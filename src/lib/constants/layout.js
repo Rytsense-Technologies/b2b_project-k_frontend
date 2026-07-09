@@ -1,8 +1,8 @@
 /** Main app sidebar widths */
 
-export const SIDEBAR_WIDTH_EXPANDED = 250;
+export const SIDEBAR_WIDTH_EXPANDED = 260;
 
-export const SIDEBAR_WIDTH_COLLAPSED = 72;
+export const SIDEBAR_WIDTH_COLLAPSED = 260;
 
 
 

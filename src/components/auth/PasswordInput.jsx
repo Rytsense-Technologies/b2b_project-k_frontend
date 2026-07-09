@@ -9,6 +9,7 @@ export default function PasswordInput({
   placeholder = 'Password',
   error,
   autoComplete = 'current-password',
+  inputClassName = 'input-base',
 }) {
   const [show, setShow] = useState(false);
   const inputProps = register ? { ...register } : { value, onChange };
@@ -21,7 +22,7 @@ export default function PasswordInput({
           type={show ? 'text' : 'password'}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className={`input-base pr-10 ${error ? 'error' : ''}`}
+          className={`${inputClassName} pr-10 ${error ? 'error' : ''}`}
         />
         <button
           type="button"

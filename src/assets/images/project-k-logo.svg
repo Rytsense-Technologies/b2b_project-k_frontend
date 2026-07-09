@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 69" fill="none" role="img" aria-label="Project K">
+  <rect x="2" y="10" width="48" height="48" rx="12" fill="#2563eb"/>
+  <path d="M18 24h10c4.418 0 8 3.582 8 8s-3.582 8-8 8H18V24zm0 0v22" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 32h-6" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <text x="62" y="46" font-family="DM Sans, system-ui, sans-serif" font-size="28" font-weight="700" fill="#0f172a">Project </text>
+  <text x="158" y="46" font-family="DM Sans, system-ui, sans-serif" font-size="28" font-weight="700" fill="#2563eb">K</text>
+</svg>

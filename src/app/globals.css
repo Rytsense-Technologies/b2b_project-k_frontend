@@ -1,37 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: 'DM Sans', system-ui, sans-serif;
-  --font-display: 'DM Serif Display', serif;
+  --font-sans: 'Inter', system-ui, Arial, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
 
-  --color-brand: #2563eb;
+  --quirri-bg: #f4f6f8;
+  --quirri-panel: #fff;
+  --quirri-line: #dce4ee;
+  --quirri-text: #102033;
+  --quirri-muted: #64748b;
+  --quirri-blue: #2366e8;
+  --quirri-teal: #123c3a;
+  --quirri-green: #13b981;
+  --quirri-red: #ef4444;
+  --quirri-orange: #f97316;
+  --quirri-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+  --quirri-radius: 15px;
+  --quirri-sidebar: 260px;
+
+  --color-brand: #2366e8;
   --color-brand-light: #3b82f6;
   --color-brand-dark: #1d4ed8;
   --color-sky: #0ea5e9;
 
-  --color-bg: #efefef;
+  --color-bg: #f4f6f8;
   --color-surface: #ffffff;
-  --color-border: #e3e7ee;
+  --color-border: #dce4ee;
   --color-sidebar-bg: #ffffff;
-  --color-text: #0f172a;
+  --color-text: #102033;
   --color-text-muted: #64748b;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
-  --shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --radius: 15px;
+  --radius-sm: 10px;
+  --radius-lg: 17px;
+  --shadow: var(--quirri-shadow);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.25);
 
-  --sidebar-width-expanded: 250px;
-  --sidebar-width-collapsed: 72px;
+  --sidebar-width-expanded: 260px;
+  --sidebar-width-collapsed: 260px;
 
-  /* Slightly smaller UI at 100% browser zoom (~90% feel); rem-based sizing follows this */
-  --app-ui-scale: 0.9;
+  --app-ui-scale: 1;
 }
 
 * {
@@ -64,8 +77,606 @@ a { color: inherit; text-decoration: none; }
 
 /* Auth page background */
 .auth-bg {
-  background: #f3f4f6;
+  background: var(--quirri-bg);
   min-height: 100vh;
+}
+
+/* ── Quirri Super Admin design system ── */
+.quirri-logo {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-size: 14px;
+}
+.quirri-logo span {
+  border-top: 4px solid #1790c8;
+  border-bottom: 4px solid #1790c8;
+  border-radius: 50%;
+  padding: 7px 10px;
+  color: #1d2940;
+}
+
+.quirri-sidebar {
+  width: var(--quirri-sidebar);
+  background: #fff;
+  border-right: 1px solid var(--quirri-line);
+  padding: 22px 18px;
+  position: fixed;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 50;
+  left: 0;
+  top: 0;
+}
+
+.quirri-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.quirri-nav a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-decoration: none;
+  color: #667085;
+  padding: 11px 12px;
+  border-radius: 11px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.quirri-nav a.active,
+.quirri-nav a:hover {
+  color: #075fe4;
+  background: #eef5ff;
+}
+
+.quirri-profile {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quirri-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #20344f;
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.quirri-profile small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.quirri-logout {
+  color: #ef2424;
+  font-weight: 600;
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.quirri-main {
+  margin-left: var(--quirri-sidebar);
+  width: calc(100% - var(--quirri-sidebar));
+  padding: 24px 36px 50px;
+  min-height: 100vh;
+  background: var(--quirri-bg);
+}
+
+.quirri-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 22px;
+}
+
+.quirri-top h1 {
+  font-size: 18px;
+  margin: 0 0 5px;
+  font-weight: 700;
+  color: var(--quirri-text);
+}
+
+.quirri-top p {
+  margin: 0;
+  color: #61738d;
+  font-size: 13px;
+}
+
+.quirri-bell {
+  font-size: 23px;
+  color: #334155;
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.quirri-hero {
+  background: linear-gradient(135deg, var(--quirri-teal), #0b2928);
+  color: #fff;
+  border-radius: 17px;
+  padding: 28px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--quirri-shadow);
+  margin-bottom: 20px;
+}
+
+.quirri-hero h2 {
+  font-size: 27px;
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.quirri-hero p {
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.92;
+}
+
+.quirri-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.quirri-cards {
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 20px;
+}
+
+.quirri-two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+.quirri-card {
+  background: #fff;
+  border: 1px solid var(--quirri-line);
+  border-radius: 15px;
+  padding: 16px;
+  box-shadow: var(--quirri-shadow);
+}
+
+.quirri-metric-title {
+  font-size: 11px;
+  color: #71809b;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.quirri-metric {
+  font-size: 25px;
+  font-weight: 800;
+  margin: 14px 0 5px;
+  color: var(--quirri-text);
+}
+
+.quirri-trend,
+.quirri-mini {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.quirri-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quirri-section-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.quirri-table-wrap {
+  overflow: hidden;
+  padding: 0;
+}
+
+.quirri-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.quirri-table th,
+.quirri-table td {
+  text-align: left;
+  padding: 13px 16px;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 12.5px;
+  vertical-align: top;
+}
+
+.quirri-table th {
+  text-transform: uppercase;
+  color: #8a98ae;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.quirri-badge {
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-block;
+}
+
+.quirri-badge-ok { background: #dcfce7; color: #15803d; }
+.quirri-badge-warn { background: #fff7ed; color: #c2410c; }
+.quirri-badge-off { background: #f1f5f9; color: #475569; }
+.quirri-badge-learning { background: #eef5ff; color: #1d4ed8; }
+.quirri-badge-qa { background: #ecfdf5; color: #047857; }
+.quirri-badge-mix { background: #fff7ed; color: #c2410c; }
+
+.quirri-filters {
+  background: #fff;
+  border: 1px solid var(--quirri-line);
+  border-radius: 15px;
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--quirri-shadow);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.quirri-filters input,
+.quirri-filters select,
+.quirri-form input,
+.quirri-form select,
+.quirri-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--quirri-text);
+  background: #fff;
+  outline: none;
+}
+
+.quirri-filters input:focus,
+.quirri-filters select:focus,
+.quirri-form input:focus,
+.quirri-form select:focus,
+.quirri-form textarea:focus {
+  border-color: var(--quirri-blue);
+  box-shadow: 0 0 0 3px rgba(35, 102, 232, 0.12);
+}
+
+.quirri-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.quirri-toolbar h2 {
+  font-size: 20px;
+  margin: 0 0 5px;
+  font-weight: 700;
+}
+
+.quirri-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.quirri-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.quirri-full {
+  grid-column: 1 / -1;
+}
+
+.quirri-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quirri-btn {
+  border: 0;
+  border-radius: 11px;
+  padding: 11px 15px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #2d9fe5;
+  color: #041827;
+  font-size: 13px;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.quirri-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.quirri-btn-primary {
+  background: var(--quirri-blue);
+  color: white;
+}
+
+.quirri-btn-light {
+  background: #fff;
+  color: var(--quirri-blue);
+  border: 1px solid var(--quirri-line);
+}
+
+.quirri-btn-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.quirri-linkbtn {
+  border: 0;
+  background: transparent;
+  color: var(--quirri-blue);
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0;
+}
+
+.quirri-linkbtn-danger {
+  color: var(--quirri-red);
+}
+
+.quirri-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 99;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.quirri-modal.show {
+  display: flex;
+}
+
+.quirri-modal-box {
+  background: white;
+  width: min(680px, 92vw);
+  max-height: 88vh;
+  overflow: auto;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  padding: 22px;
+}
+
+.quirri-modal-wide {
+  width: min(980px, 92vw);
+}
+
+.quirri-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.quirri-modal-head h2 {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.quirri-close {
+  font-size: 26px;
+  cursor: pointer;
+  color: #64748b;
+  background: none;
+  border: none;
+  line-height: 1;
+  padding: 0;
+}
+
+.quirri-pill-list {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.quirri-pill {
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.quirri-admin-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.quirri-upload-box {
+  border: 1.5px dashed #b9c6d8;
+  border-radius: 14px;
+  padding: 22px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.quirri-report-preview {
+  margin-top: 0;
+}
+
+.quirri-report-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Auth login — Quirri style */
+.quirri-auth-wrap {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--quirri-bg);
+}
+
+.quirri-auth-wrap--centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.quirri-auth-wrap--centered .quirri-auth-panel {
+  width: 100%;
+  max-width: 440px;
+  padding: 0;
+}
+
+.quirri-auth-hero {
+  background: linear-gradient(135deg, var(--quirri-teal), #0b2928);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+}
+
+.quirri-auth-hero h1 {
+  font-size: 32px;
+  margin: 24px 0 12px;
+  font-weight: 800;
+}
+
+.quirri-auth-hero p {
+  font-size: 15px;
+  line-height: 1.6;
+  opacity: 0.9;
+  max-width: 420px;
+}
+
+.quirri-auth-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.quirri-auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border: 1px solid var(--quirri-line);
+  border-radius: 17px;
+  padding: 32px;
+  box-shadow: var(--quirri-shadow);
+}
+
+.quirri-auth-card h2 {
+  font-size: 22px;
+  margin: 20px 0 6px;
+  font-weight: 800;
+  color: var(--quirri-text);
+}
+
+.quirri-auth-card .quirri-sub {
+  color: #61738d;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.quirri-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.quirri-auth-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.quirri-auth-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.quirri-auth-field input:focus {
+  outline: none;
+  border-color: var(--quirri-blue);
+  box-shadow: 0 0 0 3px rgba(35, 102, 232, 0.12);
+}
+
+@media (max-width: 1200px) {
+  .quirri-cards { grid-template-columns: repeat(3, 1fr); }
+  .quirri-two-col { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .quirri-auth-wrap { grid-template-columns: 1fr; }
+  .quirri-auth-hero { display: none; }
+  .quirri-main { margin-left: 0; width: 100%; padding: 16px; }
+  .quirri-sidebar { position: relative; width: 100%; height: auto; }
+}
+
+@media (max-width: 768px) {
+  .quirri-cards { grid-template-columns: repeat(2, 1fr); }
+  .quirri-form { grid-template-columns: 1fr; }
+  .quirri-admin-row { grid-template-columns: 1fr; }
 }
 
 /* Card styles */

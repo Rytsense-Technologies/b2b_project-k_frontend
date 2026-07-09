@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { isValidPhoneNumber } from 'react-phone-number-input';
 
 export const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),

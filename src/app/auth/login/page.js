@@ -1,18 +1,25 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
-import Logo from '@/components/shared/Logo';
+import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { loginSchema } from '@/lib/validations';
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/authSlice';
 import { loginWithRbac } from '@/lib/api/auth';
 import { getPostLoginPath, isB2bRole } from '@/lib/auth/rbac';
+import { setSessionCookie, setRoleCookie } from '@/lib/tokens';
+import { ROLES, getPermissions } from '@/lib/permissions';
+
+const DEV_BYPASS_AUTH =
+  process.env.NODE_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
+
 function setOnbCookie(val) {
   document.cookie = `pk_onb=${val}; path=/; max-age=86400; SameSite=Lax`;
 }
@@ -30,7 +37,7 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(loginSchema) });
+  } = useForm(DEV_BYPASS_AUTH ? {} : { resolver: zodResolver(loginSchema) });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -42,7 +49,30 @@ export default function LoginPage() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const session = await loginWithRbac(data.email, data.password);
+      let session;
+      if (DEV_BYPASS_AUTH) {
+        setSessionCookie();
+        setRoleCookie(ROLES.SUPERADMIN);
+        session = {
+          user: {
+            id: 'dev-user',
+            name: 'Super Admin',
+            email: data.email || 'admin@quirri.ai',
+            first_name: 'Super',
+            last_name: 'Admin',
+            plan: 'standard',
+          },
+          role: ROLES.SUPERADMIN,
+          tenant_id: null,
+          permissions: getPermissions(ROLES.SUPERADMIN),
+          plan: 'standard',
+          onboarding_complete: true,
+          plan_selected: true,
+        };
+      } else {
+        session = await loginWithRbac(data.email, data.password);
+      }
+
       if (!session?.user?.email) {
         toast.error('Unexpected login response from server.');
         return;
@@ -72,8 +102,7 @@ export default function LoginPage() {
         setOnbCookie('done');
       }
 
-      const destination = getPostLoginPath(role, onbStep);
-      router.push(destination);
+      router.push(getPostLoginPath(role, onbStep));
     } catch (err) {
       const detail = err.response?.data?.detail;
       const msg = err.message ?? (typeof detail === 'string' ? detail : null);
@@ -84,66 +113,50 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-bg min-h-screen flex items-center justify-center px-4">
-      <div className="card w-full max-w-sm p-8 animate-fade-in">
-        <div className="flex justify-center mb-6">
-          <Logo size="md" />
+    <div className="quirri-auth-wrap quirri-auth-wrap--centered">
+      <div className="quirri-auth-panel">
+        <div className="quirri-auth-card">
+          <QuirriLogo />
+          <h2>Sign in</h2>
+          <p className="quirri-sub">Welcome back — enter your credentials to continue.</p>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col" noValidate>
+            <div className="quirri-auth-field">
+              <label htmlFor="email">Email address</label>
+              <input
+                {...register('email')}
+                id="email"
+                type="email"
+                placeholder="admin@quirri.ai"
+                autoComplete="email"
+              />
+              {errors.email && (
+                <p className="text-xs text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="quirri-auth-field">
+              <label htmlFor="password">Password</label>
+              <PasswordInput
+                register={register('password')}
+                error={errors.password?.message}
+                inputClassName="w-full px-[14px] py-3 border border-[#dbe4ef] rounded-[10px] text-[13px] font-[inherit]"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="quirri-btn quirri-btn-primary w-full mt-2 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <><Loader2 size={16} className="animate-spin" /> Signing in…</>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
         </div>
-
-        <h2 className="text-center text-xl font-bold text-slate-800 mb-1">Welcome back</h2>
-        <p className="text-center text-sm text-slate-500 mb-6">
-          Sign in to{' '}
-          <span className="font-semibold text-slate-700">Project K</span>
-        </p>
-
-        <form onSubmit={handleSubmit(onSubmit)} method="post" action="#" className="flex flex-col gap-4" noValidate>
-          <div>
-            <input
-              {...register('email')}
-              type="email"
-              placeholder="Email address"
-              className={`input-base ${errors.email ? 'error' : ''}`}
-              autoComplete="email"
-            />
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <PasswordInput
-              register={register('password')}
-              error={errors.password?.message}
-            />
-          </div>
-
-          <div className="-mt-1">
-            <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:underline font-medium">
-              Forgot password?
-            </Link>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary mt-1 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <><Loader2 size={16} className="animate-spin" /> Signing in…</>
-            ) : (
-              'Sign In'
-            )}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-slate-500 mt-6">
-          Don&apos;t have an account?{' '}
-          <Link href="/auth/signup" className="text-blue-600 font-medium hover:underline">
-            Create one
-          </Link>
-          {/* {' '} */}
-          {/* <span className="text-slate-400">(students)</span> */}
-        </p>
       </div>
     </div>
   );

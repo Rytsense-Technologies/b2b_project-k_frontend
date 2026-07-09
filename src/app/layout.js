@@ -2,8 +2,8 @@ import './globals.css';
 import Providers from './Providers';
 
 export const metadata = {
-  title: 'Project K – AI Interview Module',
-  description: 'AI-powered mock interview coaching for students and freshers.',
+  title: 'Quirri – Super Admin Portal',
+  description: 'Super Admin workspace for colleges, departments, skill courses, and platform management.',
 };
 
 export default function RootLayout({ children }) {
