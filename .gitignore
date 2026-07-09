@@ -16,12 +16,14 @@ node_modules
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
 # env files
 .env
@@ -33,6 +35,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# IDE
+# IDE / editor
 .idea
 .vscode
+*.swp
+*.swo
+
+# git tooling leftovers
+.git-rewrite/
