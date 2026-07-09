@@ -2,6 +2,10 @@
   "name": "b2b_project-k_frontend",
   "version": "1.0.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rytsense-Technologies/b2b_project-k_frontend.git"
+  },
   "scripts": {
     "dev": "next dev",
     "dev:clean": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-clean.ps1 -Port 3001",
