@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node .cursor/hooks/graphify-session.js"
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "node .cursor/hooks/graphify-prompt.js"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "node .cursor/hooks/graphify-update.js"
+      }
+    ],
+    "stop": [
+      {
+        "command": "node .cursor/hooks/graphify-update.js"
+      }
+    ]
+  }
+}

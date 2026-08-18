@@ -1,0 +1,8 @@
+.next/
+out/
+coverage/
+.git-rewrite/
+*.log
+public/
+*.pack
+*.pack.gz

@@ -1,45 +1,108 @@
 'use client';
 
+import { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   QuirriToolbar,
   QuirriFilters,
   QuirriBtn,
   QuirriSectionTitle,
 } from '@/components/superadmin/quirri-ui';
-import { REPORT_PREVIEW } from '@/lib/mock/superadminData';
+import { REPORT_PREVIEW, COLLEGES } from '@/lib/mock/superadminData';
+import { reportsApi } from '@/lib/api/superadmin/modules';
+import { asList, downloadCsv, withMock } from '@/lib/api/superadmin/http';
+import { useAsyncResource } from '@/hooks/useAsyncResource';
+
+const COLUMNS = [
+  { key: 'college', label: 'College' },
+  { key: 'department', label: 'Department' },
+  { key: 'students', label: 'Students' },
+  { key: 'duration', label: 'Self Learning Duration' },
+  { key: 'questions', label: 'Questions Asked' },
+  { key: 'interviews', label: 'Interviews' },
+  { key: 'score', label: 'Avg Score' },
+];
 
 export default function ReportsPage() {
+  const [search, setSearch] = useState('');
+  const [reportType, setReportType] = useState('');
+  const [college, setCollege] = useState('');
+  const [range, setRange] = useState('last_30_days');
+  const [generating, setGenerating] = useState(false);
+
+  const params = { search, report_type: reportType, college, range };
+
+  const { data, reload } = useAsyncResource(
+    () => withMock(() => reportsApi.preview(params), REPORT_PREVIEW),
+    [search, reportType, college, range],
+  );
+  const rows = useMemo(() => asList(data, REPORT_PREVIEW), [data]);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      await reportsApi.generate(params);
+      toast.success('Report generated');
+      await reload();
+    } catch {
+      toast.success('Preview refreshed from current filters (generate API not live yet)');
+      await reload();
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleDownload = async (format) => {
+    try {
+      await reportsApi.download(format, params);
+    } catch {
+      if (format === 'csv') {
+        downloadCsv(`report-${reportType || 'preview'}.csv`, rows, COLUMNS);
+        toast.success('CSV downloaded from current preview');
+        return;
+      }
+      toast.error(`${format.toUpperCase()} download needs the reports API`);
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <QuirriToolbar
         title="Reports"
         subtitle="Search, preview report data, and download selected results."
       >
-        <QuirriBtn variant="light">Download Excel</QuirriBtn>
-        <QuirriBtn variant="light">Download PDF</QuirriBtn>
-        <QuirriBtn variant="primary">Generate Report</QuirriBtn>
+        <QuirriBtn variant="light" onClick={() => handleDownload('xlsx')}>Download Excel</QuirriBtn>
+        <QuirriBtn variant="light" onClick={() => handleDownload('pdf')}>Download PDF</QuirriBtn>
+        <QuirriBtn variant="primary" onClick={handleGenerate} disabled={generating}>
+          {generating ? 'Generating…' : 'Generate Report'}
+        </QuirriBtn>
       </QuirriToolbar>
 
       <QuirriFilters>
-        <input placeholder="Search student, college, department, subject, question keyword..." />
-        <select defaultValue="">
-          <option>Report Type</option>
-          <option>College Report</option>
-          <option>Department Report</option>
-          <option>Student Performance</option>
-          <option>Q&A Report</option>
-          <option>Interview Report</option>
-          <option>AI Usage Report</option>
+        <input
+          placeholder="Search student, college, department, subject, question keyword..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select value={reportType} onChange={(e) => setReportType(e.target.value)}>
+          <option value="">Report Type</option>
+          <option value="college">College Report</option>
+          <option value="department">Department Report</option>
+          <option value="student">Student Performance</option>
+          <option value="qa">Q&A Report</option>
+          <option value="interview">Interview Report</option>
+          <option value="ai_usage">AI Usage Report</option>
         </select>
-        <select defaultValue="">
-          <option>All Colleges</option>
-          <option>ABC Engineering</option>
-          <option>City Arts & Science</option>
+        <select value={college} onChange={(e) => setCollege(e.target.value)}>
+          <option value="">All Colleges</option>
+          {COLLEGES.map((item) => (
+            <option key={item.id} value={item.name}>{item.name}</option>
+          ))}
         </select>
-        <select defaultValue="">
-          <option>Last 30 Days</option>
-          <option>This Month</option>
-          <option>Custom Range</option>
+        <select value={range} onChange={(e) => setRange(e.target.value)}>
+          <option value="last_30_days">Last 30 Days</option>
+          <option value="this_month">This Month</option>
+          <option value="custom">Custom Range</option>
         </select>
       </QuirriFilters>
 
@@ -48,9 +111,9 @@ export default function ReportsPage() {
           title="Report Preview"
           action={(
             <div className="quirri-report-actions">
-              <QuirriBtn variant="light">CSV</QuirriBtn>
-              <QuirriBtn variant="light">Excel</QuirriBtn>
-              <QuirriBtn variant="light">PDF</QuirriBtn>
+              <QuirriBtn variant="light" onClick={() => handleDownload('csv')}>CSV</QuirriBtn>
+              <QuirriBtn variant="light" onClick={() => handleDownload('xlsx')}>Excel</QuirriBtn>
+              <QuirriBtn variant="light" onClick={() => handleDownload('pdf')}>PDF</QuirriBtn>
             </div>
           )}
         />
@@ -67,7 +130,7 @@ export default function ReportsPage() {
             </tr>
           </thead>
           <tbody>
-            {REPORT_PREVIEW.map((row) => (
+            {rows.map((row) => (
               <tr key={`${row.college}-${row.department}`}>
                 <td>{row.college}</td>
                 <td>{row.department}</td>

@@ -11,7 +11,10 @@
     "dev:clean": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-clean.ps1 -Port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "graphify": "graphify extract . --no-cluster && graphify cluster-only . --no-label",
+    "graphify:update": "graphify update . --no-cluster",
+    "graphify:query": "graphify query"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -25,6 +28,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.51.3",
     "react-hot-toast": "^2.4.1",
+    "react-phone-number-input": "^3.4.17",
     "react-redux": "^9.1.2",
     "recharts": "^2.12.4",
     "tailwind-merge": "^2.3.0",

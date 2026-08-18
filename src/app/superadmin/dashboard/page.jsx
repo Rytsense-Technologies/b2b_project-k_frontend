@@ -6,17 +6,17 @@ import {
   QuirriHero,
   QuirriMetricCards,
   QuirriSectionTitle,
-  QuirriTable,
-  QuirriLinkButton,
 } from '@/components/superadmin/quirri-ui';
-import {
-  DASHBOARD_METRICS,
-  LEARNING_ACTIVITY,
-  TOP_COLLEGES,
-  DEPT_SNAPSHOT,
-} from '@/lib/mock/superadminData';
+import { dashboardApi } from '@/lib/api/superadmin/modules';
+import { useAsyncResource } from '@/hooks/useAsyncResource';
 
 export default function SuperAdminDashboard() {
+  const { data, loading } = useAsyncResource(() => dashboardApi.getOverview({ range: 'last_30_days' }), []);
+  const metrics = data?.metrics ?? [];
+  const learning = data?.learning_activity ?? [];
+  const topColleges = data?.top_colleges ?? [];
+  const snapshot = data?.department_snapshot ?? [];
+
   return (
     <div className="animate-fade-in">
       <QuirriHero
@@ -24,7 +24,8 @@ export default function SuperAdminDashboard() {
         description="Manage colleges, departments, skill courses, reports, and platform activity from one workspace."
       />
 
-      <QuirriMetricCards items={DASHBOARD_METRICS} />
+      {loading && !data ? <p className="quirri-mini">Loading dashboard…</p> : null}
+      <QuirriMetricCards items={metrics} />
 
       <div className="quirri-grid quirri-two-col" style={{ marginBottom: 20 }}>
         <div className="quirri-card">
@@ -44,7 +45,7 @@ export default function SuperAdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {LEARNING_ACTIVITY.map((row) => (
+              {learning.map((row) => (
                 <tr key={row.college}>
                   <td>{row.college}</td>
                   <td><b>{row.duration}</b></td>
@@ -69,7 +70,7 @@ export default function SuperAdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {TOP_COLLEGES.map((row) => (
+              {topColleges.map((row) => (
                 <tr key={row.college}>
                   <td>{row.college}</td>
                   <td>{row.students}</td>
@@ -102,7 +103,7 @@ export default function SuperAdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {DEPT_SNAPSHOT.map((row) => (
+            {snapshot.map((row) => (
               <tr key={`${row.college}-${row.department}`}>
                 <td>{row.college}</td>
                 <td>{row.department}</td>

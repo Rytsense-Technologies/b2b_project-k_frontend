@@ -1,34 +1,71 @@
 'use client';
 
+import { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   QuirriToolbar,
   QuirriFilters,
   QuirriBtn,
 } from '@/components/superadmin/quirri-ui';
 import { DEPARTMENTS } from '@/lib/mock/superadminData';
+import { departmentsApi } from '@/lib/api/superadmin/modules';
+import { asList, downloadCsv, withMock } from '@/lib/api/superadmin/http';
+import { useAsyncResource } from '@/hooks/useAsyncResource';
 
 export default function DepartmentsPage() {
+  const [search, setSearch] = useState('');
+  const [college, setCollege] = useState('');
+  const [department, setDepartment] = useState('');
+
+  const { data, loading } = useAsyncResource(
+    () => withMock(() => departmentsApi.list({ search, college, department }), DEPARTMENTS),
+    [search, college, department],
+  );
+  const rows = useMemo(() => asList(data, DEPARTMENTS), [data]);
+  const colleges = [...new Set(DEPARTMENTS.map((row) => row.college))];
+  const depts = [...new Set(DEPARTMENTS.map((row) => row.department))];
+
+  const handleExport = async () => {
+    try {
+      await departmentsApi.exportData({ search, college, department });
+    } catch {
+      downloadCsv('departments.csv', rows, [
+        { key: 'college', label: 'College' },
+        { key: 'department', label: 'Department' },
+        { key: 'hod', label: 'HOD' },
+        { key: 'students', label: 'Students' },
+        { key: 'finalYear', label: 'Final Year' },
+        { key: 'subjects', label: 'Subjects' },
+        { key: 'hours', label: 'Learning Hours' },
+        { key: 'questions', label: 'Questions' },
+        { key: 'interviews', label: 'Interviews' },
+      ]);
+      toast.success('Exported current table (API export not live yet)');
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <QuirriToolbar
         title="Departments"
         subtitle="View department-wise student count and performance. Departments are created by college admin, Super Admin can view/report."
       >
-        <QuirriBtn variant="light">Export Department Data</QuirriBtn>
+        <QuirriBtn variant="light" onClick={handleExport}>Export Department Data</QuirriBtn>
       </QuirriToolbar>
 
       <QuirriFilters>
-        <input placeholder="Search college, department, HOD..." />
-        <select defaultValue="">
-          <option>All Colleges</option>
-          <option>ABC Engineering</option>
-          <option>City Arts & Science</option>
+        <input
+          placeholder="Search college, department, HOD..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select value={college} onChange={(e) => setCollege(e.target.value)}>
+          <option value="">All Colleges</option>
+          {colleges.map((name) => <option key={name}>{name}</option>)}
         </select>
-        <select defaultValue="">
-          <option>All Departments</option>
-          <option>CSE</option>
-          <option>ECE</option>
-          <option>B.Com</option>
+        <select value={department} onChange={(e) => setDepartment(e.target.value)}>
+          <option value="">All Departments</option>
+          {depts.map((name) => <option key={name}>{name}</option>)}
         </select>
       </QuirriFilters>
 
@@ -48,8 +85,9 @@ export default function DepartmentsPage() {
             </tr>
           </thead>
           <tbody>
-            {DEPARTMENTS.map((row) => (
-              <tr key={`${row.college}-${row.department}`}>
+            {loading && !rows.length ? <tr><td colSpan={9}>Loading departments…</td></tr> : null}
+            {rows.map((row) => (
+              <tr key={row.id || `${row.college}-${row.department}`}>
                 <td>{row.college}</td>
                 <td>{row.department}</td>
                 <td>{row.hod}</td>

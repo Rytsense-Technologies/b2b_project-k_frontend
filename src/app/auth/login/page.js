@@ -16,9 +16,11 @@ import { getPostLoginPath, isB2bRole } from '@/lib/auth/rbac';
 import { setSessionCookie, setRoleCookie } from '@/lib/tokens';
 import { ROLES, getPermissions } from '@/lib/permissions';
 
+/** UI demo on Vercel before backend is wired — set NEXT_PUBLIC_DEV_BYPASS_AUTH=false when API is live */
 const DEV_BYPASS_AUTH =
   process.env.NODE_ENV === 'development' ||
-  process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
+  process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true' ||
+  (process.env.VERCEL === '1' && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH !== 'false');
 
 function setOnbCookie(val) {
   document.cookie = `pk_onb=${val}; path=/; max-age=86400; SameSite=Lax`;

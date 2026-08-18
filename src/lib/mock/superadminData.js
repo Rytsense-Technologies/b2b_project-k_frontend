@@ -30,25 +30,42 @@ export const DEPT_SNAPSHOT = [
 
 export const COLLEGES = [
   {
-    id: '1',
+    id: 'col_001',
     name: 'ABC Engineering College',
     code: 'COL-0001',
     city: 'Chennai',
+    state: 'Tamil Nadu',
+    address: 'Guindy, Chennai',
+    student_limit: 5000,
     admins: 3,
+    admin_list: [
+      { name: 'Ravi Kumar', email: 'ravi@abc.edu', mobile: '9876543210' },
+      { name: 'Priya N', email: 'priya@abc.edu', mobile: '9876543211' },
+      { name: 'Arun S', email: 'arun@abc.edu', mobile: '9876543212' },
+    ],
     departments: 8,
     students: '2,340',
+    final_year: 420,
     plan: 'Premium',
     status: 'Active',
     statusType: 'ok',
   },
   {
-    id: '2',
+    id: 'col_002',
     name: 'City Arts & Science',
     code: 'COL-0002',
     city: 'Salem',
+    state: 'Tamil Nadu',
+    address: 'Fairlands, Salem',
+    student_limit: 3000,
     admins: 2,
+    admin_list: [
+      { name: 'Meena R', email: 'meena@city.edu', mobile: '9840011122' },
+      { name: 'Karthik M', email: 'karthik@city.edu', mobile: '9840011133' },
+    ],
     departments: 5,
     students: '1,120',
+    final_year: 184,
     plan: 'Standard',
     status: 'Onboarding',
     statusType: 'warn',
@@ -56,11 +73,11 @@ export const COLLEGES = [
 ];
 
 export const DEPARTMENTS = [
-  { college: 'ABC Engineering', department: 'CSE', hod: 'Dr. Karthik', students: '620', finalYear: '156', subjects: '18', hours: '1,420 hrs', questions: '4,280', interviews: '810' },
-  { college: 'ABC Engineering', department: 'ECE', hod: 'Prof. Meena', students: '480', finalYear: '120', subjects: '16', hours: '1,105 hrs', questions: '3,760', interviews: '640' },
-  { college: 'ABC Engineering', department: 'Mechanical', hod: 'Dr. Suresh', students: '390', finalYear: '94', subjects: '14', hours: '820 hrs', questions: '2,140', interviews: '410' },
-  { college: 'City Arts & Science', department: 'B.Com', hod: 'Prof. Revathi', students: '410', finalYear: '96', subjects: '12', hours: '880 hrs', questions: '2,910', interviews: '230' },
-  { college: 'City Arts & Science', department: 'B.Sc CS', hod: 'Dr. Naveen', students: '365', finalYear: '88', subjects: '15', hours: '760 hrs', questions: '2,340', interviews: '312' },
+  { id: 'dept_001', college: 'ABC Engineering', college_id: 'col_001', department: 'CSE', hod: 'Dr. Karthik', students: '620', finalYear: '156', subjects: '18', hours: '1,420 hrs', questions: '4,280', interviews: '810' },
+  { id: 'dept_002', college: 'ABC Engineering', college_id: 'col_001', department: 'ECE', hod: 'Prof. Meena', students: '480', finalYear: '120', subjects: '16', hours: '1,105 hrs', questions: '3,760', interviews: '640' },
+  { id: 'dept_003', college: 'ABC Engineering', college_id: 'col_001', department: 'Mechanical', hod: 'Dr. Suresh', students: '390', finalYear: '94', subjects: '14', hours: '820 hrs', questions: '2,140', interviews: '410' },
+  { id: 'dept_004', college: 'City Arts & Science', college_id: 'col_002', department: 'B.Com', hod: 'Prof. Revathi', students: '410', finalYear: '96', subjects: '12', hours: '880 hrs', questions: '2,910', interviews: '230' },
+  { id: 'dept_005', college: 'City Arts & Science', college_id: 'col_002', department: 'B.Sc CS', hod: 'Dr. Naveen', students: '365', finalYear: '88', subjects: '15', hours: '760 hrs', questions: '2,340', interviews: '312' },
 ];
 
 export const SKILL_METRICS = [
@@ -72,8 +89,8 @@ export const SKILL_METRICS = [
 ];
 
 export const SKILL_COURSES = [
-  { course: 'Interview Readiness Booster', type: 'AI Generated', typeStyle: 'qa', category: 'Career', audience: 'Final Year', colleges: 'All Colleges', usage: '3,204', status: 'Published', statusType: 'ok' },
-  { course: 'Communication Confidence', type: 'Video Upload', typeStyle: 'learning', category: 'Soft Skill', audience: 'All Years', colleges: '18 Colleges', usage: '2,119', status: 'Published', statusType: 'ok' },
+  { id: 'skill_001', course: 'Interview Readiness Booster', type: 'AI Generated', typeStyle: 'qa', category: 'Career', audience: 'Final Year', colleges: 'All Colleges', usage: '3,204', status: 'Published', statusType: 'ok' },
+  { id: 'skill_002', course: 'Communication Confidence', type: 'Video Upload', typeStyle: 'learning', category: 'Soft Skill', audience: 'All Years', colleges: '18 Colleges', usage: '2,119', status: 'Published', statusType: 'ok' },
 ];
 
 export const AI_USAGE = [
@@ -83,8 +100,8 @@ export const AI_USAGE = [
 ];
 
 export const EMAILS = [
-  { email: 'support@quirri.ai', purpose: 'Support notifications', status: 'Verified', addedBy: 'Super Admin', created: '12 Jun 2026' },
-  { email: 'reports@quirri.ai', purpose: 'Report delivery', status: 'Verified', addedBy: 'Super Admin', created: '10 Jun 2026' },
+  { id: 'email_001', email: 'support@quirri.ai', purpose: 'Support notifications', status: 'Verified', addedBy: 'Super Admin', created: '12 Jun 2026' },
+  { id: 'email_002', email: 'reports@quirri.ai', purpose: 'Report delivery', status: 'Verified', addedBy: 'Super Admin', created: '10 Jun 2026' },
 ];
 
 export const REPORT_PREVIEW = [
@@ -94,8 +111,8 @@ export const REPORT_PREVIEW = [
 ];
 
 export const AUDIT_LOGS = [
-  { datetime: '19 Jun 2026, 04:12 PM', user: 'Super Admin', role: 'Quirri Team', module: 'College', action: 'Added new admin to ABC Engineering', ip: '103.21.XX.18' },
-  { datetime: '19 Jun 2026, 03:48 PM', user: 'Super Admin', role: 'Quirri Team', module: 'Email', action: 'Deleted old notification email', ip: '103.21.XX.18' },
+  { id: 'audit_001', datetime: '19 Jun 2026, 04:12 PM', user: 'Super Admin', role: 'Quirri Team', module: 'College', action: 'Added new admin to ABC Engineering', ip: '103.21.XX.18' },
+  { id: 'audit_002', datetime: '19 Jun 2026, 03:48 PM', user: 'Super Admin', role: 'Quirri Team', module: 'Email', action: 'Deleted old notification email', ip: '103.21.XX.18' },
 ];
 
 export const COLLEGE_VIEW_DEPTS = [
