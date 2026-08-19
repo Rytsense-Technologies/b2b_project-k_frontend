@@ -6,6 +6,7 @@ import {
 import { resetSession } from '@/store/slices/interviewSlice';
 import { queryClient } from '@/lib/queryClient';
 import api from '@/lib/axios';
+import { clearTokens } from '@/lib/tokens';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,7 @@ export function useAuth() {
     try {
       await api.post('/auth/logout');
     } catch { /* ignore — still clear local state */ }
+    clearTokens();
     dispatch(clearCredentials());
     dispatch(resetSession());
     queryClient.clear();

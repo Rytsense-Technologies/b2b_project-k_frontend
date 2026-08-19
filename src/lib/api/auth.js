@@ -19,8 +19,10 @@ export function parseLoginUser(data) {
   return u;
 }
 
-async function loginViaAuthEndpoint(email, password) {
-  const res = await api.post('/auth/login', { email, password });
+async function loginViaAuthEndpoint(email, password, tenantSlug) {
+  const body = { email, password };
+  if (tenantSlug) body.tenant_slug = tenantSlug;
+  const res = await api.post('/auth/login', body);
   const d = res.data ?? {};
 
   setSessionCookie();
@@ -43,7 +45,7 @@ async function loginViaAuthEndpoint(email, password) {
  * Single sign-in for all roles (B2C + B2B).
  * Tries `/auth/login` first, then legacy portal endpoints until one succeeds.
  */
-export async function loginWithRbac(email, password) {
+export async function loginWithRbac(email, password, tenantSlug) {
   const legacyProviders = [
     () => superAdminLogin(email, password),
     () => adminLogin(email, password),
@@ -51,7 +53,7 @@ export async function loginWithRbac(email, password) {
   ];
 
   try {
-    const session = await loginViaAuthEndpoint(email, password);
+    const session = await loginViaAuthEndpoint(email, password, tenantSlug);
     if (session) return session;
   } catch (err) {
     const status = err.response?.status;

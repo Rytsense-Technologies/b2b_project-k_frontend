@@ -44,7 +44,12 @@ yarn-error.log*
 # git tooling leftovers
 .git-rewrite/
 
-# graphify (keep graph.json + GRAPH_REPORT.md committed)
-graphify-out/cost.json
-graphify-out/.update.lock
-graphify-out/cache/
+# graphify (local only)
+graphify-out/
+
+# docs & guides (local reference only)
+docs/
+assets/*.md
+
+# project guide
+assets/PROJECT_K_DEVELOPMENT_GUIDE.md

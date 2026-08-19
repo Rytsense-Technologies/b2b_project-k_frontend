@@ -19,6 +19,8 @@ export function setSessionCookie() {
 export function clearTokens() {
   deleteCookie('pk_session');
   deleteCookie('pk_onb');
+  deleteCookie('pk_role');
+  deleteCookie('pk_tenant');
 }
 
 // Private helper — reads a single cookie value by name.
