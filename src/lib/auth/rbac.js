@@ -44,12 +44,16 @@ export function resolveRoleFromLoginPayload(data) {
   return mapUserTypeToRole(raw);
 }
 
-/** Default landing route after login for each role */
+/**
+ * Landing routes after login.
+ * This frontend only ships the Super Admin portal — other roles stay on login
+ * (college/faculty/student UIs live in separate apps).
+ */
 export const ROLE_HOME_PATHS = {
   [ROLES.SUPERADMIN]: '/superadmin/dashboard',
-  [ROLES.COLLEGE_ADMIN]: '/admin/dashboard',
-  [ROLES.FACULTY]: '/faculty/dashboard',
-  [ROLES.STUDENT]: '/main/dashboard',
+  [ROLES.COLLEGE_ADMIN]: '/auth/login',
+  [ROLES.FACULTY]: '/auth/login',
+  [ROLES.STUDENT]: '/auth/login',
 };
 
 export function isKnownRole(role) {
@@ -67,11 +71,7 @@ export function isB2bRole(role) {
  */
 export function getPostLoginPath(role, onbCookie) {
   if (role === ROLES.SUPERADMIN) return ROLE_HOME_PATHS[ROLES.SUPERADMIN];
-  if (role === ROLES.COLLEGE_ADMIN) return ROLE_HOME_PATHS[ROLES.COLLEGE_ADMIN];
-  if (role === ROLES.FACULTY) return ROLE_HOME_PATHS[ROLES.FACULTY];
-
-  if (onbCookie === 'plan') return '/pricing?onboarding=1';
-  if (onbCookie === 'profile') return '/main/profile-setup';
+  // Super Admin frontend only — do not navigate to missing portal routes
   return ROLE_HOME_PATHS[ROLES.STUDENT];
 }
 

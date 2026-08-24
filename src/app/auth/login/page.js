@@ -176,6 +176,11 @@ function LoginForm() {
         plan_selected: isB2b ? true : (session.plan_selected ?? true),
       }));
 
+      if (role !== ROLES.SUPERADMIN) {
+        toast.error('This portal is for Super Admin only. Use the college / faculty / student app for your account.');
+        return;
+      }
+
       const displayName = user.first_name || user.name || 'there';
       toast.success(`Welcome back, ${displayName}!`);
 
