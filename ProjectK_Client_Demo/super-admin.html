@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin · Quirri — Project K</title>
+<link rel="stylesheet" href="assets/css/quirri.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="brand"><div class="logo"><span class="ring">QUIRRI</span></div></div>
+
+    <div class="tenant-box platform">
+      <div class="mark">K</div>
+      <div class="txt">
+        <div class="nm">Knotopian</div>
+        <div class="sc">Platform · all institutions</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a class="active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+
+      <div class="nav-label">Institutions</div>
+      <a data-page="universities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3L2 8l10 5 10-5-10-5z"/><path d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/></svg>Universities</a>
+      <a data-page="colleges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18M5 21V8l7-4 7 4v13"/><path d="M10 21v-6h4v6"/></svg>Colleges</a>
+      <a data-page="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M17 8.5h4M19 6.5v4"/></svg>Platform Users</a>
+
+      <div class="nav-label">Content</div>
+      <a data-page="content"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Upload &amp; Generate</a>
+
+      <div class="nav-label">Insights</div>
+      <a data-page="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M15 3v5h5M9 13h6M9 17h4"/></svg>Reports</a>
+      <a data-page="health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>Platform Health</a>
+      <a data-page="audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Audit Logs</a>
+
+      <div class="nav-label">Configuration</div>
+      <a data-page="notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Notifications</a>
+      <a data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V1a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 17 2.6a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1.7z"/></svg>Settings</a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="who">
+        <div class="av">SA</div>
+        <div><div class="n">Super Admin</div><div class="r">admin@quirri.ai</div></div>
+      </div>
+      <a class="logout" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Log out</a>
+    </div>
+  </aside>
+
+  <!-- ── Main ─────────────────────────────────────────────────────────── -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pgTitle">Dashboard</h1>
+        <p id="pgSub">Platform-wide adoption, learning activity, and system health.</p>
+      </div>
+      <div class="topbar-right">
+        <div class="scopepick">
+          <div class="lb">Period</div>
+          <select><option>Last 30 days</option><option>This month</option><option>This semester</option><option>Custom range</option></select>
+        </div>
+        <button class="iconbtn" data-demo="Notification centre — content pipeline completions and system alerts.">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══ DASHBOARD ═══════════════════════════════════════════════ -->
+      <section class="page show" id="dashboard">
+        <div class="banner">
+          <h2>Platform overview</h2>
+          <p>Every institution on Project K, in one view — onboarding, learning activity, assessment performance, and the health of the AI content pipeline.</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="k">Institutions</div><div class="v">24</div><div class="s">18 active · 6 onboarding</div></div>
+          <div class="stat"><div class="k">Active Students</div><div class="v">18,420</div><div class="s up">+12% this month</div></div>
+          <div class="stat"><div class="k">Completion Rate</div><div class="v">67<small>%</small></div><div class="s up">+4 pts</div></div>
+          <div class="stat"><div class="k">Avg Assessment</div><div class="v">74<small>%</small></div><div class="s">Across all institutions</div></div>
+          <div class="stat"><div class="k">Watch Time</div><div class="v">42,860<small> hrs</small></div><div class="s">Played seconds, last 30d</div></div>
+        </div>
+
+        <div class="cols a" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-h"><h3>Institution activity</h3><a class="link" onclick="go('colleges')">All colleges →</a></div>
+            <div class="card-sub">Learning, Q&amp;A and assessment performance per institution.</div>
+            <table>
+              <thead><tr><th>Institution</th><th>Students</th><th>Watch time</th><th>Q&amp;A</th><th>Avg score</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">ABC Engineering</span><div class="sub">Anna University</div></td><td class="num">2,340</td><td class="num">4,820 hrs</td><td class="num">12,402</td><td><span class="pill green plain">76%</span></td><td><span class="pill green">Healthy</span></td></tr>
+                <tr><td><span class="strong">City Arts &amp; Science</span><div class="sub">Bharathiar University</div></td><td class="num">1,120</td><td class="num">3,210 hrs</td><td class="num">9,310</td><td><span class="pill green plain">72%</span></td><td><span class="pill green">Healthy</span></td></tr>
+                <tr><td><span class="strong">National Polytechnic</span><div class="sub">Anna University</div></td><td class="num">980</td><td class="num">2,940 hrs</td><td class="num">7,224</td><td><span class="pill amber plain">68%</span></td><td><span class="pill amber">Low uptake</span></td></tr>
+                <tr><td><span class="strong">Vetri Institute</span><div class="sub">Periyar University</div></td><td class="num">740</td><td class="num">2,110 hrs</td><td class="num">4,778</td><td><span class="pill amber plain">64%</span></td><td><span class="pill amber">Needs push</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card card-p">
+            <h3 style="font-size:14.5px;font-weight:800;margin-bottom:3px">Top Q&amp;A topics</h3>
+            <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Clustered from student questions across all institutions.</p>
+            <div class="cmp"><div class="nm">Pointers &amp; memory</div><div class="track"><i style="width:100%;background:var(--blue)"></i></div><div class="val">3,140</div></div>
+            <div class="cmp"><div class="nm">Normalization</div><div class="track"><i style="width:81%;background:var(--sky)"></i></div><div class="val">2,540</div></div>
+            <div class="cmp"><div class="nm">TCP/IP layers</div><div class="track"><i style="width:69%;background:var(--violet)"></i></div><div class="val">2,170</div></div>
+            <div class="cmp"><div class="nm">Thermodynamics</div><div class="track"><i style="width:52%;background:var(--amber)"></i></div><div class="val">1,630</div></div>
+            <div class="cmp"><div class="nm">Time complexity</div><div class="track"><i style="width:44%;background:var(--green)"></i></div><div class="val">1,380</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Content pipeline — live</h3><a class="link" onclick="go('health')">Platform health →</a></div>
+          <div class="card-sub">AI generation jobs currently moving through the pipeline, across all institutions.</div>
+          <table>
+            <thead><tr><th>Chapter</th><th>Institution</th><th>Stage</th><th>Progress</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Linked Lists</span><div class="sub">Data Structures · Ch 3</div></td><td>ABC Engineering</td><td>Avatar render</td><td style="width:170px"><div class="bar"><i style="width:62%"></i></div></td><td><span class="pill blue">Generating</span></td></tr>
+              <tr><td><span class="strong">Signals &amp; Systems</span><div class="sub">ECE · Ch 2</div></td><td>ABC Engineering</td><td>Embedding</td><td style="width:170px"><div class="bar"><i style="width:28%"></i></div></td><td><span class="pill blue">Generating</span></td></tr>
+              <tr><td><span class="strong">Microeconomics</span><div class="sub">B.Com · Ch 4</div></td><td>City Arts &amp; Science</td><td>Awaiting HOD</td><td style="width:170px"><div class="bar green"><i style="width:100%"></i></div></td><td><span class="pill amber">Pending review</span></td></tr>
+              <tr><td><span class="strong">Thermodynamics</span><div class="sub">Mech · Ch 3</div></td><td>National Polytechnic</td><td>OCR extraction</td><td style="width:170px"><div class="bar amber"><i style="width:14%"></i></div></td><td><span class="pill red">Retrying (2/3)</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ UNIVERSITIES ════════════════════════════════════════════ -->
+      <section class="page" id="universities">
+        <div class="section-head">
+          <div>
+            <div class="t">Universities</div>
+            <div class="d">Affiliated universities. Colleges are onboarded beneath a university — this is the top of the academic hierarchy.</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('mUni')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New University</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search university name or code…"></div>
+          <select><option>All statuses</option><option>Active</option><option>Onboarding</option><option>Suspended</option></select>
+        </div>
+
+        <div class="card">
+          <table>
+            <thead><tr><th>University</th><th>Code</th><th>Colleges</th><th>Departments</th><th>Students</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Anna University</span><div class="sub">Chennai, Tamil Nadu</div></td><td class="num">UNI-0001</td><td class="num">11</td><td class="num">64</td><td class="num">9,420</td><td><span class="pill green">Active</span></td><td class="actions"><a onclick="openModal('mUni')">Edit</a></td></tr>
+              <tr><td><span class="strong">Bharathiar University</span><div class="sub">Coimbatore, Tamil Nadu</div></td><td class="num">UNI-0002</td><td class="num">7</td><td class="num">38</td><td class="num">5,180</td><td><span class="pill green">Active</span></td><td class="actions"><a onclick="openModal('mUni')">Edit</a></td></tr>
+              <tr><td><span class="strong">Periyar University</span><div class="sub">Salem, Tamil Nadu</div></td><td class="num">UNI-0003</td><td class="num">6</td><td class="num">24</td><td class="num">3,820</td><td><span class="pill amber">Onboarding</span></td><td class="actions"><a onclick="openModal('mUni')">Edit</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ COLLEGES ════════════════════════════════════════════════ -->
+      <section class="page" id="colleges">
+        <div class="section-head">
+          <div>
+            <div class="t">Colleges</div>
+            <div class="d">Onboard a member college under a university, provision its administrators, and set its licence entitlement.</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('mCollege')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New College</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search college, code, or admin email…"></div>
+          <select><option>All universities</option><option>Anna University</option><option>Bharathiar University</option><option>Periyar University</option></select>
+          <select><option>All statuses</option><option>Active</option><option>Onboarding</option><option>Suspended</option></select>
+        </div>
+
+        <div class="card">
+          <table>
+            <thead><tr><th>College</th><th>University</th><th>Admins</th><th>Depts</th><th>Students / seat cap</th><th>Licence</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="strong">ABC Engineering College</span><div class="sub">COL-0001 · Chennai</div></td>
+                <td>Anna University</td><td class="num">3</td><td class="num">8</td>
+                <td><span class="num">2,340</span> <span style="color:var(--muted-2)">/ 5,000</span><div class="bar" style="margin-top:5px;max-width:100px"><i style="width:47%"></i></div></td>
+                <td><span class="pill teal plain">Institutional</span></td><td><span class="pill green">Active</span></td>
+                <td class="actions"><a onclick="openModal('mCollegeView')">View</a><a onclick="openModal('mCollege')">Edit</a></td>
+              </tr>
+              <tr>
+                <td><span class="strong">City Arts &amp; Science</span><div class="sub">COL-0002 · Salem</div></td>
+                <td>Bharathiar University</td><td class="num">2</td><td class="num">5</td>
+                <td><span class="num">1,120</span> <span style="color:var(--muted-2)">/ 2,000</span><div class="bar" style="margin-top:5px;max-width:100px"><i style="width:56%"></i></div></td>
+                <td><span class="pill grey plain">Institutional</span></td><td><span class="pill amber">Onboarding</span></td>
+                <td class="actions"><a onclick="openModal('mCollegeView')">View</a><a onclick="openModal('mCollege')">Edit</a></td>
+              </tr>
+              <tr>
+                <td><span class="strong">National Polytechnic</span><div class="sub">COL-0003 · Trichy</div></td>
+                <td>Anna University</td><td class="num">2</td><td class="num">6</td>
+                <td><span class="num">980</span> <span style="color:var(--muted-2)">/ 1,000</span><div class="bar amber" style="margin-top:5px;max-width:100px"><i style="width:98%"></i></div></td>
+                <td><span class="pill teal plain">Institutional</span></td><td><span class="pill green">Active</span></td>
+                <td class="actions"><a onclick="openModal('mCollegeView')">View</a><a onclick="openModal('mCollege')">Edit</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ PLATFORM USERS ══════════════════════════════════════════ -->
+      <section class="page" id="users">
+        <div class="section-head">
+          <div>
+            <div class="t">Platform Users</div>
+            <div class="d">Every user across every institution. Only Super Admin can reach this view — each institution sees only its own people.</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('mUser')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Create User</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search name or email…"></div>
+          <select><option>All roles</option><option>Super Admin</option><option>College Admin</option><option>HOD</option><option>Faculty</option><option>Student</option></select>
+          <select><option>All institutions</option><option>ABC Engineering</option><option>City Arts &amp; Science</option></select>
+          <select><option>All statuses</option><option>Active</option><option>Pending activation</option><option>Deactivated</option></select>
+        </div>
+
+        <div class="card">
+          <table>
+            <thead><tr><th>User</th><th>Role</th><th>Institution</th><th>Status</th><th>Last active</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Dr. Karthik M</span><div class="sub">karthik@abceng.edu</div></td><td><span class="pill blue plain">HOD</span></td><td>ABC Engineering</td><td><span class="pill green">Active</span></td><td class="sub">2 hours ago</td><td class="actions"><a data-demo="Role change is guarded — an admin cannot escalate a user above their own role.">Change role</a><a class="danger" data-demo="Deactivation revokes all active sessions immediately.">Deactivate</a></td></tr>
+              <tr><td><span class="strong">Priya N</span><div class="sub">priya.n@abceng.edu</div></td><td><span class="pill grey plain">Student</span></td><td>ABC Engineering</td><td><span class="pill green">Active</span></td><td class="sub">18 min ago</td><td class="actions"><a data-demo="Role change is guarded.">Change role</a><a class="danger" data-demo="Deactivation revokes all active sessions.">Deactivate</a></td></tr>
+              <tr><td><span class="strong">Anitha S</span><div class="sub">anitha@citycollege.edu</div></td><td><span class="pill violet plain">College Admin</span></td><td>City Arts &amp; Science</td><td><span class="pill amber">Pending activation</span></td><td class="sub">Never</td><td class="actions"><a data-demo="Resends the single-use activation link. Rate-limited to 3/min.">Resend invite</a></td></tr>
+              <tr><td><span class="strong">Vignesh R</span><div class="sub">vignesh@abceng.edu</div></td><td><span class="pill grey plain">Faculty</span></td><td>ABC Engineering</td><td><span class="pill red">Deactivated</span></td><td class="sub">14 days ago</td><td class="actions"><a data-demo="Reactivating restores access with the user's existing password.">Reactivate</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ CONTENT UPLOAD (SOW §6.2 — Super Admin may upload) ══════ -->
+      <section class="page" id="content">
+        <div class="section-head">
+          <div>
+            <div class="t">Upload &amp; Generate</div>
+            <div class="d">Super Admin can upload academic material into any institution and trigger the AI course-generation pipeline.</div>
+          </div>
+        </div>
+
+        <div class="cols a" style="align-items:start">
+          <div class="card card-p">
+            <h3 style="font-size:14.5px;font-weight:800;margin-bottom:4px">New chapter upload</h3>
+            <p style="color:var(--muted);font-size:12.5px;margin-bottom:18px">Pick the institution, then the exact place in its academic structure.</p>
+
+            <div class="field"><label>Institution</label><select><option>ABC Engineering College</option><option>City Arts &amp; Science</option><option>National Polytechnic</option></select></div>
+            <div class="grid2">
+              <div class="field"><label>Department</label><select><option>Computer Science</option><option>Electronics</option><option>Mechanical</option></select></div>
+              <div class="field"><label>Program</label><select><option>B.Tech CSE</option><option>M.Tech CSE</option></select></div>
+            </div>
+            <div class="grid3">
+              <div class="field"><label>Year</label><select><option>Year 1</option><option selected>Year 2</option><option>Year 3</option><option>Year 4</option></select></div>
+              <div class="field"><label>Semester</label><select><option>Sem 3</option><option selected>Sem 4</option></select></div>
+              <div class="field"><label>Subject</label><select><option>Data Structures</option><option>DBMS</option></select></div>
+            </div>
+            <div class="field"><label>Chapter title</label><input placeholder="e.g. Trees &amp; Binary Search Trees"></div>
+
+            <div class="field">
+              <label>Source material</label>
+              <div class="drop" data-demo="File picker — PDF, PPT, DOCX or scanned images. Validated by content signature, then virus-scanned.">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>
+                <div class="t">Drop scanned book pages, or click to browse</div>
+                <div class="s">PDF, PPT, DOCX or image scans · up to 50 MB · English</div>
+              </div>
+            </div>
+
+            <div class="flow">
+              <span class="step">On submit:</span>
+              <span>Extract &amp; OCR</span><span class="arr">→</span>
+              <span>Chunk &amp; embed</span><span class="arr">→</span>
+              <span>Generate video + MCQs</span><span class="arr">→</span>
+              <span>Route to HOD for approval</span>
+            </div>
+            <button class="btn btn-primary btn-block" style="margin-top:16px" data-demo="Creates an async generation job and returns a job ID — the request never blocks on AI work.">Upload &amp; generate</button>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>Recent uploads</h3></div>
+            <div class="card-sub">Jobs you started, across all institutions.</div>
+            <table>
+              <thead><tr><th>Chapter</th><th>Institution</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">Graph Traversal</span><div class="sub">CSE · Sem 4</div></td><td class="sub">ABC Engineering</td><td><span class="pill blue">Generating</span></td></tr>
+                <tr><td><span class="strong">Cost Accounting</span><div class="sub">B.Com · Sem 3</div></td><td class="sub">City Arts</td><td><span class="pill amber">Pending review</span></td></tr>
+                <tr><td><span class="strong">Fluid Mechanics</span><div class="sub">Mech · Sem 4</div></td><td class="sub">National Poly</td><td><span class="pill green">Published</span></td></tr>
+                <tr><td><span class="strong">Hashing</span><div class="sub">CSE · Sem 4</div></td><td class="sub">ABC Engineering</td><td><span class="pill red">Failed — no text</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REPORTS ═════════════════════════════════════════════════ -->
+      <section class="page" id="reports">
+        <div class="section-head">
+          <div>
+            <div class="t">Reports</div>
+            <div class="d">Search across institutions, preview the result set, then export exactly what you previewed.</div>
+          </div>
+          <div style="display:flex;gap:9px">
+            <button class="btn btn-ghost btn-sm" data-demo="CSV export — streams the full filtered result set.">CSV</button>
+            <button class="btn btn-ghost btn-sm" data-demo="Excel export.">Excel</button>
+            <button class="btn btn-ghost btn-sm" data-demo="PDF export — includes institution, filters applied, and generation timestamp.">PDF</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search student, college, department, subject…"></div>
+          <select><option>Institution report</option><option>Department report</option><option>Student performance</option><option>Q&amp;A report</option><option>Interview report</option></select>
+          <select><option>All institutions</option><option>ABC Engineering</option><option>City Arts &amp; Science</option></select>
+          <select><option>Last 30 days</option><option>This semester</option><option>Custom range</option></select>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Report preview</h3><span style="font-size:12px;color:var(--muted)">124 rows · page 1 of 5</span></div>
+          <table>
+            <thead><tr><th>Institution</th><th>Department</th><th>Students</th><th>Watch time</th><th>Q&amp;A</th><th>Assessments</th><th>Avg score</th></tr></thead>
+            <tbody>
+              <tr><td>ABC Engineering</td><td>Computer Science</td><td class="num">620</td><td class="num">1,420 hrs</td><td class="num">4,280</td><td class="num">1,860</td><td><span class="pill green plain">76%</span></td></tr>
+              <tr><td>ABC Engineering</td><td>Electronics</td><td class="num">480</td><td class="num">1,105 hrs</td><td class="num">3,760</td><td class="num">1,440</td><td><span class="pill green plain">72%</span></td></tr>
+              <tr><td>ABC Engineering</td><td>Mechanical</td><td class="num">390</td><td class="num">820 hrs</td><td class="num">2,140</td><td class="num">1,170</td><td><span class="pill amber plain">68%</span></td></tr>
+              <tr><td>City Arts &amp; Science</td><td>Commerce</td><td class="num">410</td><td class="num">880 hrs</td><td class="num">2,910</td><td class="num">1,230</td><td><span class="pill amber plain">66%</span></td></tr>
+              <tr><td>City Arts &amp; Science</td><td>B.Sc CS</td><td class="num">365</td><td class="num">760 hrs</td><td class="num">2,340</td><td class="num">1,095</td><td><span class="pill green plain">71%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ PLATFORM HEALTH ═════════════════════════════════════════ -->
+      <section class="page" id="health">
+        <div class="section-head">
+          <div>
+            <div class="t">Platform Health</div>
+            <div class="d">System status, uptime, AI pipeline throughput, and recent errors — required by SOW §6.2.</div>
+          </div>
+        </div>
+
+        <div class="stats c4">
+          <div class="stat"><div class="k">Uptime · 30d</div><div class="v">99.94<small>%</small></div><div class="s up">No incidents</div></div>
+          <div class="stat"><div class="k">API p95 latency</div><div class="v">184<small>ms</small></div><div class="s">Within budget</div></div>
+          <div class="stat"><div class="k">Jobs in queue</div><div class="v">37</div><div class="s">6 processing · 31 queued</div></div>
+          <div class="stat"><div class="k">Failed jobs · 24h</div><div class="v" style="color:var(--red)">4</div><div class="s down">2 in dead-letter</div></div>
+        </div>
+
+        <div class="cols" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-h"><h3>Service status</h3></div>
+            <table>
+              <thead><tr><th>Service</th><th>Status</th><th>p95</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">API (FastAPI)</span></td><td><span class="pill green">Operational</span></td><td class="num">184 ms</td></tr>
+                <tr><td><span class="strong">PostgreSQL</span></td><td><span class="pill green">Operational</span></td><td class="num">12 ms</td></tr>
+                <tr><td><span class="strong">Vector store</span></td><td><span class="pill green">Operational</span></td><td class="num">46 ms</td></tr>
+                <tr><td><span class="strong">Generation workers</span></td><td><span class="pill amber">Degraded</span></td><td class="num">—</td></tr>
+                <tr><td><span class="strong">Real-time voice (LiveKit)</span></td><td><span class="pill green">Operational</span></td><td class="num">92 ms</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card card-p">
+            <h3 style="font-size:14.5px;font-weight:800;margin-bottom:3px">AI pipeline latency</h3>
+            <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Per-stage p95, last 24 hours.</p>
+            <div class="cmp"><div class="nm">Text extraction</div><div class="track"><i style="width:22%;background:var(--green)"></i></div><div class="val">8s</div></div>
+            <div class="cmp"><div class="nm">OCR (scanned)</div><div class="track"><i style="width:58%;background:var(--amber)"></i></div><div class="val">41s</div></div>
+            <div class="cmp"><div class="nm">Chunk + embed</div><div class="track"><i style="width:31%;background:var(--sky)"></i></div><div class="val">17s</div></div>
+            <div class="cmp"><div class="nm">Script generation</div><div class="track"><i style="width:44%;background:var(--blue)"></i></div><div class="val">28s</div></div>
+            <div class="cmp"><div class="nm">Avatar render</div><div class="track"><i style="width:100%;background:var(--violet)"></i></div><div class="val">6m 12s</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Recent errors</h3><span style="font-size:12px;color:var(--muted)">Redacted — no student PII</span></div>
+          <table>
+            <thead><tr><th>Time</th><th>Service</th><th>Error</th><th>Institution</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td class="sub">14:02</td><td>Generation worker</td><td><span class="strong">Extraction failed — no readable text in source</span></td><td class="sub">National Polytechnic</td><td class="num">2</td></tr>
+              <tr><td class="sub">11:47</td><td>Avatar vendor</td><td><span class="strong">Upstream timeout (retry 2/3)</span></td><td class="sub">ABC Engineering</td><td class="num">1</td></tr>
+              <tr><td class="sub">09:18</td><td>Notification</td><td><span class="strong">SMS delivery rejected — invalid number format</span></td><td class="sub">City Arts &amp; Science</td><td class="num">1</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ AUDIT ═══════════════════════════════════════════════════ -->
+      <section class="page" id="audit">
+        <div class="section-head">
+          <div>
+            <div class="t">Audit Logs</div>
+            <div class="d">Append-only record of every sensitive action. Reading this page is itself audited.</div>
+          </div>
+          <button class="btn btn-ghost" data-demo="Export honours the filters currently applied.">Export</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search action, user, institution…"></div>
+          <select><option>All modules</option><option>Authentication</option><option>Institutions</option><option>Users &amp; roles</option><option>Content approval</option></select>
+          <select><option>Last 30 days</option><option>Last 7 days</option><option>Today</option></select>
+        </div>
+
+        <div class="card">
+          <table>
+            <thead><tr><th>Timestamp</th><th>Actor</th><th>Role</th><th>Module</th><th>Action</th><th>IP</th></tr></thead>
+            <tbody>
+              <tr><td class="sub num">24 Aug, 16:12</td><td><span class="strong">Super Admin</span></td><td><span class="pill violet plain">Super Admin</span></td><td>Users &amp; roles</td><td>Granted College Admin to anitha@citycollege.edu</td><td class="sub num">103.21.··.18</td></tr>
+              <tr><td class="sub num">24 Aug, 15:48</td><td><span class="strong">Super Admin</span></td><td><span class="pill violet plain">Super Admin</span></td><td>Institutions</td><td>Created college COL-0003 under Anna University</td><td class="sub num">103.21.··.18</td></tr>
+              <tr><td class="sub num">24 Aug, 14:30</td><td><span class="strong">Dr. Karthik M</span></td><td><span class="pill blue plain">HOD</span></td><td>Content approval</td><td>Approved &amp; published “Arrays &amp; Complexity” to students</td><td class="sub num">49.207.··.92</td></tr>
+              <tr><td class="sub num">24 Aug, 11:05</td><td><span class="strong">ABC Admin</span></td><td><span class="pill teal plain">College Admin</span></td><td>Students</td><td>Bulk imported 84 students (CSV)</td><td class="sub num">49.207.··.14</td></tr>
+              <tr><td class="sub num">24 Aug, 09:22</td><td><span class="strong">unknown</span></td><td><span class="pill grey plain">—</span></td><td>Authentication</td><td>Account locked after 5 failed attempts</td><td class="sub num">61.12.··.77</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ NOTIFICATIONS (SOW §7 — events only; not Email Management product) ═══ -->
+      <section class="page" id="notifications">
+        <div class="section-head">
+          <div>
+            <div class="t">Notifications</div>
+            <div class="d">Phase 1 B2B notification events from the SOW — activation, content, assignments, interview results, and pipeline completion. Not a sender-address management product.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-h"><h3>Event catalogue (SOW §7)</h3></div>
+          <div class="card-sub">Channels: email primary; SMS / WhatsApp for activation where provisioned.</div>
+          <table>
+            <thead><tr><th>Event</th><th>Audience</th><th>Channels</th><th>Phase 1</th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Student activation</span></td><td>New students</td><td><span class="pill grey plain">Email</span> <span class="pill grey plain">SMS</span> <span class="pill grey plain">WhatsApp</span></td><td><span class="pill green">In scope</span></td></tr>
+              <tr><td><span class="strong">Interview results</span></td><td>Student (post-session)</td><td><span class="pill grey plain">Email</span></td><td><span class="pill green">In scope</span></td></tr>
+              <tr><td><span class="strong">Content published</span></td><td>Students / staff</td><td><span class="pill grey plain">In-app</span> <span class="pill grey plain">Email</span></td><td><span class="pill green">In scope</span></td></tr>
+              <tr><td><span class="strong">Assessment available</span></td><td>Students</td><td><span class="pill grey plain">In-app</span> <span class="pill grey plain">Email</span></td><td><span class="pill green">In scope</span></td></tr>
+              <tr><td><span class="strong">Interview assignment created</span></td><td>Final-year cohort</td><td><span class="pill grey plain">In-app</span> <span class="pill grey plain">Email</span></td><td><span class="pill green">In scope</span></td></tr>
+              <tr><td><span class="strong">AI generation completed</span></td><td>Admin / Faculty / SME</td><td><span class="pill grey plain">Email</span> <span class="pill grey plain">In-app</span></td><td><span class="pill green">In scope</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Recent deliveries</h3><a class="link" data-demo="Failed activation sends can be retried — silent failure is launch-blocking.">Retry failed →</a></div>
+          <div class="card-sub">Operational visibility for SOW notification events (not configurable from-address CRUD).</div>
+          <table>
+            <thead><tr><th>Event</th><th>Recipient</th><th>Channel</th><th>Status</th><th>Time</th></tr></thead>
+            <tbody>
+              <tr><td>Student activation</td><td class="sub">aravind.r@abceng.edu</td><td><span class="pill grey plain">Email</span></td><td><span class="pill green">Delivered</span></td><td class="sub">16:02</td></tr>
+              <tr><td>Student activation</td><td class="sub">+91 98··· ··210</td><td><span class="pill grey plain">SMS</span></td><td><span class="pill green">Delivered</span></td><td class="sub">16:02</td></tr>
+              <tr><td>Content published</td><td class="sub">karthik@abceng.edu</td><td><span class="pill grey plain">Email</span></td><td><span class="pill green">Delivered</span></td><td class="sub">14:30</td></tr>
+              <tr><td>Interview results</td><td class="sub">aravind.r@abceng.edu</td><td><span class="pill grey plain">Email</span></td><td><span class="pill green">Delivered</span></td><td class="sub">12:40</td></tr>
+              <tr><td>Student activation</td><td class="sub">divya.s@abceng.edu</td><td><span class="pill grey plain">Email</span></td><td><span class="pill red">Bounced</span></td><td class="sub">11:18</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ SETTINGS ════════════════════════════════════════════════ -->
+      <section class="page" id="settings">
+        <div class="section-head">
+          <div><div class="t">Settings</div><div class="d">Your own profile. Role and institution are not self-editable.</div></div>
+        </div>
+        <div class="card card-p" style="max-width:640px">
+          <div class="grid2">
+            <div class="field"><label>First name</label><input value="Super"></div>
+            <div class="field"><label>Last name</label><input value="Admin"></div>
+          </div>
+          <div class="field"><label>Email address</label><input value="admin@quirri.ai"><div class="hint">Changing your email requires verifying the new address before it takes effect.</div></div>
+          <div class="field"><label>Phone number</label><input value="+91 98400 12345"></div>
+          <div class="field">
+            <label>Role</label>
+            <input value="Super Admin" disabled style="background:var(--line-soft);color:var(--muted)">
+            <div class="hint">Roles are assigned by an administrator and cannot be changed here.</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:6px">
+            <button class="btn btn-primary" data-demo="Saves profile fields only — role, institution and status are immutable here.">Save changes</button>
+            <button class="btn btn-ghost" data-demo="Requires your current password, then signs out all other devices.">Change password</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Modals ─────────────────────────────────────────────────────────── -->
+<div class="overlay" id="mUni">
+  <div class="modal">
+    <div class="modal-h"><div><h3>Add university</h3><div class="crumb">Top level of the academic hierarchy</div></div><button class="modal-x" onclick="closeModal('mUni')">&times;</button></div>
+    <div class="modal-b">
+      <div class="grid2">
+        <div class="field"><label>University name</label><input placeholder="e.g. Anna University"></div>
+        <div class="field"><label>University code</label><input placeholder="UNI-0004"><div class="hint">Must be unique.</div></div>
+        <div class="field"><label>City</label><input placeholder="Chennai"></div>
+        <div class="field"><label>State</label><input value="Tamil Nadu"></div>
+      </div>
+      <div class="field"><label>Status</label><select><option>Onboarding</option><option>Active</option><option>Suspended</option></select><div class="hint">Suspending a university blocks sign-in for every user beneath it.</div></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('mUni')">Cancel</button><div class="right"><button class="btn btn-primary" onclick="closeModal('mUni');toast('University saved.')">Save university</button></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="mCollege">
+  <div class="modal wide">
+    <div class="modal-h"><div><h3>Add college</h3><div class="crumb">A college always sits under a university</div></div><button class="modal-x" onclick="closeModal('mCollege')">&times;</button></div>
+    <div class="modal-b">
+      <div class="grid2">
+        <div class="field"><label>University</label><select><option>Anna University</option><option>Bharathiar University</option><option>Periyar University</option></select></div>
+        <div class="field"><label>College name</label><input placeholder="Enter college name"></div>
+        <div class="field"><label>College code</label><input placeholder="COL-0004"></div>
+        <div class="field"><label>City</label><input></div>
+        <div class="field"><label>Licence status</label><select><option>Onboarding</option><option selected>Active</option><option>Suspended</option></select><div class="hint">B2B institutional licence — institutions pay Knotopian; students never see billing.</div></div>
+        <div class="field"><label>Student seat cap</label><input type="number" placeholder="5000"><div class="hint">Adding a student beyond the cap is refused with a clear message.</div></div>
+      </div>
+
+      <div class="blk" style="margin-top:8px">
+        <div class="lb">College administrators</div>
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Each admin receives an activation link. You never set their password.</p>
+        <div id="adminRows">
+          <div class="grid3" style="align-items:end;margin-bottom:10px">
+            <div class="field" style="margin:0"><label>Full name</label><input placeholder="Admin name"></div>
+            <div class="field" style="margin:0"><label>Email</label><input placeholder="admin@college.edu"></div>
+            <div class="field" style="margin:0"><label>Mobile</label><input placeholder="+91"></div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="addAdminRow()">+ Add another administrator</button>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('mCollege')">Cancel</button><div class="right"><button class="btn btn-primary" onclick="closeModal('mCollege');toast('College created — activation links sent.')">Create college</button></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="mCollegeView">
+  <div class="modal wide">
+    <div class="modal-h"><div><h3>ABC Engineering College</h3><div class="crumb">Anna University · COL-0001 · Chennai</div></div><button class="modal-x" onclick="closeModal('mCollegeView')">&times;</button></div>
+    <div class="modal-b">
+      <div class="chips" style="margin-bottom:22px">
+        <span class="chip">8 Departments</span><span class="chip">32 Programs</span><span class="chip">2,340 Students</span>
+        <span class="chip">420 Final year</span><span class="chip">3 Administrators</span><span class="chip">146 Subjects live</span>
+      </div>
+      <div class="lb" style="font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2);font-weight:800;margin-bottom:10px">Departments</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Department</th><th>HOD</th><th>Students</th><th>Final year</th><th>Subjects</th><th>Avg score</th></tr></thead>
+          <tbody>
+            <tr><td><span class="strong">Computer Science</span></td><td>Dr. Karthik</td><td class="num">620</td><td class="num">156</td><td class="num">18</td><td><span class="pill green plain">76%</span></td></tr>
+            <tr><td><span class="strong">Electronics</span></td><td>Prof. Meena</td><td class="num">480</td><td class="num">120</td><td class="num">16</td><td><span class="pill green plain">72%</span></td></tr>
+            <tr><td><span class="strong">Mechanical</span></td><td>Dr. Suresh</td><td class="num">390</td><td class="num">94</td><td class="num">14</td><td><span class="pill amber plain">68%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('mCollegeView')">Close</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="mUser">
+  <div class="modal">
+    <div class="modal-h"><div><h3>Create user</h3><div class="crumb">The user sets their own password from an activation link</div></div><button class="modal-x" onclick="closeModal('mUser')">&times;</button></div>
+    <div class="modal-b">
+      <div class="grid2">
+        <div class="field"><label>First name</label><input></div>
+        <div class="field"><label>Last name</label><input></div>
+      </div>
+      <div class="field"><label>Email address</label><input type="email" placeholder="name@college.edu"></div>
+      <div class="grid2">
+        <div class="field"><label>Role</label><select><option>College Admin</option><option>HOD</option><option>Faculty</option><option>Student</option><option>Super Admin</option></select></div>
+        <div class="field"><label>Institution</label><select><option>ABC Engineering College</option><option>City Arts &amp; Science</option><option>National Polytechnic</option></select></div>
+      </div>
+      <div class="notice info" style="margin-top:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div><b>No password field — by design</b>The account is created inactive and an activation link is sent. The administrator never knows the user's password.</div>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn btn-ghost" onclick="closeModal('mUser')">Cancel</button><div class="right"><button class="btn btn-primary" onclick="closeModal('mUser');toast('User created — activation link sent.')">Create &amp; send invite</button></div></div>
+  </div>
+</div>
+
+<script src="assets/js/quirri.js"></script>
+<script>
+  window.PAGE_TITLES = {
+    dashboard:['Dashboard','Platform-wide adoption, learning activity, and system health.'],
+    universities:['Universities','Affiliated universities and their member colleges.'],
+    colleges:['Colleges','Onboard colleges, provision admins, and set licence entitlements.'],
+    users:['Platform Users','Every user across every institution.'],
+    content:['Upload & Generate','Upload academic material and trigger AI course generation.'],
+    reports:['Reports','Search, preview, and export platform data.'],
+    health:['Platform Health','System status, uptime, pipeline throughput, and errors.'],
+    audit:['Audit Logs','Append-only record of sensitive actions.'],
+    notifications:['Notifications','SOW notification events — activation, content, assignments, interviews, pipeline.'],
+    settings:['Settings','Your profile and account security.']
+  };
+  function addAdminRow(){
+    var d=document.createElement('div');
+    d.className='grid3';
+    d.style.cssText='align-items:end;margin-bottom:10px';
+    d.innerHTML='<div class="field" style="margin:0"><label>Full name</label><input placeholder="Admin name"></div>'+
+                '<div class="field" style="margin:0"><label>Email</label><input placeholder="admin@college.edu"></div>'+
+                '<div class="field" style="margin:0"><label>Mobile</label><input placeholder="+91"></div>';
+    document.getElementById('adminRows').appendChild(d);
+  }
+</script>
+</body>
+</html>

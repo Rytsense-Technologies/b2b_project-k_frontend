@@ -1,0 +1,51 @@
+---
+description: Mandatory Quirri product UI rules — dropdowns, text alignment, must-haves (always apply)
+alwaysApply: true
+---
+
+# Quirri product UI rules (always)
+
+**Full contract:** `docs/QUIRRI_PRODUCT_UI_RULES.md`
+
+## Product must-haves
+
+1. No mocks in `src/` for portals — loading / error / empty only  
+2. One Amber 700 CTA per view  
+3. Forms: `FIELD_RULES` + `QuirriRHFField` (`fieldType`) — see `quirri-forms.mdc`  
+4. No native HTML `title` tooltips — use `QuirriTooltip` / `useQuirriTip`  
+5. WCAG 2.2 AA; calm sentence-case copy  
+6. Missing backend epic → empty/error (see `docs/BACKEND_STATUS_REPORT.md`)  
+7. Playwright-check UI changes after portal login  
+8. Post-login UI follows `new_updated_design_four/` (`docs/QUIRRI_UI_REFERENCE.md`); login cards stay existing centered pattern  
+9. Portal font Plus Jakarta Sans; auth cards Poppins; mist `#F4F6F7`; dark teal sidebar  
+
+## Dropdown (“drop”) rules
+
+- Use **`QuirriSelect`** custom listbox (`src/components/superadmin/QuirriSelect.jsx`) — **not** the OS native `<select>` menu (cannot brand; shows system blue)
+- Long searchable lists (India state/district): **`QuirriCombobox`** — type-to-filter; same chrome as QuirriSelect
+- Trigger + menu: white, 8px radius, soft shadow; selected row = teal-50 + check — never browser blue
+- Forms/modals: **visible label above** (sentence case)
+- Toolbar filters: visible label optional **only** with `aria-label`
+- First option: `All …` (filters) or `Select …` (required forms), `value=""`
+- Min-height 44px; teal focus; left-aligned text; keyboard + click-outside
+- Immutable fields stay visible + `disabled`  
+
+## Text allocation & alignment
+
+- **Left-align** titles, labels, body, hints, table text  
+- **Right-align** numeric cells (`.num`) with tabular nums  
+- **Center** only the auth login brand card  
+- Stack: label → control → hint **or** error  
+- Section head: title/description left, actions right  
+- Toolbar: search flexes; selects `min-width: 165px`  
+- Forms: `grid2` / `QuirriFormGrid`; long fields `full`  
+- Spacing: 4px scale only  
+
+## Forbidden
+
+- Centered product form labels or table body text  
+- Per-page one-off select styling  
+- Fake dropdown data / fake dashboard numbers  
+- All-caps UI titles or vague errors (“Invalid input.”)  
+
+Before finishing UI work: run the checklist in `docs/QUIRRI_PRODUCT_UI_RULES.md` §4.

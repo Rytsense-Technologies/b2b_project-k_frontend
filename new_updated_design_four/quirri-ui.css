@@ -1,0 +1,150 @@
+/* Quirri Project K — commercial SaaS UI layer
+   Principles: hierarchy, composition, density, CTA clarity, polished states.
+   Brand: institutional teal + amber. Not a clone of any reference layout. */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+
+:root {
+  --q-font: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --q-teal: #0E5C6B;
+  --q-teal-dark: #06252B;
+  --q-teal-700: #0A3F49;
+  --q-teal-600: #0B4B58;
+  --q-amber: #AC5B16;
+  --q-amber-bright: #CE6D1A;
+  --q-ink: #102228;
+  --q-ink-2: #33465C;
+  --q-muted: #536064;
+  --q-line: #DEE0E1;
+  --q-mist: #F4F6F7;
+  --q-panel: #ffffff;
+  --q-r: 12px;
+  --q-r-lg: 18px;
+  --q-sh: 0 1px 2px rgba(16, 34, 40, 0.04), 0 4px 14px rgba(16, 34, 40, 0.05);
+  --q-sh-md: 0 8px 28px rgba(16, 34, 40, 0.1);
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--q-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { transition: color 0.15s ease, opacity 0.15s ease; }
+button, input, select, textarea { font-family: inherit; }
+
+:focus-visible {
+  outline: 2px solid #0E5C6B;
+  outline-offset: 2px;
+}
+
+/* Auth forms */
+.q-input,
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="search"],
+select,
+textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.q-input:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+  border-color: #0E5C6B !important;
+  box-shadow: 0 0 0 3px rgba(14, 92, 107, 0.14);
+}
+
+.q-btn,
+button[type="submit"] {
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease, filter 0.14s ease;
+}
+.q-btn:hover,
+button[type="submit"]:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 6px 18px rgba(172, 91, 22, 0.28);
+}
+.q-btn:active,
+button[type="submit"]:active {
+  transform: translateY(1px);
+}
+
+.q-portal-link {
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
+}
+.q-portal-link:hover {
+  border-color: #0E5C6B !important;
+  background: #F1F5F6 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--q-sh);
+}
+
+.q-card-lift {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.q-card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--q-sh-md);
+  border-color: #B9D2D6 !important;
+}
+
+.q-nav-item {
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.q-nav-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.q-iconbtn {
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.q-iconbtn:hover {
+  border-color: #0E5C6B !important;
+  color: #0A3F49 !important;
+  background: #F1F5F6 !important;
+}
+
+@keyframes qRise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes qToastIn {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.q-rise { animation: qRise 0.35s ease both; }
+.q-rise-d1 { animation-delay: 0.04s; }
+.q-rise-d2 { animation-delay: 0.08s; }
+.q-rise-d3 { animation-delay: 0.12s; }
+
+/* Soft page atmosphere behind main content */
+.q-app-shell {
+  background:
+    radial-gradient(80% 50% at 100% 0%, rgba(14, 92, 107, 0.06), transparent 55%),
+    radial-gradient(60% 40% at 0% 100%, rgba(172, 91, 22, 0.04), transparent 50%),
+    var(--q-mist);
+}
+
+/* Auth hero texture */
+.q-auth-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(120% 100% at 70% 0%, #000 28%, transparent 75%);
+}
+
+@media (max-width: 860px) {
+  .q-hero-split { grid-template-columns: 1fr !important; }
+  .q-side-dark { max-width: 100% !important; min-width: 0 !important; }
+}

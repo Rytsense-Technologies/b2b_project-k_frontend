@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student · Quirri — Project K</title>
+<link rel="stylesheet" href="assets/css/quirri.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand"><div class="logo"><span class="ring">QUIRRI</span></div></div>
+
+    <div class="tenant-box">
+      <div class="mark">AB</div>
+      <div class="txt">
+        <div class="nm">ABC Engineering</div>
+        <div class="sc">B.Tech CSE · Sem 4</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a class="active" data-page="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</a>
+      <a data-page="subjects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M15 3v5h5"/></svg>My Subjects</a>
+      <a data-page="leaderboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Leaderboard</a>
+      <a data-page="interview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Interviews</a>
+      <a data-page="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>My Progress</a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="who">
+        <div class="av">AR</div>
+        <div><div class="n">Aravind R</div><div class="r">22CS118 · Final year</div></div>
+      </div>
+      <a class="logout" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pgTitle">Home</h1>
+        <p id="pgSub">B.Tech CSE · Semester 4 · ABC Engineering</p>
+      </div>
+      <div class="topbar-right">
+        <button class="iconbtn" data-demo="Notifications — new chapters published, assessments available, interview assignments.">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══ HOME ═══ -->
+      <section class="page show" id="home">
+        <div class="banner">
+          <h2>Welcome back, Aravind</h2>
+          <p>Pick up where you left off in Data Structures, ask the AI tutor anything from your own textbooks, or take a mock interview. Everything here is built from your college's own material.</p>
+        </div>
+
+        <div class="stats c4">
+          <div class="stat"><div class="k">This week</div><div class="v">6.2<small> hrs</small></div><div class="s up">+1.4 hrs</div></div>
+          <div class="stat"><div class="k">Questions asked</div><div class="v">128</div><div class="s">This semester</div></div>
+          <div class="stat"><div class="k">Chapters done</div><div class="v">14<small> / 32</small></div><div class="s">Across 5 subjects</div></div>
+          <div class="stat"><div class="k">Cohort rank</div><div class="v">18<small> / 156</small></div><div class="s up">Up 4 places</div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-h"><h3>Continue learning</h3><a class="link" onclick="go('subjects')">All subjects →</a></div>
+          <div class="card-sub">Jump back into your most recent chapter.</div>
+          <div style="padding:0 20px 20px">
+            <div style="display:flex;align-items:center;gap:16px;border:1px solid var(--line);border-radius:12px;padding:16px">
+              <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(125deg,var(--teal),var(--sky));flex:none"></div>
+              <div style="flex:1">
+                <div style="font-weight:800">Data Structures · Linked Lists</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">Chapter 3 · 62% watched</div>
+                <div class="bar" style="margin-top:8px;max-width:280px"><i style="width:62%"></i></div>
+              </div>
+              <button class="btn btn-primary" onclick="go('subjectDetail')">Resume</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cols">
+          <div class="card">
+            <div class="card-h"><h3>Assessments available</h3></div>
+            <div class="card-sub">Unlocked once you finish the chapter and your HOD approves the questions.</div>
+            <table>
+              <thead><tr><th>Chapter</th><th>Subject</th><th>Questions</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">Linked Lists</span><div class="sub">Chapter 3</div></td><td>Data Structures</td><td class="num">10</td><td class="actions"><a onclick="go('assessment')">Start</a></td></tr>
+                <tr><td><span class="strong">Normalization</span><div class="sub">Chapter 4</div></td><td>DBMS</td><td class="num">12</td><td class="actions"><a onclick="go('assessment')">Start</a></td></tr>
+                <tr><td><span class="strong">Trees &amp; BST</span><div class="sub">Chapter 4</div></td><td>Data Structures</td><td class="sub">—</td><td class="sub">Coming soon</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>Assigned to you</h3><a class="link" onclick="go('interview')">Interviews →</a></div>
+            <div class="card-sub">Set by your department for final-year placement preparation.</div>
+            <table>
+              <thead><tr><th>Assignment</th><th>Mode</th><th>Due</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">Placement readiness</span><div class="sub">Frontend Developer</div></td><td><span class="pill violet plain">Full</span></td><td class="sub">30 Aug</td><td><span class="pill amber">Not started</span></td></tr>
+                <tr><td><span class="strong">HR screening practice</span><div class="sub">General</div></td><td><span class="pill blue plain">Mock</span></td><td class="sub">28 Aug</td><td><span class="pill green">Completed</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SUBJECTS ═══ -->
+      <section class="page" id="subjects">
+        <div class="section-head">
+          <div><div class="t">My Subjects</div><div class="d">Semester 4 · your college's material turned into video lectures, quizzes, and an AI tutor.</div></div>
+        </div>
+        <div class="subj-grid">
+          <div class="subj" onclick="go('subjectDetail')">
+            <div class="top"><span class="code">CS204</span></div>
+            <div class="bd"><div class="nm">Data Structures</div><div class="mt">6 chapters · 2 done</div><div class="pr"><div class="bar"><i style="width:33%"></i></div><span class="pct">33%</span></div></div>
+          </div>
+          <div class="subj" onclick="go('subjectDetail')">
+            <div class="top v2"><span class="code">CS205</span></div>
+            <div class="bd"><div class="nm">Operating Systems</div><div class="mt">5 chapters · 1 done</div><div class="pr"><div class="bar"><i style="width:20%"></i></div><span class="pct">20%</span></div></div>
+          </div>
+          <div class="subj" onclick="go('subjectDetail')">
+            <div class="top v3"><span class="code">CS206</span></div>
+            <div class="bd"><div class="nm">DBMS</div><div class="mt">7 chapters · 4 done</div><div class="pr"><div class="bar green"><i style="width:57%"></i></div><span class="pct">57%</span></div></div>
+          </div>
+          <div class="subj" onclick="go('subjectDetail')">
+            <div class="top v4"><span class="code">CS207</span></div>
+            <div class="bd"><div class="nm">Computer Networks</div><div class="mt">6 chapters · 3 done</div><div class="pr"><div class="bar"><i style="width:50%"></i></div><span class="pct">50%</span></div></div>
+          </div>
+          <div class="subj" onclick="go('subjectDetail')">
+            <div class="top"><span class="code">CS208</span></div>
+            <div class="bd"><div class="nm">Design &amp; Analysis of Algorithms</div><div class="mt">8 chapters · 4 done</div><div class="pr"><div class="bar"><i style="width:50%"></i></div><span class="pct">50%</span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SUBJECT DETAIL — classroom + tutor ═══ -->
+      <section class="page" id="subjectDetail">
+        <div style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;margin-bottom:14px" onclick="go('subjects')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M15 18l-6-6 6-6"/></svg>Back to subjects
+        </div>
+        <div class="section-head" style="margin-bottom:14px">
+          <div><div class="t">Data Structures <span class="pill grey plain" style="margin-left:8px">CS204 · Sem 4</span></div></div>
+        </div>
+
+        <div class="btabs">
+          <div class="btab k1 active" id="bt1" onclick="subTab('subj')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M15 3v5h5"/></svg>Classroom
+          </div>
+          <div class="btab k2" id="bt2" onclick="subTab('tutor')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Ask your AI Tutor
+          </div>
+        </div>
+
+        <div class="tabframe">
+          <!-- Classroom -->
+          <div id="tabSubj">
+            <div class="learn">
+              <div class="chlist">
+                <div class="hd">Chapters<div class="sub">2 of 6 completed</div></div>
+                <div class="chwrap">
+                  <div class="chitem done"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></div><div class="tx"><div class="nm">Arrays &amp; Complexity</div><div class="dur">22:14</div></div></div>
+                  <div class="chquiz" onclick="go('assessment')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span class="qn">Chapter quiz</span><span>10 Q</span><span class="st done">8/10</span></div>
+                </div>
+                <div class="chwrap">
+                  <div class="chitem done"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></div><div class="tx"><div class="nm">Stacks &amp; Queues</div><div class="dur">18:40</div></div></div>
+                  <div class="chquiz" onclick="go('assessment')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span class="qn">Chapter quiz</span><span>8 Q</span><span class="st done">7/8</span></div>
+                </div>
+                <div class="chwrap">
+                  <div class="chitem active"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg></div><div class="tx"><div class="nm">Linked Lists</div><div class="dur">26:05</div></div><span class="pct">62%</span></div>
+                  <div class="chquiz" onclick="go('assessment')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span class="qn">Chapter quiz</span><span>10 Q</span><span class="st todo">Start</span></div>
+                </div>
+                <div class="chwrap">
+                  <div class="chitem"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="6 4 20 12 6 20 6 4"/></svg></div><div class="tx"><div class="nm">Trees &amp; BST</div><div class="dur">31:20</div></div></div>
+                  <div class="chquiz lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span class="qn">Chapter quiz</span><span class="st todo">Awaiting approval</span></div>
+                </div>
+                <div class="chwrap">
+                  <div class="chitem lock"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><div class="tx"><div class="nm">Graphs &amp; Traversal</div><div class="dur">Locked — finish Chapter 4 first</div></div></div>
+                </div>
+                <div class="chwrap">
+                  <div class="chitem lock"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><div class="tx"><div class="nm">Hashing</div><div class="dur">Locked</div></div></div>
+                </div>
+              </div>
+
+              <div class="player">
+                <button class="askbtn" onclick="subTab('tutor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Ask your AI Tutor</button>
+                <div class="ptop">
+                  <div class="now">Now teaching</div>
+                  <h3>Linked Lists</h3>
+                  <ul><li>Node structure &amp; pointers</li><li>Insertion &amp; deletion patterns</li><li>Traversal complexity</li></ul>
+                  <div class="av"><div class="tag">Tutor Priya</div></div>
+                </div>
+                <div class="pbar">
+                  <div class="play" data-demo="Playback controls — position is saved as you watch, so you can resume anywhere."><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>
+                  <div class="time">16:12 / 26:05</div>
+                  <div class="track"><i style="width:62%"></i></div>
+                  <div class="ctrls">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h6v6M20 20h-6v-6"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Tutor -->
+          <div id="tabTutor" style="display:none">
+            <div class="tutor-head">
+              <div class="hint">Answers come only from your <b>Data Structures</b> material — the tutor will not answer off-syllabus questions.</div>
+              <div class="langtog">
+                <button class="on">English</button>
+                <button data-demo="Tamil is supported for Q&A interactions per the project scope.">தமிழ்</button>
+              </div>
+            </div>
+            <div class="tutor">
+              <div class="tutor-char">
+                <div class="status"><span class="d"></span>Listening</div>
+                <div class="modeswitch">
+                  <button class="on" title="Voice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M5 11a7 7 0 0 0 14 0"/></svg></button>
+                  <button title="Text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                </div>
+                <div class="face"></div>
+                <div class="meta"><div class="nm">Tutor Priya</div><div class="rl">Data Structures · Chapter 3</div></div>
+              </div>
+
+              <div class="chatbox">
+                <div class="chatscroll">
+                  <div class="msg ai">
+                    Hi Aravind — ask me anything from Data Structures and I'll explain it from your own book. What are we working on today?
+                    <div class="cite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>Data Structures · your college material</div>
+                  </div>
+                  <div class="msg you">What's the difference between a singly and doubly linked list?</div>
+                  <div class="msg ai">
+                    A singly linked list node stores data and one pointer to the next node, so you can only move forward. A doubly linked list adds a second pointer to the previous node — you can traverse in both directions, at the cost of extra memory per node.
+                    <div class="cite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>Chapter 3 · Linked Lists · page 7</div>
+                  </div>
+                  <div class="msg you">When would I prefer a doubly linked list?</div>
+                  <div class="msg ai">
+                    When you often delete a node given only its reference, or need to walk backwards — an LRU cache or browser history, for example. The back-pointer makes those operations O(1) instead of O(n).
+                    <div class="cite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>Chapter 3 · Linked Lists · page 9</div>
+                  </div>
+                </div>
+                <div class="chatinput">
+                  <input placeholder="Type your question, or tap the mic to speak…">
+                  <button class="btn btn-primary" data-demo="Voice-first: speech in, answer spoken back. You can interrupt mid-answer to ask a follow-up.">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ASSESSMENT ATTEMPT ═══ -->
+      <section class="page" id="assessment">
+        <div class="quiz-wrap">
+          <div style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;margin-bottom:16px" onclick="go('subjectDetail')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M15 18l-6-6 6-6"/></svg>Leave assessment
+          </div>
+
+          <div class="section-head" style="margin-bottom:14px">
+            <div>
+              <div class="t">Linked Lists · Chapter quiz</div>
+              <div class="d">Data Structures · 10 questions · your answers are saved as you go.</div>
+            </div>
+          </div>
+
+          <div class="quiz-prog">
+            <span class="lbl">Question 3 of 10</span>
+            <div class="bar" style="flex:1"><i style="width:30%"></i></div>
+            <span class="lbl">2 answered</span>
+          </div>
+
+          <div class="qcard">
+            <div class="qn">Question 3</div>
+            <div class="qt">Which technique detects a cycle in a linked list using only O(1) extra space?</div>
+            <div class="opts">
+              <button class="opt-btn"><span class="k">A</span>Storing every visited node in a hash set</button>
+              <button class="opt-btn sel"><span class="k">B</span>Floyd's slow and fast pointer traversal</button>
+              <button class="opt-btn"><span class="k">C</span>Sorting the list and checking for duplicates</button>
+              <button class="opt-btn"><span class="k">D</span>Counting recursion depth until overflow</button>
+            </div>
+            <div class="quiz-nav">
+              <button class="btn btn-ghost" data-demo="Moves to the previous question. Your answers persist.">Previous</button>
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-ghost" data-demo="You can revisit any question before submitting.">Skip</button>
+                <button class="btn btn-primary" onclick="go('result')">Next question</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="notice info" style="margin-top:18px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <div><b>Your progress is saved automatically</b>If you close this tab, you'll come back to exactly this question with your answers intact.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ RESULT ═══ -->
+      <section class="page" id="result">
+        <div class="quiz-wrap">
+          <div class="section-head" style="margin-bottom:18px">
+            <div><div class="t">Assessment complete</div><div class="d">Linked Lists · Data Structures · submitted just now</div></div>
+          </div>
+
+          <div class="card card-p" style="margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+              <div class="score-ring">
+                <div class="in"><div><div class="pc">78%</div><div class="lb">Score</div></div></div>
+              </div>
+              <div style="flex:1;min-width:220px">
+                <div style="display:flex;gap:26px;flex-wrap:wrap;margin-bottom:18px">
+                  <div><div class="k" style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800">Correct</div><div style="font-family:var(--font-display);font-size:27px;margin-top:5px">7 <span style="font-family:var(--font);font-size:13px;color:var(--muted);font-weight:700">/ 10</span></div></div>
+                  <div><div class="k" style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800">Result</div><div style="margin-top:9px"><span class="pill green">Passed</span></div></div>
+                  <div><div class="k" style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800">Cohort rank</div><div style="font-family:var(--font-display);font-size:27px;margin-top:5px">18 <span style="font-family:var(--font);font-size:13px;color:var(--muted);font-weight:700">/ 156</span></div></div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn btn-primary" data-demo="Generates a PDF report with your score, per-question outcome, and the date."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 21h16"/></svg>Download PDF report</button>
+                  <button class="btn btn-ghost" onclick="go('leaderboard')">View leaderboard</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>Question breakdown</h3></div>
+            <div class="card-sub">Review what you got right and where to look again.</div>
+            <div style="padding:18px 20px">
+              <div class="qcard" style="border:none;box-shadow:none;padding:0 0 18px;border-bottom:1px solid var(--line-soft);margin-bottom:18px">
+                <div class="qn">Question 1 · Correct</div>
+                <div class="qt" style="font-size:14.5px;margin-bottom:14px">What is the time complexity of inserting at the head of a singly linked list?</div>
+                <div class="opts">
+                  <button class="opt-btn right"><span class="k">A</span>O(1)</button>
+                </div>
+              </div>
+              <div class="qcard" style="border:none;box-shadow:none;padding:0">
+                <div class="qn">Question 4 · Incorrect</div>
+                <div class="qt" style="font-size:14.5px;margin-bottom:14px">What is the worst-case cost of searching an unsorted singly linked list?</div>
+                <div class="opts">
+                  <button class="opt-btn wrong"><span class="k">B</span>O(log n) — your answer</button>
+                  <button class="opt-btn right"><span class="k">C</span>O(n) — correct answer</button>
+                </div>
+                <div style="margin-top:14px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;stroke:var(--muted-2)"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+                  Revise: Chapter 3 · Linked Lists · page 11
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ LEADERBOARD ═══ -->
+      <section class="page" id="leaderboard">
+        <div class="section-head">
+          <div>
+            <div class="t">Leaderboard</div>
+            <div class="d">Your standing within your cohort — B.Tech CSE, Semester 4. Updates immediately after every assessment you submit.</div>
+          </div>
+        </div>
+
+        <div class="stats c3">
+          <div class="stat"><div class="k">Your rank</div><div class="v">18<small> / 156</small></div><div class="s up">Up 4 places this week</div></div>
+          <div class="stat"><div class="k">Your average</div><div class="v">78<small>%</small></div><div class="s">Cohort average 71%</div></div>
+          <div class="stat"><div class="k">Assessments taken</div><div class="v">9</div><div class="s">Out of 14 available</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>B.Tech CSE · Semester 4</h3><span style="font-size:12px;color:var(--muted)">156 students</span></div>
+          <div class="card-sub">Ranked on average score across all submitted assessments this semester.</div>
+          <div style="padding-bottom:8px">
+            <div class="lb-row"><div class="rk top">1</div><div class="av">PN</div><div class="who2"><div class="n">Priya N</div><div class="m">12 assessments</div></div><div class="sc">94%</div></div>
+            <div class="lb-row"><div class="rk top">2</div><div class="av">SK</div><div class="who2"><div class="n">Sneha K</div><div class="m">11 assessments</div></div><div class="sc">91%</div></div>
+            <div class="lb-row"><div class="rk top">3</div><div class="av">MR</div><div class="who2"><div class="n">Mohan R</div><div class="m">12 assessments</div></div><div class="sc">89%</div></div>
+            <div class="lb-row"><div class="rk">4</div><div class="av">DK</div><div class="who2"><div class="n">Deepa K</div><div class="m">10 assessments</div></div><div class="sc">87%</div></div>
+            <div class="lb-row"><div class="rk">5</div><div class="av">VS</div><div class="who2"><div class="n">Vijay S</div><div class="m">11 assessments</div></div><div class="sc">85%</div></div>
+
+            <div style="text-align:center;padding:12px 0;color:var(--muted-2);font-size:12px;font-weight:700">· · ·</div>
+
+            <div class="lb-row me"><div class="rk">18</div><div class="av">AR</div><div class="who2"><div class="n">Aravind R — you</div><div class="m">9 assessments</div></div><div class="sc">78%</div></div>
+            <div class="lb-row"><div class="rk">19</div><div class="av">RV</div><div class="who2"><div class="n">Ramya V</div><div class="m">8 assessments</div></div><div class="sc">77%</div></div>
+            <div class="lb-row"><div class="rk">20</div><div class="av">AK</div><div class="who2"><div class="n">Arun K</div><div class="m">10 assessments</div></div><div class="sc">76%</div></div>
+          </div>
+        </div>
+
+        <div class="notice info" style="margin-top:18px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <div><b>Your cohort is your program and semester</b>You are only ever ranked against students taking the same subjects — never across other colleges.</div>
+        </div>
+      </section>
+
+      <!-- ═══ INTERVIEWS ═══ -->
+      <section class="page" id="interview">
+        <div class="section-head">
+          <div>
+            <div class="t">Interviews</div>
+            <div class="d">AI mock interviews with voice and avatar. Included with your institution’s B2B access — final-year students only. No student billing.</div>
+          </div>
+        </div>
+
+        <div class="notice info" style="margin-bottom:18px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <div><b>How interviews start (SOW)</b>Faculty/HOD can assign a session to your cohort, or you can self-start a practice session. Session limits—if any—are set by your institution, not by a consumer plan.</div>
+        </div>
+
+        <div class="card card-p" style="margin-bottom:18px">
+          <h3 style="font-size:15px;font-weight:800;margin-bottom:4px">Start a new interview</h3>
+          <p style="color:var(--muted);font-size:12.5px;margin-bottom:16px">Choose a mode, set your target role, and begin. Assigned sessions from your department appear in the list below.</p>
+          <div class="modecard">
+            <div class="mc sel" onclick="pickMode(this)"><div class="nm">Mock interview</div><div class="ds">3 focused questions with instant feedback. Good for daily practice.</div><div class="du">3–5 min · practice session</div></div>
+            <div class="mc" onclick="pickMode(this)"><div class="nm">Full interview</div><div class="ds">More questions, follow-ups, and a detailed post-interview report.</div><div class="du">10–15 min · full session + report</div></div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label>Target role</label><input placeholder="e.g. Frontend Developer"></div>
+            <div class="field"><label>Difficulty</label><select><option>Beginner</option><option selected>Intermediate</option><option>Advanced</option><option>Adaptive</option></select></div>
+          </div>
+          <button class="btn btn-dark" style="margin-top:6px" data-demo="Starts a live voice interview with an AI interviewer. Your session is recorded for the feedback report.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 4 20 12 6 20 6 4"/></svg>Start interview
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Your interviews</h3><a class="link" onclick="go('progress')">All reports →</a></div>
+          <table>
+            <thead><tr><th>Interview</th><th>Type</th><th>Source</th><th>Date</th><th>Score</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Frontend Developer</span></td><td><span class="pill violet plain">Full</span></td><td class="sub">Assigned by Dr. Karthik</td><td class="sub">21 Aug</td><td><span class="pill green">82</span></td><td class="actions"><a onclick="openModal('mReport')">View report</a></td></tr>
+              <tr><td><span class="strong">HR Screening</span></td><td><span class="pill blue plain">Mock</span></td><td class="sub">Self-initiated</td><td class="sub">18 Aug</td><td><span class="pill blue">76</span></td><td class="actions"><a onclick="openModal('mReport')">View report</a></td></tr>
+              <tr><td><span class="strong">React Developer</span></td><td><span class="pill blue plain">Mock</span></td><td class="sub">Self-initiated</td><td class="sub">12 Aug</td><td><span class="pill amber">69</span></td><td class="actions"><a onclick="openModal('mReport')">View report</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ PROGRESS ═══ -->
+      <section class="page" id="progress">
+        <div class="section-head">
+          <div><div class="t">My Progress</div><div class="d">Your learning, questions, assessments, and interview activity this semester.</div></div>
+        </div>
+
+        <div class="stats c4">
+          <div class="stat"><div class="k">Total learning</div><div class="v">42<small> hrs</small></div><div class="s">This semester</div></div>
+          <div class="stat"><div class="k">Questions asked</div><div class="v">128</div><div class="s">Across 5 subjects</div></div>
+          <div class="stat"><div class="k">Assessments</div><div class="v">9</div><div class="s">Avg 78%</div></div>
+          <div class="stat"><div class="k">Interviews</div><div class="v">3</div><div class="s">Avg 76%</div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-h"><h3>Subject progress</h3></div>
+          <table>
+            <thead><tr><th>Subject</th><th>Chapters</th><th>Watch time</th><th>Assessments</th><th>Avg score</th><th>Progress</th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Data Structures</span><div class="sub">CS204</div></td><td class="num">2 / 6</td><td class="num">11 hrs</td><td class="num">2</td><td><span class="pill green plain">78%</span></td><td style="width:150px"><div class="bar"><i style="width:33%"></i></div></td></tr>
+              <tr><td><span class="strong">DBMS</span><div class="sub">CS206</div></td><td class="num">4 / 7</td><td class="num">13 hrs</td><td class="num">3</td><td><span class="pill green plain">84%</span></td><td style="width:150px"><div class="bar green"><i style="width:57%"></i></div></td></tr>
+              <tr><td><span class="strong">Computer Networks</span><div class="sub">CS207</div></td><td class="num">3 / 6</td><td class="num">9 hrs</td><td class="num">2</td><td><span class="pill green plain">75%</span></td><td style="width:150px"><div class="bar"><i style="width:50%"></i></div></td></tr>
+              <tr><td><span class="strong">Operating Systems</span><div class="sub">CS205</div></td><td class="num">1 / 5</td><td class="num">5 hrs</td><td class="num">1</td><td><span class="pill amber plain">68%</span></td><td style="width:150px"><div class="bar amber"><i style="width:20%"></i></div></td></tr>
+              <tr><td><span class="strong">Design &amp; Analysis of Algorithms</span><div class="sub">CS208</div></td><td class="num">4 / 8</td><td class="num">4 hrs</td><td class="num">1</td><td><span class="pill green plain">80%</span></td><td style="width:150px"><div class="bar"><i style="width:50%"></i></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Assessment history</h3></div>
+          <table>
+            <thead><tr><th>Assessment</th><th>Subject</th><th>Date</th><th>Score</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Linked Lists</span><div class="sub">Chapter 3</div></td><td>Data Structures</td><td class="sub">24 Aug</td><td><span class="pill green">78%</span></td><td class="actions"><a data-demo="Downloads the PDF report for this attempt.">PDF</a></td></tr>
+              <tr><td><span class="strong">Stacks &amp; Queues</span><div class="sub">Chapter 2</div></td><td>Data Structures</td><td class="sub">20 Aug</td><td><span class="pill green">88%</span></td><td class="actions"><a data-demo="Downloads the PDF report.">PDF</a></td></tr>
+              <tr><td><span class="strong">Normalization</span><div class="sub">Chapter 4</div></td><td>DBMS</td><td class="sub">18 Aug</td><td><span class="pill green">84%</span></td><td class="actions"><a data-demo="Downloads the PDF report.">PDF</a></td></tr>
+              <tr><td><span class="strong">OSI Layers</span><div class="sub">Chapter 1</div></td><td>Computer Networks</td><td class="sub">14 Aug</td><td><span class="pill amber">68%</span></td><td class="actions"><a data-demo="Downloads the PDF report.">PDF</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Interview report modal -->
+<div class="overlay" id="mReport">
+  <div class="modal wide">
+    <div class="modal-h">
+      <div><h3>Frontend Developer — interview report</h3><div class="crumb">Full interview · 21 Aug 2026 · 13 min 40 s</div></div>
+      <button class="modal-x" onclick="closeModal('mReport')">&times;</button>
+    </div>
+    <div class="modal-b split">
+      <div>
+        <div class="blk">
+          <div class="lb">Per-question feedback</div>
+          <div class="mcq" style="margin-bottom:10px">
+            <div class="q"><span class="n">1.</span><span>Tell me about a project you're proud of.</span></div>
+            <div style="font-size:12.5px;color:var(--ink-2);line-height:1.65;margin-bottom:10px">
+              Strong opening — you named the problem, your role, and the outcome in under a minute.
+              You quantified the result (“cut load time by 40%”), which is exactly what interviewers look for.
+            </div>
+            <div class="foot"><span class="src">Structure · Clarity · Impact</span><span class="pill green">88</span></div>
+          </div>
+          <div class="mcq" style="margin-bottom:10px">
+            <div class="q"><span class="n">2.</span><span>How would you optimise a slow-rendering list of 10,000 rows?</span></div>
+            <div style="font-size:12.5px;color:var(--ink-2);line-height:1.65;margin-bottom:10px">
+              You reached virtualisation quickly, but stopped there. Interviewers expect you to also mention
+              memoisation and why key stability matters. Try naming two or three options and then justifying your pick.
+            </div>
+            <div class="foot"><span class="src">Technical depth</span><span class="pill amber">64</span></div>
+          </div>
+          <div class="mcq" style="margin-bottom:0">
+            <div class="q"><span class="n">3.</span><span>Describe a disagreement with a teammate.</span></div>
+            <div style="font-size:12.5px;color:var(--ink-2);line-height:1.65;margin-bottom:10px">
+              Good use of a real example. Add the resolution and what you'd do differently — the answer currently
+              ends on the conflict rather than the learning.
+            </div>
+            <div class="foot"><span class="src">Communication · Reflection</span><span class="pill green">79</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="blk" style="text-align:center">
+          <div class="score-ring" style="margin:0 auto 14px;background:conic-gradient(var(--green) 0 82%, #eaeff5 82% 100%)">
+            <div class="in"><div><div class="pc">82</div><div class="lb">Overall</div></div></div>
+          </div>
+        </div>
+        <div class="blk">
+          <div class="lb">Score by dimension</div>
+          <div class="cmp"><div class="nm" style="width:120px">Communication</div><div class="track"><i style="width:86%;background:var(--green)"></i></div><div class="val">86</div></div>
+          <div class="cmp"><div class="nm" style="width:120px">Structure</div><div class="track"><i style="width:88%;background:var(--green)"></i></div><div class="val">88</div></div>
+          <div class="cmp"><div class="nm" style="width:120px">Technical depth</div><div class="track"><i style="width:64%;background:var(--amber)"></i></div><div class="val">64</div></div>
+          <div class="cmp"><div class="nm" style="width:120px">Confidence</div><div class="track"><i style="width:81%;background:var(--green)"></i></div><div class="val">81</div></div>
+        </div>
+        <div class="blk" style="margin-bottom:0">
+          <div class="lb">Your improvement plan</div>
+          <div style="font-size:12.5px;color:var(--ink-2);line-height:1.75">
+            <div style="display:flex;gap:9px;margin-bottom:9px"><span style="color:var(--blue);font-weight:800">1.</span><span>Practise naming <b>two or three</b> options before choosing one — it reads as depth, not indecision.</span></div>
+            <div style="display:flex;gap:9px;margin-bottom:9px"><span style="color:var(--blue);font-weight:800">2.</span><span>Close every behavioural answer with the outcome and what you learned.</span></div>
+            <div style="display:flex;gap:9px"><span style="color:var(--blue);font-weight:800">3.</span><span>Revise rendering performance — your weakest dimension across the last two interviews.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" onclick="closeModal('mReport')">Close</button>
+      <div class="right">
+        <button class="btn btn-primary" data-demo="Downloads the full report as a PDF. A copy was also emailed to you when the interview finished.">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 21h16"/></svg>Download PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/quirri.js"></script>
+<script>
+  window.PAGE_TITLES = {
+    home:['Home','B.Tech CSE · Semester 4 · ABC Engineering'],
+    subjects:['My Subjects','Your semester subjects, built from your college material.'],
+    subjectDetail:['Data Structures','Switch between the classroom and your AI tutor anytime.'],
+    assessment:['Chapter quiz','Your answers are saved as you go.'],
+    result:['Assessment result','Your score, breakdown, and downloadable report.'],
+    leaderboard:['Leaderboard','Your standing within your cohort.'],
+    interview:['Interviews','Practice with an AI interviewer using your semester allocation.'],
+    progress:['My Progress','Your learning, Q&A, assessment, and interview activity.']
+  };
+
+  function subTab(which){
+    var isSubj = which === 'subj';
+    document.getElementById('bt1').classList.toggle('active', isSubj);
+    document.getElementById('bt2').classList.toggle('active', !isSubj);
+    document.getElementById('tabSubj').style.display  = isSubj ? '' : 'none';
+    document.getElementById('tabTutor').style.display = isSubj ? 'none' : '';
+  }
+
+  function pickMode(el){
+    document.querySelectorAll('.mc').forEach(function(m){ m.classList.remove('sel'); });
+    el.classList.add('sel');
+  }
+
+  document.querySelectorAll('.modeswitch button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.modeswitch button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+</script>
+</body>
+</html>

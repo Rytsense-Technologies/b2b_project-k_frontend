@@ -18,8 +18,9 @@ export default function Providers({ children }) {
               background: '#1e293b',
               color: '#f1f5f9',
               border: '1px solid #334155',
-              borderRadius: '10px',
+              borderRadius: '12px',
               fontSize: '14px',
+              fontFamily: 'var(--font)',
             },
           }}
         />

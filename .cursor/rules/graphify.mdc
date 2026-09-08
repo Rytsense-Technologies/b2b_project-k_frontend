@@ -1,7 +1,11 @@
 ---
-description: graphify knowledge graph context — query first for token optimization
+description: graphify knowledge graph + Project K scope references
 alwaysApply: true
 ---
+
+# Graphify + Project K References
+
+## 1. GRAPHIFY (query first)
 
 This project has a graphify knowledge graph at `graphify-out/`. Use it as persistent memory so prompts do not re-scan the repo.
 
@@ -22,4 +26,37 @@ Only use Read/Grep/Glob when:
 
 - Prefer query/path/explain over reading `GRAPH_REPORT.md`
 - Read `graphify-out/GRAPH_REPORT.md` only for a broad architecture review
-- If `graphify-out/wiki/index.md` exists, navigate it instead of raw files
+- If `graphify-out/wiki/index.md` exists, navigate it first for scope/brand pointers
+- Full brand/build rules: `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` (also `AGENTS.md`)
+- Forms: `src/lib/validation/` + `.cursor/rules/quirri-forms.mdc` — reuse field types; do not invent per-page validation
+- Product UI: `docs/QUIRRI_PRODUCT_UI_RULES.md` + `.cursor/rules/quirri-product-ui.mdc` — dropdowns (`QuirriSelect`), left text align, must-haves
+- India location: `docs/QUIRRI_INDIA_LOCATION_RULES.md` + `.cursor/rules/quirri-india-location.mdc` — country IN, state/district combobox, +91, pincode
+- Backend API SoT: `docs/BACKEND_STATUS_REPORT.md` · FE map: `docs/FRONTEND_BACKEND_ALIGNMENT.md` — prefer `/api/v1/{auth,universities,colleges,users,roles}` over legacy `/superadmin/*`
+- Tooltips: never native HTML `title` hover boxes — use `QuirriTooltip` / `useQuirriTip` (white/Ink Quirri tip)
+- UI bugs/design: verify with Playwright + Super Admin login before finishing
+
+---
+
+## 2. AUTHORITATIVE REFERENCES
+
+| Priority | Document | Role |
+|----------|----------|------|
+| **1 (contract)** | `assets/ProjectK_B2B_SOW_v1.0.pdf` | Phase 1 B2B scope — product, roles, portals, exclusions |
+| **2 (product)** | `assets/PROJECT_K_DEVELOPMENT_GUIDE.md` | What to build — modules, tenancy, RBAC, academic hierarchy |
+| **3 (brand & build)** | `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` | How to build — brand, design tokens, UX, a11y, workflow |
+| **4 (UI shell — post-login)** | `new_updated_design_four/` | Primary client design for four portals after login (`docs/QUIRRI_UI_REFERENCE.md`) |
+| **4b (legacy demo)** | `ProjectK_Client_Demo/` | Older static click-through — keep as-is |
+
+**Rule:** Phase 1 delivery = **B2B SOW only**. Do not implement FRS-only B2C billing, standalone B2C portal, or appendix-only pipelines unless a Change Request says so.
+
+---
+
+## 3. MAIN NEXT.JS APP RULES
+
+- Super Admin login must use real API (`NEXT_PUBLIC_DEV_BYPASS_AUTH=false` unless user explicitly enables bypass)
+- Four portals: SA `/superadmin/*`, CA `/admin/*`, Faculty `/faculty/*`, Student `/student/*` — middleware by role
+- Login UI stays centered Quirri card (Poppins) — do not restyle from `Login.dc.html`
+- Post-login UI follows `new_updated_design_four` (dark sidebar, Plus Jakarta Sans, mist `#F4F6F7`)
+- No static/mock portal data in `src/` — APIs only; show loading/error/empty
+- Do not reintroduce Skill Courses, Email Management CRUD, AI Usage ₹ dashboard, or student billing UI
+- Follow Quirri tokens in `src/styles/quirri-design.css`

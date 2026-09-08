@@ -1,17 +1,25 @@
 'use client';
 
-const BADGE_STYLES = {
-  ok: 'quirri-badge-ok',
-  warn: 'quirri-badge-warn',
-  off: 'quirri-badge-off',
-  learning: 'quirri-badge-learning',
-  qa: 'quirri-badge-qa',
-  mix: 'quirri-badge-mix',
+const PILL_VARIANTS = {
+  ok: 'green',
+  warn: 'amber',
+  off: 'red',
+  learning: 'blue',
+  qa: 'violet',
+  mix: 'grey',
+  green: 'green',
+  amber: 'amber',
+  red: 'red',
+  blue: 'blue',
+  violet: 'violet',
+  grey: 'grey',
+  teal: 'teal',
 };
 
-export default function QuirriBadge({ children, variant = 'ok' }) {
+export default function QuirriBadge({ children, variant = 'ok', plain = false }) {
+  const color = PILL_VARIANTS[variant] ?? 'grey';
   return (
-    <span className={`quirri-badge ${BADGE_STYLES[variant] ?? BADGE_STYLES.off}`}>
+    <span className={`pill ${color}${plain ? ' plain' : ''}`}>
       {children}
     </span>
   );

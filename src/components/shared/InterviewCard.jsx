@@ -10,7 +10,7 @@ export default function InterviewCard({ interview }) {
   return (
     <Link
       href={`/main/reports/${id}`}
-      className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all group"
+      className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition-all group"
     >
       {/* Score circle */}
       <div
@@ -43,7 +43,7 @@ export default function InterviewCard({ interview }) {
             Processing
           </span>
         ) : (
-          <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+          <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-500 transition-colors" />
         )}
       </div>
     </Link>

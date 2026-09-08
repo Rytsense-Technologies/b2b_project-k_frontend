@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scope Map · Project K B2B (SOW)</title>
+<link rel="stylesheet" href="assets/css/quirri.css">
+<style>
+  .doc{max-width:940px;margin:0 auto;padding:48px 32px 90px}
+  .doc h1{font-family:var(--font-display);font-weight:400;font-size:44px;letter-spacing:-.02em;margin-bottom:12px}
+  .doc .lede{color:var(--muted);font-size:15px;line-height:1.75;max-width:70ch;margin-bottom:14px}
+  .doc h2{font-family:var(--font-display);font-weight:400;font-size:27px;letter-spacing:-.01em;margin:44px 0 8px}
+  .doc h2 + p{color:var(--muted);font-size:13.5px;line-height:1.7;margin-bottom:20px;max-width:74ch}
+  .doc table{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-xs)}
+  .back{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-weight:700;font-size:13px;margin-bottom:26px}
+  .back:hover{color:var(--ink)}
+</style>
+</head>
+<body style="background:var(--bg-warm)">
+<div class="doc">
+
+  <a class="back" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M15 18l-6-6 6-6"/></svg>
+    Back to walkthrough
+  </a>
+
+  <h1>Scope map</h1>
+  <p class="lede">
+    This walkthrough is bounded by <b>ProjectK_B2B_SOW_v1.0.pdf</b> (Phase 1 B2B contract).
+    Engineering depth may come from <b>Project K.pdf</b> (FRS), but FRS-only B2C billing and
+    standalone Interview Portal are <b>not</b> designed here. Where an earlier mockup disagreed
+    with the SOW, the SOW won.
+  </p>
+
+  <h2>SOW portals (3) · demo shells (4)</h2>
+  <p>
+    The SOW defines three portals. HOD and Faculty share the College Admin portal with different
+    RBAC — the demo shows that as a separate shell with a <b>View as</b> switch so the restriction is visible.
+  </p>
+  <table>
+    <thead><tr><th>SOW portal</th><th>Roles</th><th>Demo file</th></tr></thead>
+    <tbody>
+      <tr><td><span class="strong">Super Admin</span></td><td>Knotopian (platform-wide)</td><td>super-admin.html</td></tr>
+      <tr><td><span class="strong">College Admin</span></td><td>Admin · HOD (college-wide) · Faculty/SME (subject-level)</td><td>college-admin.html · hod-faculty.html</td></tr>
+      <tr><td><span class="strong">Student</span></td><td>Students of one college tenant</td><td>student.html</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Included — Phase 1 B2B</h2>
+  <p>Required by the approved SOW. Designed here even when earlier mockups skipped them.</p>
+  <table>
+    <thead><tr><th>Screen / capability</th><th>Portal</th><th>Why it's here</th></tr></thead>
+    <tbody>
+      <tr><td><span class="strong">Universities</span></td><td>Super Admin</td><td>Hierarchy starts at University → College (SOW §6.2).</td></tr>
+      <tr><td><span class="strong">Platform Users</span></td><td>Super Admin</td><td>Manage users across institutions (SOW §5.1).</td></tr>
+      <tr><td><span class="strong">Upload &amp; Generate</span></td><td>Super Admin · College · Faculty</td><td>Upload by Super Admin or authorised Faculty/SME (SOW §6.1.1).</td></tr>
+      <tr><td><span class="strong">Platform Health</span></td><td>Super Admin</td><td>Status, uptime, error logs (SOW §6.2).</td></tr>
+      <tr><td><span class="strong">MCQ Review</span></td><td>HOD / Faculty</td><td>SME approval before student publication (SOW §6.1.4).</td></tr>
+      <tr><td><span class="strong">Video Review</span></td><td>HOD / Faculty</td><td>Approve AI avatar videos before publish (SOW §6.1.3).</td></tr>
+      <tr><td><span class="strong">Add student · CSV ≤100</span></td><td>College Admin</td><td>Single add + bulk import up to 100 (SOW §5.2 / §6.3).</td></tr>
+      <tr><td><span class="strong">Activation email + SMS/WhatsApp</span></td><td>Auth</td><td>SOW §6.3 / §7.</td></tr>
+      <tr><td><span class="strong">Interview Assignments</span></td><td>College Admin · HOD</td><td>Final-year cohorts (SOW §6.4.5).</td></tr>
+      <tr><td><span class="strong">Assessment · PDF · Leaderboard</span></td><td>Student</td><td>SOW §6.4.3–6.4.4.</td></tr>
+      <tr><td><span class="strong">QnA AI Tutor (EN + Tamil)</span></td><td>Student</td><td>SOW §6.4.2 — Hindi is out.</td></tr>
+      <tr><td><span class="strong">AI Interview (assigned or self-start)</span></td><td>Student</td><td>Final year only; embedded B2B (SOW §6.4.5).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Deliberately excluded (SOW §14 + prior mockups)</h2>
+  <p>Not Phase 1 B2B. Designing these in would imply commitments the contract has not made.</p>
+  <table>
+    <thead><tr><th>Excluded</th><th>Source</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td><span class="strong">All student payment UI</span><div class="sub">Buy to enroll, buy hours, Razorpay/Stripe</div></td><td>Earlier mockup · FRS B2C</td><td>Institutions pay Knotopian; students never do (SOW §4).</td></tr>
+      <tr><td><span class="strong">B2C Interview Portal + billing</span></td><td>FRS · SOW §14</td><td>Separate B2C SOW.</td></tr>
+      <tr><td><span class="strong">Skill Courses / AI Skill Courses</span></td><td>Earlier mockup</td><td>Not in B2B SOW — would need a Change Request.</td></tr>
+      <tr><td><span class="strong">AI Usage cost dashboard (₹ / tokens)</span></td><td>Earlier mockup</td><td>Not a named SOW module; commercial UI not committed.</td></tr>
+      <tr><td><span class="strong">Email Management (sender CRUD)</span></td><td>Earlier SA mockup</td><td>Replaced with SOW §7 event catalogue + delivery visibility only.</td></tr>
+      <tr><td><span class="strong">Standard / Premium plan tiers</span></td><td>Earlier SA mockup</td><td>SOW is institutional licensing + seat caps — not consumer plan SKUs.</td></tr>
+      <tr><td><span class="strong">Fixed 10 mock / 4 full quotas</span></td><td>Earlier student mockup</td><td>Not in SOW; removed from student UI.</td></tr>
+      <tr><td><span class="strong">Mobile app (iOS / Android)</span></td><td>SOW §14</td><td>Desktop web only in Phase 1.</td></tr>
+      <tr><td><span class="strong">Offline / downloaded content</span></td><td>SOW §14</td><td>Out of scope.</td></tr>
+      <tr><td><span class="strong">Live faculty–student streaming</span></td><td>SOW §14</td><td>AI video + AI tutor only.</td></tr>
+      <tr><td><span class="strong">On-premise deployment</span></td><td>SOW §14</td><td>Add-on only.</td></tr>
+      <tr><td><span class="strong">LMS integrations (Moodle, Canvas…)</span></td><td>SOW §14</td><td>Out of scope.</td></tr>
+      <tr><td><span class="strong">Hindi language option</span></td><td>Earlier mockup</td><td>English instruction + Tamil QnA only.</td></tr>
+      <tr><td><span class="strong">Public sign-up</span></td><td>Implied</td><td>Every account is provisioned by an administrator.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Design decisions worth flagging</h2>
+  <p>Choices still worth an explicit yes/no from the client.</p>
+  <table>
+    <thead><tr><th>Decision</th><th>What we've shown</th><th>Needs confirmation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="strong">Tenant context always visible</span></td>
+        <td>Every portal shows which institution you operate inside.</td>
+        <td>Whether colleges also get logo / accent branding.</td>
+      </tr>
+      <tr>
+        <td><span class="strong">AI tutor is voice-first</span></td>
+        <td>Audio-led tutor with text fallback; EN / தமிழ் toggle.</td>
+        <td>Whether lip-synced speaking avatar is required (ongoing cost).</td>
+      </tr>
+      <tr>
+        <td><span class="strong">Faculty restriction is demonstrated</span></td>
+        <td><b>View as</b> HOD | Faculty locks institution-wide analytics for Faculty.</td>
+        <td>Whether Faculty sees any cross-subject view at all.</td>
+      </tr>
+      <tr>
+        <td><span class="strong">Leaderboard shows peer names</span></td>
+        <td>Named classmates in the same cohort only.</td>
+        <td>Whether peers should be anonymised.</td>
+      </tr>
+      <tr>
+        <td><span class="strong">Audit Logs as SA screen</span></td>
+        <td>Append-only sensitive actions (ops/security).</td>
+        <td>Keep as Phase 1, or fold under Platform Health only.</td>
+      </tr>
+      <tr>
+        <td><span class="strong">Interview session limits</span></td>
+        <td>No fixed student-facing 10/4 quota. Assign or self-start.</td>
+        <td>Any numeric institutional caps TBD with client if needed.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>What this is and isn't</h2>
+  <p>
+    This is a static click-through for design review against the B2B SOW. Screens navigate and
+    modals open, but nothing connects to a server. Figures are illustrative. Agree the interface
+    and flows here before they are built in the Next.js Super Admin app and sibling portals.
+  </p>
+
+</div>
+</body>
+</html>

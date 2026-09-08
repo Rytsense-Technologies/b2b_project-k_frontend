@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOD / Faculty · Quirri — Project K</title>
+<link rel="stylesheet" href="assets/css/quirri.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand"><div class="logo"><span class="ring">QUIRRI</span></div></div>
+
+    <div class="tenant-box">
+      <div class="mark">AB</div>
+      <div class="txt">
+        <div class="nm">ABC Engineering</div>
+        <div class="sc" id="scopeLabel">HOD · 2 departments</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a class="active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+
+      <div class="nav-label">Review queue</div>
+      <a data-page="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Video Review<span class="badge">5</span></a>
+      <a data-page="mcq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>MCQ Review<span class="badge">3</span></a>
+
+      <div class="nav-label">Academics</div>
+      <a data-page="subjects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M15 3v5h5"/></svg>Subjects</a>
+      <a data-page="students"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg>Students</a>
+
+      <div class="nav-label">Placement</div>
+      <a data-page="interviews"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Interview Assignments</a>
+
+      <div class="nav-label">Insights</div>
+      <a data-page="analytics" id="navAnalytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Department Analytics</a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="who">
+        <div class="av" id="whoAv">KA</div>
+        <div><div class="n" id="whoName">Dr. Karthik</div><div class="r" id="whoRole">HOD · Computer Science, IT</div></div>
+      </div>
+      <a class="logout" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pgTitle">Dashboard</h1>
+        <p id="pgSub">Review AI-generated content and track your departments.</p>
+      </div>
+      <div class="topbar-right">
+        <!-- Demo control: shows how the SAME screen differs by role permission -->
+        <div class="scopepick">
+          <div class="lb">View as</div>
+          <select id="roleSel" onchange="switchRole()">
+            <option value="hod">HOD</option>
+            <option value="faculty">Faculty / SME</option>
+          </select>
+        </div>
+        <div class="scopepick">
+          <div class="lb">Scope</div>
+          <select id="deptSel"><option>All my departments</option><option>Computer Science</option><option>Information Technology</option></select>
+        </div>
+        <button class="iconbtn" data-demo="Notifications — new content assigned for review.">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="demo-note" id="facultyNote" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <div><b>Viewing as Faculty / SME.</b> Department Analytics is now locked, the scope selector is fixed to assigned subjects, and student data is limited to those subjects. In the real product this is enforced by the API — hiding the menu item is not the control.</div>
+      </div>
+
+      <!-- ═══ DASHBOARD ═══ -->
+      <section class="page show" id="dashboard">
+        <div class="banner">
+          <h2>Welcome, Dr. Karthik</h2>
+          <p>You have 8 items waiting for review — 5 chapter videos and 3 MCQ sets. Nothing reaches a student until you approve it.</p>
+          <div class="banner-cta">
+            <button class="btn btn-light" onclick="go('review')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Review videos</button>
+            <button class="btn btn-light" onclick="go('mcq')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/></svg>Review MCQs</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="k">Videos pending</div><div class="v" style="color:var(--amber)">5</div><div class="s">Across 2 departments</div></div>
+          <div class="stat"><div class="k">MCQ sets pending</div><div class="v" style="color:var(--amber)">3</div><div class="s">38 questions total</div></div>
+          <div class="stat"><div class="k">Published</div><div class="v">128</div><div class="s">This semester</div></div>
+          <div class="stat"><div class="k">Sent back</div><div class="v">7</div><div class="s">Awaiting re-upload</div></div>
+          <div class="stat"><div class="k">Students</div><div class="v">1,100</div><div class="s">620 CSE · 480 IT</div></div>
+        </div>
+
+        <div class="cols">
+          <div class="card">
+            <div class="card-h"><h3>Waiting for your review</h3><a class="link" onclick="go('review')">Open queue →</a></div>
+            <div class="card-sub">AI-generated chapter videos assigned to you.</div>
+            <table>
+              <thead><tr><th>Chapter</th><th>Subject</th><th>Dept</th><th>Waiting</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">Linked Lists</span><div class="sub">Ch 3</div></td><td>Data Structures</td><td>CSE</td><td class="sub">2 days</td></tr>
+                <tr><td><span class="strong">Normalization</span><div class="sub">Ch 4</div></td><td>DBMS</td><td>CSE</td><td class="sub">Today</td></tr>
+                <tr><td><span class="strong">TCP/IP Model</span><div class="sub">Ch 2</div></td><td>Computer Networks</td><td>IT</td><td class="sub">Today</td></tr>
+                <tr><td><span class="strong">Threads &amp; Concurrency</span><div class="sub">Ch 5</div></td><td>Operating Systems</td><td>CSE</td><td class="sub">1 day</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>Recently actioned</h3></div>
+            <div class="card-sub">Your last approvals and send-backs.</div>
+            <table>
+              <thead><tr><th>Chapter</th><th>Subject</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">Arrays &amp; Complexity</span><div class="sub">Ch 1</div></td><td>Data Structures</td><td><span class="pill green">Published</span></td></tr>
+                <tr><td><span class="strong">Stacks &amp; Queues</span><div class="sub">Ch 2</div></td><td>Data Structures</td><td><span class="pill green">Published</span></td></tr>
+                <tr><td><span class="strong">Trees &amp; BST</span><div class="sub">Ch 5</div></td><td>Data Structures</td><td><span class="pill red">Sent back</span></td></tr>
+                <tr><td><span class="strong">SQL Joins</span><div class="sub">Ch 6</div></td><td>DBMS</td><td><span class="pill red">Sent back</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ VIDEO REVIEW ═══ -->
+      <section class="page" id="review">
+        <div class="section-head">
+          <div>
+            <div class="t">Video Review</div>
+            <div class="d">Each card is one AI-generated chapter video. Watch it, then publish it to students or send it back with comments.</div>
+          </div>
+        </div>
+
+        <div class="tabs" data-tabgroup="rev">
+          <div class="tab active" data-tabkey="pending">Pending <span class="ct">5</span></div>
+          <div class="tab" data-tabkey="sent">Sent back <span class="ct">7</span></div>
+          <div class="tab" data-tabkey="done">Published <span class="ct">128</span></div>
+        </div>
+
+        <div data-tabpanel="rev" data-tabkey="pending">
+          <div style="font-weight:800;font-size:13.5px;padding:10px 4px">Data Structures <span style="font-weight:500;color:var(--muted-2);font-size:12px">· CSE · Year 2 · Sem 4 · uploaded by ABC Engineering</span></div>
+          <div class="card" style="margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px">
+              <div class="chap-h" style="padding:0;background:none"><div class="num">3</div></div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13.5px">Linked Lists</div>
+                <div style="font-size:11.5px;color:var(--muted-2);margin-top:3px;display:flex;gap:14px;flex-wrap:wrap">
+                  <span>Video 26:05</span><span>10 MCQs generated</span><span>Uploaded 2 days ago</span>
+                </div>
+              </div>
+              <span class="pill amber">Pending</span>
+              <button class="btn btn-primary btn-sm" onclick="openReview('Linked Lists','Data Structures · CSE · Sem 4')">Review</button>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px">
+              <div class="chap-h" style="padding:0;background:none"><div class="num">5</div></div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13.5px">Threads &amp; Concurrency</div>
+                <div style="font-size:11.5px;color:var(--muted-2);margin-top:3px;display:flex;gap:14px;flex-wrap:wrap">
+                  <span>Video 31:20</span><span>8 MCQs generated</span><span>Uploaded 1 day ago</span>
+                </div>
+              </div>
+              <span class="pill amber">Pending</span>
+              <button class="btn btn-primary btn-sm" onclick="openReview('Threads &amp; Concurrency','Operating Systems · CSE · Sem 4')">Review</button>
+            </div>
+          </div>
+
+          <div style="font-weight:800;font-size:13.5px;padding:10px 4px">Computer Networks <span style="font-weight:500;color:var(--muted-2);font-size:12px">· IT · Year 2 · Sem 4</span></div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line-soft)">
+              <div class="chap-h" style="padding:0;background:none"><div class="num">2</div></div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13.5px">TCP/IP Model</div>
+                <div style="font-size:11.5px;color:var(--muted-2);margin-top:3px;display:flex;gap:14px"><span>Video 19:44</span><span>9 MCQs generated</span><span>Uploaded today</span></div>
+              </div>
+              <span class="pill amber">Pending</span>
+              <button class="btn btn-primary btn-sm" onclick="openReview('TCP/IP Model','Computer Networks · IT · Sem 4')">Review</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 18px">
+              <div class="chap-h" style="padding:0;background:none"><div class="num">3</div></div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13.5px">Routing Algorithms</div>
+                <div style="font-size:11.5px;color:var(--muted-2);margin-top:3px;display:flex;gap:14px"><span>Video 22:30</span><span>10 MCQs generated</span><span>Uploaded today</span></div>
+              </div>
+              <span class="pill amber">Pending</span>
+              <button class="btn btn-primary btn-sm" onclick="openReview('Routing Algorithms','Computer Networks · IT · Sem 4')">Review</button>
+            </div>
+          </div>
+        </div>
+
+        <div data-tabpanel="rev" data-tabkey="sent" style="display:none">
+          <div class="card">
+            <table>
+              <thead><tr><th>Chapter</th><th>Subject</th><th>Your comment</th><th>Sent back</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">Trees &amp; BST</span><div class="sub">Ch 5</div></td><td>Data Structures</td><td style="max-width:340px" class="sub">“Pacing too fast on traversal. Add one worked example.”</td><td class="sub">3 days ago</td><td><span class="pill grey">Awaiting re-upload</span></td></tr>
+                <tr><td><span class="strong">SQL Joins</span><div class="sub">Ch 6</div></td><td>DBMS</td><td style="max-width:340px" class="sub">“Outer join example is wrong. Please regenerate.”</td><td class="sub">4 days ago</td><td><span class="pill blue">Regenerating</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div data-tabpanel="rev" data-tabkey="done" style="display:none">
+          <div class="card">
+            <table>
+              <thead><tr><th>Chapter</th><th>Subject</th><th>Dept</th><th>Published</th><th>Note</th></tr></thead>
+              <tbody>
+                <tr><td><span class="strong">Arrays &amp; Complexity</span><div class="sub">Ch 1</div></td><td>Data Structures</td><td>CSE</td><td class="sub">18 Aug</td><td class="sub">—</td></tr>
+                <tr><td><span class="strong">Stacks &amp; Queues</span><div class="sub">Ch 2</div></td><td>Data Structures</td><td>CSE</td><td class="sub">18 Aug</td><td class="sub">“Good clarity”</td></tr>
+                <tr><td><span class="strong">ER Modeling</span><div class="sub">Ch 3</div></td><td>DBMS</td><td>CSE</td><td class="sub">16 Aug</td><td class="sub">—</td></tr>
+                <tr><td><span class="strong">OSI Layers</span><div class="sub">Ch 1</div></td><td>Computer Networks</td><td>IT</td><td class="sub">15 Aug</td><td class="sub">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ MCQ REVIEW ═══ -->
+      <section class="page" id="mcq">
+        <div class="section-head">
+          <div>
+            <div class="t">MCQ Review</div>
+            <div class="d">AI-generated questions must be approved before any student can be assessed on them. A chapter's assessment stays unavailable until its questions pass review.</div>
+          </div>
+          <div style="display:flex;gap:9px">
+            <button class="btn btn-ghost" data-demo="Rejects the whole set and requests regeneration.">Reject all</button>
+            <button class="btn btn-green" onclick="toast('10 questions approved — assessment is now live for students.')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Approve all 10</button>
+          </div>
+        </div>
+
+        <div class="notice warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+          <div><b>Assessment not yet available to students</b>Data Structures · Chapter 3 · Linked Lists — 10 questions awaiting your approval. Students see “assessment coming soon” until you approve.</div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search question text…"></div>
+          <select><option>Data Structures · Ch 3 · Linked Lists (10)</option><option>DBMS · Ch 4 · Normalization (12)</option><option>Computer Networks · Ch 2 · TCP/IP (9)</option></select>
+        </div>
+
+        <div class="mcq">
+          <div class="q"><span class="n">1.</span><span>What is the time complexity of inserting a node at the head of a singly linked list?</span></div>
+          <div class="opts">
+            <div class="opt correct"><span class="k">A</span>O(1)</div>
+            <div class="opt"><span class="k">B</span>O(n)</div>
+            <div class="opt"><span class="k">C</span>O(log n)</div>
+            <div class="opt"><span class="k">D</span>O(n²)</div>
+          </div>
+          <div class="foot">
+            <span class="src">Source: Chapter 3 · page 4 — “Insertion at head requires only pointer reassignment.”</span>
+            <button class="btn btn-ghost btn-sm" data-demo="Opens an inline editor for the stem, options, and correct answer.">Edit</button>
+            <button class="btn btn-warn btn-sm" data-demo="Rejected questions can never enter an assessment.">Reject</button>
+            <button class="btn btn-green btn-sm" onclick="toast('Question 1 approved.')">Approve</button>
+          </div>
+        </div>
+
+        <div class="mcq">
+          <div class="q"><span class="n">2.</span><span>Which pointer does a doubly linked list node hold that a singly linked list node does not?</span></div>
+          <div class="opts">
+            <div class="opt"><span class="k">A</span>A pointer to the head</div>
+            <div class="opt correct"><span class="k">B</span>A pointer to the previous node</div>
+            <div class="opt"><span class="k">C</span>A pointer to the tail</div>
+            <div class="opt"><span class="k">D</span>A pointer to itself</div>
+          </div>
+          <div class="foot">
+            <span class="src">Source: Chapter 3 · page 7 — “Each node stores prev and next references.”</span>
+            <button class="btn btn-ghost btn-sm" data-demo="Opens the inline editor.">Edit</button>
+            <button class="btn btn-warn btn-sm" data-demo="Rejects this question.">Reject</button>
+            <button class="btn btn-green btn-sm" onclick="toast('Question 2 approved.')">Approve</button>
+          </div>
+        </div>
+
+        <div class="mcq">
+          <div class="q"><span class="n">3.</span><span>Which technique detects a cycle in a linked list in O(1) extra space?</span></div>
+          <div class="opts">
+            <div class="opt"><span class="k">A</span>Storing visited nodes in a hash set</div>
+            <div class="opt correct"><span class="k">B</span>Floyd's slow and fast pointer traversal</div>
+            <div class="opt"><span class="k">C</span>Sorting the list first</div>
+            <div class="opt"><span class="k">D</span>Recursive depth counting</div>
+          </div>
+          <div class="foot">
+            <span class="src">Source: Chapter 3 · page 12 — “Two pointers advancing at different rates will meet inside a cycle.”</span>
+            <button class="btn btn-ghost btn-sm" data-demo="Opens the inline editor.">Edit</button>
+            <button class="btn btn-warn btn-sm" data-demo="Rejects this question.">Reject</button>
+            <button class="btn btn-green btn-sm" onclick="toast('Question 3 approved.')">Approve</button>
+          </div>
+        </div>
+
+        <div style="text-align:center;padding:8px 0 4px">
+          <button class="btn btn-ghost btn-sm" data-demo="Loads the remaining 7 questions in this set.">Show remaining 7 questions</button>
+        </div>
+      </section>
+
+      <!-- ═══ SUBJECTS ═══ -->
+      <section class="page" id="subjects">
+        <div class="section-head">
+          <div><div class="t">Subjects</div><div class="d">Subjects in your scope, and how far each one's content is through review.</div></div>
+        </div>
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search subject or code…"></div>
+          <select><option>All my departments</option><option>Computer Science</option><option>Information Technology</option></select>
+          <select><option>All semesters</option><option>Sem 3</option><option>Sem 4</option></select>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Subject</th><th>Dept · Sem</th><th>Chapters</th><th>Videos approved</th><th>MCQs approved</th><th>Content progress</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Data Structures</span><div class="sub">CS204</div></td><td>CSE · Sem 4</td><td class="num">6</td><td class="num">2 / 6</td><td class="num">18 / 58</td><td style="width:150px"><div class="bar"><i style="width:33%"></i></div></td><td class="actions"><a data-demo="Opens the chapter list for this subject.">View</a></td></tr>
+              <tr><td><span class="strong">DBMS</span><div class="sub">CS206</div></td><td>CSE · Sem 4</td><td class="num">7</td><td class="num">3 / 7</td><td class="num">24 / 71</td><td style="width:150px"><div class="bar"><i style="width:43%"></i></div></td><td class="actions"><a data-demo="Opens the chapter list.">View</a></td></tr>
+              <tr><td><span class="strong">Operating Systems</span><div class="sub">CS205</div></td><td>CSE · Sem 4</td><td class="num">5</td><td class="num">4 / 5</td><td class="num">36 / 44</td><td style="width:150px"><div class="bar green"><i style="width:80%"></i></div></td><td class="actions"><a data-demo="Opens the chapter list.">View</a></td></tr>
+              <tr><td><span class="strong">Computer Networks</span><div class="sub">IT302</div></td><td>IT · Sem 4</td><td class="num">6</td><td class="num">1 / 6</td><td class="num">9 / 54</td><td style="width:150px"><div class="bar amber"><i style="width:16%"></i></div></td><td class="actions"><a data-demo="Opens the chapter list.">View</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ STUDENTS ═══ -->
+      <section class="page" id="students">
+        <div class="section-head">
+          <div><div class="t">Students</div><div class="d">Students within your scope, with learning, Q&amp;A, and assessment activity.</div></div>
+        </div>
+        <div class="toolbar">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="Search student or roll number…"></div>
+          <select><option>All my departments</option><option>Computer Science</option><option>Information Technology</option></select>
+          <select><option>All semesters</option><option>Sem 3</option><option>Sem 4</option></select>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Student</th><th>Roll no.</th><th>Sem</th><th>Chapters</th><th>Watch time</th><th>Q&amp;A</th><th>Avg score</th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Aravind R</span><div class="sub">aravind.r@abceng.edu</div></td><td class="num">22CS118</td><td>Sem 4</td><td class="num">14 / 32</td><td class="num">42 hrs</td><td class="num">128</td><td><span class="pill green plain">78%</span></td></tr>
+              <tr><td><span class="strong">Priya N</span><div class="sub">priya.n@abceng.edu</div></td><td class="num">22CS204</td><td>Sem 4</td><td class="num">19 / 32</td><td class="num">55 hrs</td><td class="num">176</td><td><span class="pill green plain">82%</span></td></tr>
+              <tr><td><span class="strong">Sneha K</span><div class="sub">sneha.k@abceng.edu</div></td><td class="num">22CS150</td><td>Sem 4</td><td class="num">16 / 32</td><td class="num">48 hrs</td><td class="num">140</td><td><span class="pill green plain">74%</span></td></tr>
+              <tr><td><span class="strong">Rahul V</span><div class="sub">rahul.v@abceng.edu</div></td><td class="num">23IT121</td><td>Sem 3</td><td class="num">11 / 28</td><td class="num">33 hrs</td><td class="num">88</td><td><span class="pill amber plain">67%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ INTERVIEWS ═══ -->
+      <section class="page" id="interviews">
+        <div class="section-head">
+          <div><div class="t">Interview Assignments</div><div class="d">Assign AI mock interviews to final-year students in your departments.</div></div>
+          <button class="btn btn-primary" data-demo="Same assignment flow as College Admin, scoped to your departments."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New assignment</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Assignment</th><th>Cohort</th><th>Mode</th><th>Due</th><th>Completion</th><th>Avg score</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="strong">Placement readiness — CSE</span><div class="sub">Frontend Developer · Intermediate</div></td><td>B.Tech CSE · Sem 8</td><td><span class="pill violet plain">Full</span></td><td class="sub">30 Aug</td><td style="width:160px"><div class="bar green"><i style="width:82%"></i></div><div class="sub" style="margin-top:4px">128 / 156</div></td><td><span class="pill green plain">74%</span></td><td class="actions"><a data-demo="Per-student status and score breakdown.">Track</a></td></tr>
+              <tr><td><span class="strong">Mock round 1 — IT</span><div class="sub">Backend Developer · Beginner</div></td><td>B.Tech IT · Sem 8</td><td><span class="pill blue plain">Mock</span></td><td class="sub">1 Sep</td><td style="width:160px"><div class="bar"><i style="width:58%"></i></div><div class="sub" style="margin-top:4px">70 / 120</div></td><td><span class="pill amber plain">68%</span></td><td class="actions"><a data-demo="Per-student status.">Track</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ ANALYTICS (HOD only) ═══ -->
+      <section class="page" id="analytics">
+        <div class="section-head">
+          <div><div class="t">Department Analytics</div><div class="d">Subject-wise engagement across your departments, last 30 days.</div></div>
+          <button class="btn btn-ghost" data-demo="Export honours the current scope and period."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 21h16"/></svg>Export</button>
+        </div>
+        <div class="stats c4">
+          <div class="stat"><div class="k">Watch time</div><div class="v">2,525<small> hrs</small></div><div class="s up">+9% vs last month</div></div>
+          <div class="stat"><div class="k">Q&amp;A asked</div><div class="v">8,040</div><div class="s up">+6%</div></div>
+          <div class="stat"><div class="k">Assessments taken</div><div class="v">3,180</div><div class="s">Avg 74%</div></div>
+          <div class="stat"><div class="k">Interviews taken</div><div class="v">1,450</div><div class="s">CSE 76% · IT 72%</div></div>
+        </div>
+        <div class="cols">
+          <div class="card card-p">
+            <h3 style="font-size:14.5px;font-weight:800;margin-bottom:3px">Watch time by subject</h3>
+            <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Played seconds, not elapsed time — seeking ahead does not count.</p>
+            <div class="cmp"><div class="nm">Data Structures</div><div class="track"><i style="width:100%;background:var(--blue)"></i></div><div class="val">820</div></div>
+            <div class="cmp"><div class="nm">DBMS</div><div class="track"><i style="width:82%;background:var(--sky)"></i></div><div class="val">670</div></div>
+            <div class="cmp"><div class="nm">Operating Systems</div><div class="track"><i style="width:64%;background:var(--violet)"></i></div><div class="val">525</div></div>
+            <div class="cmp"><div class="nm">Computer Networks</div><div class="track"><i style="width:62%;background:var(--amber)"></i></div><div class="val">510</div></div>
+          </div>
+          <div class="card card-p">
+            <h3 style="font-size:14.5px;font-weight:800;margin-bottom:3px">Q&amp;A questions by subject</h3>
+            <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Where students needed the AI tutor most.</p>
+            <div class="cmp"><div class="nm">Data Structures</div><div class="track"><i style="width:100%;background:var(--blue)"></i></div><div class="val">2,610</div></div>
+            <div class="cmp"><div class="nm">DBMS</div><div class="track"><i style="width:78%;background:var(--sky)"></i></div><div class="val">2,040</div></div>
+            <div class="cmp"><div class="nm">Computer Networks</div><div class="track"><i style="width:70%;background:var(--violet)"></i></div><div class="val">1,820</div></div>
+            <div class="cmp"><div class="nm">Operating Systems</div><div class="track"><i style="width:60%;background:var(--amber)"></i></div><div class="val">1,570</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Access-denied state, shown when Faculty tries the institution-wide dashboard -->
+      <section class="page" id="denied">
+        <div class="card">
+          <div class="empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <div class="t">You don't have access to this module</div>
+            <div class="d">Department Analytics is available to HODs only. Your Faculty role is scoped to the subjects assigned to you.</div>
+            <button class="btn btn-ghost" onclick="go('dashboard')">Back to dashboard</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Review modal -->
+<div class="overlay" id="mReview">
+  <div class="modal wide">
+    <div class="modal-h">
+      <div><h3 id="rvTitle">Linked Lists</h3><div class="crumb" id="rvCrumb">Data Structures · CSE · Sem 4</div></div>
+      <button class="modal-x" onclick="closeModal('mReview')">&times;</button>
+    </div>
+    <div class="modal-b split">
+      <div>
+        <div class="blk">
+          <div class="lb">AI-generated chapter video</div>
+          <div class="video">
+            <span class="lbl">Now teaching · Tutor Priya</span>
+            <div class="play" data-demo="Playback of the generated lecture."><svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>
+            <div class="av"></div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">
+            <span class="pill grey plain">26:05</span>
+            <span class="pill grey plain">English</span>
+            <span class="pill grey plain">Generated from 1 source file</span>
+          </div>
+        </div>
+        <div class="blk">
+          <div class="lb">Source material</div>
+          <div class="srcfile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>
+            linkedlist_ch3.pdf · 5.1 MB
+            <span class="gr" data-demo="Opens the original source file the video was generated from.">Open</span>
+          </div>
+        </div>
+        <div class="blk" style="margin-bottom:0">
+          <div class="lb">Generated MCQs — separate approval required</div>
+          <div class="notice warn" style="margin-bottom:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            <div><b>10 questions awaiting approval</b>Approving this video publishes the lecture. The assessment stays locked until you approve the questions too.
+              <br><a class="link" onclick="closeModal('mReview');go('mcq')">Review MCQs now →</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="blk">
+          <div class="lb">Decision</div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6">
+            Approve to publish this chapter to students immediately, or send it back to the
+            college admin with comments for a regenerate.
+          </p>
+        </div>
+        <div class="blk">
+          <div class="lb">Comments <span style="text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted)">— optional to approve, required to send back</span></div>
+          <textarea placeholder="e.g. Slow the pacing on traversal and add one worked example…"></textarea>
+        </div>
+        <div class="blk" style="margin-bottom:0">
+          <div class="lb">History</div>
+          <div style="font-size:12px;color:var(--muted-2);line-height:1.9">
+            <div>Uploaded by ABC Engineering · 2 days ago</div>
+            <div>Text extracted &amp; embedded · 2 days ago</div>
+            <div>Video + MCQs generated · 2 days ago</div>
+            <div>Assigned to you · 2 days ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" onclick="closeModal('mReview')">Cancel</button>
+      <div class="right">
+        <button class="btn btn-warn" onclick="closeModal('mReview');toast('Sent back to college admin with comments.')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Send back
+        </button>
+        <button class="btn btn-green" onclick="closeModal('mReview');toast('Approved — video published to students.')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          Approve &amp; publish
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/quirri.js"></script>
+<script>
+  window.PAGE_TITLES = {
+    dashboard:['Dashboard','Review AI-generated content and track your departments.'],
+    review:['Video Review','Approve chapter videos, or send them back with comments.'],
+    mcq:['MCQ Review','Approve generated questions before students are assessed on them.'],
+    subjects:['Subjects','Subjects in your scope and their review progress.'],
+    students:['Students','Students within your scope.'],
+    interviews:['Interview Assignments','Assign AI mock interviews to final-year students.'],
+    analytics:['Department Analytics','Subject-wise engagement across your departments.'],
+    denied:['Access denied','This module is not available to your role.']
+  };
+
+  function openReview(title, crumb){
+    document.getElementById('rvTitle').innerHTML = title;
+    document.getElementById('rvCrumb').innerHTML = crumb;
+    openModal('mReview');
+  }
+
+  /* Demo: switch between HOD and Faculty to show the RBAC difference on one screen. */
+  function switchRole(){
+    var faculty = document.getElementById('roleSel').value === 'faculty';
+    document.getElementById('facultyNote').style.display = faculty ? '' : 'none';
+
+    var nav = document.getElementById('navAnalytics');
+    nav.classList.toggle('locked', faculty);
+    if (faculty && !nav.querySelector('.lockicon')) {
+      nav.insertAdjacentHTML('beforeend',
+        '<svg class="lockicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+        '<rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>');
+    }
+    if (!faculty) { var l = nav.querySelector('.lockicon'); if (l) l.remove(); }
+
+    document.getElementById('whoAv').textContent   = faculty ? 'AP' : 'KA';
+    document.getElementById('whoName').textContent = faculty ? 'Ms. Anitha P' : 'Dr. Karthik';
+    document.getElementById('whoRole').textContent = faculty ? 'Faculty · Data Structures, DBMS' : 'HOD · Computer Science, IT';
+    document.getElementById('scopeLabel').textContent = faculty ? 'Faculty · 2 subjects' : 'HOD · 2 departments';
+
+    var d = document.getElementById('deptSel');
+    d.innerHTML = faculty
+      ? '<option>Data Structures</option><option>DBMS</option>'
+      : '<option>All my departments</option><option>Computer Science</option><option>Information Technology</option>';
+
+    if (faculty && document.getElementById('analytics').classList.contains('show')) go('denied');
+  }
+</script>
+</body>
+</html>

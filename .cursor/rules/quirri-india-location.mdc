@@ -1,0 +1,28 @@
+---
+description: India-only location & phone rules for Quirri B2B (always apply)
+alwaysApply: true
+---
+
+# Quirri India location rules (always)
+
+**Product scope:** Quirri Phase 1 B2B is **India only**. Do not add multi-country address UIs.
+
+**Full contract:** `docs/QUIRRI_INDIA_LOCATION_RULES.md`  
+**Data:** `src/lib/india/` · **UI:** `IndiaLocationFields` + `QuirriCombobox`  
+**Validation:** `FIELD_RULES.pincode` + `schemas/indiaLocation.js`
+
+## Hard rules
+
+1. **Country** is always **India** (`IN`) — show locked/disabled; never a country picker.
+2. **State / UT** and **District** use **`QuirriCombobox`** (type-to-filter). Never free-text state/district; never OS `<select>`.
+3. Choosing a state clears district; district options come from `getDistrictsForState(state)`.
+4. **Pincode** uses `fieldType="pincode"` — exactly **6 digits** (Indian PIN).
+5. **Phone / mobile** defaults to **`+91`** (`INDIA_COUNTRY.phonePrefix` / form defaultValues). Catalog filter keeps `+91` when cleared.
+6. Reuse **`IndiaLocationFields`** for every new institution / address form (colleges, universities, future campus/location forms). Do not invent a second location pattern.
+7. API payloads include `country: 'IN'`, `state`, `district`, `city`, `pincode` when those fields exist on the form. Backend may currently persist only `city`/`state` — still send the full shape so BE can extend without another FE pass.
+
+## Forbidden
+
+- Country dropdowns or non-IN defaults  
+- Free-text State/District inputs on new or edited forms  
+- Inventing per-page state lists or pincode regex outside `FIELD_RULES` / `src/lib/india`

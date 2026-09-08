@@ -93,16 +93,9 @@ export const authApi = {
     return { data: { ...session.user, user: session.user, role: session.role, tenant_id: session.tenant_id, permissions: session.permissions } };
   },
 
-  register: (data) => api.post('/auth/register', {
-    first_name: data.firstName,
-    last_name: data.lastName,
-    email: data.email,
-    password: data.password,
-    confirm_password: data.confirmPassword,
-    phone_number: data.phoneNumber,
-    email_verified: true,
-    user_type: 'individual',
-  }),
+  register: () => {
+    throw new Error('Open self-signup is not available in B2B. Accounts are created by an administrator.');
+  },
 
   logout: async () => {
     const res = await api.post('/auth/logout');

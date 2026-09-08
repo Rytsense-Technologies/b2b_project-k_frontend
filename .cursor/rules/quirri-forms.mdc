@@ -1,0 +1,52 @@
+---
+description: Field Rules Catalog — mandatory for every input/form (always apply)
+alwaysApply: true
+---
+
+# Quirri forms & field validation (MANDATORY)
+
+**Source of truth:** `src/lib/validation/`  
+**UX copy:** `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` §34  
+**UI binding:** `QuirriRHFField` / `QuirriControlledField` in `src/components/superadmin/quirri-ui.jsx`
+
+## Hard rule — every new or edited input
+
+Before creating or changing **any** text/email/phone/password/OTP/search/code/name field:
+
+1. Pick a type from `FIELD_RULES` in `src/lib/validation/fields.js`:
+   - `personName` · `institutionName` · `placeName` · `academicLabel` · `code` · `email` · `phone` · `password` · `otp` · `address` · `search` · `url` · `positiveInt` · `pincode`
+2. If no type fits — **extend `fields.js` once**, then reuse. Never invent a one-off regex in a page.
+3. Add/compose a Zod schema under `src/lib/validation/schemas/` using catalog helpers only.
+4. Wire UI with `react-hook-form` + `zodResolver` + `QuirriRHFField` (`fieldType="…"`).
+5. Selects/checkboxes/file inputs: validate via schema; labels via `QuirriField`.
+6. **India location** (country/state/district/city/pincode): use `IndiaLocationFields` + `QuirriCombobox` — see `.cursor/rules/quirri-india-location.mdc`. Phone defaults to `+91`.
+
+## Forbidden
+
+- Raw `<input>` for user-editable text without `fieldType` / catalog filter
+- `toast.error('… is required')` as the only validation
+- Hard-coded `maxLength` / charset regex / `.trim()` rules duplicated in pages
+- Vague errors: “Invalid input.”
+
+## Dual validation
+
+1. **L1** Catalog filter while typing (where charset is strict)
+2. **L2** Zod on blur/submit (API truth)
+3. Never rely on L1 alone
+
+## Already migrated (follow these patterns)
+
+- Login email + password max — `src/app/auth/login/page.js`, `src/app/admin/(auth)/login/page.jsx`
+- OTP — `src/components/auth/OTPModal.jsx`
+- Universities — `src/app/superadmin/universities/page.jsx` (`IndiaLocationFields`)
+- Colleges — `src/app/superadmin/colleges/page.jsx` (`IndiaLocationFields`)
+- Platform Users create — `src/app/superadmin/users/page.jsx`
+- College Admin Students / Staff — `src/app/admin/(portal)/students/page.jsx`, `…/staff/page.jsx`
+- Settings profile + password — `src/app/superadmin/settings/page.jsx`, `src/app/admin/(portal)/settings/page.jsx`
+
+## Agent checklist before finishing a form change
+
+- [ ] Schema imported from `@/lib/validation`
+- [ ] Every editable text field has a `fieldType`
+- [ ] No ad-hoc toast validation for empty/charset
+- [ ] Errors are calm and specific (Quirri §34)

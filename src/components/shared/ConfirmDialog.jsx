@@ -20,10 +20,10 @@ export default function ConfirmDialog({ open, title = 'Are you sure?', message, 
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-white transition-colors ${
+            className={`flex-1 py-2.5 px-6 min-h-11 rounded-full text-sm font-medium text-white transition-colors ${
               danger
-                ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'bg-error hover:opacity-90'
+                : 'bg-amber-700 hover:bg-amber-600'
             }`}
           >
             {confirmLabel}

@@ -52,7 +52,7 @@ function SidebarSupportContent({ plan }) {
           </p>
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
-            className="text-xs font-medium text-[#0b66d6] hover:underline"
+            className="text-xs font-medium text-[#0E5C6B] hover:underline"
           >
             {SUPPORT_EMAIL}
           </a>
@@ -234,7 +234,7 @@ export default function AppSidebar() {
                 sidebarOpen ? 'gap-3 px-3' : 'justify-center px-0'
               } ${
                 active
-                  ? 'text-[#0b66d6]'
+                  ? 'text-[#0E5C6B]'
                   : 'text-[#7b7f8c] hover:text-[#2b3240]'
               }`}
               onMouseEnter={!sidebarOpen ? (e) => showNavTooltip(e, label) : undefined}
@@ -313,7 +313,7 @@ export default function AppSidebar() {
                 >
                   <Icon size={16} className="flex-shrink-0" />
                   <span className="flex-1">{label}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 ${accent ? '' : 'hidden'}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded bg-brand-100 text-brand-700 ${accent ? '' : 'hidden'}`}>
                     ✦
                   </span>
                 </Link>

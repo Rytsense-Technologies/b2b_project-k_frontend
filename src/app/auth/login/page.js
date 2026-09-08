@@ -1,25 +1,24 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Loader2, Lock } from 'lucide-react';
 import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import PasswordInput from '@/components/auth/PasswordInput';
+import { QuirriControlledField } from '@/components/superadmin/quirri-ui';
 import { loginSchema } from '@/lib/validations';
+import { FIELD_RULES } from '@/lib/validation';
 import { useAppDispatch } from '@/store/hooks';
-import { setCredentials } from '@/store/slices/authSlice';
-import { loginWithRbac } from '@/lib/api/auth';
+import { setCredentials, clearCredentials } from '@/store/slices/authSlice';
+import { loginWithRbac, authApi } from '@/lib/api/auth';
+import { getApiErrorMessage, isCredentialFailure } from '@/lib/api/errors';
 import { getPostLoginPath, isB2bRole } from '@/lib/auth/rbac';
-import { setSessionCookie, setRoleCookie, setTenantCookie } from '@/lib/tokens';
+import { setSessionCookie, setRoleCookie, setTenantCookie, clearTokens } from '@/lib/tokens';
 import { ROLES, getPermissions } from '@/lib/permissions';
 
-const DEV_BYPASS_AUTH =
-  process.env.NODE_ENV === 'development' ||
-  process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true' ||
-  (process.env.VERCEL === '1' && process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH !== 'false');
+const DEV_BYPASS_AUTH = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_MS = 15 * 60 * 1000;
@@ -66,9 +65,10 @@ function LoginForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
-  } = useForm(DEV_BYPASS_AUTH ? {} : { resolver: zodResolver(loginSchema) });
+  } = useForm(DEV_BYPASS_AUTH ? {} : { resolver: zodResolver(loginSchema), mode: 'onBlur' });
 
   const checkLockout = useCallback(() => {
     const { lockedUntil } = getLockoutState();
@@ -118,11 +118,10 @@ function LoginForm() {
 
   const isLockedOut = lockoutRemaining > 0;
   const lockoutMinutes = Math.ceil(lockoutRemaining / 60000);
-  const lockoutSeconds = Math.ceil((lockoutRemaining % 60000) / 1000);
 
   const onSubmit = async (data) => {
     if (checkLockout()) {
-      toast.error(`Too many failed attempts. Try again in ${lockoutMinutes}m ${lockoutSeconds}s.`);
+      toast.error(`Too many failed attempts. Try again in ${lockoutMinutes} minutes.`);
       return;
     }
 
@@ -176,6 +175,28 @@ function LoginForm() {
         plan_selected: isB2b ? true : (session.plan_selected ?? true),
       }));
 
+      if (role !== ROLES.SUPERADMIN) {
+        clearTokens();
+        dispatch(clearCredentials());
+        try {
+          sessionStorage.removeItem('pk_user');
+          sessionStorage.removeItem('pk_plan');
+        } catch {
+          /* ignore */
+        }
+        try {
+          await authApi.logout();
+        } catch {
+          /* httpOnly cookies may still clear via Set-Cookie */
+        }
+        const portalHint =
+          role === ROLES.COLLEGE_ADMIN
+            ? 'College Admins sign in at /admin/login.'
+            : 'Use the login page for your role.';
+        toast.error(`This portal is for Super Admin only. ${portalHint}`);
+        return;
+      }
+
       const displayName = user.first_name || user.name || 'there';
       toast.success(`Welcome back, ${displayName}!`);
 
@@ -186,76 +207,102 @@ function LoginForm() {
 
       router.push(getPostLoginPath(role, onbStep));
     } catch (err) {
-      recordFailure();
-      const detail = err.response?.data?.detail;
-      const msg = err.message ?? (typeof detail === 'string' ? detail : null);
-      toast.error(msg && msg !== 'Not Found' ? msg : 'Invalid email or password.');
+      if (isCredentialFailure(err)) {
+        recordFailure();
+      }
+      toast.error(getApiErrorMessage(err, 'Invalid email or password.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="quirri-auth-wrap quirri-auth-wrap--centered">
-      <div className="quirri-auth-panel">
-        <div className="quirri-auth-card">
-          <QuirriLogo />
-          <h2>Sign in</h2>
-          <p className="quirri-sub">
+    <div className="auth">
+      <div className="auth-shell">
+        <div className="auth-card">
+          <div className="auth-brand">
+            <QuirriLogo size="lg" priority />
+          </div>
+
+          <h1>Welcome back</h1>
+          <p className="sub">
             {tenantSlug
-              ? `Sign in to your ${tenantSlug} account.`
-              : 'Welcome back — enter your credentials to continue.'}
+              ? `Sign in to Quirri for ${tenantSlug}`
+              : 'Sign in to Quirri'}
           </p>
 
           {isLockedOut ? (
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <Lock size={32} className="text-red-500" />
-              <p className="text-sm text-red-600 font-medium">
-                Too many failed login attempts.
-              </p>
-              <p className="text-xs text-gray-500">
-                Try again in {lockoutMinutes}m {String(lockoutSeconds).padStart(2, '0')}s
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col" noValidate>
-              <div className="quirri-auth-field">
-                <label htmlFor="email">Email address</label>
-                <input
-                  {...register('email')}
-                  id="email"
-                  type="email"
-                  placeholder="admin@quirri.ai"
-                  autoComplete="email"
-                />
-                {errors.email && (
-                  <p className="text-xs text-red-500">{errors.email.message}</p>
-                )}
+            <>
+              <div className="notice err">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="4" y="10" width="16" height="10" rx="2" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+                <div>
+                  <b>Account temporarily locked</b>
+                  Too many failed attempts. Try again in {lockoutMinutes} minute{lockoutMinutes === 1 ? '' : 's'},
+                  or reset your password to regain access now.
+                </div>
               </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-block"
+                onClick={() => {
+                  clearLockout();
+                  toast.success('You can try signing in again.');
+                }}
+              >
+                Try again now
+              </button>
+              <a className="btn btn-ghost btn-block" href="/auth/forgot-password" style={{ marginTop: 8 }}>
+                Reset password
+              </a>
+            </>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <Controller
+                control={control}
+                name="email"
+                defaultValue=""
+                render={({ field, fieldState }) => (
+                  <QuirriControlledField
+                    fieldType="email"
+                    label="Email"
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    inputRef={field.ref}
+                    error={fieldState.error}
+                    placeholder="you@college.edu"
+                  />
+                )}
+              />
 
-              <div className="quirri-auth-field">
+              <div className="field">
                 <label htmlFor="password">Password</label>
                 <PasswordInput
+                  id="password"
                   register={register('password')}
                   error={errors.password?.message}
-                  inputClassName="w-full px-[14px] py-3 border border-[#dbe4ef] rounded-[10px] text-[13px] font-[inherit]"
+                  maxLength={FIELD_RULES.password.max}
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="quirri-btn quirri-btn-primary w-full mt-2 flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <><Loader2 size={16} className="animate-spin" /> Signing in…</>
-                ) : (
-                  'Sign In'
-                )}
+              <div className="auth-row">
+                <a className="link" href="/auth/forgot-password">Forgot password?</a>
+              </div>
+
+              <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
+                {loading ? 'Signing in…' : 'Sign in'}
               </button>
             </form>
           )}
         </div>
+
+        <p className="auth-foot">
+          Access is by invitation from your administrator.
+        </p>
       </div>
     </div>
   );

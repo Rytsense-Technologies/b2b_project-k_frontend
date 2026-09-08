@@ -1,0 +1,165 @@
+---
+description: Quirri AI master build guidance — brand, UX, accessibility, workflow (always apply)
+alwaysApply: true
+---
+
+# Quirri AI — Cursor Development Guidance
+
+**Full reference:** `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` (76 sections — brand, tokens, components, accessibility, workflow).
+
+Read and follow that document for **how** to build. Use the documents below for **what** to build.
+
+---
+
+## 1. ROLE
+
+You are the senior full-stack, UI/UX, accessibility, and design-system engineer for this Quirri AI product.
+
+Inspect the existing repository first. Preserve stack, architecture, routing, API structure, and components unless there is a strong technical reason to change. Do not rewrite unnecessarily.
+
+---
+
+## 2. FIRST STEP — INSPECT BEFORE CODING
+
+Before modifying or creating code:
+
+1. Query graphify (`graphify query "<prompt>" --budget 1500`) — do not re-scan the repo blindly.
+2. Understand folder structure, framework, package manager, components, routing, APIs, auth, styling, env, and tests.
+3. Search for existing components/utilities before creating new ones.
+4. Do not duplicate functionality or create a second design system.
+
+---
+
+## 3. AUTHORITATIVE REFERENCES (priority order)
+
+| Priority | Document | Role |
+|----------|----------|------|
+| **1 (contract)** | `assets/ProjectK_B2B_SOW_v1.0.pdf` | Phase 1 B2B scope, roles, portals, exclusions |
+| **2 (product)** | `assets/PROJECT_K_DEVELOPMENT_GUIDE.md` | What to build — modules, tenancy, RBAC, hierarchy |
+| **2b (backend API)** | `docs/BACKEND_STATUS_REPORT.md` | Live backend epics + `/api/v1` surface — align clients here |
+| **2c (FE↔BE map)** | `docs/FRONTEND_BACKEND_ALIGNMENT.md` | Which screens have live APIs vs empty/error only |
+| **3 (brand & build)** | `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` | How to build — brand, tokens, UX writing, a11y, workflow |
+| **4 (UI shell — post-login)** | `new_updated_design_four/` | **Primary** client design for SA / CA / HOD / Student after login — see `docs/QUIRRI_UI_REFERENCE.md` |
+| **4b (legacy demo)** | `ProjectK_Client_Demo/` | Older static click-through — keep; do not prefer over `new_updated_design_four` for portal chrome |
+
+**Project K app rules (Phase 1 B2B):**
+
+- Super Admin login via real API at `/auth/login` (`NEXT_PUBLIC_DEV_BYPASS_AUTH=false` unless user enables bypass)
+- College Admin `/admin/login` · Faculty `/faculty/login` · Student `/student/login` — **same centered Quirri card** (do not adopt `Login.dc.html` split layout)
+- Middleware by role: `superadmin` → `/superadmin/*`, `college_admin` → `/admin/*`, `faculty` → `/faculty/*`, `student` → `/student/*`
+- No static/mock portal data in `src/` — APIs only; show loading/error/empty
+- Post-login chrome matches `new_updated_design_four`: dark teal sidebar, Plus Jakarta Sans, mist `#F4F6F7`, `PortalHero`
+- Nav modules follow the design pack tables in `docs/QUIRRI_UI_REFERENCE.md`
+- Do not reintroduce Skill Courses, Email Management CRUD, AI Usage ₹ dashboard, or student billing UI
+
+---
+
+## 4. BRAND & DESIGN SYSTEM (summary)
+
+Follow `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` sections 3–76, reconciled with `new_updated_design_four/quirri-ui.css`:
+
+- **Colours:** Quirri Teal `#0E5C6B`, Deep Teal `#06252B`, Signal Amber `#F5821F` (action only), Mist `#F4F6F7`, Ink `#102228` — use defined ramps only
+- **Typography:** **Plus Jakarta Sans** for post-login portals; **Poppins** for auth login cards only
+- **Spacing:** 4px base unit (4, 8, 12, 16, 24, 32, 48, 64, 96)
+- **Radius (portals):** 12 / 18 / full pill CTAs
+- **One amber CTA per view** — Amber 700 `#AC5B16` for buttons with white text (not Signal Amber)
+- Soft radial atmosphere on `.q-app-shell` is allowed (design pack); no generic purple AI SaaS look
+- **Accessibility:** WCAG 2.2 AA — contrast, focus rings, keyboard nav, 44×44px touch targets, reduced motion
+- **UX tone:** Calm, plain, encouraging — "a calm, well-prepared friend who wants you to do well"
+
+Use central design tokens (`src/styles/quirri-design.css` and CSS variables). Do not scatter hard-coded brand values.
+
+---
+
+## 4.1 FORMS & FIELD VALIDATION (MANDATORY)
+
+Every editable input must use the Field Rules Catalog:
+
+- Catalog: `src/lib/validation/fields.js` (`FIELD_RULES`)
+- Schemas: `src/lib/validation/schemas/`
+- UI: `QuirriRHFField` / `QuirriControlledField` with `fieldType`
+- Rule file: `.cursor/rules/quirri-forms.mdc`
+
+Do **not** invent maxLength, charset regex, or toast-only validation in page files. Extend the catalog once, reuse everywhere.
+
+---
+
+## 4.2 LOGIN UI PATTERN (MANDATORY — FROZEN)
+
+**User lock:** Do **not** change login UI design until the user explicitly asks. See `.cursor/rules/quirri-login-freeze.mdc`.
+
+All product login screens use the **centered Quirri card** pattern (not a split hero; not `Login.dc.html`):
+
+- Mist canvas with a centered white card (`--radius-lg`, soft shadow) · Poppins
+- Official logo from `/public/quirri-logo.svg` via `QuirriLogo` (centered)
+- Headline: **Welcome back** · Subcopy: **Sign in to Quirri**
+- Catalog-bound email + password · Primary CTA: Amber 700 **Sign in**
+- Routes: `/auth/login` (SA) · `/admin/login` · `/faculty/login` · `/student/login`
+
+Reference: SA `src/app/auth/login/page.js`; CA `src/app/admin/(auth)/login/page.jsx`; shared `PortalLoginPage` for faculty/student. Auth **logic** may change; **visual design** may not.
+
+---
+
+## 5. DEVELOPMENT WORKFLOW
+
+For every feature (see full doc §72–76):
+
+1. **Understand** — inspect repo + graphify; read scope/design refs
+2. **Plan** — reuse components, identify API/state/a11y/brand needs
+3. **Implement** — existing architecture + Quirri design system
+4. **Integrate** — connect to app; no isolated demo code in `src/`
+5. **Validate** — function, responsive, a11y, brand, loading/empty/error states
+6. **Refine** — remove duplicates, arbitrary values, clutter
+7. **Report** — what changed, files touched, decisions, assumptions, open issues
+
+### 5.1 Playwright (mandatory for UI)
+
+For **any** design change or visual/layout bug report:
+
+1. Use the **Playwright** MCP (`user-playwright`) — navigate, log in as Super Admin, screenshot, and hit-test.
+2. Prefer seeded Super Admin credentials from the API seed script — never echo passwords in chat.
+3. Confirm open + collapsed / before + after when the bug is state-dependent (e.g. sidebar toggle).
+4. Do not mark UI work done until Playwright evidence shows the fix.
+
+### 5.2 Tooltips (mandatory)
+
+- **Forbidden:** native HTML `title` attributes for hover hints (OS black/yellow tooltips).
+- **Required:** Quirri floating tips via `useQuirriTip` / `QuirriTooltip` (`src/components/superadmin/QuirriTooltip.jsx`).
+- **Look:** white card, Ink text, `--line` border, `--shadow-md`, Plus Jakarta Sans 12px / medium, `--radius` (8px), calm — never solid black panels.
+- Icon-only controls still need `aria-label`; the tip is supplementary.
+- Use for collapsed sidebar labels, icon buttons, and any truncated name that needs a hover reveal.
+
+### 5.3 Product UI — dropdowns & text (mandatory)
+
+Full contract: `docs/QUIRRI_PRODUCT_UI_RULES.md` · rule file: `.cursor/rules/quirri-product-ui.mdc`
+
+- **Dropdowns:** `QuirriSelect` (or labeled `quirri-select`); first option `All…` / `Select…`; 44px min-height; `aria-label` if no visible label.
+- **Text:** left-align titles/labels/body; right-align `.num`; center only login brand card; label → control → hint|error.
+- **Fonts:** post-login = Plus Jakarta Sans (sidebar module listing face, via `next/font` `--font-portal`); auth cards = Poppins only.
+- **Must-haves:** no mocks, one amber CTA, catalog fields, empty/error when API missing, Playwright for UI checks.
+- Applies to **existing and all future** builds — do not invent per-page layout or select styles.
+
+---
+
+## 6. PRIORITY ORDER
+
+```text
+1. Functional correctness
+2. Existing project architecture
+3. Accessibility
+4. Quirri brand system
+5. Responsive UX
+6. Performance
+7. Maintainability
+8. Visual polish
+```
+
+Never sacrifice accessibility for appearance. Never invent product modules, roles, brand colours, or auth flows unless required by scope.
+
+---
+
+## 7. GRAPHIFY
+
+After every code change: `graphify update . --no-cluster`
+
+Query before Read/Grep/Glob when `graphify-out/graph.json` exists.

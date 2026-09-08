@@ -4,7 +4,7 @@ import { ArrowRight, Building2 } from 'lucide-react';
 
 const PLAN_STYLE = {
   trial:    { label: 'Trial',    bg: '#fff7ed', text: '#c2410c' },
-  standard: { label: 'Standard', bg: '#eff6ff', text: '#1d4ed8' },
+  standard: { label: 'Standard', bg: '#eff6ff', text: '#0B4B58' },
   premium:  { label: 'Premium',  bg: '#f5f3ff', text: '#6d28d9' },
 };
 
@@ -58,7 +58,7 @@ export default function RecentTenants({ tenants = [], loading = false }) {
         </div>
         <Link
           href="/superadmin/tenants"
-          className="flex items-center gap-1 text-xs text-[#0b66d6] font-semibold hover:opacity-75 transition-opacity"
+          className="flex items-center gap-1 text-xs text-[#0E5C6B] font-semibold hover:opacity-75 transition-opacity"
         >
           View All <ArrowRight size={13} />
         </Link>
@@ -101,7 +101,7 @@ export default function RecentTenants({ tenants = [], loading = false }) {
                   <td className="px-4 py-3">
                     <Link
                       href={`/superadmin/tenants/${t.id}`}
-                      className="font-medium text-slate-800 hover:text-[#0b66d6] transition-colors"
+                      className="font-medium text-slate-800 hover:text-[#0E5C6B] transition-colors"
                     >
                       {t.name}
                     </Link>

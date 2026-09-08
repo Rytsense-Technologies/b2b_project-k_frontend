@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quirri · Sign in (UI demo)</title>
+  <meta name="description" content="Quirri B2B UI/UX walkthrough — static demo for client review. No live authentication.">
+  <link rel="stylesheet" href="./auth.css">
+</head>
+<body class="auth-page">
+  <div class="auth">
+    <div class="auth-shell">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <img src="./assets/quirri-logo.svg" alt="Quirri" width="180" height="60">
+        </div>
+
+        <h1>Welcome back</h1>
+        <p class="sub">Sign in to Quirri</p>
+
+        <p class="demo-label">UI demo — pick a portal</p>
+        <p class="hint" style="margin-bottom: 14px;">
+          This build is static for client review. There is no live login API —
+          choose a role below to open that portal’s UI.
+        </p>
+
+        <nav class="portal-list" aria-label="Demo portal logins">
+          <a class="portal-link" href="./superadmin.html">
+            <span>
+              Super Admin
+              <span class="meta" style="display:block;margin-top:2px">Platform · all tenants</span>
+            </span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="portal-link" href="./college-admin.html">
+            <span>
+              College Admin
+              <span class="meta" style="display:block;margin-top:2px">ABC Engineering</span>
+            </span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="portal-link" href="./hod-faculty.html">
+            <span>
+              HOD / Faculty
+              <span class="meta" style="display:block;margin-top:2px">Dr. Karthik · CSE</span>
+            </span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="portal-link" href="./student.html">
+            <span>
+              Student
+              <span class="meta" style="display:block;margin-top:2px">Aravind R · Sem 4</span>
+            </span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </nav>
+
+        <div class="divider">Account flows</div>
+        <div class="portal-list" style="margin-top:12px">
+          <a class="portal-link" href="./forgot-password.html">
+            <span>Forgot password</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a class="portal-link" href="./activate-account.html">
+            <span>Activate account</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+
+      <p class="auth-foot">
+        Access is by invitation from your administrator.<br>
+        <a href="./scope.html">Phase 1 scope map</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

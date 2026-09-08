@@ -43,15 +43,15 @@ function StepDots({ step }) {
         <div key={s} className="flex items-center gap-2">
           <div
             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-              s < step  ? 'bg-[#2563eb] text-white' :
-              s === step ? 'bg-[#2563eb] text-white ring-4 ring-[#e0deff]' :
+              s < step  ? 'bg-brand-500 text-white' :
+              s === step ? 'bg-amber-700 text-white ring-4 ring-amber-100' :
                            'bg-slate-100 text-slate-400'
             }`}
           >
             {s < step ? <CheckCircle2 size={14} /> : s}
           </div>
           {s < 3 && (
-            <div className={`h-px w-8 ${s < step ? 'bg-[#2563eb]' : 'bg-slate-200'}`} />
+            <div className={`h-px w-8 ${s < step ? 'bg-[#0E5C6B]' : 'bg-slate-200'}`} />
           )}
         </div>
       ))}
@@ -102,7 +102,7 @@ function Step1({ onParsed }) {
           handleFile(e.dataTransfer.files[0]);
         }}
         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-          dragging ? 'border-[#2563eb] bg-blue-50' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+          dragging ? 'border-[#0E5C6B] bg-brand-50' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
         }`}
       >
         <input
@@ -112,10 +112,10 @@ function Step1({ onParsed }) {
           className="hidden"
           onChange={(e) => handleFile(e.target.files[0])}
         />
-        <Upload size={28} className={`mx-auto mb-3 ${dragging ? 'text-[#2563eb]' : 'text-slate-300'}`} />
+        <Upload size={28} className={`mx-auto mb-3 ${dragging ? 'text-[#0E5C6B]' : 'text-slate-300'}`} />
         {fileName ? (
           <div className="flex items-center justify-center gap-2">
-            <FileText size={16} className="text-[#2563eb]" />
+            <FileText size={16} className="text-[#0E5C6B]" />
             <span className="text-sm font-medium text-slate-700">{fileName}</span>
           </div>
         ) : (
@@ -199,9 +199,9 @@ function Step2({ rows, onConfirm, onBack }) {
         <button
           onClick={onConfirm}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-white text-sm font-semibold"
-          style={{ backgroundColor: '#2563eb' }}
+          style={{ backgroundColor: '#AC5B16' }}
         >
-          Import {rows.length} Users <ChevronRight size={15} />
+          Import {rows.length} users <ChevronRight size={15} />
         </button>
       </div>
     </div>
@@ -244,7 +244,7 @@ function Step3({ result, onClose }) {
       <button
         onClick={onClose}
         className="w-full py-2.5 rounded-lg text-white text-sm font-semibold"
-        style={{ backgroundColor: '#2563eb' }}
+        style={{ backgroundColor: '#AC5B16' }}
       >
         Done
       </button>
@@ -322,7 +322,7 @@ export default function BulkUploadModal({ open, onClose, onSuccess }) {
           {/* Submitting overlay */}
           {mutation.isPending && step === 2 && (
             <div className="absolute inset-0 rounded-2xl bg-white/80 flex flex-col items-center justify-center gap-3">
-              <Loader2 size={28} className="animate-spin text-[#2563eb]" />
+              <Loader2 size={28} className="animate-spin text-[#0E5C6B]" />
               <p className="text-sm font-medium text-slate-600">Importing users…</p>
             </div>
           )}

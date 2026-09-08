@@ -22,6 +22,8 @@ export function getApiBaseUrl() {
       return PRODUCTION_API_BASE;
     }
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
+      if (fromEnv) return fromEnv;
       return LOCAL_API_BASE;
     }
     // HTTPS custom domain — avoid cross-origin calls to raw IP (mixed content / CORS)
