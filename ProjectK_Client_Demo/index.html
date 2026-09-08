@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project K — UI/UX Walkthrough</title>
+<link rel="stylesheet" href="assets/css/quirri.css">
+<style>
+  .lp{min-height:100vh;background:var(--bg-warm)}
+  .lp-hero{
+    position:relative;overflow:hidden;color:#fff;padding:62px 0 78px;
+    background:
+      radial-gradient(110% 90% at 88% 5%, rgba(14,165,183,.30), transparent 60%),
+      radial-gradient(80% 70% at 3% 100%, rgba(35,102,232,.26), transparent 60%),
+      linear-gradient(150deg,var(--teal) 0%,var(--teal-2) 100%);
+  }
+  .lp-hero::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(110% 100% at 75% 0%,#000 28%,transparent 76%);
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px;position:relative;z-index:1}
+  .lp-hero .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.6);font-weight:800;margin:26px 0 18px}
+  .lp-hero h1{font-family:var(--font-display);font-weight:400;font-size:clamp(40px,5.4vw,68px);line-height:1.03;letter-spacing:-.02em;margin-bottom:20px;max-width:17ch}
+  .lp-hero h1 em{font-style:italic;color:#8fe3e8}
+  .lp-hero .lede{color:#bcd6d4;font-size:16px;line-height:1.7;max-width:60ch}
+  .lp-meta{display:flex;gap:36px;flex-wrap:wrap;margin-top:38px;padding-top:28px;border-top:1px solid rgba(255,255,255,.14)}
+  .lp-meta .m .v{font-family:var(--font-display);font-size:30px;line-height:1;color:#fff}
+  .lp-meta .m .l{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:800;margin-top:7px}
+
+  .lp-body{padding:56px 0 80px}
+  .lp-sec{margin-bottom:52px}
+  .lp-sec > h2{font-family:var(--font-display);font-weight:400;font-size:30px;letter-spacing:-.01em;margin-bottom:8px}
+  .lp-sec > p{color:var(--muted);font-size:14px;max-width:70ch;line-height:1.7;margin-bottom:26px}
+
+  .roles{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .role{
+    display:block;background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);
+    padding:26px;box-shadow:var(--shadow-xs);transition:transform .16s,box-shadow .16s,border-color .16s;
+  }
+  .role:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:#cfdae7}
+  .role .rt{display:flex;align-items:center;gap:13px;margin-bottom:14px}
+  .role .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;color:#fff}
+  .role .ic svg{width:20px;height:20px;stroke-width:1.9}
+  .role .nm{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .role .sc{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+  .role .ds{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin-bottom:16px}
+  .role .mods{display:flex;flex-wrap:wrap;gap:6px}
+  .role .mod{font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:7px;background:#f1f5f9;color:var(--ink-2)}
+  .role .go{margin-top:18px;display:flex;align-items:center;gap:7px;color:var(--blue);font-weight:800;font-size:13px}
+
+  .flowmap{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .fstep{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 16px;box-shadow:var(--shadow-xs);position:relative}
+  .fstep .n{font-family:var(--font-display);font-size:22px;color:var(--sky);line-height:1;margin-bottom:10px}
+  .fstep .t{font-weight:800;font-size:13px;margin-bottom:5px}
+  .fstep .d{font-size:12px;color:var(--muted);line-height:1.55}
+  .fstep .who{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--teal);margin-top:10px}
+
+  .authlinks{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .alink{
+    display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;
+    box-shadow:var(--shadow-xs);transition:border-color .14s,transform .14s;
+  }
+  .alink:hover{border-color:var(--blue);transform:translateY(-2px)}
+  .alink .t{font-weight:800;font-size:13.5px;margin-bottom:4px}
+  .alink .d{font-size:12px;color:var(--muted);line-height:1.5}
+
+  @media(max-width:980px){.roles,.authlinks{grid-template-columns:1fr 1fr}.flowmap{grid-template-columns:1fr 1fr}}
+  @media(max-width:640px){.roles,.authlinks,.flowmap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="lp">
+
+  <header class="lp-hero">
+    <div class="wrap">
+      <div class="logo on-dark"><span class="ring">QUIRRI</span></div>
+      <div class="eyebrow">Project K · UI/UX walkthrough</div>
+      <h1>One platform.<br>Four <em>very different</em> jobs.</h1>
+      <p class="lede">
+        A clickable walkthrough of every screen in the Project K <b>B2B Phase 1</b> platform —
+        aligned to <b>ProjectK_B2B_SOW_v1.0.pdf</b>. From the institution that onboards, to the
+        faculty who approve, to the student who learns. Nothing beyond the B2B SOW has been designed in.
+      </p>
+      <div class="lp-meta">
+        <div class="m"><div class="v">3</div><div class="l">SOW portals</div></div>
+        <div class="m"><div class="v">5</div><div class="l">Roles</div></div>
+        <div class="m"><div class="v">4</div><div class="l">Demo shells</div></div>
+        <div class="m"><div class="v">B2B</div><div class="l">Phase 1 only</div></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="lp-body">
+    <div class="wrap">
+
+      <!-- Portals -->
+      <section class="lp-sec">
+        <h2>Start anywhere</h2>
+        <p>Each portal opens as a working click-through — navigate the menu, open modals, switch tabs. Sample data is illustrative.</p>
+
+        <div class="roles">
+          <a class="role" href="super-admin.html">
+            <div class="rt">
+              <div class="ic" style="background:linear-gradient(140deg,var(--blue),var(--sky))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3L2 8l10 5 10-5-10-5z"/><path d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/></svg>
+              </div>
+              <div><div class="nm">Super Admin</div><div class="sc">Knotopian · platform-wide</div></div>
+            </div>
+            <div class="ds">Onboards universities and colleges, provisions administrators, manages users across every institution, and watches the health of the whole platform.</div>
+            <div class="mods">
+              <span class="mod">Dashboard</span><span class="mod">Universities</span><span class="mod">Colleges</span>
+              <span class="mod">Platform Users</span><span class="mod">Upload &amp; Generate</span><span class="mod">Reports</span>
+              <span class="mod">Platform Health</span><span class="mod">Audit Logs</span><span class="mod">SOW Notifications</span>
+            </div>
+            <div class="go">Open portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </a>
+
+          <a class="role" href="college-admin.html">
+            <div class="rt">
+              <div class="ic" style="background:linear-gradient(140deg,var(--teal),var(--teal-3))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18M5 21V8l7-4 7 4v13"/><path d="M10 21v-6h4v6"/></svg>
+              </div>
+              <div><div class="nm">College Admin</div><div class="sc">ABC Engineering · one institution</div></div>
+            </div>
+            <div class="ds">Builds the academic structure, uploads chapter material, adds students individually or by CSV, manages staff, and assigns interviews to final-year cohorts.</div>
+            <div class="mods">
+              <span class="mod">Dashboard</span><span class="mod">Academic Structure</span><span class="mod">Upload &amp; Content</span>
+              <span class="mod">Students</span><span class="mod">Staff &amp; HOD</span><span class="mod">Interview Assignments</span>
+              <span class="mod">Analytics</span><span class="mod">Reports</span>
+            </div>
+            <div class="go">Open portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </a>
+
+          <a class="role" href="hod-faculty.html">
+            <div class="rt">
+              <div class="ic" style="background:linear-gradient(140deg,#3b3a8f,var(--violet))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div><div class="nm">HOD / Faculty</div><div class="sc">Department &amp; subject scope</div></div>
+            </div>
+            <div class="ds">The approval gate. Reviews every generated video and every generated MCQ before students see them. Includes a <b>View as</b> switch showing how the same screen changes for Faculty.</div>
+            <div class="mods">
+              <span class="mod">Dashboard</span><span class="mod">Video Review</span><span class="mod">MCQ Review</span>
+              <span class="mod">Subjects</span><span class="mod">Students</span><span class="mod">Interview Assignments</span>
+              <span class="mod">Department Analytics</span>
+            </div>
+            <div class="go">Open portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </a>
+
+          <a class="role" href="student.html">
+            <div class="rt">
+              <div class="ic" style="background:linear-gradient(140deg,#0b5d43,var(--green))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg>
+              </div>
+              <div><div class="nm">Student</div><div class="sc">Aravind R · B.Tech CSE, Sem 4</div></div>
+            </div>
+            <div class="ds">Watches AI video lectures built from their own syllabus, asks the chapter-grounded AI tutor in English or Tamil, takes assessments, and practises AI mock interviews.</div>
+            <div class="mods">
+              <span class="mod">Home</span><span class="mod">My Subjects</span><span class="mod">Classroom</span>
+              <span class="mod">AI Tutor</span><span class="mod">Assessment</span><span class="mod">Leaderboard</span>
+              <span class="mod">Interviews</span><span class="mod">My Progress</span>
+            </div>
+            <div class="go">Open portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Auth -->
+      <section class="lp-sec">
+        <h2>Authentication flows</h2>
+        <p>Every account in Project K is created by an administrator — there is no public sign-up. New users set their own password from a single-use activation link.</p>
+        <div class="authlinks">
+          <a class="alink" href="login.html"><div class="t">Sign in</div><div class="d">Tenant-aware login. Fail three times to see the lockout state.</div></a>
+          <a class="alink" href="activate-account.html"><div class="t">Activate account</div><div class="d">First-login flow from an emailed invite link.</div></a>
+          <a class="alink" href="forgot-password.html"><div class="t">Forgot password</div><div class="d">Non-enumerating request, then a single-use link.</div></a>
+          <a class="alink" href="reset-password.html"><div class="t">Reset password</div><div class="d">Live policy meter matching the backend rules.</div></a>
+        </div>
+      </section>
+
+      <!-- Core flow -->
+      <section class="lp-sec">
+        <h2>The core loop</h2>
+        <p>One chapter's journey through the platform. This is the sequence every screen in the demo hangs off.</p>
+        <div class="flowmap">
+          <div class="fstep">
+            <div class="n">01</div>
+            <div class="t">Upload</div>
+            <div class="d">A scanned chapter is uploaded into the exact place in the academic tree.</div>
+            <div class="who">College Admin</div>
+          </div>
+          <div class="fstep">
+            <div class="n">02</div>
+            <div class="t">Generate</div>
+            <div class="d">Text is extracted, embedded, then turned into a video lecture and an MCQ set.</div>
+            <div class="who">AI pipeline</div>
+          </div>
+          <div class="fstep">
+            <div class="n">03</div>
+            <div class="t">Approve</div>
+            <div class="d">The HOD watches the video and reviews every question. Nothing publishes without this.</div>
+            <div class="who">HOD / SME</div>
+          </div>
+          <div class="fstep">
+            <div class="n">04</div>
+            <div class="t">Learn</div>
+            <div class="d">The student watches, then asks the AI tutor follow-ups grounded in that chapter.</div>
+            <div class="who">Student</div>
+          </div>
+          <div class="fstep">
+            <div class="n">05</div>
+            <div class="t">Assess</div>
+            <div class="d">They take the quiz, get scored instantly, and move on the cohort leaderboard.</div>
+            <div class="who">Student</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scope -->
+      <section class="lp-sec" style="margin-bottom:0">
+        <h2>What's in — and what isn't</h2>
+        <p>This walkthrough is deliberately bounded by <b>ProjectK_B2B_SOW_v1.0.pdf</b>. Payment UI, Skill Courses, B2C Interview billing, mobile apps, and other §14 exclusions are left out on purpose.</p>
+        <a class="btn btn-dark" href="scope.html">
+          Read the scope map
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </section>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

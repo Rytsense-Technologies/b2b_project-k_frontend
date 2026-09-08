@@ -133,7 +133,7 @@ export default function ScrollableSelect({
                     }}
                     className={`w-full text-left px-3.5 text-sm transition-colors ${
                       active
-                        ? 'bg-blue-50 text-[#0b66d6] font-medium'
+                        ? 'bg-brand-50 text-[#0E5C6B] font-medium'
                         : 'text-slate-800 hover:bg-slate-50'
                     }`}
                     style={{ minHeight: ROW_HEIGHT_PX, lineHeight: `${ROW_HEIGHT_PX - 16}px` }}

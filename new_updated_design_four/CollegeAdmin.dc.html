@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="none">
+<link rel="stylesheet" href="./quirri-ui.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+*{box-sizing:border-box}
+body{margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+::placeholder{color:#939C9E}
+</style>
+</helmet>
+
+<div class="q-app-shell" style="--teal:#0E5C6B;--teal-dark:#06252B;--teal-700:#0A3F49;--teal-50:#F1F5F6;--teal-100:#DDE8EA;--amber-pri:#AC5B16;--ink:#102228;--ink-2:#33465C;--muted:#536064;--muted-2:#707A7E;--muted-3:#939C9E;--line:#DEE0E1;--line-soft:#EEF0F0;--mist:#F4F6F7;--success:#0F6E56;--success-soft:#E9F5EF;--warning:#C97A0E;--warning-soft:#FDF1E2;--error:#A32D2D;--error-soft:#FBEEEC;--violet:#5B3FD6;--violet-soft:#EFEBFC;--blue:#1D5FB8;--blue-soft:#E8F0FB;--r-md:12px;--r-lg:18px;--sh-1:0 1px 2px rgba(16,34,40,.04),0 4px 14px rgba(16,34,40,.05);font-family:'Plus Jakarta Sans',system-ui,sans-serif;min-height:100vh;display:flex;color:var(--ink);font-size:14px">
+
+  <aside class="q-side-dark" style="flex:1 1 258px;max-width:258px;min-width:230px;background:var(--teal-dark);border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;color:#fff">
+    <div style="padding:22px 20px 16px;display:flex;align-items:center;gap:9px">
+      <div style="width:28px;height:28px;border-radius:var(--r-md);background:var(--teal);display:grid;place-items:center;flex:none">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v3M12 16v3M5 12h3M16 12h3"></path></svg>
+      </div>
+      <span style="font-size:16px;font-weight:700;letter-spacing:-.01em;color:#fff">Quirri</span>
+    </div>
+
+    <div style="margin:4px 14px 10px;padding:11px 12px;border:1px solid rgba(255,255,255,.12);border-radius:var(--r-md);background:rgba(255,255,255,.06);display:flex;gap:10px;align-items:center">
+      <div style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700;flex:none">AB</div>
+      <div style="min-width:0">
+        <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">ABC Engineering</div>
+        <div style="font-size:10.5px;color:rgba(255,255,255,.55);font-weight:500">Anna University</div>
+      </div>
+    </div>
+
+    <nav style="padding:10px 12px 4px;flex:1">
+      <a class="q-nav-item" onClick="{{ navDash.onClick }}" style="{{ navDash.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navDash.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>Dashboard</a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">Academics</div>
+      <a class="q-nav-item" onClick="{{ navStructure.onClick }}" style="{{ navStructure.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navStructure.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"></path><circle cx="7" cy="6" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle></svg>Academic Structure</a>
+      <a class="q-nav-item" onClick="{{ navUpload.onClick }}" style="{{ navUpload.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navUpload.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0l-4 4m4-4l4 4"></path><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"></path></svg><span style="flex:1">Upload &amp; Content</span><span style="background:var(--warning-soft);color:var(--warning);font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px">2</span></a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">People</div>
+      <a class="q-nav-item" onClick="{{ navStudents.onClick }}" style="{{ navStudents.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navStudents.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"></path></svg>Students</a>
+      <a class="q-nav-item" onClick="{{ navStaff.onClick }}" style="{{ navStaff.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navStaff.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 19c0-3.2 2.7-5 6-5s6 1.8 6 5"></path><path d="M17 7l2 2 3-3.2"></path></svg>Staff &amp; HOD</a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">Placement</div>
+      <a class="q-nav-item" onClick="{{ navInterviews.onClick }}" style="{{ navInterviews.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navInterviews.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z"></path><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Interview Assignments</a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">Insights</div>
+      <a class="q-nav-item" onClick="{{ navAnalytics.onClick }}" style="{{ navAnalytics.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navAnalytics.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Analytics</a>
+      <a class="q-nav-item" onClick="{{ navReports.onClick }}" style="{{ navReports.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navReports.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><path d="M15 3v5h5M9 13h6M9 17h4"></path></svg>Reports</a>
+    </nav>
+
+    <div style="border-top:1px solid rgba(255,255,255,.1);padding:13px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11px;flex:none">RA</div>
+        <div><div style="font-weight:700;font-size:12.5px;color:#fff">Ravi A</div><div style="color:rgba(255,255,255,.55);font-size:10.5px">College Admin</div></div>
+      </div>
+      <a href="Login.dc.html" style="display:flex;align-items:center;gap:8px;color:rgba(255,140,140,.88);font-size:12px;margin-top:11px;font-weight:600">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5M21 12H9"></path></svg>Log out
+      </a>
+    </div>
+  </aside>
+
+  <div style="flex:5 1 700px;min-width:320px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 32px 14px;flex-wrap:wrap">
+      <div>
+        <h1 style="font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0">{{ titleMain }}</h1>
+        <p style="color:var(--muted);font-size:13px;margin:3px 0 0;max-width:64ch">{{ titleSub }}</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="padding:8px 14px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;color:var(--ink-2);background:#fff">Last 30 days</div>
+        <button class="q-iconbtn" onClick="{{ ring }}" style="width:36px;height:36px;border-radius:var(--r-md);background:#fff;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;position:relative;color:var(--muted);flex:none">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+          <span style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--error);border:2px solid #fff"></span>
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:6px 32px 56px">
+
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+        <div class="q-hero-split" style="display:grid;grid-template-columns:1fr minmax(260px,340px);gap:16px;margin-bottom:20px;align-items:stretch">
+          <div style="border-radius:var(--r-lg);padding:28px 32px;color:#fff;background:var(--teal-dark);position:relative;overflow:hidden">
+            <div style="position:absolute;inset:0;background-image:radial-gradient(70% 100% at 90% 0%,rgba(14,92,107,.6),transparent 65%)"></div>
+            <div style="position:relative">
+              <h2 style="font-size:24px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">Welcome, ABC Engineering</h2>
+              <p style="color:#B7CED3;font-size:14px;max-width:66ch;line-height:1.6;margin:0 0 18px;font-weight:400">Build your academic structure, upload subject material, and track how students learn. Everything you upload routes automatically to the department HOD for review before students see it.</p>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button onClick="{{ navUpload.onClick }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;background:#fff;color:var(--teal-dark);display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0l-4 4m4-4l4 4"></path><path d="M20 16v4H4v-4"></path></svg>Upload a chapter</button>
+                <button onClick="{{ navStudents.onClick }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;background:#AC5B16;color:#fff;display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>Add students</button>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 24px;box-shadow:var(--sh-1);display:flex;flex-direction:column">
+            <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:10px">This week's focus</div>
+            <ul style="margin:0;padding:0 0 0 18px;list-style:none;display:flex;flex-direction:column;gap:12px;flex:1">
+              <li style="font-size:13px;line-height:1.5;color:var(--ink-2);position:relative;padding-left:14px"><span style="position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--warning)"></span><strong style="color:var(--ink);font-weight:600">2 chapters awaiting HOD</strong> — Data Structures and Digital Circuits need faculty sign-off before students can access them.</li>
+              <li style="font-size:13px;line-height:1.5;color:var(--ink-2);position:relative;padding-left:14px"><span style="position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--teal)"></span><strong style="color:var(--ink);font-weight:600">Bulk-import new students</strong> — CSV import with roll-number validation saves hours at semester start.</li>
+              <li style="font-size:13px;line-height:1.5;color:var(--ink-2);position:relative;padding-left:14px"><span style="position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--amber-pri)"></span><strong style="color:var(--ink);font-weight:600">Interview assignments due</strong> — 3 placement mock rounds are open; 34 students haven't started yet.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
+          <sc-for list="{{ dashStats }}" as="s" hint-placeholder-count="5">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px">
+                <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">{{ s.k }}</div>
+                <div style="width:32px;height:32px;border-radius:9px;background:{{ s.iconBg }};color:{{ s.iconFg }};display:grid;place-items:center;flex:none">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="{{ s.iconFg }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
+                </div>
+              </div>
+              <div style="font-size:26px;font-weight:700;margin:8px 0 3px;letter-spacing:-.01em">{{ s.v }}</div>
+              <div style="font-size:11.5px;color:{{ s.color }};font-weight:{{ s.weight }}">{{ s.s }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;padding:11px 18px;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);margin-bottom:20px;flex-wrap:wrap">
+          <span style="font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap">Content pipeline · 2 chapters awaiting HOD</span>
+          <div style="flex:1;min-width:100px;height:5px;background:var(--line-soft);border-radius:999px;overflow:hidden">
+            <div style="width:38%;height:100%;background:linear-gradient(90deg,var(--warning),#E8A54A);border-radius:999px"></div>
+          </div>
+          <a onClick="{{ navUpload.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Upload chapter →</a>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Awaiting HOD review</h3><a onClick="{{ navUpload.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer">View all →</a></div>
+            <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">Chapters you uploaded that are with faculty for approval.</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Department</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">HOD</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Status</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ awaitingRows }}" as="r" hint-placeholder-count="4">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.ch }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.sub }}</div></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.dept }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.hod }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.status }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Department activity</h3><a onClick="{{ navAnalytics.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer">Compare →</a></div>
+            <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">Watch time, questions asked, and interviews — last 30 days.</div>
+            <div style="overflow-x:auto">
+            <table style="width:100%;min-width:380px;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Department</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Watch time</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Q&amp;A</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Interviews</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ deptActivityRows }}" as="d" hint-placeholder-count="4">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-weight:600;font-size:12.5px">{{ d.nm }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ d.watch }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ d.qa }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ d.interviews }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Recently added students</h3><a onClick="{{ navStudents.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer">Manage students →</a></div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Student</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Roll no.</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Program</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Year · Sem</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Status</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ recentStudents }}" as="r" hint-placeholder-count="3">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.email }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.roll }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.program }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.yearSem }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.status }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStructure }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+          <div><div style="font-size:16.5px;font-weight:700">Academic Structure</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:66ch">Department → Program → Year → Semester → Subject → Chapter. Everything else in the platform hangs off this tree.</div></div>
+          <button onClick="{{ toastNewDept }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:10px 18px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px;flex:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>New Department</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:minmax(230px,290px) minmax(320px,1fr);gap:18px;align-items:start">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:10px">
+            <sc-for list="{{ deptTree }}" as="d" hint-placeholder-count="4">
+              <div style="margin-bottom:2px">
+                <div onClick="{{ d.onClick }}" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12.5px;background:{{ d.bg }};color:{{ d.fg }}">
+                  <span style="width:6px;height:6px;border-radius:50%;background:{{ d.dotColor }};flex:none"></span>
+                  <span style="flex:1">{{ d.nm }}</span>
+                  <span style="font-size:10.5px;color:var(--muted-3);font-weight:500">{{ d.meta }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:22px">
+            <div style="font-size:11.5px;color:var(--muted-3);margin-bottom:6px">Computer Science · B.Tech CSE · Year 2 · Semester 4</div>
+            <h3 style="font-size:17px;font-weight:700;margin:0 0 4px">Data Structures</h3>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Subject code CS204 · 6 chapters · HOD: Dr. Karthik</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+              <span style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:999px;background:#EEF0F0;color:var(--ink-2)">6 chapters uploaded</span>
+              <span style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:999px;background:#EEF0F0;color:var(--ink-2)">4 videos approved</span>
+              <span style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--warning-soft);color:#8A560A">1 pending HOD approval</span>
+              <span style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--blue-soft);color:var(--blue)">1 generating</span>
+            </div>
+
+            <sc-for list="{{ chapterList }}" as="c" hint-placeholder-count="3">
+              <div style="border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:28px;height:28px;border-radius:7px;background:var(--teal-50);color:var(--teal-700);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none">{{ c.num }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-weight:700;font-size:13px">{{ c.nm }}</div>
+                    <div style="font-size:11px;color:var(--muted-3);margin-top:1px">{{ c.file }}</div>
+                  </div>
+                  <span style="font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};flex:none">{{ c.status }}</span>
+                </div>
+                <sc-if value="{{ c.hasTags }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft)">
+                    <sc-for list="{{ c.tags }}" as="tg" hint-placeholder-count="2"><span style="font-size:11px;color:var(--muted-2);display:flex;align-items:center;gap:5px">{{ tg }}</span></sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ c.hasProgress }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft)">
+                    <div style="flex:1;max-width:220px;height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ c.pct }}%;background:var(--blue)"></i></div>
+                    <span style="font-size:11px;color:var(--muted-2)">Avatar render · {{ c.pct }}%</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+
+            <button onClick="{{ navUpload.onClick }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:999px;color:var(--ink-2);margin:4px 0 20px;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>Add chapter</button>
+
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--line-soft);font-size:11.5px;color:var(--muted)">
+              <span style="font-weight:700;color:var(--ink-2)">Approval flow:</span>
+              <span style="padding:4px 10px;border-radius:999px;background:#EEF0F0">Upload</span>→
+              <span style="padding:4px 10px;border-radius:999px;background:#EEF0F0">AI generates video + MCQs</span>→
+              <span style="padding:4px 10px;border-radius:999px;background:#EEF0F0">Auto-assign to HOD</span>→
+              <span style="padding:4px 10px;border-radius:999px;background:#EEF0F0">HOD approves</span>→
+              <span style="padding:4px 10px;border-radius:999px;background:var(--success-soft);color:var(--success);font-weight:700">Live for students</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:16px"><div style="font-size:16.5px;font-weight:700">Upload &amp; Content</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:66ch">Upload chapter by chapter. Each chapter generates a video lecture and an MCQ set, then routes to the department HOD.</div></div>
+
+        <div style="display:grid;grid-template-columns:minmax(320px,1.1fr) minmax(300px,1fr);gap:18px;align-items:start;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:22px">
+            <h3 style="font-size:14.5px;font-weight:700;margin:0 0 4px">New chapter upload</h3>
+            <p style="color:var(--muted);font-size:12.5px;margin:0 0 18px">Pick the exact location in your academic structure.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Department</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Computer Science</option><option>Electronics</option><option>Mechanical</option><option>Commerce</option></select></div>
+              <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Program</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>B.Tech CSE</option><option>M.Tech CSE</option><option>B.Sc Computer Science</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+              <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Year</label><select defaultValue="Year 2" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option></select></div>
+              <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Semester</label><select defaultValue="Sem 4" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Sem 3</option><option>Sem 4</option></select></div>
+              <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Subject</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Data Structures</option><option>Operating Systems</option><option>DBMS</option></select></div>
+            </div>
+            <div style="margin-bottom:12px"><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Chapter title</label><input placeholder="e.g. Trees &amp; Binary Search Trees" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+            <div style="margin-bottom:16px">
+              <label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Source material</label>
+              <div onClick="{{ toastDrop }}" style="border:1.5px dashed var(--line);border-radius:var(--r-md);padding:26px;text-align:center;cursor:pointer;color:var(--muted-2)">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom:8px"><path d="M12 16V4m0 0l-4 4m4-4l4 4"></path><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"></path></svg>
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Drop scanned book pages, or click to browse</div>
+                <div style="font-size:11px;margin-top:4px">PDF, PPT, DOCX or image scans · up to 50 MB · English</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;padding:12px 14px;border-radius:var(--r-md);background:var(--teal-50);font-size:12px;color:var(--teal-700);margin-bottom:16px"><b>On submit:</b> The AI builds a video lecture and an MCQ set, then assigns both to the department HOD for approval.</div>
+            <button onClick="{{ toastUploadGenerate }}" style="width:100%;border:none;cursor:pointer;font-weight:600;font-size:13.5px;padding:12px 20px;border-radius:999px;background:var(--amber-pri);color:#fff">Upload &amp; generate</button>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Content status</h3></div>
+            <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">Every chapter through review. Visible to you and the HOD.</div>
+            <div style="overflow-x:auto">
+            <table style="width:100%;min-width:440px;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject / chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Placement</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Status</th><th style="border-bottom:1px solid var(--line-soft)"></th></tr></thead>
+              <tbody>
+                <sc-for list="{{ contentStatusRows }}" as="r" hint-placeholder-count="5">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.sub }}</div></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ r.placement }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.status }}</span></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ r.action }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">{{ r.cta }}</a></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">HOD feedback — needs your action</h3></div>
+          <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">When an HOD sends a chapter back, it lands here. Fix the prompt, regenerate, and resubmit.</div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">HOD comment</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">From</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Sent back</th><th style="border-bottom:1px solid var(--line-soft)"></th></tr></thead>
+            <tbody>
+              <sc-for list="{{ feedbackRows }}" as="r" hint-placeholder-count="2">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.ch }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.sub }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3);max-width:340px">{{ r.comment }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.from }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ r.when }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ openFix }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">Fix &amp; regenerate</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStudents }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+          <div><div style="font-size:16.5px;font-weight:700">Students</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:66ch">Add students individually or import up to 100 at a time. Each one receives an activation link — you never set their password.</div></div>
+          <div style="display:flex;gap:9px;flex:none">
+            <button onClick="{{ openImport }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:999px;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 21h16"></path></svg>Bulk import</button>
+            <button onClick="{{ openStudent }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 18px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>Add student</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;margin-bottom:18px;border:1px solid var(--teal-100);background:var(--teal-50);color:var(--teal-700)">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+          <div><b style="display:block;margin-bottom:2px">2,340 of 5,000 seats used</b>Your licence permits 5,000 students. Adding beyond the cap is refused — contact Knotopian to raise it.</div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Student</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Roll no.</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Program · Sem</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Watch time</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Avg score</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Status</th>
+              <th style="border-bottom:1px solid var(--line-soft)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ studentRows }}" as="st" hint-placeholder-count="5">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ st.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ st.email }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.roll }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.prog }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.watch }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)">
+                    <sc-if value="{{ st.hasScore }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ st.scoreBg }};color:{{ st.scoreFg }}">{{ st.score }}%</span></sc-if>
+                    <sc-if value="{{ st.noScore }}" hint-placeholder-val="{{ false }}"><span style="color:var(--muted-3)">—</span></sc-if>
+                  </td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ st.statusBg }};color:{{ st.statusFg }}">{{ st.status }}</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right;white-space:nowrap"><a onClick="{{ st.action }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">{{ st.actionLabel }}</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div><div style="font-size:16.5px;font-weight:700">Staff &amp; HOD</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:66ch">Add faculty and assign HODs. Faculty are scoped to specific subjects — that scope is what keeps them out of other departments' data.</div></div>
+          <button onClick="{{ openStaff }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 18px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px;flex:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>Add staff</button>
+        </div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Name</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Role</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Scope</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subjects</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Pending reviews</th>
+              <th style="border-bottom:1px solid var(--line-soft)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ staffRows }}" as="s" hint-placeholder-count="5">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ s.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ s.email }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:{{ s.roleBg }};color:{{ s.roleFg }}">{{ s.role }}</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ s.scope }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ s.subjects }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:{{ s.pendBg }};color:{{ s.pendFg }}">{{ s.pending }}</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right;white-space:nowrap"><a onClick="{{ s.toastEdit }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer;margin-right:12px">Edit</a><a onClick="{{ s.toastRemove }}" style="color:var(--error);font-weight:600;font-size:12px;cursor:pointer">Remove</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isInterviews }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div><div style="font-size:16.5px;font-weight:700">Interview Assignments</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:66ch">Assign AI mock interviews to final-year cohorts and track completion. Only final-year students are eligible.</div></div>
+          <button onClick="{{ openAssign }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 18px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px;flex:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>New assignment</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px">
+          <sc-for list="{{ interviewStats }}" as="s" hint-placeholder-count="4">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">{{ s.k }}</div>
+              <div style="font-size:26px;font-weight:700;margin:8px 0 3px;color:{{ s.color }}">{{ s.v }}</div>
+              <div style="font-size:11.5px;color:var(--muted)">{{ s.s }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Active assignments</h3></div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Assignment</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Cohort</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Mode</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Due</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Completion</th>
+              <th style="border-bottom:1px solid var(--line-soft)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ assignmentRows }}" as="a" hint-placeholder-count="3">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ a.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ a.role }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-size:12.5px;color:var(--ink-2)">{{ a.cohort }}</div><div style="font-size:11px;color:var(--muted-3)">{{ a.eligible }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:{{ a.modeBg }};color:{{ a.modeFg }}">{{ a.mode }}</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ a.due }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);width:160px"><div style="height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ a.pct }}%;background:{{ a.barColor }}"></i></div><div style="font-size:11px;color:var(--muted-3);margin-top:4px">{{ a.done }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ a.toastTrack }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">Track</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAnalytics }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div><div style="font-size:16.5px;font-weight:700">Analytics</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:66ch">Completion, assessment performance, Q&amp;A demand, and interview readiness across your college.</div></div>
+          <button onClick="{{ toastExport }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:999px;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px;flex:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 21h16"></path></svg>Export</button>
+        </div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden;margin-bottom:18px">
+          <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Department performance</h3></div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Department</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">HOD</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Students</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Completion</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Avg score</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Pass rate</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Interview ready</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ deptPerfRows }}" as="d" hint-placeholder-count="4">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-weight:600;font-size:12.5px">{{ d.nm }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ d.hod }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ d.students }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);width:130px"><div style="height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ d.compPct }}%;background:{{ d.compColor }}"></i></div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ d.scoreBg }};color:{{ d.scoreFg }}">{{ d.score }}%</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ d.pass }}%</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ d.readyBg }};color:{{ d.readyFg }}">{{ d.ready }}%</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:20px">
+            <h3 style="font-size:14.5px;font-weight:700;margin:0 0 3px">Assessment score distribution</h3>
+            <p style="color:var(--muted);font-size:12px;margin:0 0 16px">All submitted assessments · pass mark 50%.</p>
+            <sc-for list="{{ scoreDistribution }}" as="w" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+                <div style="width:80px;font-weight:600;font-size:12px;flex:none">{{ w.nm }}</div>
+                <div style="flex:1;height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ w.pct }}%;background:{{ w.color }}"></i></div>
+                <div style="width:50px;text-align:right;font-weight:700;font-size:12px;flex:none">{{ w.val }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:20px">
+            <h3 style="font-size:14.5px;font-weight:700;margin:0 0 3px">Top Q&amp;A topics</h3>
+            <p style="color:var(--muted);font-size:12px;margin:0 0 16px">Where students are asking most — a signal of where teaching needs reinforcement.</p>
+            <sc-for list="{{ topQaTopics }}" as="w" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+                <div style="width:140px;font-weight:600;font-size:12px;flex:none">{{ w.nm }}</div>
+                <div style="flex:1;height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ w.pct }}%;background:{{ w.color }}"></i></div>
+                <div style="width:44px;text-align:right;font-weight:700;font-size:12px;flex:none">{{ w.val }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Interview readiness — at-risk students</h3><a onClick="{{ navInterviews.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer">All assignments →</a></div>
+          <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">Final-year students scoring below the readiness threshold, or who have not started an assigned interview.</div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Student</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Department</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Interviews</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Avg score</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Weakest area</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Flag</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ atRiskRows }}" as="r" hint-placeholder-count="3">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.roll }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.dept }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.done }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)">
+                    <sc-if value="{{ r.hasScore }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ r.scoreBg }};color:{{ r.scoreFg }}">{{ r.score }}%</span></sc-if>
+                    <sc-if value="{{ r.noScore }}" hint-placeholder-val="{{ false }}"><span style="color:var(--muted-3)">—</span></sc-if>
+                  </td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ r.weak }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:{{ r.flagBg }};color:{{ r.flagFg }}">{{ r.flag }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div><div style="font-size:16.5px;font-weight:700">Reports</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:66ch">Student-level and cohort-level reports for your college. The export always matches what you previewed.</div></div>
+          <div style="display:flex;gap:8px;flex:none">
+            <button onClick="{{ toastCsv }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12px;padding:8px 14px;border-radius:999px;color:var(--ink-2)">CSV</button>
+            <button onClick="{{ toastExcel }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12px;padding:8px 14px;border-radius:999px;color:var(--ink-2)">Excel</button>
+            <button onClick="{{ toastPdf }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12px;padding:8px 14px;border-radius:999px;color:var(--ink-2)">PDF</button>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Report preview</h3><span style="font-size:12px;color:var(--muted)">2,340 rows · page 1 of 47</span></div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Student</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Roll no.</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Program · Sem</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapters done</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Watch time</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Assessments</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Avg score</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ reportRows }}" as="r" hint-placeholder-count="5">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-weight:600;font-size:12.5px">{{ r.nm }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.roll }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.prog }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.chapters }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.watch }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.assess }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.score }}%</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <sc-if value="{{ studentModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(16,34,40,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:600px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(9,25,40,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line-soft)">
+          <div><h3 style="font-size:16px;font-weight:700;margin:0">Add student</h3><div style="color:var(--muted);font-size:11.5px;margin-top:3px">The student sets their own password from an activation link</div></div>
+          <button onClick="{{ closeModal }}" style="width:30px;height:30px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none">✕</button>
+        </div>
+        <div style="padding:20px 24px;display:grid;gap:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">First name</label><input placeholder="Aravind" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Last name</label><input placeholder="R" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Email address</label><input type="email" placeholder="name@abceng.edu" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Roll number</label><input placeholder="22CS118" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Department</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Computer Science</option><option>Electronics</option></select></div>
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Program</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>B.Tech CSE</option><option>B.Tech ECE</option></select></div>
+          </div>
+          <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12px;line-height:1.5;border:1px solid var(--teal-100);background:var(--teal-50);color:var(--teal-700)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+            <div><b style="display:block;margin-bottom:2px">Final-year status is derived, not typed</b>Interview eligibility comes from program duration and current year — never entered by hand.</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 24px;border-top:1px solid var(--line-soft)">
+          <button onClick="{{ closeModal }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--ink-2)">Cancel</button>
+          <button onClick="{{ createStudentToast }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--amber-pri);color:#fff">Create &amp; send invite</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ importModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(16,34,40,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:640px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(9,25,40,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line-soft)">
+          <div><h3 style="font-size:16px;font-weight:700;margin:0">Bulk import students</h3><div style="color:var(--muted);font-size:11.5px;margin-top:3px">Up to 100 students per batch</div></div>
+          <button onClick="{{ closeModal }}" style="width:30px;height:30px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none">✕</button>
+        </div>
+        <div style="padding:20px 24px;display:grid;gap:18px">
+          <div>
+            <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">Step 1 — Download the template</div>
+            <button onClick="{{ toastTemplate }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12px;padding:8px 14px;border-radius:999px;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 21h16"></path></svg>students-template.csv</button>
+          </div>
+          <div>
+            <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">Step 2 — Upload your file</div>
+            <div onClick="{{ toastDrop }}" style="border:1.5px dashed var(--line);border-radius:var(--r-md);padding:22px;text-align:center;cursor:pointer;color:var(--muted-2)">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom:7px"><path d="M12 16V4m0 0l-4 4m4-4l4 4"></path><path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"></path></svg>
+              <div style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Drop your CSV, or click to browse</div>
+              <div style="font-size:11px;margin-top:4px">Maximum 100 data rows per batch</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">Step 3 — Review before committing</div>
+            <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;margin-bottom:14px;border:1px solid #F3DDB0;background:var(--warning-soft);color:#8A560A">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+              <div><b style="display:block;margin-bottom:2px">3 rows need attention</b>84 of 87 rows are valid. Nothing is saved until you fix or skip the flagged rows.</div>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:8px 14px;border-bottom:1px solid var(--line-soft)">Row</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:8px 14px;border-bottom:1px solid var(--line-soft)">Student</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:8px 14px;border-bottom:1px solid var(--line-soft)">Issue</th></tr></thead>
+                <tbody>
+                  <tr><td style="padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--ink-2)">12</td><td style="padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">meera.k@abceng.edu</td><td style="padding:9px 14px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--error-soft);color:var(--error)">Roll number 22CS118 already exists</span></td></tr>
+                  <tr><td style="padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--ink-2)">31</td><td style="padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">(blank)</td><td style="padding:9px 14px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--error-soft);color:var(--error)">Email is required</span></td></tr>
+                  <tr><td style="padding:9px 14px;font-size:12px;color:var(--ink-2)">58</td><td style="padding:9px 14px;font-size:12px;color:var(--muted-3)">vijay@abceng</td><td style="padding:9px 14px"><span style="font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--error-soft);color:var(--error)">Email format is invalid</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 24px;border-top:1px solid var(--line-soft);flex-wrap:wrap">
+          <button onClick="{{ toastErrorReport }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:999px;color:var(--ink-2)">Download error report</button>
+          <div style="display:flex;gap:10px">
+            <button onClick="{{ closeModal }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--ink-2)">Cancel</button>
+            <button onClick="{{ importToast }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--amber-pri);color:#fff">Import 84 valid rows</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ staffModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(16,34,40,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(9,25,40,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line-soft)">
+          <div><h3 style="font-size:16px;font-weight:700;margin:0">Add staff</h3><div style="color:var(--muted);font-size:11.5px;margin-top:3px">HOD or Faculty · scoped to your college</div></div>
+          <button onClick="{{ closeModal }}" style="width:30px;height:30px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none">✕</button>
+        </div>
+        <div style="padding:20px 24px;display:grid;gap:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Full name</label><input placeholder="Dr. Name" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Email address</label><input type="email" placeholder="name@abceng.edu" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Role</label>
+            <div style="display:flex;background:#fff;border:1px solid var(--line);border-radius:999px;overflow:hidden;width:fit-content">
+              <button onClick="{{ setRoleHodModal }}" style="{{ roleHodModalStyle }}">HOD — department-wide</button>
+              <button onClick="{{ setRoleFacultyModal }}" style="{{ roleFacultyModalStyle }}">Faculty / SME — subject-level</button>
+            </div>
+          </div>
+          <sc-if value="{{ staffRoleIsHod }}" hint-placeholder-val="{{ true }}">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Departments</label><select multiple="" size="4" defaultValue="Computer Science" style="width:100%;padding:8px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"><option>Computer Science</option><option>Electronics</option><option>Mechanical</option><option>Commerce</option></select><div style="font-size:11px;color:var(--muted-3);margin-top:5px">An HOD may hold more than one department.</div></div>
+          </sc-if>
+          <sc-if value="{{ staffRoleIsFaculty }}" hint-placeholder-val="{{ false }}">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Subjects</label><select multiple="" size="4" defaultValue="Data Structures" style="width:100%;padding:8px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"><option>Data Structures</option><option>DBMS</option><option>Operating Systems</option><option>Computer Networks</option></select><div style="font-size:11px;color:var(--muted-3);margin-top:5px">Faculty must be scoped to at least one subject — this is what blocks access to other departments.</div></div>
+          </sc-if>
+          <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12px;line-height:1.5;border:1px solid #F3DDB0;background:var(--warning-soft);color:#8A560A">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+            <div><b style="display:block;margin-bottom:2px">Faculty cannot see the college-wide dashboard</b>This is enforced by the backend, not by hiding the menu item.</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 24px;border-top:1px solid var(--line-soft)">
+          <button onClick="{{ closeModal }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--ink-2)">Cancel</button>
+          <button onClick="{{ createStaffToast }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--amber-pri);color:#fff">Create &amp; send invite</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ assignModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(16,34,40,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(9,25,40,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line-soft)">
+          <div><h3 style="font-size:16px;font-weight:700;margin:0">New interview assignment</h3><div style="color:var(--muted);font-size:11.5px;margin-top:3px">Final-year students only</div></div>
+          <button onClick="{{ closeModal }}" style="width:30px;height:30px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none">✕</button>
+        </div>
+        <div style="padding:20px 24px;display:grid;gap:14px">
+          <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Assignment name</label><input placeholder="e.g. Placement readiness — CSE" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Department</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Computer Science</option><option>Electronics</option><option>Mechanical</option></select></div>
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Program &amp; semester</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>B.Tech CSE · Sem 8</option><option>B.Tech CSE · Sem 7</option></select></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Mode</label><select style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Mock — 3 questions, 3–5 min</option><option>Full — follow-ups + report, 10–15 min</option></select></div>
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Difficulty</label><select defaultValue="Intermediate" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff"><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Adaptive</option></select></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Target role</label><input placeholder="e.g. Frontend Developer" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+            <div><label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Due date</label><input type="date" style="width:100%;padding:9px 12px;border:1px solid #DBE3EC;border-radius:2px;font-size:12.5px;font-family:inherit"></div>
+          </div>
+          <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12px;line-height:1.5;border:1px solid var(--teal-100);background:var(--teal-50);color:var(--teal-700)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+            <div><b style="display:block;margin-bottom:2px">156 of 178 students are eligible</b>22 are excluded because they are not in their final year. They will not be assigned, and you'll see the exclusion list before confirming.</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 24px;border-top:1px solid var(--line-soft)">
+          <button onClick="{{ closeModal }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--ink-2)">Cancel</button>
+          <button onClick="{{ assignToast }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--amber-pri);color:#fff">Assign to 156 students</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ fixModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(16,34,40,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(9,25,40,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line-soft)">
+          <div><h3 style="font-size:16px;font-weight:700;margin:0">Fix &amp; regenerate</h3><div style="color:var(--muted);font-size:11.5px;margin-top:3px">Thermodynamics · Ch 3 · Entropy</div></div>
+          <button onClick="{{ closeModal }}" style="width:30px;height:30px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none">✕</button>
+        </div>
+        <div style="padding:20px 24px;display:grid;gap:16px">
+          <div>
+            <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">HOD comment</div>
+            <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;border:1px solid #F3DDB0;background:var(--warning-soft);color:#8A560A">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <div><b style="display:block;margin-bottom:2px">Dr. Suresh · 3 days ago</b>"Avatar skipped the second-law derivation. Please regenerate with the full derivation included."</div>
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:6px">Additional instruction for regeneration</label>
+            <textarea placeholder="The HOD comment is passed to the generator automatically. Add anything else it should change…" style="width:100%;min-height:80px;padding:11px 13px;border:1px solid #DBE3EC;border-radius:2px;outline:none;font-size:12.5px;font-family:inherit;resize:vertical"></textarea>
+            <div style="font-size:11px;color:var(--muted-3);margin-top:5px">The reviewer's comment is injected into the generation prompt, so the new version addresses it directly.</div>
+          </div>
+          <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12px;line-height:1.5;border:1px solid var(--teal-100);background:var(--teal-50);color:var(--teal-700)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+            <div><b style="display:block;margin-bottom:2px">The current version stays live until the new one is approved</b>Regeneration creates a new version — students are never left without content mid-review.</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 24px;border-top:1px solid var(--line-soft)">
+          <button onClick="{{ closeModal }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--ink-2)">Cancel</button>
+          <button onClick="{{ regenerateToast }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--amber-pri);color:#fff">Regenerate chapter</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastMsg }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:var(--teal-dark);color:#fff;padding:11px 20px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 8px 28px rgba(16,34,40,.28);white-space:nowrap;max-width:90vw">{{ toastMsg }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    page: 'dashboard', staffModalRole: 'hod',
+    studentModalOpen: false, importModalOpen: false, staffModalOpen: false, assignModalOpen: false, fixModalOpen: false,
+    toastMsg: null
+  };
+
+  showToast(msg) {
+    if (this._t) clearTimeout(this._t);
+    this.setState({ toastMsg: msg });
+    this._t = setTimeout(() => this.setState({ toastMsg: null }), 2800);
+  }
+
+  renderVals() {
+    const page = this.state.page;
+    const titles = {
+      dashboard: ['Dashboard', 'Departments, content pipeline, and student activity across your college.'],
+      structure: ['Academic Structure', 'Build and manage your Department → Program → Semester → Subject tree.'],
+      upload: ['Upload & Content', 'Upload chapter material and track HOD approvals.'],
+      students: ['Students', 'Add, import, and manage students across every department.'],
+      staff: ['Staff & HOD', 'Add faculty and assign HODs who review and approve content.'],
+      interviews: ['Interview Assignments', 'Assign AI mock interviews to final-year cohorts.'],
+      analytics: ['Analytics', 'Completion, assessment performance, Q&A demand, interview readiness.'],
+      reports: ['Reports', 'Student-level and cohort-level reports.']
+    };
+    const t = titles[page] || titles.dashboard;
+
+    const go = (id) => () => this.setState({ page: id });
+    const navDef = (id) => {
+      const active = page === id;
+      return {
+        onClick: go(id),
+        color: active ? '#fff' : '#8FA8AD',
+        style: { display:'flex', alignItems:'center', gap:11, padding:'9px 12px', borderRadius:10, fontWeight: active?700:500, fontSize:13, margin:'1px 0', cursor:'pointer', background: active?'rgba(255,255,255,.12)':'transparent', color: active?'#fff':'#C8D9DC', transition:'background .14s ease' }
+      };
+    };
+
+    const dashStats = [
+      { k: 'Students', v: '2,340', s: '+120 this month', color: '#0F6E56', weight: 600, iconBg: '#E9F5EF', iconFg: '#0F6E56', iconD: 'M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zM5 20c0-3.3 2.7-6 7-6s7 2.7 7 6' },
+      { k: 'Departments', v: '8', s: '32 programs', color: '#536064', weight: 500, iconBg: '#E8F0FB', iconFg: '#1D5FB8', iconD: 'M3 21h18M5 21V8l7-4 7 4v13M10 21v-6h4v6' },
+      { k: 'Subjects live', v: '146', s: '18 pending review', color: '#536064', weight: 500, iconBg: '#EFEBFC', iconFg: '#5B3FD6', iconD: 'M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM15 3v5h5' },
+      { k: 'Watch time', v: '4,820 hrs', s: 'Last 30 days', color: '#536064', weight: 500, iconBg: '#F1F5F6', iconFg: '#0E5C6B', iconD: 'M12 8v5l3 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' },
+      { k: 'Q&A questions', v: '12,402', s: '+8% this month', color: '#0F6E56', weight: 600, iconBg: '#FDF1E2', iconFg: '#C97A0E', iconD: 'M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z' }
+    ];
+
+    const awaitingRows = [
+      { ch: 'Data Structures', sub: 'B.Tech CSE · Sem 4', dept: 'Computer Science', hod: 'Dr. Karthik', status: 'Pending', bg: '#FDF1E2', fg: '#8A560A' },
+      { ch: 'Thermodynamics', sub: 'B.Tech Mech · Sem 3', dept: 'Mechanical', hod: 'Dr. Suresh', status: 'Sent back', bg: '#FBEEEC', fg: '#A32D2D' },
+      { ch: 'Digital Circuits', sub: 'B.Tech ECE · Sem 3', dept: 'Electronics', hod: 'Prof. Meena', status: 'Pending', bg: '#FDF1E2', fg: '#8A560A' },
+      { ch: 'Microeconomics', sub: 'B.Com · Sem 2', dept: 'Commerce', hod: 'Prof. Revathi', status: 'Published', bg: '#E9F5EF', fg: '#0B4B3A' }
+    ];
+    const deptActivityRows = [
+      { nm: 'Computer Science', watch: '1,420 hrs', qa: '4,280', interviews: '810' },
+      { nm: 'Electronics', watch: '1,105 hrs', qa: '3,760', interviews: '640' },
+      { nm: 'Mechanical', watch: '820 hrs', qa: '2,140', interviews: '410' },
+      { nm: 'Commerce', watch: '880 hrs', qa: '2,910', interviews: '230' }
+    ];
+    const recentStudents = [
+      { nm: 'Aravind R', email: 'aravind.r@abceng.edu', roll: '22CS118', program: 'B.Tech CSE', yearSem: '2nd · Sem 4', status: 'Active', bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Divya S', email: 'divya.s@abceng.edu', roll: '24EC042', program: 'B.Tech ECE', yearSem: '1st · Sem 2', status: 'Pending activation', bg: '#FDF1E2', fg: '#8A560A' },
+      { nm: 'Karthik M', email: 'karthik.m@abceng.edu', roll: '23ME090', program: 'B.Tech Mech', yearSem: '2nd · Sem 3', status: 'Active', bg: '#E9F5EF', fg: '#0B4B3A' }
+    ];
+
+    const deptTreeDefs = [
+      { nm: 'Computer Science', meta: '3 programs', sel: true },
+      { nm: 'Electronics', meta: '2 programs', sel: false },
+      { nm: 'Mechanical', meta: '2 programs', sel: false },
+      { nm: 'Commerce', meta: '3 programs', sel: false }
+    ];
+    const deptTree = deptTreeDefs.map(d => ({
+      nm: d.nm, meta: d.meta,
+      bg: d.sel ? '#F1F5F6' : 'transparent', fg: d.sel ? '#0A3F49' : '#33465C',
+      dotColor: d.sel ? '#0E5C6B' : '#B9C2C4',
+      onClick: () => this.showToast('Opens the ' + d.nm + ' program tree.')
+    }));
+
+    const chapterDefs = [
+      { num: 1, nm: 'Arrays & Complexity Analysis', file: 'arrays_ch1.pdf · 4.2 MB', status: 'Live', bg: '#E9F5EF', fg: '#0B4B3A', hasTags: true, tags: ['Video 22:14', '10 MCQs approved'] },
+      { num: 2, nm: 'Stacks & Queues', file: 'stacks_ch2.pdf · 3.8 MB', status: 'Live', bg: '#E9F5EF', fg: '#0B4B3A', hasTags: true, tags: ['Video 18:40', '8 MCQs approved'] },
+      { num: 3, nm: 'Linked Lists', file: 'linkedlist_ch3.pdf · 5.1 MB', status: 'Generating', bg: '#E8F0FB', fg: '#1D5FB8', hasProgress: true, pct: 62 }
+    ];
+    const chapterList = chapterDefs.map(c => ({ ...c, hasTags: !!c.hasTags, hasProgress: !!c.hasProgress, tags: c.tags || [] }));
+
+    const contentStatusDefs = [
+      { nm: 'Data Structures', sub: '6 chapters', placement: 'CSE · Sem 4', status: 'Pending', bg: '#FDF1E2', fg: '#8A560A', cta: 'View' },
+      { nm: 'Thermodynamics', sub: 'Ch 3 flagged', placement: 'Mech · Sem 3', status: 'Sent back', bg: '#FBEEEC', fg: '#A32D2D', cta: 'Fix' },
+      { nm: 'Digital Circuits', sub: '5 chapters', placement: 'ECE · Sem 3', status: 'Pending', bg: '#FDF1E2', fg: '#8A560A', cta: 'View' },
+      { nm: 'Microeconomics', sub: '4 chapters', placement: 'B.Com · Sem 2', status: 'Published', bg: '#E9F5EF', fg: '#0B4B3A', cta: 'View' },
+      { nm: 'Signals & Systems', sub: 'Ch 2 generating', placement: 'ECE · Sem 4', status: 'Generating', bg: '#E8F0FB', fg: '#1D5FB8', cta: 'Track' }
+    ];
+    const contentStatusRows = contentStatusDefs.map(r => ({
+      ...r,
+      action: r.cta === 'Fix' ? (() => this.setState({ fixModalOpen: true })) : (() => this.showToast(r.cta === 'Track' ? 'Shows live job progress per pipeline stage.' : 'Opens the chapter detail.'))
+    }));
+
+    const feedbackRows = [
+      { ch: 'Thermodynamics', sub: 'Ch 3 · Entropy', comment: '"Avatar skipped the second-law derivation. Please regenerate with the full derivation included."', from: 'Dr. Suresh', when: '3 days ago' },
+      { ch: 'Data Structures', sub: 'Ch 5 · Trees', comment: '"Pacing too fast on traversal. Slow it down and add one worked example."', from: 'Dr. Karthik', when: '4 days ago' }
+    ];
+
+    const studentDefs = [
+      { nm: 'Aravind R', email: 'aravind.r@abceng.edu', roll: '22CS118', prog: 'B.Tech CSE · Sem 4', watch: '42 hrs', score: 78, status: 'Active' },
+      { nm: 'Priya N', email: 'priya.n@abceng.edu', roll: '22CS204', prog: 'B.Tech CSE · Sem 4', watch: '55 hrs', score: 82, status: 'Active' },
+      { nm: 'Divya S', email: 'divya.s@abceng.edu', roll: '24EC042', prog: 'B.Tech ECE · Sem 2', watch: '—', score: null, status: 'Pending activation' },
+      { nm: 'Karthik M', email: 'karthik.m@abceng.edu', roll: '23ME090', prog: 'B.Tech Mech · Sem 3', watch: '19 hrs', score: 64, status: 'Active' },
+      { nm: 'Rahul V', email: 'rahul.v@abceng.edu', roll: '23EC121', prog: 'B.Tech ECE · Sem 3', watch: '33 hrs', score: 71, status: 'Active' }
+    ];
+    const studentRows = studentDefs.map(s => ({
+      nm: s.nm, email: s.email, roll: s.roll, prog: s.prog, watch: s.watch,
+      hasScore: s.score != null, noScore: s.score == null, score: s.score,
+      scoreBg: (s.score||0) >= 75 ? '#E9F5EF' : '#FDF1E2', scoreFg: (s.score||0) >= 75 ? '#0B4B3A' : '#8A560A',
+      status: s.status, statusBg: s.status === 'Active' ? '#E9F5EF' : '#FDF1E2', statusFg: s.status === 'Active' ? '#0B4B3A' : '#8A560A',
+      actionLabel: s.status === 'Pending activation' ? 'Resend invite' : 'View',
+      action: () => this.showToast(s.status === 'Pending activation' ? 'Resends the activation link. Rate-limited.' : 'Opens the student record.')
+    }));
+
+    const staffDefs = [
+      { nm: 'Dr. Karthik M', email: 'karthik@abceng.edu', role: 'HOD', scope: 'Computer Science, Information Technology', subjects: 34, pending: '5 pending', pendType: 'warn' },
+      { nm: 'Prof. Meena R', email: 'meena@abceng.edu', role: 'HOD', scope: 'Electronics', subjects: 16, pending: '2 pending', pendType: 'warn' },
+      { nm: 'Dr. Suresh K', email: 'suresh@abceng.edu', role: 'HOD', scope: 'Mechanical', subjects: 14, pending: 'None', pendType: 'ok' },
+      { nm: 'Ms. Anitha P', email: 'anitha@abceng.edu', role: 'Faculty', scope: 'CSE · Data Structures, DBMS', subjects: 2, pending: '—', pendType: 'muted' },
+      { nm: 'Mr. Vignesh S', email: 'vignesh@abceng.edu', role: 'Faculty', scope: 'ECE · Digital Circuits', subjects: 1, pending: '—', pendType: 'muted' }
+    ];
+    const staffRows = staffDefs.map(s => ({
+      ...s,
+      roleBg: s.role === 'HOD' ? '#E8F0FB' : '#EEF0F0', roleFg: s.role === 'HOD' ? '#1D5FB8' : '#33465C',
+      pendBg: s.pendType === 'warn' ? '#FDF1E2' : (s.pendType === 'ok' ? '#E9F5EF' : '#EEF0F0'),
+      pendFg: s.pendType === 'warn' ? '#8A560A' : (s.pendType === 'ok' ? '#0B4B3A' : '#707A7E'),
+      toastEdit: () => this.showToast('Edit role and department/subject scope.'),
+      toastRemove: () => this.showToast(s.pending !== 'None' && s.pending !== '—' ? 'Blocked while the ' + s.role + ' holds pending reviews — reassign them first.' : 'Removes the staff account and revokes sessions.')
+    }));
+
+    const interviewStats = [
+      { k: 'Final-year students', v: '420', s: 'Eligible for interviews', color: '#102228' },
+      { k: 'Assigned', v: '312', s: 'Across 4 assignments', color: '#102228' },
+      { k: 'Completed', v: '248', s: '79% completion', color: '#0F6E56' },
+      { k: 'At risk', v: '34', s: 'Score below 60%', color: '#C97A0E' }
+    ];
+    const assignmentDefs = [
+      { nm: 'Placement readiness — CSE', role: 'Frontend Developer · Intermediate', cohort: 'B.Tech CSE · Sem 8', eligible: '156 eligible', mode: 'Full', due: '30 Aug', pct: 82, done: '128 / 156' },
+      { nm: 'HR screening practice — ECE', role: 'General · Beginner', cohort: 'B.Tech ECE · Sem 8', eligible: '120 eligible', mode: 'Mock', due: '28 Aug', pct: 64, done: '77 / 120' },
+      { nm: 'Mock round 1 — Mech', role: 'Design Engineer · Intermediate', cohort: 'B.Tech Mech · Sem 8', eligible: '94 eligible', mode: 'Mock', due: '2 Sep', pct: 45, done: '43 / 94' }
+    ];
+    const assignmentRows = assignmentDefs.map(a => ({
+      ...a,
+      modeBg: a.mode === 'Full' ? '#EFEBFC' : '#E8F0FB', modeFg: a.mode === 'Full' ? '#5B3FD6' : '#1D5FB8',
+      barColor: a.pct >= 75 ? '#0F6E56' : (a.pct >= 50 ? '#0E5C6B' : '#C97A0E'),
+      toastTrack: () => this.showToast('Per-student completion status, filterable by not-started / in-progress / overdue.')
+    }));
+
+    const deptPerfDefs = [
+      { nm: 'Computer Science', hod: 'Dr. Karthik', students: 620, compPct: 74, score: 76, pass: 89, ready: 82 },
+      { nm: 'Electronics', hod: 'Prof. Meena', students: 480, compPct: 68, score: 72, pass: 84, ready: 76 },
+      { nm: 'Mechanical', hod: 'Dr. Suresh', students: 390, compPct: 52, score: 68, pass: 76, ready: 61 },
+      { nm: 'Commerce', hod: 'Prof. Revathi', students: 410, compPct: 49, score: 66, pass: 73, ready: 58 }
+    ];
+    const deptPerfRows = deptPerfDefs.map(d => ({
+      ...d,
+      compColor: d.compPct >= 70 ? '#0F6E56' : '#C97A0E',
+      scoreBg: d.score >= 70 ? '#E9F5EF' : '#FDF1E2', scoreFg: d.score >= 70 ? '#0B4B3A' : '#8A560A',
+      readyBg: d.ready >= 70 ? '#E9F5EF' : '#FDF1E2', readyFg: d.ready >= 70 ? '#0B4B3A' : '#8A560A'
+    }));
+
+    const scoreDistribution = [
+      { nm: '90–100%', pct: 22, val: 412, color: '#0F6E56' },
+      { nm: '75–89%', pct: 64, val: 1186, color: '#0F6E56' },
+      { nm: '50–74%', pct: 100, val: 1842, color: '#1D5FB8' },
+      { nm: '25–49%', pct: 31, val: 574, color: '#C97A0E' },
+      { nm: '0–24%', pct: 9, val: 168, color: '#A32D2D' }
+    ];
+    const topQaTopics = [
+      { nm: 'Pointers & memory', pct: 100, val: 842, color: '#1D5FB8' },
+      { nm: 'Normalization', pct: 78, val: 658, color: '#4D8691' },
+      { nm: 'Tree traversal', pct: 61, val: 514, color: '#5B3FD6' },
+      { nm: 'Entropy', pct: 44, val: 372, color: '#C97A0E' },
+      { nm: 'OSI layers', pct: 38, val: 318, color: '#0F6E56' }
+    ];
+
+    const atRiskDefs = [
+      { nm: 'Suresh B', roll: '21ME044', dept: 'Mechanical', done: '1 of 3', score: 48, weak: 'Structured answers', flag: 'At risk', flagType: 'risk' },
+      { nm: 'Meena L', roll: '21CO118', dept: 'Commerce', done: '0 of 3', score: null, weak: 'Not started', flag: 'At risk', flagType: 'risk' },
+      { nm: 'Vimal R', roll: '21EC202', dept: 'Electronics', done: '2 of 3', score: 57, weak: 'Technical depth', flag: 'Watch', flagType: 'watch' }
+    ];
+    const atRiskRows = atRiskDefs.map(r => ({
+      ...r, hasScore: r.score != null, noScore: r.score == null,
+      scoreBg: '#FBEEEC', scoreFg: '#A32D2D',
+      flagBg: r.flagType === 'risk' ? '#FBEEEC' : '#FDF1E2', flagFg: r.flagType === 'risk' ? '#A32D2D' : '#8A560A'
+    }));
+
+    const reportDefs = [
+      { nm: 'Aravind R', roll: '22CS118', prog: 'B.Tech CSE · 4', chapters: '14 / 32', watch: '42 hrs', assess: 9, score: 78 },
+      { nm: 'Priya N', roll: '22CS204', prog: 'B.Tech CSE · 4', chapters: '19 / 32', watch: '55 hrs', assess: 12, score: 82 },
+      { nm: 'Sneha K', roll: '22CS150', prog: 'B.Tech CSE · 4', chapters: '16 / 32', watch: '48 hrs', assess: 10, score: 74 },
+      { nm: 'Rahul V', roll: '23EC121', prog: 'B.Tech ECE · 3', chapters: '11 / 28', watch: '33 hrs', assess: 7, score: 71 },
+      { nm: 'Karthik M', roll: '23ME090', prog: 'B.Tech Mech · 3', chapters: '7 / 26', watch: '19 hrs', assess: 5, score: 64 }
+    ];
+    const reportRows = reportDefs.map(r => ({ ...r, bg: r.score >= 70 ? '#E9F5EF' : '#FDF1E2', fg: r.score >= 70 ? '#0B4B3A' : '#8A560A' }));
+
+    const staffRoleIsHod = this.state.staffModalRole === 'hod';
+
+    return {
+      isDashboard: page === 'dashboard', isStructure: page === 'structure', isUpload: page === 'upload',
+      isStudents: page === 'students', isStaff: page === 'staff', isInterviews: page === 'interviews',
+      isAnalytics: page === 'analytics', isReports: page === 'reports',
+      titleMain: t[0], titleSub: t[1],
+      navDash: navDef('dashboard'), navStructure: navDef('structure'), navUpload: navDef('upload'),
+      navStudents: navDef('students'), navStaff: navDef('staff'), navInterviews: navDef('interviews'),
+      navAnalytics: navDef('analytics'), navReports: navDef('reports'),
+      ring: () => this.showToast('Notifications — HOD feedback, generation completions, student activation failures.'),
+      dashStats, awaitingRows, deptActivityRows, recentStudents,
+      toastNewDept: () => this.showToast('Creates a department. Names must be unique among siblings.'),
+      deptTree, chapterList,
+      toastDrop: () => this.showToast('File type is verified by content signature, not extension, then virus-scanned before storage.'),
+      toastUploadGenerate: () => this.showToast('Creates an async job. You can close this page — you will be notified when generation completes.'),
+      contentStatusRows, feedbackRows,
+      openFix: () => this.setState({ fixModalOpen: true }),
+      studentRows,
+      openImport: () => this.setState({ importModalOpen: true }),
+      openStudent: () => this.setState({ studentModalOpen: true }),
+      staffRows,
+      openStaff: () => this.setState({ staffModalOpen: true, staffModalRole: 'hod' }),
+      interviewStats, assignmentRows,
+      openAssign: () => this.setState({ assignModalOpen: true }),
+      toastExport: () => this.showToast('Export honours the current filters.'),
+      deptPerfRows, scoreDistribution, topQaTopics, atRiskRows,
+      toastCsv: () => this.showToast('CSV export.'),
+      toastExcel: () => this.showToast('Excel export.'),
+      toastPdf: () => this.showToast('PDF export with filter summary and timestamp.'),
+      reportRows,
+      studentModalOpen: this.state.studentModalOpen,
+      importModalOpen: this.state.importModalOpen,
+      staffModalOpen: this.state.staffModalOpen,
+      assignModalOpen: this.state.assignModalOpen,
+      fixModalOpen: this.state.fixModalOpen,
+      closeModal: () => this.setState({ studentModalOpen: false, importModalOpen: false, staffModalOpen: false, assignModalOpen: false, fixModalOpen: false }),
+      stop: e => e.stopPropagation(),
+      createStudentToast: () => { this.setState({ studentModalOpen: false }); this.showToast('Student created — activation link sent by email and SMS.'); },
+      toastTemplate: () => this.showToast('Downloads a CSV with the required headers.'),
+      toastErrorReport: () => this.showToast('Downloads an annotated CSV naming the row, column and reason for every failure.'),
+      importToast: () => { this.setState({ importModalOpen: false }); this.showToast('84 students imported — activation links queued.'); },
+      staffRoleIsHod, staffRoleIsFaculty: !staffRoleIsHod,
+      setRoleHodModal: () => this.setState({ staffModalRole: 'hod' }),
+      setRoleFacultyModal: () => this.setState({ staffModalRole: 'faculty' }),
+      roleHodModalStyle: { border:'none', padding:'8px 14px', fontSize:11.5, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: staffRoleIsHod?'#0E5C6B':'#fff', color: staffRoleIsHod?'#fff':'#536064' },
+      roleFacultyModalStyle: { border:'none', padding:'8px 14px', fontSize:11.5, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: !staffRoleIsHod?'#0E5C6B':'#fff', color: !staffRoleIsHod?'#fff':'#536064' },
+      createStaffToast: () => { this.setState({ staffModalOpen: false }); this.showToast('Staff created — activation link sent.'); },
+      assignToast: () => { this.setState({ assignModalOpen: false }); this.showToast('Assignment created — 156 students notified.'); },
+      regenerateToast: () => { this.setState({ fixModalOpen: false }); this.showToast('Regeneration started — HOD will be notified on completion.'); },
+      toastMsg: this.state.toastMsg
+    };
+  }
+}
+</script>
+</body>
+</html>

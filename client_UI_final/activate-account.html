@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quirri · Activate account (UI demo)</title>
+  <link rel="stylesheet" href="./auth.css">
+</head>
+<body class="auth-page">
+  <div class="auth">
+    <div class="auth-shell">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <img src="./assets/quirri-logo.svg" alt="Quirri" width="180" height="60">
+        </div>
+
+        <div id="step-form">
+          <h1>Activate account</h1>
+          <p class="sub">Set your password to finish joining Quirri.</p>
+
+          <form id="activate-form" novalidate>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" type="email" value="aravind.r@abceng.edu" disabled>
+            </div>
+            <div class="field">
+              <label for="password">Create password</label>
+              <input id="password" name="password" type="password" placeholder="••••••••" autocomplete="new-password" required minlength="8">
+            </div>
+            <div class="field">
+              <label for="confirm">Confirm password</label>
+              <input id="confirm" name="confirm" type="password" placeholder="••••••••" autocomplete="new-password" required minlength="8">
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Activate &amp; continue</button>
+          </form>
+        </div>
+
+        <div id="step-done" hidden>
+          <h1>You’re in</h1>
+          <p class="sub">Your student account is ready.</p>
+          <div class="notice ok">
+            <div>
+              <b>Activated (demo)</b>
+              Continues to the Student portal UI — no live session is created.
+            </div>
+          </div>
+          <a class="btn btn-primary btn-block" href="./student.html">Continue to Student portal</a>
+        </div>
+
+        <p style="margin-top:26px;padding-top:20px;border-top:1px solid var(--line);text-align:left">
+          <a class="link" href="./index.html">← Back to sign in</a>
+        </p>
+      </div>
+
+      <p class="auth-foot">UI demo only — no authentication API.</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('activate-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const pw = document.getElementById('password').value;
+      const cf = document.getElementById('confirm').value;
+      if (pw.length < 8 || pw !== cf) {
+        alert('Use matching passwords with at least 8 characters (demo validation only).');
+        return;
+      }
+      document.getElementById('step-form').hidden = true;
+      document.getElementById('step-done').hidden = false;
+    });
+  </script>
+</body>
+</html>

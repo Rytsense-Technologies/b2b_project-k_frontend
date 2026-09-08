@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="none">
+<link rel="stylesheet" href="./quirri-ui.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+::placeholder{color:#939C9E}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;background:#F4F6F7">
+
+  <aside class="q-auth-grid" style="flex:1 1 480px;min-width:320px;position:relative;overflow:hidden;background:linear-gradient(155deg,#0A3F49 0%,#06252B 55%,#04191D 100%);color:#fff;padding:52px 56px;display:flex;flex-direction:column">
+    <div style="position:absolute;inset:0;background-image:radial-gradient(70% 55% at 90% 0%,rgba(14,92,107,.55),transparent 62%),radial-gradient(50% 40% at 0% 100%,rgba(172,91,22,.18),transparent 55%);pointer-events:none"></div>
+    <a href="Login.dc.html" style="position:relative;display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);display:grid;place-items:center;flex:none">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v3M12 16v3M5 12h3M16 12h3"></path></svg>
+      </div>
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.02em">Quirri</span>
+    </a>
+    <div style="position:relative;margin-top:auto">
+      <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#86AEB5;font-weight:700;margin-bottom:18px">Welcome to Project K</div>
+      <h1 style="font-size:clamp(36px,4.2vw,48px);line-height:1.06;letter-spacing:-.03em;font-weight:800;margin:0 0 18px;max-width:14ch">Activate your student account.</h1>
+      <p style="color:#B7CED3;font-size:15.5px;line-height:1.65;max-width:42ch;margin:0;font-weight:400">Your college created this account for you. Set a password to activate it — the administrator never sees or sets your password.</p>
+    </div>
+    <div style="position:relative;margin-top:44px;display:grid;gap:0">
+      <sc-for list="{{ pillars }}" as="p" hint-placeholder-count="3">
+        <div style="display:flex;gap:14px;align-items:flex-start;padding:15px 0;border-top:1px solid rgba(255,255,255,.12)">
+          <div style="font-size:14px;color:#7EC8CF;font-weight:800;min-width:24px">{{ p.n }}</div>
+          <div><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">{{ p.t }}</div><div style="font-size:12.5px;color:#94A3A6;line-height:1.55;font-weight:400">{{ p.d }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+  </aside>
+
+  <main style="flex:1 1 420px;min-width:320px;display:flex;align-items:center;justify-content:center;padding:40px 32px;background:radial-gradient(80% 60% at 50% 0%,rgba(14,92,107,.05),transparent 55%),#F4F6F7">
+    <div class="q-rise" style="width:100%;max-width:400px">
+      <div style="display:inline-flex;align-items:center;gap:9px;padding:7px 13px 7px 8px;background:#fff;border:1px solid #DEE0E1;border-radius:999px;box-shadow:0 1px 2px rgba(16,34,40,.05),0 4px 14px rgba(16,34,40,.04);margin-bottom:28px">
+        <div style="width:24px;height:24px;border-radius:7px;background:#0E5C6B;color:#fff;display:grid;place-items:center;font-size:9px;font-weight:800;flex:none">AB</div>
+        <div style="font-size:12.5px;font-weight:700;color:#102228">ABC Engineering College</div>
+      </div>
+
+      <sc-if value="{{ !activated }}" hint-placeholder-val="{{ true }}">
+        <h2 style="font-size:30px;font-weight:800;letter-spacing:-.025em;margin:0 0 6px;color:#102228">Set your password</h2>
+        <p style="color:#536064;font-size:13.5px;margin:0 0 26px;line-height:1.6">Activating <b style="color:#33465C">aravind.r@abceng.edu</b> · B.Tech CSE · Semester 4</p>
+
+        <form onSubmit="{{ activate }}">
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:12.5px;font-weight:700;color:#102228;margin-bottom:7px">Create password</label>
+            <input type="password" placeholder="••••••••" value="{{ pw }}" onChange="{{ setPw }}" style="width:100%;padding:12px 14px;border:1px solid #DBE3EC;border-radius:10px;background:#fff;color:#102228;outline:none;font-size:13.5px;font-family:inherit">
+            <div style="display:flex;gap:4px;margin-top:9px">
+              <sc-for list="{{ meterBars }}" as="b" hint-placeholder-count="4"><i style="height:4px;flex:1;border-radius:4px;background:{{ b }}"></i></sc-for>
+            </div>
+            <div style="margin-top:10px;display:grid;gap:5px">
+              <sc-for list="{{ rules }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:{{ r.color }};font-weight:{{ r.weight }}"><span style="width:5px;height:5px;border-radius:50%;background:{{ r.color }};flex:none"></span>{{ r.label }}</div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <label style="display:block;font-size:12.5px;font-weight:700;color:#102228;margin-bottom:7px">Confirm password</label>
+            <input type="password" placeholder="••••••••" value="{{ cp }}" onChange="{{ setCp }}" style="width:100%;padding:12px 14px;border:1px solid {{ cpBorder }};border-radius:10px;background:#fff;color:#102228;outline:none;font-size:13.5px;font-family:inherit">
+            <sc-if value="{{ cpError }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#A32D2D;margin-top:6px;font-weight:600">Passwords do not match.</div></sc-if>
+          </div>
+
+          <button type="submit" class="q-btn" style="width:100%;border:none;cursor:pointer;font-weight:700;font-size:15px;padding:13px 24px;border-radius:999px;background:#AC5B16;color:#fff;font-family:inherit">Activate &amp; continue</button>
+        </form>
+
+        <p style="margin-top:22px;color:#939C9E;font-size:11.5px;line-height:1.6">Link expired? Ask your college administrator to resend it. Activation links are valid for 72 hours and can only be used once.</p>
+      </sc-if>
+
+      <sc-if value="{{ activated }}" hint-placeholder-val="{{ false }}">
+        <h2 style="font-size:30px;font-weight:800;letter-spacing:-.025em;margin:0 0 6px;color:#102228">Account activated</h2>
+        <p style="color:#536064;font-size:13.5px;margin:0 0 22px;line-height:1.6">Signing you in to your semester's subjects…</p>
+        <a href="Student.dc.html" class="q-btn" style="display:flex;align-items:center;justify-content:center;width:100%;border:none;cursor:pointer;font-weight:700;font-size:15px;padding:13px 24px;border-radius:999px;background:#AC5B16;color:#fff">Continue to Student portal</a>
+      </sc-if>
+    </div>
+  </main>
+
+  <sc-if value="{{ toastMsg }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:#A32D2D;color:#fff;padding:11px 20px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 8px 28px rgba(16,34,40,.28);white-space:nowrap">{{ toastMsg }}</div>
+  </sc-if>
+</div>
+</b_dc_html>
+<c_dc_js>class Component extends DCLogic {
+  state = { pw: '', cp: '', cpError: false, activated: false, toastMsg: null };
+  showToast(msg) {
+    if (this._t) clearTimeout(this._t);
+    this.setState({ toastMsg: msg });
+    this._t = setTimeout(() => this.setState({ toastMsg: null }), 2600);
+  }
+  checks() {
+    const v = this.state.pw;
+    return [v.length >= 8, /[A-Z]/.test(v), /[a-z]/.test(v), /[0-9]/.test(v)];
+  }
+  activate(e) {
+    e.preventDefault();
+    const checks = this.checks();
+    if (checks.filter(Boolean).length < 4) { this.showToast('Password does not meet the policy.'); return; }
+    if (this.state.pw !== this.state.cp) { this.setState({ cpError: true }); return; }
+    this.setState({ cpError: false, activated: true });
+  }
+  renderVals() {
+    const checks = this.checks();
+    const score = checks.filter(Boolean).length;
+    const colors = ['#DEE0E1', '#DEE0E1', '#DEE0E1', '#DEE0E1'];
+    const activeColor = score <= 1 ? '#A32D2D' : score === 2 ? '#C97A0E' : score === 3 ? '#4D8691' : '#0F6E56';
+    for (let i = 0; i < score; i++) colors[i] = activeColor;
+    const labels = ['At least 8 characters', 'One uppercase letter', 'One lowercase letter', 'One number'];
+    const rules = labels.map((label, i) => ({ label, color: checks[i] ? '#0F6E56' : '#707A7E', weight: checks[i] ? 600 : 400 }));
+    const pillars = [
+      { n: '01', t: 'Your college adds you', d: 'Individually, or in a bulk CSV import of up to 100 students.' },
+      { n: '02', t: 'You get an activation link', d: "Sent by email and SMS/WhatsApp. It's single-use and expires in 72 hours." },
+      { n: '03', t: 'You set your own password', d: "Then you're signed straight in to your semester's subjects." }
+    ];
+    return {
+      pillars,
+      pw: this.state.pw, setPw: e => this.setState({ pw: e.target.value }),
+      cp: this.state.cp, setCp: e => this.setState({ cp: e.target.value }),
+      cpError: this.state.cpError, cpBorder: this.state.cpError ? '#A32D2D' : '#DBE3EC',
+      meterBars: colors, rules,
+      activated: this.state.activated, activate: e => this.activate(e),
+      toastMsg: this.state.toastMsg
+    };
+  }
+}</c_dc_js>
+
+</x-dc>
+</body>
+</html>

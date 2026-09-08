@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="none">
+<link rel="stylesheet" href="./quirri-ui.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+*{box-sizing:border-box}
+body{margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.role{transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.role:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(16,34,40,.12);border-color:#B9D2D6}
+.alink{transition:border-color .14s ease,transform .14s ease,box-shadow .14s ease}
+.alink:hover{border-color:#0E5C6B;transform:translateY(-2px);box-shadow:0 4px 14px rgba(16,34,40,.08)}
+</style>
+</helmet>
+
+<div style="--teal:#0E5C6B;--teal-dark:#06252B;--teal-700:#0A3F49;--amber-pri:#AC5B16;--ink:#102228;--ink-2:#33465C;--muted:#536064;--muted-3:#939C9E;--line:#DEE0E1;--mist:#F4F6F7;--success:#0F6E56;--violet:#5B3FD6;--blue:#1D5FB8;--r-md:12px;--r-lg:18px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--mist);color:var(--ink);min-height:100vh">
+
+  <header class="q-auth-grid" style="position:relative;overflow:hidden;color:#fff;padding:64px 0 80px;background:linear-gradient(155deg,#0A3F49 0%,#06252B 55%,#04191D 100%)">
+    <div style="position:absolute;inset:0;background-image:radial-gradient(90% 80% at 88% 0%,rgba(14,92,107,.45),transparent 60%),radial-gradient(50% 40% at 0% 100%,rgba(172,91,22,.15),transparent 55%)"></div>
+    <div style="max-width:1120px;margin:0 auto;padding:0 32px;position:relative">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);display:grid;place-items:center">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v3M12 16v3M5 12h3M16 12h3"></path></svg>
+        </div>
+        <span style="font-size:18px;font-weight:800;letter-spacing:-.02em">Quirri</span>
+      </div>
+      <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:700;margin-bottom:16px">Product UI · walkthrough</div>
+      <h1 style="font-weight:800;font-size:clamp(34px,4.6vw,54px);line-height:1.06;letter-spacing:-.03em;margin:0 0 18px;max-width:18ch">One platform, four very different jobs.</h1>
+      <p style="color:#C7DBDD;font-size:15.5px;line-height:1.7;max-width:62ch;margin:0;font-weight:400">A clickable walkthrough of every screen in the Quirri platform — from the institution that onboards, to the faculty who approve, to the student who learns.</p>
+      <div style="display:flex;gap:36px;flex-wrap:wrap;margin-top:36px;padding-top:26px;border-top:1px solid rgba(255,255,255,.16)">
+        <sc-for list="{{ metaStats }}" as="m" hint-placeholder-count="4">
+          <div><div style="font-size:28px;font-weight:700;line-height:1">{{ m.v }}</div><div style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:700;margin-top:6px">{{ m.l }}</div></div>
+        </sc-for>
+      </div>
+    </div>
+  </header>
+
+  <main style="padding:52px 0 80px">
+    <div style="max-width:1120px;margin:0 auto;padding:0 32px">
+
+      <section style="margin-bottom:50px">
+        <h2 style="font-weight:700;font-size:22px;letter-spacing:-.01em;margin:0 0 6px">Start anywhere</h2>
+        <p style="color:var(--muted);font-size:13.5px;max-width:70ch;line-height:1.6;margin:0 0 24px">Each portal opens as a working click-through — navigate the menu, open modals, switch tabs. Sample data is illustrative.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+          <a class="role" href="SuperAdmin.dc.html" style="display:block;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;transition:transform .16s,box-shadow .16s,border-color .16s">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
+              <div style="width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(140deg,#1D5FB8,#4D8691)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3L2 8l10 5 10-5-10-5z"></path><path d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"></path></svg></div>
+              <div><div style="font-size:16px;font-weight:700;letter-spacing:-.01em">Super Admin</div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Quirri · platform-wide</div></div>
+            </div>
+            <div style="font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:14px">Onboards universities and colleges, provisions administrators, manages users across every institution, and watches the health of the whole platform.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Dashboard</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Universities</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Colleges</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Platform Users</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Reports</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Platform Health</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Audit Logs</span>
+            </div>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:6px;color:var(--blue);font-weight:700;font-size:12.5px">Open portal <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+          </a>
+
+          <a class="role" href="CollegeAdmin.dc.html" style="display:block;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;transition:transform .16s,box-shadow .16s,border-color .16s">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
+              <div style="width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(140deg,#0E5C6B,#4D8691)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 21h18M5 21V8l7-4 7 4v13"></path><path d="M10 21v-6h4v6"></path></svg></div>
+              <div><div style="font-size:16px;font-weight:700;letter-spacing:-.01em">College Admin</div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">ABC Engineering · one institution</div></div>
+            </div>
+            <div style="font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:14px">Builds the academic structure, uploads chapter material, adds students individually or by CSV, manages staff, and assigns interviews to final-year cohorts.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Dashboard</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Academic Structure</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Upload &amp; Content</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Students</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Staff &amp; HOD</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Interview Assignments</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Analytics</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Reports</span>
+            </div>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:6px;color:var(--blue);font-weight:700;font-size:12.5px">Open portal <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+          </a>
+
+          <a class="role" href="HodFaculty.dc.html" style="display:block;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;transition:transform .16s,box-shadow .16s,border-color .16s">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
+              <div style="width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(140deg,#3b3a8f,#5B3FD6)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9 11l3 3 8-8"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></div>
+              <div><div style="font-size:16px;font-weight:700;letter-spacing:-.01em">HOD / Faculty</div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Department &amp; subject scope</div></div>
+            </div>
+            <div style="font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:14px">The approval gate. Reviews every generated video and every generated MCQ before students see them. Includes a View as switch showing how the screen changes for Faculty.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Dashboard</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Video Review</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">MCQ Review</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Subjects</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Students</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Interview Assignments</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Department Analytics</span>
+            </div>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:6px;color:var(--blue);font-weight:700;font-size:12.5px">Open portal <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+          </a>
+
+          <a class="role" href="Student.dc.html" style="display:block;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;transition:transform .16s,box-shadow .16s,border-color .16s">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
+              <div style="width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(140deg,#0b5d43,#0F6E56)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"></path></svg></div>
+              <div><div style="font-size:16px;font-weight:700;letter-spacing:-.01em">Student</div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Aravind R · B.Tech CSE, Sem 4</div></div>
+            </div>
+            <div style="font-size:13px;color:var(--ink-2);line-height:1.6;margin-bottom:14px">Watches AI video lectures built from their own syllabus, asks the chapter-grounded AI tutor in English or Tamil, takes assessments, and practises AI mock interviews.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Home</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">My Subjects</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Classroom</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">AI Tutor</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Assessment</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Leaderboard</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">Interviews</span>
+              <span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:var(--mist);color:var(--ink-2)">My Progress</span>
+            </div>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:6px;color:var(--blue);font-weight:700;font-size:12.5px">Open portal <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+          </a>
+        </div>
+      </section>
+
+      <section style="margin-bottom:50px">
+        <h2 style="font-weight:700;font-size:22px;letter-spacing:-.01em;margin:0 0 6px">Authentication flows</h2>
+        <p style="color:var(--muted);font-size:13.5px;max-width:70ch;line-height:1.6;margin:0 0 24px">Every account is created by an administrator — there is no public sign-up. New users set their own password from a single-use activation link.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+          <sc-for list="{{ authLinks }}" as="a" hint-placeholder-count="4">
+            <a class="alink" href="{{ a.href }}" style="display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;transition:border-color .14s,transform .14s">
+              <div style="font-weight:700;font-size:13.5px;margin-bottom:4px">{{ a.t }}</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5">{{ a.d }}</div>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom:0">
+        <h2 style="font-weight:700;font-size:22px;letter-spacing:-.01em;margin:0 0 6px">The core loop</h2>
+        <p style="color:var(--muted);font-size:13.5px;max-width:70ch;line-height:1.6;margin:0 0 24px">One chapter's journey through the platform — the sequence every screen in this walkthrough hangs off.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:36px">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 16px">
+              <div style="font-size:20px;font-weight:700;color:var(--teal);line-height:1;margin-bottom:9px">{{ s.n }}</div>
+              <div style="font-weight:700;font-size:13px;margin-bottom:5px">{{ s.t }}</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.55">{{ s.d }}</div>
+              <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-pri);margin-top:10px">{{ s.who }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:var(--teal-dark);border-radius:var(--r-lg);padding:24px 28px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;font-size:15px;margin-bottom:4px">What's in — and what isn't</div>
+            <div style="font-size:12.5px;color:#B7CED3;max-width:56ch;line-height:1.55">This walkthrough is deliberately bounded by the approved scope.</div>
+          </div>
+          <a href="Scope.dc.html" style="border:none;cursor:pointer;font-weight:700;font-size:12.5px;padding:11px 20px;border-radius:999px;background:#fff;color:var(--teal-dark);display:inline-flex;align-items:center;gap:8px;flex:none">Read the scope map<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      metaStats: [
+        { v: '4', l: 'Portals' }, { v: '5', l: 'Roles' }, { v: '38', l: 'Screens' }, { v: '11', l: 'Modals' }
+      ],
+      authLinks: [
+        { t: 'Sign in', d: 'Tenant-aware login. Fail three times to see the lockout state.', href: 'Login.dc.html' },
+        { t: 'Activate account', d: 'First-login flow from an emailed invite link.', href: 'ActivateAccount.dc.html' },
+        { t: 'Forgot password', d: 'Non-enumerating request, then a single-use link.', href: 'ForgotPassword.dc.html' },
+        { t: 'Reset password', d: 'Live policy meter matching the backend rules.', href: 'ResetPassword.dc.html' }
+      ],
+      steps: [
+        { n: '01', t: 'Upload', d: 'A scanned chapter is uploaded into the exact place in the academic tree.', who: 'College Admin' },
+        { n: '02', t: 'Generate', d: 'Text is extracted, embedded, then turned into a video lecture and an MCQ set.', who: 'AI pipeline' },
+        { n: '03', t: 'Approve', d: 'The HOD watches the video and reviews every question. Nothing publishes without this.', who: 'HOD / SME' },
+        { n: '04', t: 'Learn', d: 'The student watches, then asks the AI tutor follow-ups grounded in that chapter.', who: 'Student' },
+        { n: '05', t: 'Assess', d: 'They take the quiz, get scored instantly, and move on the cohort leaderboard.', who: 'Student' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

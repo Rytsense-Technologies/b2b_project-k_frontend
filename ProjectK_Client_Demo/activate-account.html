@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activate your account · Quirri</title>
+<link rel="stylesheet" href="assets/css/quirri.css">
+</head>
+<body>
+<div class="auth">
+  <aside class="auth-hero">
+    <div class="logo on-dark"><span class="ring">QUIRRI</span></div>
+    <div style="margin-top:auto">
+      <div class="eyebrow">Welcome to Project K</div>
+      <h1>Activate your<br>student account.</h1>
+      <p class="lede">
+        Your college created this account for you. Set a password to activate it —
+        the administrator never sees or sets your password.
+      </p>
+    </div>
+    <div class="auth-pillars">
+      <div class="auth-pillar">
+        <div class="n">01</div>
+        <div><div class="t">Your college adds you</div><div class="d">Individually, or in a bulk CSV import of up to 100 students.</div></div>
+      </div>
+      <div class="auth-pillar">
+        <div class="n">02</div>
+        <div><div class="t">You get an activation link</div><div class="d">Sent by email and SMS/WhatsApp. It's single-use and expires in 72 hours.</div></div>
+      </div>
+      <div class="auth-pillar">
+        <div class="n">03</div>
+        <div><div class="t">You set your own password</div><div class="d">Then you're signed straight in to your semester's subjects.</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="auth-panel">
+    <div class="auth-card">
+      <div class="tenant-chip">
+        <div class="mark">AB</div>
+        <div class="nm">ABC Engineering College</div>
+      </div>
+
+      <h2>Set your password</h2>
+      <p class="sub">Activating <b>aravind.r@abceng.edu</b> · B.Tech CSE · Semester 4</p>
+
+      <form onsubmit="return activate(event)" novalidate>
+        <div class="field">
+          <label for="np">Create password</label>
+          <div class="pw-wrap">
+            <input id="np" type="password" placeholder="••••••••" data-pwmeter="meter" autocomplete="new-password" required>
+            <button class="pw-toggle" type="button"></button>
+          </div>
+          <div class="pw-meter" id="meter"><i></i><i></i><i></i><i></i></div>
+          <div class="pw-rules">
+            <div class="pw-rule"><span class="dot"></span>At least 8 characters</div>
+            <div class="pw-rule"><span class="dot"></span>One uppercase letter</div>
+            <div class="pw-rule"><span class="dot"></span>One lowercase letter</div>
+            <div class="pw-rule"><span class="dot"></span>One number</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="cp">Confirm password</label>
+          <div class="pw-wrap">
+            <input id="cp" type="password" placeholder="••••••••" autocomplete="new-password" required>
+            <button class="pw-toggle" type="button"></button>
+          </div>
+          <div class="err" id="cpErr" style="display:none">Passwords do not match.</div>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit">Activate & continue</button>
+      </form>
+
+      <div class="auth-foot">
+        Link expired? Ask your college administrator to resend it.
+        Activation links are valid for 72 hours and can only be used once.
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/quirri.js"></script>
+<script>
+  function activate(e) {
+    e.preventDefault();
+    var a = document.getElementById('np').value, b = document.getElementById('cp').value;
+    var okPolicy = a.length >= 8 && /[A-Z]/.test(a) && /[a-z]/.test(a) && /[0-9]/.test(a);
+    if (!okPolicy) { toast('Password does not meet the policy.', 'err'); return false; }
+    if (a !== b) {
+      document.getElementById('cpErr').style.display = 'block';
+      document.getElementById('cp').classList.add('invalid');
+      return false;
+    }
+    toast('Account activated — signing you in…');
+    setTimeout(function () { location.href = 'student.html'; }, 900);
+    return false;
+  }
+</script>
+</body>
+</html>

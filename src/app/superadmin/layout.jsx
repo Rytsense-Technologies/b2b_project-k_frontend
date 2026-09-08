@@ -2,15 +2,17 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setRoleDataOnly } from '@/store/slices/authSlice';
+import { selectSidebarOpen } from '@/store/slices/uiSlice';
 import { getRoleCookie, getTenantCookie, clearRoleCookie, clearTenantCookie } from '@/lib/tokens';
-import { PAGE_META } from '@/lib/mock/superadminData';
+import { PAGE_META } from '@/lib/superadmin/pageMeta';
 import SuperAdminSidebar from '@/components/superadmin/SuperAdminSidebar';
 
 export default function SuperAdminLayout({ children }) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
+  const sidebarOpen = useAppSelector(selectSidebarOpen);
 
   useEffect(() => {
     const role = getRoleCookie();
@@ -34,21 +36,18 @@ export default function SuperAdminLayout({ children }) {
   const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'Super Admin', subtitle: '' };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--quirri-bg)' }}>
+    <div className="app q-app-shell">
       <SuperAdminSidebar />
 
-      <div className="quirri-main">
-        <div className="quirri-top">
+      <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
+        <div className="topbar">
           <div>
             <h1>{meta.title}</h1>
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}
           </div>
-          <button type="button" className="quirri-bell" aria-label="Notifications">
-            ♧
-          </button>
         </div>
 
-        <main>{children}</main>
+        <div className="content">{children}</div>
       </div>
     </div>
   );

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="none">
+<link rel="stylesheet" href="./quirri-ui.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+*{box-sizing:border-box}
+body{margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+th,td{text-align:left;vertical-align:top}
+</style>
+</helmet>
+
+<div style="--teal:#0E5C6B;--ink:#102228;--ink-2:#33465C;--muted:#536064;--muted-3:#939C9E;--line:#DEE0E1;--mist:#F4F6F7;--r-md:12px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--mist);color:var(--ink);min-height:100vh">
+  <div style="max-width:940px;margin:0 auto;padding:48px 32px 90px">
+
+    <a href="Index.dc.html" style="display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-weight:700;font-size:13px;margin-bottom:26px">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>Back to walkthrough
+    </a>
+
+    <h1 style="font-weight:800;font-size:36px;letter-spacing:-.03em;margin:0 0 12px">Scope map</h1>
+    <p style="color:var(--muted);font-size:14px;line-height:1.75;max-width:70ch;margin:0 0 14px">What this walkthrough covers, what it deliberately leaves out, and why. Everything here traces to the approved Quirri SOW — where an earlier mockup and the SOW disagreed, the SOW won and the difference is noted below.</p>
+
+    <h2 style="font-weight:700;font-size:22px;letter-spacing:-.01em;margin:40px 0 6px">Included — and newly designed</h2>
+    <p style="color:var(--muted);font-size:13px;line-height:1.65;max-width:74ch;margin:0 0 18px">Required by the approved scope but with no design in earlier mockups. Designed here for the first time.</p>
+    <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <colgroup><col style="width:24%"><col style="width:18%"><col style="width:58%"></colgroup>
+        <thead><tr><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Screen</th><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Portal</th><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Why it's here</th></tr></thead>
+        <tbody>
+          <sc-for list="{{ includedRows }}" as="r" hint-placeholder-count="9">
+            <tr><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:12.5px">{{ r.screen }}</td><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2)">{{ r.portal }}</td><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55">{{ r.why }}</td></tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-weight:700;font-size:22px;letter-spacing:-.01em;margin:40px 0 6px">Deliberately excluded</h2>
+    <p style="color:var(--muted);font-size:13px;line-height:1.65;max-width:74ch;margin:0 0 18px">Present in earlier mockups, but outside the approved scope. Designing these in would imply commitments the project has not made.</p>
+    <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <colgroup><col style="width:26%"><col style="width:18%"><col style="width:56%"></colgroup>
+        <thead><tr><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Removed</th><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Was in</th><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Reason</th></tr></thead>
+        <tbody>
+          <sc-for list="{{ excludedRows }}" as="r" hint-placeholder-count="7">
+            <tr><td style="padding:12px 18px;border-bottom:1px solid var(--line)"><div style="font-weight:700;font-size:12.5px">{{ r.removed }}</div><sc-if value="{{ r.sub }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:var(--muted-3);margin-top:2px">{{ r.sub }}</div></sc-if></td><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2)">{{ r.wasIn }}</td><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55">{{ r.reason }}</td></tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-weight:700;font-size:22px;letter-spacing:-.01em;margin:40px 0 6px">Design decisions worth flagging</h2>
+    <p style="color:var(--muted);font-size:13px;line-height:1.65;max-width:74ch;margin:0 0 18px">Choices made in this walkthrough that are worth an explicit yes or no from you.</p>
+    <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <colgroup><col style="width:26%"><col style="width:38%"><col style="width:36%"></colgroup>
+        <thead><tr><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Decision</th><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">What we've shown</th><th style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-3);font-weight:700;padding:11px 18px;border-bottom:1px solid var(--line)">Needs your confirmation</th></tr></thead>
+        <tbody>
+          <sc-for list="{{ decisionRows }}" as="r" hint-placeholder-count="6">
+            <tr><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:12.5px">{{ r.decision }}</td><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55">{{ r.shown }}</td><td style="padding:12px 18px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2);line-height:1.55">{{ r.confirm }}</td></tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-weight:700;font-size:22px;letter-spacing:-.01em;margin:40px 0 6px">What this is and isn't</h2>
+    <p style="color:var(--muted);font-size:13px;line-height:1.75;max-width:74ch;margin:0">This is a static click-through for design review. Screens navigate and modals open, but nothing connects to a server — there is no real authentication, no data is saved, and the figures shown are illustrative. Its purpose is to agree the interface and the flows before they are built.</p>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      includedRows: [
+        { screen: 'Universities', portal: 'Super Admin', why: 'The hierarchy starts at University → College. The earlier mockup began at College, leaving the top level undesigned.' },
+        { screen: 'Platform Users', portal: 'Super Admin', why: 'Managing users across all institutions is an explicit Super Admin responsibility with no prior screen.' },
+        { screen: 'Upload & Generate', portal: 'Super Admin', why: 'Content upload is performed by Super Admin or authorised Faculty — only the Faculty side had been designed.' },
+        { screen: 'Platform Health', portal: 'Super Admin', why: 'Monitoring system status, uptime and error logs is a stated Super Admin capability.' },
+        { screen: 'MCQ Review', portal: 'HOD / Faculty', why: 'Generated questions require SME approval before activation. The earlier mockup labelled the quiz "no approval needed" — corrected here.' },
+        { screen: 'Add student · Bulk import', portal: 'College Admin', why: 'Single add and CSV import (≤100 per batch) are both required. The mockup had an "Add Student" button with nothing behind it.' },
+        { screen: 'Interview Assignments', portal: 'College Admin · HOD', why: 'Faculty and HODs create interview assignments for cohorts. No prior screen existed.' },
+        { screen: 'Assessment attempt & result', portal: 'Student', why: 'The mockup linked to a quiz but never designed taking one, scoring it, or the PDF report.' },
+        { screen: 'Leaderboard', portal: 'Student', why: 'Required by the SOW, absent from every mockup.' }
+      ],
+      excludedRows: [
+        { removed: 'All payment UI', sub: 'Prices, "Buy to Enroll", "Buy hours", "Buy extra"', wasIn: 'Student mockup', reason: 'The platform is not consumer-facing on billing — institutions pay, students never do. No payment flow exists anywhere in this build.' },
+        { removed: 'Skill Courses catalogue', sub: '', wasIn: 'Student mockup', reason: 'A separate non-syllabus course product. Not part of the approved eLearning scope.' },
+        { removed: 'AI Skill Courses', sub: '', wasIn: 'Super Admin mockup', reason: 'Same product as above, authoring side. Would need to be agreed as a change request.' },
+        { removed: 'AI Usage cost dashboard', sub: 'Token counts, ₹ estimates, limits', wasIn: 'Super Admin mockup', reason: 'Internal usage instrumentation is being built; a customer-facing cost dashboard is a commercial decision not yet made.' },
+        { removed: 'Off-the-shelf Courses', sub: '', wasIn: 'College Admin mockup', reason: "Uptake analytics for a course product that isn't in scope." },
+        { removed: 'Hindi language option', sub: '', wasIn: 'Student mockup', reason: 'Scope names English for instruction and Tamil for Q&A. Hindi was shown as "coming soon" and has been removed rather than implied.' },
+        { removed: 'Public sign-up', sub: '', wasIn: 'Implied', reason: 'Every account is provisioned by an administrator. Open registration would break the institutional model.' }
+      ],
+      decisionRows: [
+        { decision: 'Tenant context is always visible', shown: "Every portal shows which institution you're operating inside, in the sidebar and at login.", confirm: 'Whether colleges should also get their own logo and accent colour.' },
+        { decision: 'AI tutor is voice-first', shown: 'A calm audio-led tutor with a visual presence, text as a fallback.', confirm: 'Whether a fully rendered, lip-synced speaking avatar is required — it carries a significant, ongoing infrastructure cost.' },
+        { decision: 'Every AI answer shows its source', shown: 'Each tutor reply cites the chapter and page it came from.', confirm: 'Nothing — but worth noting this is what makes the tutor defensible to faculty.' },
+        { decision: 'Faculty restriction is demonstrated, not just stated', shown: 'The HOD portal has a View as switch showing Department Analytics locking for Faculty.', confirm: 'Whether Faculty should see any cross-subject view at all.' },
+        { decision: 'Leaderboard shows peer names', shown: 'Students see named classmates in their cohort ranking.', confirm: 'Whether peers should be anonymised instead — a real choice with student-wellbeing implications.' },
+        { decision: 'Interview allocation is fixed', shown: '10 mock and 4 full interviews per semester, with no way to buy more.', confirm: 'The actual numbers, and whether they vary by plan tier.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

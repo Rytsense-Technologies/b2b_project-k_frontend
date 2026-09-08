@@ -1,0 +1,292 @@
+/* Quirri client demo — auth screens (centered card, product login pattern)
+   Portals use Plus Jakarta Sans via quirri-ui.css / inline styles.
+   Auth cards use Poppins to match the live product login. */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --teal-500: #0E5C6B;
+  --teal-600: #0B4B58;
+  --amber-700: #AC5B16;
+  --amber-600: #CE6D1A;
+  --ink: #102228;
+  --ink-2: #33465C;
+  --muted: #536064;
+  --muted-2: #707A7E;
+  --line: #DEE0E1;
+  --line-soft: #EEF0F0;
+  --panel: #ffffff;
+  --mist: #F8F8F9;
+  --radius-lg: 18px;
+  --shadow-md: 0 8px 28px rgba(16, 34, 40, 0.1);
+  --font-auth: Poppins, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --green: #0F6E56;
+  --green-soft: #E9F5EF;
+  --error: #A32D2D;
+  --error-soft: #FBEEEC;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body.auth-page {
+  font-family: var(--font-auth);
+  background: var(--mist);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: var(--mist);
+}
+
+.auth-shell {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-card {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 40px 36px 32px;
+}
+
+.auth-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.auth-brand img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+
+.auth-card h1 {
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 36px;
+  letter-spacing: -0.005em;
+  text-align: center;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.auth-card .sub {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 22px;
+  text-align: center;
+  margin: 0 0 28px;
+}
+
+.field {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.field label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin-bottom: 7px;
+}
+
+.field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.field input:focus {
+  border-color: var(--teal-500);
+  box-shadow: 0 0 0 3px rgba(14, 92, 107, 0.14);
+}
+
+.auth-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 22px;
+}
+
+.link {
+  color: var(--teal-500);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.link:hover { text-decoration: underline; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.btn-block { width: 100%; }
+
+.btn-primary {
+  background: var(--amber-700);
+  color: #fff;
+}
+
+.btn-primary:hover { background: var(--amber-600); }
+
+.btn-ghost {
+  background: #fff;
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+
+.btn-ghost:hover { background: var(--line-soft); }
+
+.auth-foot {
+  text-align: center;
+  color: var(--muted-2);
+  font-size: 12.5px;
+  margin-top: 20px;
+  line-height: 1.5;
+}
+
+.auth-foot a {
+  color: var(--teal-500);
+  font-weight: 600;
+}
+
+/* Demo portal picker */
+.demo-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin: 8px 0 12px;
+  text-align: left;
+}
+
+.portal-list {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.portal-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
+  text-align: left;
+}
+
+.portal-link:hover {
+  border-color: var(--teal-500);
+  background: #F1F5F6;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgba(16, 34, 40, 0.04), 0 4px 14px rgba(16, 34, 40, 0.05);
+}
+
+.portal-link .meta {
+  color: var(--muted-2);
+  font-weight: 500;
+  font-size: 12px;
+  text-align: right;
+}
+
+.portal-link .arrow {
+  color: var(--teal-500);
+  font-weight: 700;
+  flex: none;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 8px;
+  color: var(--muted-2);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.notice {
+  display: flex;
+  gap: 12px;
+  padding: 14px 15px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.notice.ok {
+  border: 1px solid #BFE0D2;
+  background: var(--green-soft);
+  color: #0B4B3A;
+}
+
+.notice.err {
+  border: 1px solid #F0C9C9;
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+.notice b { display: block; margin-bottom: 2px; }
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  text-align: left;
+  line-height: 1.45;
+}
+
+@media (max-width: 480px) {
+  .auth-card { padding: 32px 22px 28px; }
+  .portal-link { flex-direction: column; align-items: flex-start; }
+  .portal-link .meta { text-align: left; }
+}

@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="none">
+<link rel="stylesheet" href="./quirri-ui.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+::placeholder{color:#939C9E}
+</style>
+</helmet>
+
+<div class="q-app-shell" style="--teal:#0E5C6B;--teal-dark:#06252B;--teal-700:#0A3F49;--teal-600:#0B4B58;--teal-400:#4D8691;--teal-300:#86AEB5;--teal-200:#B7CED3;--teal-100:#DDE8EA;--teal-50:#F1F5F6;--amber:#F5821F;--amber-pri:#AC5B16;--amber-600:#CE6D1A;--amber-100:#FDE8D7;--ink:#102228;--ink-2:#33465C;--muted:#536064;--muted-2:#707A7E;--muted-3:#939C9E;--line:#DEE0E1;--line-soft:#EEF0F0;--mist:#F4F6F7;--success:#0F6E56;--success-soft:#E9F5EF;--warning:#C97A0E;--warning-soft:#FDF1E2;--error:#A32D2D;--error-soft:#FBEEEC;--r-sm:2px;--r-md:12px;--r-lg:18px;--sh-1:0 1px 2px rgba(16,34,40,.04),0 4px 14px rgba(16,34,40,.05);--sh-2:0 8px 28px rgba(16,34,40,.1);font-family:'Plus Jakarta Sans',system-ui,sans-serif;min-height:100vh;display:flex;flex-wrap:wrap;color:var(--ink);font-size:14px">
+
+  <!-- SIDEBAR -->
+  <aside class="q-side-dark" style="flex:1 1 258px;max-width:258px;min-width:230px;background:var(--teal-dark);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;color:#C8D9DC">
+    <div style="padding:22px 20px 16px;display:flex;align-items:center;gap:9px">
+      <div style="width:28px;height:28px;border-radius:10px;background:var(--teal);display:grid;place-items:center;flex:none">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v3M12 16v3M5 12h3M16 12h3"></path></svg>
+      </div>
+      <span style="font-size:16px;font-weight:700;letter-spacing:-.01em;color:#fff">Quirri</span>
+    </div>
+
+    <div style="margin:4px 14px 10px;padding:11px 12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);display:flex;gap:10px;align-items:center">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700;flex:none">AB</div>
+      <div style="min-width:0">
+        <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">ABC Engineering</div>
+        <div style="font-size:10.5px;color:#8FA8AD;font-weight:500">B.Tech CSE · Sem 4</div>
+      </div>
+    </div>
+
+    <nav style="padding:6px 12px;flex:1">
+      <a class="q-nav-item" onClick="{{ navHome.onClick }}" style="{{ navHome.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navHome.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>Home</a>
+      <a class="q-nav-item" onClick="{{ navSubjects.onClick }}" style="{{ navSubjects.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navSubjects.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><path d="M15 3v5h5"></path></svg>My Subjects</a>
+      <a class="q-nav-item" onClick="{{ navLeaderboard.onClick }}" style="{{ navLeaderboard.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navLeaderboard.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"></path><path d="M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>Leaderboard</a>
+      <a class="q-nav-item" onClick="{{ navInterview.onClick }}" style="{{ navInterview.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navInterview.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z"></path><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Interviews</a>
+      <a class="q-nav-item" onClick="{{ navProgress.onClick }}" style="{{ navProgress.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navProgress.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>My Progress</a>
+    </nav>
+
+    <div style="border-top:1px solid rgba(255,255,255,.08);padding:13px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11px;flex:none">AR</div>
+        <div><div style="font-weight:700;font-size:12.5px;color:#fff">Aravind R</div><div style="color:#8FA8AD;font-size:10.5px">22CS118 · Final year</div></div>
+      </div>
+      <a href="Login.dc.html" style="display:flex;align-items:center;gap:8px;color:#A8C4C8;font-size:12px;margin-top:11px;font-weight:600;opacity:.85">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5M21 12H9"></path></svg>Log out
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="flex:5 1 700px;min-width:320px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 32px 14px">
+      <div>
+        <h1 style="font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0">{{ titleMain }}</h1>
+        <p style="color:var(--muted);font-size:13px;margin:3px 0 0">{{ titleSub }}</p>
+      </div>
+      <button class="q-iconbtn" onClick="{{ ring }}" style="width:36px;height:36px;border-radius:10px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;position:relative;color:var(--muted);flex:none">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+        <span style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--error);border:2px solid #fff"></span>
+      </button>
+    </div>
+
+    <div style="padding:6px 32px 56px">
+      <!-- HOME -->
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div class="q-hero-split q-rise" style="display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:20px">
+          <div style="border-radius:var(--r-lg);padding:28px 32px;color:#fff;background:var(--teal-dark);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;min-height:180px">
+            <div style="position:absolute;inset:0;background-image:radial-gradient(70% 100% at 90% 0%,rgba(14,92,107,.6),transparent 65%)"></div>
+            <div style="position:relative">
+              <div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#86AEB5;font-weight:700;margin-bottom:8px">Semester 4 · ABC Engineering</div>
+              <h2 style="font-size:24px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">Welcome back, Aravind</h2>
+              <p style="color:#B7CED3;font-size:14px;max-width:52ch;line-height:1.6;margin:0 0 18px;font-weight:400">Pick up where you left off in Data Structures, ask the AI tutor from your own textbooks, or take a mock interview — all built from your college's material.</p>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button onClick="{{ goSubjectDetail }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:#fff;color:var(--teal-dark);display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>Resume learning</button>
+                <button onClick="{{ navInterview.onClick }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z"></path><path d="M5 11a7 7 0 0 0 14 0"></path></svg>Start mock interview</button>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 24px;box-shadow:var(--sh-1);display:flex;flex-direction:column;justify-content:center">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+              <div style="width:28px;height:28px;border-radius:8px;background:var(--amber-100);display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--amber-pri)" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l2 2"></path></svg></div>
+              <h3 style="font-size:14.5px;font-weight:700;margin:0;color:var(--ink)">Focus this week</h3>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0;display:grid;gap:11px">
+              <li style="display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink-2);line-height:1.45"><span style="width:6px;height:6px;border-radius:50%;background:var(--teal);flex:none;margin-top:6px"></span><span><b style="color:var(--ink)">Finish Linked Lists</b> — complete Chapter 3 video and unlock the quiz.</span></li>
+              <li style="display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink-2);line-height:1.45"><span style="width:6px;height:6px;border-radius:50%;background:var(--amber-pri);flex:none;margin-top:6px"></span><span><b style="color:var(--ink)">Practice interview</b> — HR screening mock is due 28 Aug.</span></li>
+              <li style="display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink-2);line-height:1.45"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);flex:none;margin-top:6px"></span><span><b style="color:var(--ink)">Ask tutor on Trees</b> — preview Chapter 4 before it unlocks.</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="q-rise q-rise-d1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px">
+          <sc-for list="{{ homeStats }}" as="s" hint-placeholder-count="4">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">{{ s.k }}</div>
+                  <div style="font-size:26px;font-weight:700;margin:8px 0 3px;letter-spacing:-.01em">{{ s.v }}</div>
+                  <div style="font-size:11.5px;color:{{ s.color }};font-weight:{{ s.weight }}">{{ s.s }}</div>
+                </div>
+                <div style="width:36px;height:36px;border-radius:10px;background:{{ s.iconBg }};display:grid;place-items:center;flex:none">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="{{ s.iconColor }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"></circle><path d="M12 8v4l2.5 1.5"></path></svg>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div class="q-rise q-rise-d2" style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:12px 18px;box-shadow:var(--sh-1);margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div style="font-size:12.5px;font-weight:600;color:var(--ink-2);flex:none">Semester progress · <span style="color:var(--ink)">14 of 32 chapters</span></div>
+          <div style="flex:1;min-width:120px;height:7px;background:#EAEFF1;border-radius:999px;overflow:hidden"><i style="display:block;height:100%;width:44%;background:linear-gradient(90deg,var(--teal),var(--teal-400));border-radius:999px"></i></div>
+          <span style="font-size:12px;font-weight:700;color:var(--teal);flex:none">44%</span>
+          <a onClick="{{ navProgress.onClick }}" style="color:var(--teal);font-size:12.5px;font-weight:600;cursor:pointer;flex:none">My Progress →</a>
+        </div>
+
+        <div class="q-rise q-rise-d3" style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:17px 20px 4px">
+            <h3 style="font-size:14.5px;font-weight:700;margin:0">Continue learning</h3>
+            <a onClick="{{ navSubjects.onClick }}" style="color:var(--teal);font-size:12.5px;font-weight:600;cursor:pointer">All subjects →</a>
+          </div>
+          <div style="padding:14px 20px 20px">
+            <div style="display:flex;align-items:center;gap:16px;border:1px solid var(--line);border-radius:var(--r-md);padding:16px;flex-wrap:wrap;background:linear-gradient(135deg,#fff 0%,var(--teal-50) 100%)">
+              <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--teal-dark),var(--teal));flex:none;display:grid;place-items:center;box-shadow:0 4px 12px rgba(14,92,107,.25)">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><path d="M15 3v5h5"></path></svg>
+              </div>
+              <div style="flex:1;min-width:180px">
+                <div style="font-weight:700;font-size:13.5px">Data Structures · Linked Lists</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Chapter 3 · 62% watched · last opened today</div>
+                <div style="height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden;margin-top:8px;max-width:280px"><i style="display:block;height:100%;width:62%;background:linear-gradient(90deg,var(--teal),var(--teal-300));border-radius:6px"></i></div>
+              </div>
+              <button onClick="{{ goSubjectDetail }}" style="border:none;cursor:pointer;font-weight:600;font-size:13.5px;padding:10px 22px;border-radius:999px;background:var(--amber-pri);color:#fff;box-shadow:0 4px 14px rgba(172,91,22,.22)">Resume</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Assessments available</h3></div>
+            <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">Unlocked once you finish the chapter and your HOD approves the questions.</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th><th style="text-align:right;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)"></th></tr></thead>
+              <tbody>
+                <sc-for list="{{ assessRows }}" as="row" hint-placeholder-count="3">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ row.ch }}</div><div style="font-size:11px;color:var(--muted-3)">{{ row.sub }}</div></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ row.subject }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ row.action }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">{{ row.cta }}</a></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:17px 20px 4px;white-space:nowrap"><h3 style="font-size:14.5px;font-weight:700;margin:0">Assigned to you</h3><a onClick="{{ navInterview.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer;flex:none">Interviews →</a></div>
+            <div style="padding:0 20px 12px;color:var(--muted);font-size:11.5px">Set by your department for placement preparation.</div>
+            <div style="padding:4px 20px 18px;display:grid;gap:14px">
+              <sc-for list="{{ assignedRows }}" as="a" hint-placeholder-count="2">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                  <div style="min-width:0"><div style="font-weight:600;font-size:12.5px;line-height:1.4">{{ a.nm }}</div><div style="font-size:11px;color:var(--muted-3);margin-top:2px">{{ a.mode }} · due {{ a.due }}</div></div>
+                  <span style="font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:{{ a.bg }};color:{{ a.fg }};flex:none;white-space:nowrap">{{ a.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- SUBJECTS -->
+      <sc-if value="{{ isSubjects }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:18px"><div style="font-size:16.5px;font-weight:700">My Subjects</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Semester 4 · your college's material turned into video lectures, quizzes and an AI tutor.</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+          <sc-for list="{{ subjects }}" as="s" hint-placeholder-count="5">
+            <div class="q-card-lift" onClick="{{ goSubjectDetail }}" style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden;cursor:pointer">
+              <div style="height:64px;background:{{ s.grad }};position:relative">
+                <span style="position:absolute;left:14px;top:12px;color:rgba(255,255,255,.9);font-size:10px;font-weight:700;letter-spacing:.05em">{{ s.code }}</span>
+              </div>
+              <div style="padding:13px 15px">
+                <div style="font-weight:700;font-size:13.5px">{{ s.nm }}</div>
+                <div style="font-size:11px;color:var(--muted-3);margin:3px 0 11px">{{ s.chapters }} chapters · {{ s.done }} done</div>
+                <div style="display:flex;align-items:center;gap:9px">
+                  <div style="flex:1;height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ s.pct }}%;background:{{ s.barColor }}"></i></div>
+                  <span style="font-size:11px;font-weight:700;color:var(--muted)">{{ s.pct }}%</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- SUBJECT DETAIL -->
+      <sc-if value="{{ isSubjectDetail }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ navSubjects.onClick }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:14px">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>Back to subjects
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <div style="font-size:16.5px;font-weight:700">Data Structures</div>
+          <span style="font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:#EEF0F0;color:var(--muted)">CS204 · Sem 4</span>
+        </div>
+
+        <div style="display:flex;gap:4px;margin-bottom:-1px;position:relative;z-index:2">
+          <div onClick="{{ classroomTab.onClick }}" style="{{ classroomTab.style }}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><path d="M15 3v5h5"></path></svg>Classroom
+          </div>
+          <div onClick="{{ tutorTab.onClick }}" style="{{ tutorTab.style }}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Ask your AI Tutor
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:0 var(--r-lg) var(--r-lg) var(--r-lg);box-shadow:var(--sh-1);padding:18px">
+
+          <sc-if value="{{ isClassroom }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:minmax(260px,310px) minmax(300px,1fr);gap:18px;align-items:start">
+              <div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--line-soft);font-weight:700;font-size:13px">Chapters<div style="font-size:11px;color:var(--muted-3);font-weight:500;margin-top:2px">2 of 6 completed</div></div>
+                <sc-for list="{{ chapters }}" as="c" hint-placeholder-count="6">
+                  <div style="border-bottom:1px solid var(--line-soft)">
+                    <div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:11px;padding:11px 16px;cursor:pointer;background:{{ c.bg }}">
+                      <span style="width:18px;height:18px;flex:none;color:{{ c.iconColor }}">{{ c.glyph }}</span>
+                      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;color:{{ c.textColor }}">{{ c.nm }}</div><div style="font-size:10.5px;color:var(--muted-3);margin-top:1px">{{ c.dur }}</div></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="background:#0E1A2B;border-radius:var(--r-md);overflow:hidden;position:relative;min-height:340px;display:flex;flex-direction:column">
+                <button onClick="{{ tutorTab.onClick }}" style="position:absolute;right:18px;top:16px;background:#fff;color:var(--ink);border:none;border-radius:999px;padding:8px 15px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:7px;cursor:pointer;z-index:2">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--teal)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Ask your AI Tutor
+                </button>
+                <div style="padding:20px 22px;flex:1">
+                  <div style="color:#87A0B9;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600">Now teaching</div>
+                  <h3 style="color:#fff;font-size:19px;font-weight:600;margin:7px 0 12px">Linked Lists</h3>
+                  <ul style="list-style:none;color:#BCCDDF;font-size:12.5px;padding:0;margin:0;display:grid;gap:6px">
+                    <li>› Node structure &amp; pointers</li><li>› Insertion &amp; deletion patterns</li><li>› Traversal complexity</li>
+                  </ul>
+                </div>
+                <div style="background:#08111E;padding:13px 20px;display:flex;align-items:center;gap:14px">
+                  <div onClick="{{ toastPlayback }}" style="width:36px;height:36px;border-radius:50%;background:var(--teal);display:grid;place-items:center;cursor:pointer;flex:none"><svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg></div>
+                  <div style="color:#87A0B9;font-size:11.5px;flex:none">16:12 / 26:05</div>
+                  <div style="flex:1;height:4px;background:#1C2941;border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:62%;background:var(--teal-300)"></i></div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isTutorTab }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+              <div style="font-size:12.5px;color:var(--muted)">Answers come only from your <b style="color:var(--ink-2)">Data Structures</b> material — the tutor will not answer off-syllabus questions.</div>
+              <div style="display:flex;background:#fff;border:1px solid var(--line);border-radius:999px;overflow:hidden">
+                <button onClick="{{ langEn.onClick }}" style="{{ langEn.style }}">English</button>
+                <button onClick="{{ langTa.onClick }}" style="{{ langTa.style }}">தமிழ்</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(220px,288px) minmax(280px,1fr);gap:18px;align-items:start">
+              <div style="background:linear-gradient(165deg,var(--teal-dark),var(--teal));border-radius:var(--r-md);position:relative;overflow:hidden;min-height:340px;display:flex;flex-direction:column;justify-content:flex-end">
+                <div style="position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:7px;color:#D7E4E5;font-size:11px;font-weight:600;z-index:2"><span style="width:7px;height:7px;border-radius:50%;background:#34D399"></span>Listening</div>
+                <div style="position:absolute;top:14px;right:14px;display:flex;gap:6px;z-index:2">
+                  <button onClick="{{ voiceMode.onClick }}" style="{{ voiceMode.style }}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="{{ voiceMode.color }}" stroke-width="1.9"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M5 11a7 7 0 0 0 14 0"></path></svg></button>
+                  <button onClick="{{ textMode.onClick }}" style="{{ textMode.style }}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="{{ textMode.color }}" stroke-width="1.9"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></button>
+                </div>
+                <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 50% 38%,#a5b4fc,#6366f1);box-shadow:0 0 0 10px rgba(255,255,255,.06),0 0 0 22px rgba(255,255,255,.03)"></div>
+                <div style="position:relative;padding:18px 20px;background:linear-gradient(transparent,rgba(6,10,20,.6));color:#fff;z-index:2">
+                  <div style="font-weight:700;font-size:14px">Tutor Priya</div>
+                  <div style="font-size:11px;color:#C7CDF0;margin-top:2px">Data Structures · Chapter 3</div>
+                </div>
+              </div>
+
+              <div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;display:flex;flex-direction:column;min-height:340px">
+                <div style="padding:18px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:auto">
+                  <sc-for list="{{ chat }}" as="m" hint-placeholder-count="3">
+                    <div style="{{ m.style }}">
+                      {{ m.text }}
+                      <sc-if value="{{ m.cite }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:8px;font-size:10.5px;color:var(--muted-3);border-top:1px solid rgba(0,0,0,.08);padding-top:6px">📎 {{ m.cite }}</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:10px;padding:13px 15px;border-top:1px solid var(--line-soft);align-items:center">
+                  <input value="{{ chatInput }}" onChange="{{ setChatInput }}" placeholder="Type your question, or tap the mic to speak…" style="flex:1;padding:10px 13px;border:1px solid #DBE3EC;border-radius:999px;outline:none;font-size:12.5px;font-family:inherit">
+                  <button onClick="{{ sendChat }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:10px 18px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"></path></svg>Send</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ASSESSMENT -->
+      <sc-if value="{{ isAssessment }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:740px;margin:0 auto">
+          <div onClick="{{ goSubjectDetail }}" style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:16px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>Leave assessment</div>
+          <div style="margin-bottom:14px"><div style="font-size:16px;font-weight:700">Linked Lists · Chapter quiz</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Data Structures · 10 questions · your answers are saved as you go.</div></div>
+
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+            <span style="font-size:12.5px;font-weight:600;color:var(--muted);flex:none">Question 3 of 10</span>
+            <div style="flex:1;height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:30%;background:var(--teal)"></i></div>
+            <span style="font-size:12.5px;font-weight:600;color:var(--muted);flex:none">2 answered</span>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:26px">
+            <div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-3);font-weight:700;margin-bottom:11px">Question 3</div>
+            <div style="font-size:17px;font-weight:600;line-height:1.5;margin-bottom:20px;letter-spacing:-.005em">Which technique detects a cycle in a linked list using only O(1) extra space?</div>
+            <div style="display:grid;gap:10px">
+              <sc-for list="{{ quizOpts }}" as="o" hint-placeholder-count="4">
+                <button onClick="{{ o.onClick }}" style="{{ o.style }}"><span style="width:25px;height:25px;border-radius:7px;background:{{ o.kbg }};color:{{ o.kfg }};display:grid;place-items:center;font-size:11px;font-weight:700;flex:none">{{ o.k }}</span>{{ o.label }}</button>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:12px;flex-wrap:wrap">
+              <button onClick="{{ toastPrev }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;color:var(--ink-2)">Previous</button>
+              <div style="display:flex;gap:10px">
+                <button onClick="{{ toastSkip }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;color:var(--ink-2)">Skip</button>
+                <button onClick="{{ goResult }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:11px 22px;border-radius:999px;background:var(--amber-pri);color:#fff">Next question</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;margin-top:18px;border:1px solid var(--teal-100);background:var(--teal-50);color:var(--teal-700)">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+            <div><b style="display:block;margin-bottom:2px">Your progress is saved automatically</b>If you close this tab, you'll come back to exactly this question with your answers intact.</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- RESULT -->
+      <sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:820px;margin:0 auto">
+          <div style="margin-bottom:18px"><div style="font-size:16px;font-weight:700">Assessment complete</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Linked Lists · Data Structures · submitted just now</div></div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:24px;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+              <div style="width:140px;height:140px;border-radius:50%;display:grid;place-items:center;flex:none;background:conic-gradient(var(--success) 0 78%, #EAEFF1 78% 100%)">
+                <div style="width:110px;height:110px;border-radius:50%;background:#fff;display:grid;place-items:center;text-align:center">
+                  <div><div style="font-size:32px;font-weight:700;line-height:1">78%</div><div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:2px">Score</div></div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:220px">
+                <div style="display:flex;gap:28px;flex-wrap:wrap;margin-bottom:18px">
+                  <div><div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700">Correct</div><div style="font-size:24px;font-weight:700;margin-top:5px">7 <span style="font-size:12px;color:var(--muted);font-weight:600">/ 10</span></div></div>
+                  <div><div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700">Result</div><div style="margin-top:8px"><span style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;background:var(--success-soft);color:var(--success)">Passed</span></div></div>
+                  <div><div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700">Cohort rank</div><div style="font-size:24px;font-weight:700;margin-top:5px">18 <span style="font-size:12px;color:var(--muted);font-weight:600">/ 156</span></div></div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button onClick="{{ toastPdfResult }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 21h16"></path></svg>Download PDF report</button>
+                  <button onClick="{{ navLeaderboard.onClick }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;color:var(--ink-2)">View leaderboard</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1)">
+            <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Question breakdown</h3></div>
+            <div style="padding:0 20px 6px;color:var(--muted);font-size:11.5px">Review what you got right and where to look again.</div>
+            <div style="padding:14px 20px 20px">
+              <div style="padding-bottom:18px;border-bottom:1px solid var(--line-soft);margin-bottom:18px">
+                <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--success);font-weight:700;margin-bottom:10px">Question 1 · Correct</div>
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:12px">What is the time complexity of inserting at the head of a singly linked list?</div>
+                <button style="display:flex;align-items:center;gap:11px;padding:11px 14px;border:1.5px solid #BFE0D2;border-radius:var(--r-md);background:var(--success-soft);width:100%;text-align:left;font-size:13px;color:var(--ink-2)"><span style="width:22px;height:22px;border-radius:6px;background:var(--success);color:#fff;display:grid;place-items:center;font-size:10.5px;font-weight:700;flex:none">A</span>O(1)</button>
+              </div>
+              <div>
+                <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--error);font-weight:700;margin-bottom:10px">Question 4 · Incorrect</div>
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:12px">What is the worst-case cost of searching an unsorted singly linked list?</div>
+                <div style="display:grid;gap:8px">
+                  <button style="display:flex;align-items:center;gap:11px;padding:11px 14px;border:1.5px solid #E9C8C4;border-radius:var(--r-md);background:var(--error-soft);width:100%;text-align:left;font-size:13px;color:var(--ink-2)"><span style="width:22px;height:22px;border-radius:6px;background:var(--error);color:#fff;display:grid;place-items:center;font-size:10.5px;font-weight:700;flex:none">B</span>O(log n) — your answer</button>
+                  <button style="display:flex;align-items:center;gap:11px;padding:11px 14px;border:1.5px solid #BFE0D2;border-radius:var(--r-md);background:var(--success-soft);width:100%;text-align:left;font-size:13px;color:var(--ink-2)"><span style="width:22px;height:22px;border-radius:6px;background:var(--success);color:#fff;display:grid;place-items:center;font-size:10.5px;font-weight:700;flex:none">C</span>O(n) — correct answer</button>
+                </div>
+                <div style="margin-top:12px;font-size:12px;color:var(--muted)">📎 Revise: Chapter 3 · Linked Lists · page 11</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- LEADERBOARD -->
+      <sc-if value="{{ isLeaderboard }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:18px"><div style="font-size:16.5px;font-weight:700">Leaderboard</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:70ch">Your standing within your cohort — B.Tech CSE, Semester 4. Updates immediately after every assessment you submit.</div></div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)"><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">Your rank</div><div style="font-size:26px;font-weight:700;margin:8px 0 3px">18<span style="font-size:14px;color:var(--muted-2)"> / 156</span></div><div style="font-size:11.5px;color:var(--success);font-weight:600">Up 4 places this week</div></div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)"><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">Your average</div><div style="font-size:26px;font-weight:700;margin:8px 0 3px">78%</div><div style="font-size:11.5px;color:var(--muted)">Cohort average 71%</div></div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)"><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">Assessments taken</div><div style="font-size:26px;font-weight:700;margin:8px 0 3px">9</div><div style="font-size:11.5px;color:var(--muted)">Out of 14 available</div></div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">B.Tech CSE · Semester 4</h3><span style="font-size:11.5px;color:var(--muted)">156 students</span></div>
+          <div style="padding:0 20px 6px;color:var(--muted);font-size:11.5px">Ranked on average score across all submitted assessments this semester.</div>
+          <div style="padding:4px 8px 8px">
+            <sc-for list="{{ leaderboard }}" as="row" hint-placeholder-count="8">
+              <sc-if value="{{ row.sep }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:10px 0;color:var(--muted-3);font-size:12px;font-weight:700">· · ·</div></sc-if>
+              <sc-if value="{{ row.notSep }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:16px;padding:11px 12px;border-radius:var(--r-md);background:{{ row.bg }}">
+                  <div style="width:30px;font-size:16px;font-weight:700;color:{{ row.rankColor }};flex:none;text-align:center">{{ row.rank }}</div>
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11px;flex:none">{{ row.initials }}</div>
+                  <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">{{ row.name }}</div><div style="font-size:11px;color:var(--muted-3)">{{ row.meta }}</div></div>
+                  <div style="font-weight:700;font-size:14px;flex:none">{{ row.score }}%</div>
+                </div>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;margin-top:18px;border:1px solid var(--teal-100);background:var(--teal-50);color:var(--teal-700)">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+          <div><b style="display:block;margin-bottom:2px">Your cohort is your program and semester</b>You are only ever ranked against students taking the same subjects — never across other colleges.</div>
+        </div>
+      </sc-if>
+
+      <!-- INTERVIEWS -->
+      <sc-if value="{{ isInterview }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:18px"><div style="font-size:16.5px;font-weight:700">Interviews</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Practice with an AI interviewer. Included with your college's plan — final-year students only.</div></div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:18px 20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700;font-size:13.5px">Mock interviews</div><span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--teal-50);color:var(--teal-700)">3–5 min each</span></div>
+            <div style="font-size:28px;font-weight:700">7 <span style="font-size:12px;color:var(--muted);font-weight:600">of 10 remaining</span></div>
+            <div style="height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden;margin:12px 0 4px"><i style="display:block;height:100%;width:70%;background:var(--teal)"></i></div>
+            <div style="margin-top:12px;font-size:11.5px;color:var(--muted)">Allocation resets next semester</div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:18px 20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700;font-size:13.5px">Full interviews</div><span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:#EEF0F0;color:var(--ink-2)">10–15 min each</span></div>
+            <div style="font-size:28px;font-weight:700">3 <span style="font-size:12px;color:var(--muted);font-weight:600">of 4 remaining</span></div>
+            <div style="height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden;margin:12px 0 4px"><i style="display:block;height:100%;width:75%;background:var(--success)"></i></div>
+            <div style="margin-top:12px;font-size:11.5px;color:var(--muted)">Includes a detailed feedback report</div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:22px;margin-bottom:18px">
+          <h3 style="font-size:14.5px;font-weight:700;margin:0 0 4px">Start a new interview</h3>
+          <p style="color:var(--muted);font-size:12px;margin:0 0 16px">Choose a mode, set your target role, and begin. Uses one interview from your allocation.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px">
+            <sc-for list="{{ modes }}" as="m" hint-placeholder-count="2">
+              <div onClick="{{ m.onClick }}" style="{{ m.style }}">
+                <div style="font-weight:700;font-size:13.5px;margin-bottom:4px">{{ m.nm }}</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;line-height:1.5">{{ m.ds }}</div>
+                <div style="font-size:11px;color:var(--teal);font-weight:700">{{ m.du }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px">
+            <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Target role</label><input placeholder="e.g. Frontend Developer" style="width:100%;padding:10px 13px;border:1px solid #DBE3EC;border-radius:2px;outline:none;font-size:13px;font-family:inherit"></div>
+            <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Difficulty</label>
+              <select style="width:100%;padding:10px 13px;border:1px solid #DBE3EC;border-radius:2px;outline:none;font-size:13px;font-family:inherit;background:#fff"><option>Beginner</option><option selected="">Intermediate</option><option>Advanced</option><option>Adaptive</option></select>
+            </div>
+          </div>
+          <button onClick="{{ toastStartInterview }}" style="border:none;cursor:pointer;font-weight:600;font-size:13.5px;padding:12px 24px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="15" height="15" fill="#fff"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>Start interview</button>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Your interviews</h3></div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Interview</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Source</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Date</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Score</th><th style="border-bottom:1px solid var(--line-soft)"></th></tr></thead>
+            <tbody>
+              <sc-for list="{{ interviewHistory }}" as="h" hint-placeholder-count="3">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ h.nm }}</div><span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;background:#EEF0F0;color:var(--ink-2)">{{ h.type }}</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ h.source }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ h.date }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ h.bg }};color:{{ h.fg }}">{{ h.score }}</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ openReport }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">View report</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <!-- PROGRESS -->
+      <sc-if value="{{ isProgress }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:18px"><div style="font-size:16.5px;font-weight:700">My Progress</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Your learning, questions, assessments and interview activity this semester.</div></div>
+
+        <div style="display:grid;grid-template-columns:minmax(280px,auto) 1fr;gap:16px;margin-bottom:20px;align-items:stretch">
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--sh-1);flex:1;min-width:130px;text-align:center">
+              <div style="width:88px;height:88px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px;background:conic-gradient(var(--success) 0 78%, #EAEFF1 78% 100%)">
+                <div style="width:70px;height:70px;border-radius:50%;background:#fff;display:grid;place-items:center"><div style="font-size:22px;font-weight:700;color:var(--ink)">78%</div></div>
+              </div>
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700">Avg assessment</div>
+              <div style="font-size:11.5px;color:var(--success);font-weight:600;margin-top:4px">+6% vs last month</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--sh-1);flex:1;min-width:130px;text-align:center">
+              <div style="width:88px;height:88px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px;background:conic-gradient(var(--amber-pri) 0 64%, #EAEFF1 64% 100%)">
+                <div style="width:70px;height:70px;border-radius:50%;background:#fff;display:grid;place-items:center"><div style="font-size:22px;font-weight:700;color:var(--ink)">64%</div></div>
+              </div>
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700">Interview readiness</div>
+              <div style="font-size:11.5px;color:var(--muted);font-weight:500;margin-top:4px">3 interviews taken</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 22px;box-shadow:var(--sh-1);display:flex;flex-direction:column">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <div><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700">Weekly study hours</div><div style="font-size:22px;font-weight:700;margin-top:4px">6.2 <span style="font-size:13px;color:var(--muted);font-weight:600">hrs this week</span></div></div>
+              <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--success-soft);color:var(--success)">+1.4 hrs</span>
+            </div>
+            <svg viewBox="0 0 320 80" width="100%" height="72" preserveAspectRatio="none" style="margin-top:auto">
+              <defs><linearGradient id="studyGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0E5C6B" stop-opacity=".35"/><stop offset="100%" stop-color="#0E5C6B" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,65 L40,58 L80,52 L120,45 L160,38 L200,42 L240,30 L280,22 L320,18 L320,80 L0,80 Z" fill="url(#studyGrad)"/>
+              <path d="M0,65 L40,58 L80,52 L120,45 L160,38 L200,42 L240,30 L280,22 L320,18" fill="none" stroke="#0E5C6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted-3);margin-top:6px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)"><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">Total learning</div><div style="font-size:26px;font-weight:700;margin:8px 0 3px">42<span style="font-size:14px;color:var(--muted-2)"> hrs</span></div><div style="font-size:11.5px;color:var(--muted)">This semester</div></div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)"><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">Questions asked</div><div style="font-size:26px;font-weight:700;margin:8px 0 3px">128</div><div style="font-size:11.5px;color:var(--muted)">Across 5 subjects</div></div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)"><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">Assessments</div><div style="font-size:26px;font-weight:700;margin:8px 0 3px">9</div><div style="font-size:11.5px;color:var(--muted)">Avg 78%</div></div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)"><div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">Interviews</div><div style="font-size:26px;font-weight:700;margin:8px 0 3px">3</div><div style="font-size:11.5px;color:var(--muted)">Avg 76%</div></div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);margin-bottom:18px;padding:18px 22px">
+          <div style="margin-bottom:16px"><h3 style="font-size:14.5px;font-weight:700;margin:0 0 4px">Skill breakdown</h3><div style="color:var(--muted);font-size:11.5px">How you're performing across key learning dimensions.</div></div>
+          <div style="display:grid;gap:14px">
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Video completion</span><span style="font-size:12.5px;font-weight:700;color:var(--teal)">72%</span></div><div style="height:8px;background:#EAEFF1;border-radius:999px;overflow:hidden"><i style="display:block;height:100%;width:72%;background:var(--teal);border-radius:999px"></i></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Tutor engagement</span><span style="font-size:12.5px;font-weight:700;color:var(--success)">85%</span></div><div style="height:8px;background:#EAEFF1;border-radius:999px;overflow:hidden"><i style="display:block;height:100%;width:85%;background:var(--success);border-radius:999px"></i></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Assessment avg</span><span style="font-size:12.5px;font-weight:700;color:var(--teal)">78%</span></div><div style="height:8px;background:#EAEFF1;border-radius:999px;overflow:hidden"><i style="display:block;height:100%;width:78%;background:var(--teal-400);border-radius:999px"></i></div></div>
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Interview practice</span><span style="font-size:12.5px;font-weight:700;color:var(--amber-pri)">64%</span></div><div style="height:8px;background:#EAEFF1;border-radius:999px;overflow:hidden"><i style="display:block;height:100%;width:64%;background:var(--amber-pri);border-radius:999px"></i></div></div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);margin-bottom:18px;overflow:hidden">
+          <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Subject progress</h3></div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapters</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Avg score</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Progress</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ subjProgress }}" as="p" hint-placeholder-count="5">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ p.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ p.code }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ p.chapters }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ p.bg }};color:{{ p.fg }}">{{ p.score }}%</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);width:160px"><div style="height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ p.pct }}%;background:var(--teal)"></i></div></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Assessment history</h3></div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Assessment</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Date</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Score</th>
+              <th style="border-bottom:1px solid var(--line-soft)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ assessHistory }}" as="a" hint-placeholder-count="4">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ a.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ a.ch }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ a.subject }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ a.date }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ a.bg }};color:{{ a.fg }}">{{ a.score }}%</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ toastPdfHistory }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">PDF</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <!-- INTERVIEW REPORT MODAL -->
+  <sc-if value="{{ reportOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeReport }}" style="position:fixed;inset:0;background:rgba(16,34,40,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:900px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(9,25,40,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line-soft)">
+          <div><h3 style="font-size:16px;font-weight:700;margin:0">Frontend Developer — interview report</h3><div style="color:var(--muted);font-size:11.5px;margin-top:3px">Full interview · 21 Aug 2026 · 13 min 40 s</div></div>
+          <button onClick="{{ closeReport }}" style="width:30px;height:30px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(280px,1.4fr) minmax(220px,1fr);gap:22px;padding:22px 24px">
+          <div>
+            <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:10px">Per-question feedback</div>
+            <sc-for list="{{ reportQuestions }}" as="q" hint-placeholder-count="3">
+              <div style="border:1px solid var(--line);border-radius:var(--r-md);padding:15px;margin-bottom:10px">
+                <div style="font-weight:600;font-size:13px;margin-bottom:10px;display:flex;gap:9px"><span style="color:var(--muted-3);font-weight:700">{{ q.n }}.</span><span>{{ q.q }}</span></div>
+                <div style="font-size:12px;color:var(--ink-2);line-height:1.6;margin-bottom:10px">{{ q.feedback }}</div>
+                <div style="display:flex;align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--line-soft)"><span style="font-size:11px;color:var(--muted-3);flex:1">{{ q.tag }}</span><span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:{{ q.bg }};color:{{ q.fg }}">{{ q.score }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+          <div>
+            <div style="text-align:center;margin-bottom:18px">
+              <div style="width:110px;height:110px;border-radius:50%;display:grid;place-items:center;margin:0 auto;background:conic-gradient(var(--success) 0 82%, #EAEFF1 82% 100%)"><div style="width:86px;height:86px;border-radius:50%;background:#fff;display:grid;place-items:center;text-align:center"><div><div style="font-size:24px;font-weight:700">82</div><div style="font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700">Overall</div></div></div></div>
+            </div>
+            <div style="margin-bottom:18px">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:10px">Score by dimension</div>
+              <sc-for list="{{ dimensions }}" as="d" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+                  <div style="width:110px;font-weight:600;font-size:11.5px;flex:none">{{ d.nm }}</div>
+                  <div style="flex:1;height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ d.v }}%;background:{{ d.color }}"></i></div>
+                  <div style="width:26px;text-align:right;font-weight:700;font-size:11.5px;flex:none">{{ d.v }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div>
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:10px">Your improvement plan</div>
+              <div style="font-size:12px;color:var(--ink-2);line-height:1.7;display:grid;gap:8px">
+                <div style="display:flex;gap:8px"><span style="color:var(--teal);font-weight:700">1.</span><span>Practise naming two or three options before choosing one.</span></div>
+                <div style="display:flex;gap:8px"><span style="color:var(--teal);font-weight:700">2.</span><span>Close every behavioural answer with the outcome and what you learned.</span></div>
+                <div style="display:flex;gap:8px"><span style="color:var(--teal);font-weight:700">3.</span><span>Revise rendering performance — your weakest dimension across the last two interviews.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 24px;border-top:1px solid var(--line-soft);background:#FBFCFC;position:sticky;bottom:0">
+          <button onClick="{{ closeReport }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--ink-2)">Close</button>
+          <button onClick="{{ toastPdfModal }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 21h16"></path></svg>Download PDF</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastMsg }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:var(--teal-dark);color:#fff;padding:11px 20px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 8px 28px rgba(16,34,40,.28);white-space:nowrap;max-width:90vw">{{ toastMsg }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    page: 'home', subTab: 'classroom', lang: 'en', tutorMode: 'voice',
+    chatInput: '', selectedOpt: 'B', interviewMode: 'mock',
+    reportOpen: false, toastMsg: null
+  };
+
+  showToast(msg) {
+    if (this._t) clearTimeout(this._t);
+    this.setState({ toastMsg: msg });
+    this._t = setTimeout(() => this.setState({ toastMsg: null }), 2800);
+  }
+
+  renderVals() {
+    const titles = {
+      home: ['Home', 'B.Tech CSE · Semester 4 · ABC Engineering'],
+      subjects: ['My Subjects', "Your semester subjects, built from your college material."],
+      subjectDetail: ['Data Structures', 'Switch between the classroom and your AI tutor anytime.'],
+      assessment: ['Chapter quiz', 'Your answers are saved as you go.'],
+      result: ['Assessment result', 'Your score, breakdown, and downloadable report.'],
+      leaderboard: ['Leaderboard', 'Your standing within your cohort.'],
+      interview: ['Interviews', 'Practice with an AI interviewer using your semester allocation.'],
+      progress: ['My Progress', 'Your learning, Q&A, assessment, and interview activity.']
+    };
+    const t = titles[this.state.page];
+
+    const navDef = (id) => {
+      const active = this.state.page === id;
+      return {
+        onClick: () => this.setState({ page: id }),
+        color: active ? '#fff' : '#8FA8AD',
+        style: { display:'flex', alignItems:'center', gap:11, padding:'9px 12px', borderRadius:10, fontWeight: active?700:500, fontSize:13, margin:'1px 0', cursor:'pointer', background: active?'rgba(255,255,255,.12)':'transparent', color: active?'#fff':'#C8D9DC', transition:'background .14s ease' }
+      };
+    };
+
+    const homeStats = [
+      { k: 'This week', v: '6.2 hrs', s: '+1.4 hrs', color: '#0F6E56', weight: 600, iconBg: '#E9F5EF', iconColor: '#0F6E56', iconPath: 'M12 6v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
+      { k: 'Questions asked', v: '128', s: 'This semester', color: '#536064', weight: 500, iconBg: '#F1F5F6', iconColor: '#0E5C6B', iconPath: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+      { k: 'Chapters done', v: '14 / 32', s: 'Across 5 subjects', color: '#536064', weight: 500, iconBg: '#FDE8D7', iconColor: '#AC5B16', iconPath: 'M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z M15 3v5h5' },
+      { k: 'Cohort rank', v: '18 / 156', s: 'Up 4 places', color: '#0F6E56', weight: 600, iconBg: '#E9F5EF', iconColor: '#0F6E56', iconPath: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3' }
+    ];
+
+    const assessRows = [
+      { ch: 'Linked Lists', sub: 'Chapter 3', subject: 'Data Structures', cta: 'Start', action: () => this.setState({ page: 'assessment' }) },
+      { ch: 'Normalization', sub: 'Chapter 4', subject: 'DBMS', cta: 'Start', action: () => this.setState({ page: 'assessment' }) },
+      { ch: 'Trees & BST', sub: 'Chapter 4', subject: 'Data Structures', cta: 'Soon', action: () => this.showToast('Awaiting HOD approval.') }
+    ];
+
+    const assignedRows = [
+      { nm: 'Placement readiness · Frontend Developer', mode: 'Full', due: '30 Aug', status: 'Not started', bg: '#FDF1E2', fg: '#8A560A' },
+      { nm: 'HR screening practice', mode: 'Mock', due: '28 Aug', status: 'Completed', bg: '#E9F5EF', fg: '#0B4B3A' }
+    ];
+
+    const subjects = [
+      { code: 'CS204', nm: 'Data Structures', chapters: 6, done: 2, pct: 33, grad: 'linear-gradient(125deg,#0E5C6B,#4D8691)', barColor: '#0E5C6B' },
+      { code: 'CS205', nm: 'Operating Systems', chapters: 5, done: 1, pct: 20, grad: 'linear-gradient(125deg,#06252B,#0B4B58)', barColor: '#0E5C6B' },
+      { code: 'CS206', nm: 'DBMS', chapters: 7, done: 4, pct: 57, grad: 'linear-gradient(125deg,#0B4B3A,#0F6E56)', barColor: '#0F6E56' },
+      { code: 'CS207', nm: 'Computer Networks', chapters: 6, done: 3, pct: 50, grad: 'linear-gradient(125deg,#0A3F49,#86AEB5)', barColor: '#0E5C6B' },
+      { code: 'CS208', nm: 'Design & Analysis of Algorithms', chapters: 8, done: 4, pct: 50, grad: 'linear-gradient(125deg,#0E5C6B,#B7CED3)', barColor: '#0E5C6B' }
+    ];
+
+    const chapterGlyph = { done: '✓', active: '●', todo: '▶', lock: '🔒' };
+    const chDefs = [
+      { nm: 'Arrays & Complexity', dur: '22:14', state: 'done' },
+      { nm: 'Stacks & Queues', dur: '18:40', state: 'done' },
+      { nm: 'Linked Lists', dur: '26:05', state: 'active' },
+      { nm: 'Trees & BST', dur: '31:20', state: 'todo' },
+      { nm: 'Graphs & Traversal', dur: 'Locked — finish Chapter 4 first', state: 'lock' },
+      { nm: 'Hashing', dur: 'Locked', state: 'lock' }
+    ];
+    const chapters = chDefs.map(c => ({
+      nm: c.nm, dur: c.dur,
+      bg: c.state === 'active' ? '#F1F5F6' : 'transparent',
+      iconColor: c.state === 'done' ? '#0F6E56' : (c.state === 'active' ? '#0E5C6B' : '#707A7E'),
+      glyph: chapterGlyph[c.state],
+      textColor: c.state === 'lock' ? '#939C9E' : '#102228',
+      onClick: c.state === 'lock' ? (() => this.showToast('This chapter unlocks after the previous one is complete.')) : (() => this.setState({ page: 'assessment' }))
+    }));
+
+    const chatDefs = [
+      { who: 'ai', text: "Hi Aravind — ask me anything from Data Structures and I'll explain it from your own book. What are we working on today?", cite: 'Data Structures · your college material' },
+      { who: 'you', text: "What's the difference between a singly and doubly linked list?" },
+      { who: 'ai', text: 'A singly linked list node stores data and one pointer to the next node. A doubly linked list adds a second pointer to the previous node — you can traverse in both directions, at the cost of extra memory per node.', cite: 'Chapter 3 · Linked Lists · page 7' }
+    ];
+    const chat = chatDefs.map(m => ({
+      ...m,
+      style: m.who === 'you'
+        ? { alignSelf:'flex-end', maxWidth:'82%', padding:'11px 14px', borderRadius:14, borderBottomRightRadius:4, fontSize:12.5, lineHeight:1.6, background:'#0E5C6B', color:'#fff' }
+        : { alignSelf:'flex-start', maxWidth:'82%', padding:'11px 14px', borderRadius:14, borderBottomLeftRadius:4, fontSize:12.5, lineHeight:1.6, background:'#F1F5F6', color:'#33465C' }
+    }));
+
+    const quizLabels = {
+      A: 'Storing every visited node in a hash set',
+      B: "Floyd's slow and fast pointer traversal",
+      C: 'Sorting the list and checking for duplicates',
+      D: 'Counting recursion depth until overflow'
+    };
+    const quizOpts = Object.keys(quizLabels).map(k => {
+      const sel = this.state.selectedOpt === k;
+      return {
+        k, label: quizLabels[k],
+        onClick: () => this.setState({ selectedOpt: k }),
+        kbg: sel ? '#0E5C6B' : '#EEF0F0', kfg: sel ? '#fff' : '#536064',
+        style: { display:'flex', alignItems:'center', gap:13, padding:'14px 16px', border:'1.5px solid ' + (sel?'#0E5C6B':'#DEE0E1'), borderRadius:8, background: sel?'#F1F5F6':'#fff', cursor:'pointer', textAlign:'left', fontSize:13.5, color:'#33465C', width:'100%', fontFamily:'inherit' }
+      };
+    });
+
+    const leaderboard = [
+      { rank: 1, initials: 'PN', name: 'Priya N', meta: '12 assessments', score: 94, rankColor: '#C97A0E', bg: 'transparent' },
+      { rank: 2, initials: 'SK', name: 'Sneha K', meta: '11 assessments', score: 91, rankColor: '#C97A0E', bg: 'transparent' },
+      { rank: 3, initials: 'MR', name: 'Mohan R', meta: '12 assessments', score: 89, rankColor: '#C97A0E', bg: 'transparent' },
+      { rank: 4, initials: 'DK', name: 'Deepa K', meta: '10 assessments', score: 87, rankColor: '#536064', bg: 'transparent' },
+      { rank: 5, initials: 'VS', name: 'Vijay S', meta: '11 assessments', score: 85, rankColor: '#536064', bg: 'transparent' },
+      { sep: true },
+      { rank: 18, initials: 'AR', name: 'Aravind R — you', meta: '9 assessments', score: 78, rankColor: '#0E5C6B', bg: '#F1F5F6' },
+      { rank: 19, initials: 'RV', name: 'Ramya V', meta: '8 assessments', score: 77, rankColor: '#536064', bg: 'transparent' },
+      { rank: 20, initials: 'AK', name: 'Arun K', meta: '10 assessments', score: 76, rankColor: '#536064', bg: 'transparent' }
+    ].map(r => ({ ...r, notSep: !r.sep }));
+
+    const modeDefs = [
+      { id: 'mock', nm: 'Mock interview', ds: 'Three focused questions with instant feedback. Good for daily practice.', du: '3–5 min · uses 1 mock' },
+      { id: 'full', nm: 'Full interview', ds: 'More questions, follow-ups, and a detailed post-interview report.', du: '10–15 min · uses 1 full' }
+    ];
+    const modes = modeDefs.map(m => {
+      const sel = this.state.interviewMode === m.id;
+      return { ...m, onClick: () => this.setState({ interviewMode: m.id }),
+        style: { border:'1.5px solid ' + (sel?'#0E5C6B':'#DEE0E1'), borderRadius:8, padding:16, background: sel?'#F1F5F6':'#fff', cursor:'pointer' } };
+    });
+
+    const interviewHistory = [
+      { nm: 'Frontend Developer', type: 'Full', source: 'Assigned by Dr. Karthik', date: '21 Aug', score: 82, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'HR Screening', type: 'Mock', source: 'Self-initiated', date: '18 Aug', score: 76, bg: '#F1F5F6', fg: '#0A3F49' },
+      { nm: 'React Developer', type: 'Mock', source: 'Self-initiated', date: '12 Aug', score: 69, bg: '#FDF1E2', fg: '#8A560A' }
+    ];
+
+    const subjProgress = [
+      { nm: 'Data Structures', code: 'CS204', chapters: '2 / 6', score: 78, pct: 33, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'DBMS', code: 'CS206', chapters: '4 / 7', score: 84, pct: 57, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Computer Networks', code: 'CS207', chapters: '3 / 6', score: 75, pct: 50, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Operating Systems', code: 'CS205', chapters: '1 / 5', score: 68, pct: 20, bg: '#FDF1E2', fg: '#8A560A' },
+      { nm: 'Design & Analysis of Algorithms', code: 'CS208', chapters: '4 / 8', score: 80, pct: 50, bg: '#E9F5EF', fg: '#0B4B3A' }
+    ];
+
+    const assessHistory = [
+      { nm: 'Linked Lists', ch: 'Chapter 3', subject: 'Data Structures', date: '24 Aug', score: 78, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Stacks & Queues', ch: 'Chapter 2', subject: 'Data Structures', date: '20 Aug', score: 88, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Normalization', ch: 'Chapter 4', subject: 'DBMS', date: '18 Aug', score: 84, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'OSI Layers', ch: 'Chapter 1', subject: 'Computer Networks', date: '14 Aug', score: 68, bg: '#FDF1E2', fg: '#8A560A' }
+    ];
+
+    const reportQuestions = [
+      { n: 1, q: "Tell me about a project you're proud of.", feedback: 'Strong opening — you named the problem, your role, and the outcome in under a minute. You quantified the result, which is exactly what interviewers look for.', tag: 'Structure · Clarity · Impact', score: 88, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { n: 2, q: 'How would you optimise a slow-rendering list of 10,000 rows?', feedback: 'You reached virtualisation quickly, but stopped there. Interviewers expect memoisation and key stability too — name two or three options and justify your pick.', tag: 'Technical depth', score: 64, bg: '#FDF1E2', fg: '#8A560A' },
+      { n: 3, q: 'Describe a disagreement with a teammate.', feedback: "Good use of a real example. Add the resolution and what you'd do differently — the answer currently ends on the conflict rather than the learning.", tag: 'Communication · Reflection', score: 79, bg: '#E9F5EF', fg: '#0B4B3A' }
+    ];
+    const dimensions = [
+      { nm: 'Communication', v: 86, color: '#0F6E56' },
+      { nm: 'Structure', v: 88, color: '#0F6E56' },
+      { nm: 'Technical depth', v: 64, color: '#C97A0E' },
+      { nm: 'Confidence', v: 81, color: '#0F6E56' }
+    ];
+
+    const classroomActive = this.state.subTab === 'classroom';
+    const tabStyle = (active, color) => ({ display:'flex', alignItems:'center', gap:9, padding:'12px 20px', background: active?'#fff':'#E6EBEC', color: active?color:'#536064', border:'1px solid #DEE0E1', borderBottom: active?'none':'1px solid #DEE0E1', borderRadius:'8px 8px 0 0', cursor:'pointer', fontWeight:700, fontSize:13 });
+
+    const langActive = this.state.lang;
+    const langBtnStyle = (l) => ({ border:'none', padding:'7px 13px', fontSize:11.5, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: langActive===l?'#0E5C6B':'#fff', color: langActive===l?'#fff':'#536064' });
+
+    const modeActive = this.state.tutorMode;
+    const modeBtnStyle = (m) => ({ border:'none', background: modeActive===m?'#fff':'rgba(255,255,255,.14)', borderRadius:8, width:30, height:30, display:'grid', placeItems:'center', cursor:'pointer' });
+    const modeIconColor = (m) => modeActive === m ? '#5B3FD6' : '#fff';
+
+    return {
+      page: this.state.page,
+      isHome: this.state.page === 'home',
+      isSubjects: this.state.page === 'subjects',
+      isSubjectDetail: this.state.page === 'subjectDetail',
+      isAssessment: this.state.page === 'assessment',
+      isResult: this.state.page === 'result',
+      isLeaderboard: this.state.page === 'leaderboard',
+      isInterview: this.state.page === 'interview',
+      isProgress: this.state.page === 'progress',
+      isClassroom: classroomActive,
+      isTutorTab: !classroomActive,
+      titleMain: t[0], titleSub: t[1],
+      navHome: navDef('home'), navSubjects: navDef('subjects'), navLeaderboard: navDef('leaderboard'),
+      navInterview: navDef('interview'), navProgress: navDef('progress'),
+      ring: () => this.showToast('New chapters published, assessments available, interview assignments.'),
+      goSubjectDetail: () => this.setState({ page: 'subjectDetail' }),
+      goResult: () => this.setState({ page: 'result' }),
+      homeStats, assessRows, assignedRows, subjects,
+      subTab: this.state.subTab,
+      classroomTab: { onClick: () => this.setState({ subTab: 'classroom' }), style: tabStyle(classroomActive, '#0E5C6B') },
+      tutorTab: { onClick: () => this.setState({ subTab: 'tutor' }), style: tabStyle(!classroomActive, '#5B3FD6') },
+      chapters, chat,
+      toastPlayback: () => this.showToast('Playback controls — position is saved as you watch.'),
+      toastPrev: () => this.showToast('Moves to the previous question. Your answers persist.'),
+      toastSkip: () => this.showToast('You can revisit any question before submitting.'),
+      toastPdfResult: () => this.showToast('Generates a PDF report with your score and per-question outcome.'),
+      toastPdfModal: () => this.showToast('Downloads the full report as a PDF.'),
+      toastPdfHistory: () => this.showToast('Downloads the PDF report for this attempt.'),
+      toastStartInterview: () => this.showToast('Starts a live voice interview with an AI interviewer.'),
+      langEn: { onClick: () => this.setState({ lang: 'en' }), style: langBtnStyle('en') },
+      langTa: { onClick: () => this.setState({ lang: 'ta' }), style: langBtnStyle('ta') },
+      voiceMode: { onClick: () => this.setState({ tutorMode: 'voice' }), style: modeBtnStyle('voice'), color: modeIconColor('voice') },
+      textMode: { onClick: () => this.setState({ tutorMode: 'text' }), style: modeBtnStyle('text'), color: modeIconColor('text') },
+      chatInput: this.state.chatInput, setChatInput: e => this.setState({ chatInput: e.target.value }),
+      sendChat: () => { this.showToast('Voice-first: speech in, answer spoken back.'); this.setState({ chatInput: '' }); },
+      quizOpts, leaderboard, modes, interviewHistory, subjProgress, assessHistory,
+      openReport: () => this.setState({ reportOpen: true }),
+      closeReport: () => this.setState({ reportOpen: false }),
+      stop: (e) => e.stopPropagation(),
+      reportOpen: this.state.reportOpen,
+      reportQuestions, dimensions,
+      toastMsg: this.state.toastMsg
+    };
+  }
+}
+</script>
+</body>
+</html>

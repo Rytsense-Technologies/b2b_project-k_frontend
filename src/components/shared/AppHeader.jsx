@@ -1,5 +1,4 @@
 'use client';
-import { Bell } from 'lucide-react';
 
 export default function AppHeader({ title, subtitle, endContent = null, compact = false }) {
   return (
@@ -16,16 +15,11 @@ export default function AppHeader({ title, subtitle, endContent = null, compact 
         ) : null}
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {endContent}
-        <button
-          type="button"
-          className="relative p-2 rounded-lg text-slate-500 hover:bg-black/[0.04] transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-        </button>
-      </div>
+      {endContent ? (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {endContent}
+        </div>
+      ) : null}
     </header>
   );
 }

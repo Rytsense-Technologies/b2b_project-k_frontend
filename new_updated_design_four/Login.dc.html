@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="none">
+<link rel="stylesheet" href="./quirri-ui.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+::placeholder{color:#939C9E}
+@keyframes qToastIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes qRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;background:#F4F6F7">
+
+  <aside class="q-auth-grid" style="flex:1 1 480px;min-width:320px;position:relative;overflow:hidden;background:linear-gradient(155deg,#0A3F49 0%,#06252B 55%,#04191D 100%);color:#fff;padding:52px 56px;display:flex;flex-direction:column">
+    <div style="position:absolute;inset:0;background-image:radial-gradient(70% 55% at 90% 0%,rgba(14,92,107,.55),transparent 62%),radial-gradient(50% 40% at 0% 100%,rgba(172,91,22,.18),transparent 55%);pointer-events:none"></div>
+    <div style="position:relative;display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);display:grid;place-items:center;flex:none">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v3M12 16v3M5 12h3M16 12h3"></path></svg>
+      </div>
+      <span style="font-size:18px;font-weight:800;letter-spacing:-.02em">Quirri</span>
+    </div>
+
+    <div style="position:relative;margin-top:auto;animation:qRise .45s ease both">
+      <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#86AEB5;font-weight:700;margin-bottom:18px">AI learning for institutions</div>
+      <h1 style="font-size:clamp(36px,4.2vw,48px);line-height:1.06;letter-spacing:-.03em;font-weight:800;margin:0 0 18px;max-width:14ch">Your syllabus,<br>taught by AI.</h1>
+      <p style="color:#B7CED3;font-size:15.5px;line-height:1.65;max-width:42ch;margin:0;font-weight:400">Project K turns your own academic material into structured video lectures, a chapter-grounded AI tutor, and auto-evaluated assessments — under your institution's review.</p>
+    </div>
+
+    <div style="position:relative;margin-top:44px;display:grid;gap:0">
+      <sc-for list="{{ pillars }}" as="p" hint-placeholder-count="3">
+        <div style="display:flex;gap:14px;align-items:flex-start;padding:15px 0;border-top:1px solid rgba(255,255,255,.12)">
+          <div style="font-size:14px;color:#7EC8CF;font-weight:800;min-width:24px;letter-spacing:.02em">{{ p.n }}</div>
+          <div>
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:3px">{{ p.t }}</div>
+            <div style="font-size:12.5px;color:#94A3A6;line-height:1.55;font-weight:400">{{ p.d }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </aside>
+
+  <main style="flex:1 1 420px;min-width:320px;display:flex;align-items:center;justify-content:center;padding:40px 32px;background:radial-gradient(80% 60% at 50% 0%,rgba(14,92,107,.05),transparent 55%),#F4F6F7">
+    <div class="q-rise" style="width:100%;max-width:400px">
+
+      <div style="display:inline-flex;align-items:center;gap:9px;padding:7px 13px 7px 8px;background:#fff;border:1px solid #DEE0E1;border-radius:999px;box-shadow:0 1px 2px rgba(16,34,40,.05),0 4px 14px rgba(16,34,40,.04);margin-bottom:28px">
+        <div style="width:24px;height:24px;border-radius:7px;background:#0E5C6B;color:#fff;display:grid;place-items:center;font-size:9px;font-weight:800;flex:none">AB</div>
+        <div style="font-size:12.5px;font-weight:700;color:#102228">ABC Engineering College</div>
+        <div data-demo="Institution switcher — resolves the tenant from the URL slug." style="font-size:11.5px;color:#0E5C6B;font-weight:700;cursor:pointer;border-left:1px solid #DEE0E1;padding-left:9px">Change</div>
+      </div>
+
+      <sc-if value="{{ !locked }}" hint-placeholder-val="{{ true }}">
+        <h2 style="font-size:30px;font-weight:800;letter-spacing:-.025em;margin:0 0 6px;color:#102228">Sign in</h2>
+        <p style="color:#536064;font-size:13.5px;margin:0 0 26px;line-height:1.6">Use the credentials issued by your institution.</p>
+
+        <form onSubmit="{{ handleLogin }}">
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:12.5px;font-weight:700;color:#102228;margin-bottom:7px">Email address</label>
+            <input type="email" placeholder="you@abceng.edu" value="{{ email }}" onChange="{{ setEmail }}" style="{{ emailInputStyle }}">
+            <sc-if value="{{ emailError }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:11.5px;color:#A32D2D;margin-top:6px;font-weight:600">Enter a valid email address.</div>
+            </sc-if>
+          </div>
+
+          <div style="margin-bottom:16px">
+            <label style="display:block;font-size:12.5px;font-weight:700;color:#102228;margin-bottom:7px">Password</label>
+            <div style="position:relative">
+              <input type="{{ pwFieldType }}" placeholder="••••••••" value="{{ password }}" onChange="{{ setPassword }}" style="width:100%;padding:12px 44px 12px 14px;border:1px solid #DBE3EC;border-radius:10px;background:#fff;color:#102228;outline:none;font-size:13.5px;font-family:inherit">
+              <button type="button" onClick="{{ togglePw }}" aria-label="Toggle password visibility" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#536064;padding:7px;border-radius:8px;display:grid;place-items:center">
+                <sc-if value="{{ showPassword }}" hint-placeholder-val="{{ false }}">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.4 0 10 7 10 7a17 17 0 0 1-2.5 3.35M6.6 6.6A17 17 0 0 0 2 11s3.6 7 10 7a9 9 0 0 0 5.4-1.6"></path><path d="M2 2l20 20"></path></svg>
+                </sc-if>
+                <sc-if value="{{ !showPassword }}" hint-placeholder-val="{{ true }}">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </sc-if>
+              </button>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+            <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:#33465C;font-weight:500">
+              <input type="checkbox" style="width:15px;height:15px;accent-color:#0E5C6B;cursor:pointer">Keep me signed in
+            </label>
+            <a href="ForgotPassword.dc.html" style="color:#0E5C6B;font-weight:700;font-size:12.5px">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="q-btn" style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-weight:700;font-size:15px;padding:13px 24px;border-radius:999px;background:#AC5B16;color:#fff;font-family:inherit">Sign in</button>
+        </form>
+      </sc-if>
+
+      <sc-if value="{{ locked }}" hint-placeholder-val="{{ false }}">
+        <h2 style="font-size:30px;font-weight:800;letter-spacing:-.025em;margin:0 0 6px;color:#102228">Sign in</h2>
+        <p style="color:#536064;font-size:13.5px;margin:0 0 22px;line-height:1.6">Use the credentials issued by your institution.</p>
+        <div style="display:flex;gap:12px;padding:14px 15px;border-radius:12px;font-size:12.5px;line-height:1.55;margin-bottom:20px;border:1px solid #E9C8C4;background:#FBEEEC;color:#7A231E">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+          <div><b style="display:block;margin-bottom:2px">Account temporarily locked</b>Too many failed attempts. Try again in 15 minutes, or reset your password to regain access now.</div>
+        </div>
+        <a href="ForgotPassword.dc.html" style="display:flex;align-items:center;justify-content:center;width:100%;border:1px solid #DEE0E1;cursor:pointer;font-weight:700;font-size:15px;padding:13px 24px;border-radius:999px;background:#fff;color:#33465C;font-family:inherit;box-shadow:0 1px 2px rgba(16,34,40,.05)">Reset password</a>
+      </sc-if>
+
+      <div style="margin-top:28px;padding-top:22px;border-top:1px solid #E8EBEC">
+        <div style="font-weight:800;color:#33465C;font-size:10.5px;margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase">Demo — open a portal directly</div>
+        <div style="display:grid;gap:8px">
+          <a class="q-portal-link" href="SuperAdmin.dc.html" style="display:flex;justify-content:space-between;align-items:center;border:1px solid #DEE0E1;background:#fff;padding:11px 16px;border-radius:12px;font-size:12.5px;font-weight:700;color:#33465C">Super Admin <span style="color:#939C9E;font-weight:500">Knotopian platform</span></a>
+          <a class="q-portal-link" href="CollegeAdmin.dc.html" style="display:flex;justify-content:space-between;align-items:center;border:1px solid #DEE0E1;background:#fff;padding:11px 16px;border-radius:12px;font-size:12.5px;font-weight:700;color:#33465C">College Admin <span style="color:#939C9E;font-weight:500">ABC Engineering</span></a>
+          <a class="q-portal-link" href="HodFaculty.dc.html" style="display:flex;justify-content:space-between;align-items:center;border:1px solid #DEE0E1;background:#fff;padding:11px 16px;border-radius:12px;font-size:12.5px;font-weight:700;color:#33465C">HOD / Faculty <span style="color:#939C9E;font-weight:500">Dr. Karthik</span></a>
+          <a class="q-portal-link" href="Student.dc.html" style="display:flex;justify-content:space-between;align-items:center;border:1px solid #DEE0E1;background:#fff;padding:11px 16px;border-radius:12px;font-size:12.5px;font-weight:700;color:#33465C">Student <span style="color:#939C9E;font-weight:500">Aravind R, Sem 4</span></a>
+        </div>
+        <p style="margin-top:16px;color:#939C9E;font-size:11.5px;line-height:1.6">Accounts are created by an administrator — there is no public sign-up. New users receive an activation link by email.</p>
+      </div>
+    </div>
+  </main>
+
+  <sc-if value="{{ toastMsg }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:{{ toastBg }};color:#fff;padding:11px 20px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 8px 28px rgba(16,34,40,.28);animation:qToastIn .22s ease;white-space:nowrap">{{ toastMsg }}</div>
+  </sc-if>
+</div>
+</b_dc_html>
+<c_dc_js>class Component extends DCLogic {
+  state = {
+    email: '', password: '', showPassword: false,
+    emailError: false, attempts: 0, locked: false,
+    toastMsg: null, toastKind: 'info'
+  };
+
+  showToast(msg, kind) {
+    if (this._t) clearTimeout(this._t);
+    this.setState({ toastMsg: msg, toastKind: kind || 'info' });
+    this._t = setTimeout(() => this.setState({ toastMsg: null }), 2800);
+  }
+
+  handleLogin(e) {
+    e.preventDefault();
+    const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.state.email);
+    this.setState({ emailError: !ok });
+    if (!ok) return;
+    const attempts = this.state.attempts + 1;
+    if (attempts < 3) {
+      this.setState({ attempts });
+      this.showToast('Invalid email or password. (' + (3 - attempts) + ' attempts before lockout)', 'err');
+    } else {
+      this.setState({ attempts, locked: true });
+      this.showToast('Account locked after 3 failed attempts.', 'err');
+    }
+  }
+
+  renderVals() {
+    const pillars = [
+      { n: '01', t: 'Built from your own material', d: 'Upload a chapter; the AI generates a video lecture and quiz grounded only in that content.' },
+      { n: '02', t: 'Nothing publishes without approval', d: 'Every generated video and MCQ passes HOD / SME review before a student ever sees it.' },
+      { n: '03', t: 'Your data stays yours', d: 'Institution-level isolation is enforced in the backend — never by hiding it in the interface.' }
+    ];
+    const emailInputStyle = {
+      width: '100%', padding: '12px 14px',
+      border: '1px solid ' + (this.state.emailError ? '#A32D2D' : '#DBE3EC'),
+      borderRadius: '10px', background: '#fff', color: '#102228', outline: 'none',
+      fontSize: '13.5px', fontFamily: 'inherit'
+    };
+    return {
+      pillars,
+      email: this.state.email,
+      setEmail: e => this.setState({ email: e.target.value }),
+      password: this.state.password,
+      setPassword: e => this.setState({ password: e.target.value }),
+      showPassword: this.state.showPassword,
+      pwFieldType: this.state.showPassword ? 'text' : 'password',
+      togglePw: () => this.setState({ showPassword: !this.state.showPassword }),
+      emailError: this.state.emailError,
+      emailInputStyle,
+      locked: this.state.locked,
+      handleLogin: e => this.handleLogin(e),
+      toastMsg: this.state.toastMsg,
+      toastBg: this.state.toastKind === 'err' ? '#A32D2D' : (this.state.toastKind === 'warn' ? '#C97A0E' : '#06252B')
+    };
+  }
+}</c_dc_js>
+
+</x-dc>
+</body>
+</html>

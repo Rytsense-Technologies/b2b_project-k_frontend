@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { authApi } from '@/lib/api/auth';
 import toast from 'react-hot-toast';
+import { applyFieldFilter, otpSchema } from '@/lib/validation';
 
 // verifyFn: optional override — receives (phone, otpCode) and must return a Promise.
 // If not provided, falls back to authApi.verifyOtp(phone, code, 'login').
@@ -14,11 +15,11 @@ export default function OTPModal({ open, phone, onSuccess, onClose, verifyFn }) 
   if (!open) return null;
 
   const handleChange = (i, val) => {
-    if (!/^\d?$/.test(val)) return;
+    const digit = applyFieldFilter('otp', val).slice(0, 1);
     const next = [...otp];
-    next[i] = val;
+    next[i] = digit;
     setOtp(next);
-    if (val && i < 5) refs.current[i + 1]?.focus();
+    if (digit && i < 5) refs.current[i + 1]?.focus();
   };
 
   const handleKeyDown = (i, e) => {
@@ -27,7 +28,11 @@ export default function OTPModal({ open, phone, onSuccess, onClose, verifyFn }) 
 
   const handleSubmit = async () => {
     const code = otp.join('');
-    if (code.length !== 6) { toast.error('Enter the 6-digit OTP'); return; }
+    const parsed = otpSchema.safeParse({ otp: code });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message || 'Enter the 6-digit OTP');
+      return;
+    }
     setLoading(true);
     try {
       if (verifyFn) {
@@ -38,7 +43,7 @@ export default function OTPModal({ open, phone, onSuccess, onClose, verifyFn }) 
       toast.success('Phone verified!');
       onSuccess();
     } catch {
-      toast.error('Invalid OTP. Please try again.');
+      toast.error('That code did not match. Try again, or resend a new one.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +97,7 @@ export default function OTPModal({ open, phone, onSuccess, onClose, verifyFn }) 
 
         <p className="text-center text-xs text-slate-500 mt-4">
           Didn&apos;t receive it?{' '}
-          <button className="text-blue-600 font-medium hover:underline" onClick={handleResend}>
+          <button className="text-brand-500 font-medium hover:underline" onClick={handleResend}>
             Resend
           </button>
         </p>

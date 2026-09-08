@@ -15,19 +15,6 @@ export function buildParams(obj = {}) {
   return params.toString();
 }
 
-export async function withMock(request, mock) {
-  try {
-    const res = await request();
-    const data = unwrap(res);
-    if (data === undefined || data === null) {
-      return typeof mock === 'function' ? mock() : mock;
-    }
-    return data;
-  } catch {
-    return typeof mock === 'function' ? mock() : mock;
-  }
-}
-
 export async function downloadBlob(request, fallbackName) {
   const res = await request();
   const blob = new Blob([res.data]);
@@ -66,6 +53,39 @@ export function asList(data, fallback = []) {
   if (Array.isArray(data?.results)) return data.results;
   if (Array.isArray(data?.rows)) return data.rows;
   return fallback;
+}
+
+/** FastAPI `{ detail: "..." }` or validation array → human message */
+export function apiErrorMessage(err, fallback = 'Something went wrong') {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (Array.isArray(detail) && detail.length) {
+    return detail
+      .map((d) => (typeof d === 'string' ? d : d?.msg || d?.message))
+      .filter(Boolean)
+      .join('; ') || fallback;
+  }
+  if (err?.message && err.message !== 'Network Error') return err.message;
+  return fallback;
+}
+
+/** EPIC shells: treat missing routes as unavailable, not a hard crash. */
+export function isApiUnavailable(err) {
+  const status = err?.response?.status;
+  return status === 404 || status === 501 || status === 503;
+}
+
+/**
+ * Like unwrap+request, but returns `null` when the epic API is not live yet.
+ * Real failures (auth, 500, network) still throw.
+ */
+export async function fetchOptional(request) {
+  try {
+    return unwrap(await request());
+  } catch (err) {
+    if (isApiUnavailable(err)) return null;
+    throw err;
+  }
 }
 
 export { api };

@@ -1,38 +1,38 @@
 'use client';
-import { Building2, Users, Video, IndianRupee } from 'lucide-react';
+import { Building2, Users, Video, Activity } from 'lucide-react';
 
 const STAT_CONFIG = [
   {
     key:     'total_tenants',
-    label:   'Total Tenants',
+    label:   'Total colleges',
     Icon:    Building2,
-    color:   '#2563eb',
+    color:   '#0E5C6B',
     format:  (v) => v ?? '—',
     sub:     (v) => v != null ? `${v} institutions` : 'Loading…',
   },
   {
     key:     'active_users',
-    label:   'Active Users',
+    label:   'Active users',
     Icon:    Users,
-    color:   '#0984e3',
+    color:   '#4D8691',
     format:  (v) => v != null ? v.toLocaleString() : '—',
     sub:     (v) => v != null ? 'across all tenants' : 'Loading…',
   },
   {
     key:     'interviews_today',
-    label:   'Interviews Today',
+    label:   'Interviews today',
     Icon:    Video,
-    color:   '#00b894',
+    color:   '#0A3F49',
     format:  (v) => v ?? '—',
     sub:     (v) => v != null ? 'sessions completed' : 'Loading…',
   },
   {
-    key:     'total_revenue',
-    label:   'Monthly Revenue',
-    Icon:    IndianRupee,
-    color:   '#e17055',
-    format:  (v) => v != null ? `₹${Number(v).toLocaleString('en-IN')}` : '—',
-    sub:     (v) => v != null ? 'this month' : 'Loading…',
+    key:     'pipeline_jobs',
+    label:   'Pipeline jobs',
+    Icon:    Activity,
+    color:   '#AC5B16',
+    format:  (v) => v != null ? Number(v).toLocaleString('en-IN') : '—',
+    sub:     (v) => v != null ? 'in progress' : 'Loading…',
   },
 ];
 

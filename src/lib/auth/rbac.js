@@ -10,6 +10,7 @@ export const BACKEND_USER_TYPE_TO_ROLE = {
   college_admin: ROLES.COLLEGE_ADMIN,
   admin: ROLES.COLLEGE_ADMIN,
   faculty: ROLES.FACULTY,
+  hod: ROLES.FACULTY,
   student: ROLES.STUDENT,
   individual: ROLES.STUDENT,
 };
@@ -46,14 +47,14 @@ export function resolveRoleFromLoginPayload(data) {
 
 /**
  * Landing routes after login.
- * This frontend only ships the Super Admin portal — other roles stay on login
- * (college/faculty/student UIs live in separate apps).
+ * Super Admin → `/superadmin/*`; College Admin → `/admin/*`;
+ * HOD/Faculty → `/faculty/*`; Student → `/student/*`.
  */
 export const ROLE_HOME_PATHS = {
   [ROLES.SUPERADMIN]: '/superadmin/dashboard',
-  [ROLES.COLLEGE_ADMIN]: '/auth/login',
-  [ROLES.FACULTY]: '/auth/login',
-  [ROLES.STUDENT]: '/auth/login',
+  [ROLES.COLLEGE_ADMIN]: '/admin/dashboard',
+  [ROLES.FACULTY]: '/faculty/dashboard',
+  [ROLES.STUDENT]: '/student/home',
 };
 
 export function isKnownRole(role) {
@@ -70,8 +71,7 @@ export function isB2bRole(role) {
  * @param {string|undefined} onbCookie - pk_onb value for B2C onboarding
  */
 export function getPostLoginPath(role, onbCookie) {
-  if (role === ROLES.SUPERADMIN) return ROLE_HOME_PATHS[ROLES.SUPERADMIN];
-  // Super Admin frontend only — do not navigate to missing portal routes
+  if (role && ROLE_HOME_PATHS[role]) return ROLE_HOME_PATHS[role];
   return ROLE_HOME_PATHS[ROLES.STUDENT];
 }
 
@@ -92,6 +92,8 @@ export function buildUserObject(raw) {
     avatar_url: u.avatar_url ?? null,
     department: u.department ?? u.dept ?? null,
     tenant_name: u.tenant_name ?? u.college_name ?? null,
+    college_name: u.college_name ?? u.tenant_name ?? null,
+    university_name: u.university_name ?? u.university ?? null,
     plan: u.plan ?? 'free',
   };
 }

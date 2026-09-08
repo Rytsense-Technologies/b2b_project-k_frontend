@@ -10,15 +10,15 @@ function UpgradeOverlay({ targetPlan, upgradeHref }) {
   return (
     <div className="locked-overlay">
       <div className="flex flex-col items-center gap-3 text-center px-6">
-        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-          <Lock size={18} className="text-blue-600" />
+        <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center">
+          <Lock size={18} className="text-brand-500" />
         </div>
         <p className="text-sm font-semibold text-slate-700">
           Unlock with {labels[targetPlan] || targetPlan} Plan
         </p>
         <a
           href={upgradeHref ?? getUpgradeHref({ plan: 'premium' })}
-          className="text-xs font-medium text-blue-600 hover:text-blue-700 underline underline-offset-2"
+          className="text-xs font-medium text-brand-500 hover:text-brand-600 underline underline-offset-2"
         >
           Upgrade now →
         </a>

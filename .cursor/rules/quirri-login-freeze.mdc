@@ -1,0 +1,38 @@
+---
+description: FREEZE — do not change any product login UI until the user explicitly asks
+alwaysApply: true
+---
+
+# Login UI freeze (user lock)
+
+**Owner instruction (2026-09-07):** Stick to the **current** login UI for **all** portals. Do **not** change it in development until the user explicitly says to.
+
+## Frozen surfaces (do not restyle / redesign)
+
+| Route | Implementation |
+|-------|----------------|
+| `/auth/login` | `src/app/auth/login/page.js` |
+| `/admin/login` | `src/app/admin/(auth)/login/page.jsx` |
+| `/faculty/login` · `/student/login` | `src/components/auth/PortalLoginPage.jsx` |
+| Forgot / reset | `src/app/auth/forgot-password/page.jsx`, `src/app/auth/reset-password/page.jsx` (same centered card family) |
+
+## Locked pattern (preserve exactly)
+
+- Centered Quirri card on mist canvas — **not** split-hero, **not** `new_updated_design_four/Login.dc.html`
+- Poppins on auth cards; official `QuirriLogo` centered
+- Copy: **Welcome back** / **Sign in to Quirri** (portal-specific subcopy only where already present)
+- Catalog fields (`email`, `password`) + Amber 700 **Sign in** CTA
+- Shared auth CSS / card chrome — do not invent a second login look
+
+## Allowed without unfreezing
+
+- Auth **logic** only: API wiring, role redirects, cookie cleanup, lockout, validation via `FIELD_RULES` / schemas
+- Bug fixes that restore the **existing** look (broken layout, a11y regressions) — not a redesign
+
+## Forbidden until user says otherwise
+
+- Visual redesign, layout changes, new login templates, Figma/design-pack login restyles
+- Adopting `Login.dc.html` or any post-login shell styling on auth screens
+- “While we’re here” polish on login pages during unrelated work
+
+**Unfreeze:** only when the user explicitly asks to change login UI.

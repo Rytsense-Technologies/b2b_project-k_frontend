@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="none">
+<link rel="stylesheet" href="./quirri-ui.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap');
+*{box-sizing:border-box}
+body{margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+::placeholder{color:#939C9E}
+</style>
+</helmet>
+
+<div class="q-app-shell" style="--teal:#0E5C6B;--teal-dark:#06252B;--teal-700:#0A3F49;--teal-50:#F1F5F6;--teal-100:#DDE8EA;--amber-pri:#AC5B16;--ink:#102228;--ink-2:#33465C;--muted:#536064;--muted-2:#707A7E;--muted-3:#939C9E;--line:#DEE0E1;--line-soft:#EEF0F0;--mist:#F4F6F7;--success:#0F6E56;--success-soft:#E9F5EF;--warning:#C97A0E;--warning-soft:#FDF1E2;--error:#A32D2D;--error-soft:#FBEEEC;--violet:#5B3FD6;--violet-soft:#EFEBFC;--blue:#1D5FB8;--blue-soft:#E8F0FB;--r-md:12px;--r-lg:18px;--sh-1:0 1px 2px rgba(16,34,40,.04),0 4px 14px rgba(16,34,40,.05);font-family:'Plus Jakarta Sans',system-ui,sans-serif;min-height:100vh;display:flex;color:var(--ink);font-size:14px">
+
+  <aside class="q-side-dark" style="flex:1 1 258px;max-width:258px;min-width:230px;background:var(--teal-dark);border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;color:#fff">
+    <div style="padding:22px 20px 16px;display:flex;align-items:center;gap:9px">
+      <div style="width:28px;height:28px;border-radius:var(--r-md);background:var(--teal);display:grid;place-items:center;flex:none">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><path d="M12 5v3M12 16v3M5 12h3M16 12h3"></path></svg>
+      </div>
+      <span style="font-size:16px;font-weight:700;letter-spacing:-.01em;color:#fff">Quirri</span>
+    </div>
+
+    <div style="margin:4px 14px 10px;padding:11px 12px;border:1px solid rgba(255,255,255,.12);border-radius:var(--r-md);background:rgba(255,255,255,.06);display:flex;gap:10px;align-items:center">
+      <div style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700;flex:none">AB</div>
+      <div style="min-width:0">
+        <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff">ABC Engineering</div>
+        <div style="font-size:10.5px;color:rgba(255,255,255,.55);font-weight:500">{{ scopeLabel }}</div>
+      </div>
+    </div>
+
+    <nav style="padding:10px 12px 4px;flex:1;overflow-y:auto">
+      <a class="q-nav-item" onClick="{{ navDash.onClick }}" style="{{ navDash.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navDash.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>Dashboard</a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">Review queue</div>
+      <a class="q-nav-item" onClick="{{ navReview.onClick }}" style="{{ navReview.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navReview.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span style="flex:1">Video Review</span><span style="background:var(--warning-soft);color:var(--warning);font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px">5</span></a>
+      <a class="q-nav-item" onClick="{{ navMcq.onClick }}" style="{{ navMcq.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navMcq.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg><span style="flex:1">MCQ Review</span><span style="background:var(--warning-soft);color:var(--warning);font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px">3</span></a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">Academics</div>
+      <a class="q-nav-item" onClick="{{ navSubjects.onClick }}" style="{{ navSubjects.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navSubjects.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><path d="M15 3v5h5"></path></svg>Subjects</a>
+      <a class="q-nav-item" onClick="{{ navStudents.onClick }}" style="{{ navStudents.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navStudents.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"></path></svg>Students</a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">Placement</div>
+      <a class="q-nav-item" onClick="{{ navInterviews.onClick }}" style="{{ navInterviews.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navInterviews.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z"></path><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Interview Assignments</a>
+
+      <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:700;padding:16px 12px 6px">Insights</div>
+      <a class="q-nav-item" onClick="{{ navAnalytics.onClick }}" style="{{ navAnalytics.style }}"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="{{ navAnalytics.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg><span style="flex:1">Department Analytics</span></a>
+    </nav>
+
+    <div style="border-top:1px solid rgba(255,255,255,.1);padding:13px 16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11px;flex:none">{{ whoAv }}</div>
+        <div><div style="font-weight:700;font-size:12.5px;color:#fff">{{ whoName }}</div><div style="color:rgba(255,255,255,.55);font-size:10.5px">{{ whoRole }}</div></div>
+      </div>
+      <a href="Login.dc.html" style="display:flex;align-items:center;gap:8px;color:rgba(255,140,140,.88);font-size:12px;margin-top:11px;font-weight:600">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5M21 12H9"></path></svg>Log out
+      </a>
+    </div>
+  </aside>
+
+  <div style="flex:5 1 700px;min-width:320px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 32px 14px;flex-wrap:wrap">
+      <div>
+        <h1 style="font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0">{{ titleMain }}</h1>
+        <p style="color:var(--muted);font-size:13px;margin:3px 0 0;max-width:60ch">{{ titleSub }}</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;background:#fff;border:1px solid var(--line);border-radius:999px;overflow:hidden">
+          <button onClick="{{ setRoleHod }}" style="{{ roleBtnHodStyle }}">HOD</button>
+          <button onClick="{{ setRoleFaculty }}" style="{{ roleBtnFacultyStyle }}">Faculty / SME</button>
+        </div>
+        <div style="padding:8px 14px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;color:var(--ink-2);background:#fff">{{ scopeText }}</div>
+        <button class="q-iconbtn" onClick="{{ ring }}" style="width:36px;height:36px;border-radius:var(--r-md);background:#fff;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;position:relative;color:var(--muted);flex:none">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+          <span style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--error);border:2px solid #fff"></span>
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:6px 32px 56px">
+
+      <sc-if value="{{ isFaculty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;margin-bottom:18px;border:1px solid var(--teal-100);background:var(--teal-50);color:var(--teal-700)">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+          <div><b style="display:block;margin-bottom:2px">Viewing as Faculty / SME</b>Department Analytics is locked, the scope selector is fixed to assigned subjects, and student data is limited to those subjects. In the real product this is enforced by the API — hiding the menu item is not the control.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+        <div class="q-hero-split" style="display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-bottom:20px;align-items:stretch">
+          <div style="border-radius:var(--r-lg);padding:28px 32px;color:#fff;background:var(--teal-dark);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center">
+            <div style="position:absolute;inset:0;background-image:radial-gradient(70% 100% at 90% 0%,rgba(14,92,107,.6),transparent 65%)"></div>
+            <div style="position:relative">
+              <h2 style="font-size:24px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em">Welcome, {{ whoName }}</h2>
+              <p style="color:#B7CED3;font-size:14px;max-width:52ch;line-height:1.6;margin:0 0 18px;font-weight:400">You have 8 items waiting for review — 5 chapter videos and 3 MCQ sets. Nothing reaches a student until you approve it.</p>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button onClick="{{ navReview.onClick }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;background:#fff;color:var(--teal-dark);display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Review videos</button>
+                <button onClick="{{ navMcq.onClick }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:11px 20px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"></path></svg>Review MCQs</button>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px 26px;box-shadow:var(--sh-1);display:flex;flex-direction:column;justify-content:center">
+            <h3 style="font-size:15px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em">Review priorities</h3>
+            <p style="color:var(--muted);font-size:12px;margin:0 0 16px;line-height:1.5">What needs your attention first this week.</p>
+            <ul style="margin:0;padding:0 0 0 18px;color:var(--ink-2);font-size:12.5px;line-height:1.65">
+              <li style="margin-bottom:8px"><b style="color:var(--ink)">5 videos pending</b> — Linked Lists and TCP/IP Model are oldest; students cannot watch until approved.</li>
+              <li style="margin-bottom:8px"><b style="color:var(--ink)">3 MCQ sets pending</b> — 38 questions block assessments on Data Structures Ch 3 and DBMS Ch 4.</li>
+              <li><b style="color:var(--ink)">48-hour SLA</b> — Items waiting more than 2 days should be reviewed or sent back with comments today.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px">
+          <sc-for list="{{ dashStats }}" as="s" hint-placeholder-count="5">
+            <div class="q-card-lift" style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">
+                <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600;line-height:1.35">{{ s.k }}</div>
+                <div style="width:34px;height:34px;border-radius:9px;background:{{ s.iconBg }};color:{{ s.iconFg }};display:grid;place-items:center;flex:none">{{ s.icon }}</div>
+              </div>
+              <div style="font-size:26px;font-weight:700;margin:0 0 3px;letter-spacing:-.01em;color:{{ s.color }}">{{ s.v }}</div>
+              <div style="font-size:11.5px;color:var(--muted)">{{ s.s }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:14px;padding:11px 18px;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);margin-bottom:20px;flex-wrap:wrap">
+          <div style="font-weight:700;font-size:12.5px;color:var(--ink);flex:none">Review queue · 8 items pending</div>
+          <div style="flex:1;min-width:140px;height:7px;background:#EAEFF1;border-radius:999px;overflow:hidden">
+            <i style="display:block;height:100%;width:62%;background:linear-gradient(90deg,var(--teal) 0%,var(--teal) 62%,var(--amber-pri) 62%,var(--amber-pri) 100%)"></i>
+          </div>
+          <div style="font-size:11px;color:var(--muted-2);flex:none;font-weight:600">5 videos · 3 MCQs</div>
+          <a onClick="{{ navReview.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer;flex:none">Go to review →</a>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Waiting for your review</h3><a onClick="{{ navReview.onClick }}" style="color:var(--teal);font-size:12px;font-weight:600;cursor:pointer">Open queue →</a></div>
+            <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">AI-generated chapter videos assigned to you.</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Dept</th><th style="text-align:right;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Waiting</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ waitingRows }}" as="r" hint-placeholder-count="4">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.ch }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.sub }}</div></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.subject }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.dept }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right;font-size:12px;color:var(--muted-3)">{{ r.waiting }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <div style="padding:17px 20px 4px"><h3 style="font-size:14.5px;font-weight:700;margin:0">Recently actioned</h3></div>
+            <div style="padding:0 20px 10px;color:var(--muted);font-size:11.5px">Your last approvals and send-backs.</div>
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th><th style="text-align:right;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Action</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ actionedRows }}" as="r" hint-placeholder-count="4">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.ch }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.sub }}</div></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.subject }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><span style="font-size:10.5px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.status }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:16px"><div style="font-size:16.5px;font-weight:700">Video Review</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:70ch">Each card is one AI-generated chapter video. Watch it, then publish it to students or send it back with comments.</div></div>
+
+        <div style="display:flex;gap:4px;margin-bottom:16px">
+          <sc-for list="{{ revTabs }}" as="tb" hint-placeholder-count="3">
+            <div onClick="{{ tb.onClick }}" style="{{ tb.style }}">{{ tb.label }} <span style="background:{{ tb.ctBg }};color:{{ tb.ctFg }};font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:5px">{{ tb.count }}</span></div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ isRevPending }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ pendingGroups }}" as="g" hint-placeholder-count="2">
+            <div style="font-weight:700;font-size:13.5px;padding:10px 4px">{{ g.title }} <span style="font-weight:500;color:var(--muted-2);font-size:12px">· {{ g.meta }}</span></div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);margin-bottom:16px;overflow:hidden">
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line-soft)">
+                  <div style="width:32px;height:32px;border-radius:8px;background:var(--teal-50);color:var(--teal-700);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none">{{ it.num }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-weight:700;font-size:13.5px">{{ it.nm }}</div>
+                    <div style="font-size:11.5px;color:var(--muted-2);margin-top:3px;display:flex;gap:14px;flex-wrap:wrap"><span>{{ it.video }}</span><span>{{ it.mcqs }}</span><span>{{ it.uploaded }}</span></div>
+                  </div>
+                  <span style="font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:var(--warning-soft);color:var(--warning);flex:none">Pending</span>
+                  <button onClick="{{ it.onReview }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 18px;border-radius:999px;background:var(--amber-pri);color:#fff;flex:none">Review</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{ isRevSent }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Your comment</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Sent back</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Status</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ sentBackRows }}" as="r" hint-placeholder-count="2">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.ch }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.sub }}</div></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.subject }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3);max-width:280px">{{ r.comment }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ r.when }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.status }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isRevDone }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapter</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Dept</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Published</th><th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Note</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ publishedRows }}" as="r" hint-placeholder-count="4">
+                  <tr>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ r.ch }}</div><div style="font-size:11px;color:var(--muted-3)">{{ r.sub }}</div></td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.subject }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ r.dept }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ r.date }}</td>
+                    <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ r.note }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isMcq }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+          <div><div style="font-size:16.5px;font-weight:700">MCQ Review</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px;max-width:64ch">AI-generated questions must be approved before any student can be assessed on them. A chapter's assessment stays unavailable until its questions pass review.</div></div>
+          <div style="display:flex;gap:9px;flex:none">
+            <button onClick="{{ toastRejectAll }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:999px;color:var(--ink-2)">Reject all</button>
+            <button onClick="{{ toastApproveAll }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 18px;border-radius:999px;background:var(--success);color:#fff;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>Approve all 10</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;margin-bottom:18px;border:1px solid #F3DDB0;background:var(--warning-soft);color:#8A560A">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+          <div><b style="display:block;margin-bottom:2px">Assessment not yet available to students</b>Data Structures · Chapter 3 · Linked Lists — 10 questions awaiting your approval. Students see "assessment coming soon" until you approve.</div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px;display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:999px;padding:9px 16px;background:#fff">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--muted-2)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg>
+            <input placeholder="Search question text…" style="border:none;outline:none;flex:1;font-size:12.5px;font-family:inherit">
+          </div>
+          <div style="padding:9px 14px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;background:#fff;color:var(--ink-2);font-weight:600">Data Structures · Ch 3 · Linked Lists (10)</div>
+        </div>
+
+        <sc-for list="{{ mcqQuestions }}" as="q" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:18px;margin-bottom:14px">
+            <div style="display:flex;gap:10px;font-size:13.5px;font-weight:600;margin-bottom:14px"><span style="color:var(--muted-3);font-weight:700">{{ q.n }}.</span><span>{{ q.text }}</span></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin-bottom:14px">
+              <sc-for list="{{ q.opts }}" as="o" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 13px;border:1.5px solid {{ o.border }};border-radius:8px;background:{{ o.bg }};font-size:12.5px;color:var(--ink-2)"><span style="width:20px;height:20px;border-radius:6px;background:{{ o.kbg }};color:{{ o.kfg }};display:grid;place-items:center;font-size:10px;font-weight:700;flex:none">{{ o.k }}</span>{{ o.label }}</div>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line-soft)">
+              <span style="font-size:11px;color:var(--muted-3);flex:1;min-width:200px">Source: {{ q.source }}</span>
+              <button onClick="{{ q.toastEdit }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12px;padding:7px 14px;border-radius:999px;color:var(--ink-2)">Edit</button>
+              <button onClick="{{ q.toastReject }}" style="border:1px solid #E9C8C4;background:var(--error-soft);cursor:pointer;font-weight:600;font-size:12px;padding:7px 14px;border-radius:999px;color:var(--error)">Reject</button>
+              <button onClick="{{ q.approve }}" style="border:none;cursor:pointer;font-weight:600;font-size:12px;padding:7px 16px;border-radius:999px;background:var(--success);color:#fff">Approve</button>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="text-align:center;padding:8px 0 4px">
+          <button onClick="{{ toastShowMore }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 18px;border-radius:999px;color:var(--ink-2)">Show remaining 7 questions</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSubjects }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:16px"><div style="font-size:16.5px;font-weight:700">Subjects</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Subjects in your scope, and how far each one's content is through review.</div></div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Subject</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Dept · Sem</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapters</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Videos</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">MCQs</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Progress</th>
+              <th style="border-bottom:1px solid var(--line-soft)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ subjectRows }}" as="s" hint-placeholder-count="4">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ s.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ s.code }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ s.deptSem }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ s.chapters }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ s.videos }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ s.mcqs }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);width:150px"><div style="height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ s.pct }}%;background:{{ s.barColor }}"></i></div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ s.toastView }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">View</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStudents }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:16px"><div style="font-size:16.5px;font-weight:700">Students</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Students within your scope, with learning, Q&amp;A, and assessment activity.</div></div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Student</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Roll no.</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Sem</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Chapters</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Watch time</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Q&amp;A</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Avg score</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ studentRows }}" as="st" hint-placeholder-count="4">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ st.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ st.email }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.roll }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.sem }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.chapters }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.watch }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ st.qa }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ st.bg }};color:{{ st.fg }}">{{ st.score }}%</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isInterviews }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div><div style="font-size:16.5px;font-weight:700">Interview Assignments</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Assign AI mock interviews to final-year students in your departments.</div></div>
+          <button onClick="{{ toastNewAssignment }}" style="border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:10px 18px;border-radius:999px;background:var(--amber-pri);color:#fff;display:inline-flex;align-items:center;gap:7px;flex:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>New assignment</button>
+        </div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Assignment</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Cohort</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Mode</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Due</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Completion</th>
+              <th style="text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;padding:9px 20px;border-bottom:1px solid var(--line-soft)">Avg score</th>
+              <th style="border-bottom:1px solid var(--line-soft)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ assignmentRows }}" as="a" hint-placeholder-count="2">
+                <tr>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><div style="font-weight:600;font-size:12.5px">{{ a.nm }}</div><div style="font-size:11px;color:var(--muted-3)">{{ a.role }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)">{{ a.cohort }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:{{ a.modeBg }};color:{{ a.modeFg }}">{{ a.mode }}</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--muted-3)">{{ a.due }}</td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);width:160px"><div style="height:6px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ a.pct }}%;background:{{ a.barColor }}"></i></div><div style="font-size:11px;color:var(--muted-3);margin-top:4px">{{ a.done }}</div></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft)"><span style="font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;background:{{ a.scoreBg }};color:{{ a.scoreFg }}">{{ a.score }}%</span></td>
+                  <td style="padding:11px 20px;border-bottom:1px solid var(--line-soft);text-align:right"><a onClick="{{ a.toastTrack }}" style="color:var(--teal);font-weight:600;font-size:12px;cursor:pointer">Track</a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAnalytics }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div><div style="font-size:16.5px;font-weight:700">Department Analytics</div><div style="color:var(--muted);font-size:12.5px;margin-top:3px">Subject-wise engagement across your departments, last 30 days.</div></div>
+          <button onClick="{{ toastExport }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:999px;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px;flex:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 21h16"></path></svg>Export</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px">
+          <sc-for list="{{ analyticsStats }}" as="s" hint-placeholder-count="4">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;box-shadow:var(--sh-1)">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:600">{{ s.k }}</div>
+              <div style="font-size:26px;font-weight:700;margin:8px 0 3px">{{ s.v }}</div>
+              <div style="font-size:11.5px;color:{{ s.color }};font-weight:600">{{ s.s }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:20px">
+            <h3 style="font-size:14.5px;font-weight:700;margin:0 0 3px">Watch time by subject</h3>
+            <p style="color:var(--muted);font-size:12px;margin:0 0 16px">Played seconds, not elapsed time — seeking ahead does not count.</p>
+            <sc-for list="{{ watchBySubject }}" as="w" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+                <div style="width:130px;font-weight:600;font-size:12px;flex:none">{{ w.nm }}</div>
+                <div style="flex:1;height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ w.pct }}%;background:{{ w.color }}"></i></div>
+                <div style="width:44px;text-align:right;font-weight:700;font-size:12px;flex:none">{{ w.val }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:20px">
+            <h3 style="font-size:14.5px;font-weight:700;margin:0 0 3px">Q&amp;A questions by subject</h3>
+            <p style="color:var(--muted);font-size:12px;margin:0 0 16px">Where students needed the AI tutor most.</p>
+            <sc-for list="{{ qaBySubject }}" as="w" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+                <div style="width:130px;font-weight:600;font-size:12px;flex:none">{{ w.nm }}</div>
+                <div style="flex:1;height:7px;background:#EAEFF1;border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:{{ w.pct }}%;background:{{ w.color }}"></i></div>
+                <div style="width:44px;text-align:right;font-weight:700;font-size:12px;flex:none">{{ w.val }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDenied }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh-1);padding:60px 32px;text-align:center;max-width:520px;margin:40px auto 0">
+          <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="var(--muted-3)" stroke-width="1.6" style="margin-bottom:16px"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px">You don't have access to this module</div>
+          <div style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:22px">Department Analytics is available to HODs only. Your Faculty role is scoped to the subjects assigned to you.</div>
+          <button onClick="{{ navDash.onClick }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;color:var(--ink-2)">Back to dashboard</button>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <sc-if value="{{ reviewOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeReview }}" style="position:fixed;inset:0;background:rgba(16,34,40,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="background:#fff;border-radius:var(--r-lg);width:100%;max-width:940px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(9,25,40,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line-soft)">
+          <div><h3 style="font-size:16px;font-weight:700;margin:0">{{ reviewTitle }}</h3><div style="color:var(--muted);font-size:11.5px;margin-top:3px">{{ reviewCrumb }}</div></div>
+          <button onClick="{{ closeReview }}" style="width:30px;height:30px;border-radius:var(--r-md);border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--muted);flex:none">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(280px,1.3fr) minmax(240px,1fr);gap:24px;padding:22px 24px">
+          <div>
+            <div style="margin-bottom:18px">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">AI-generated chapter video</div>
+              <div style="background:#0E1A2B;border-radius:var(--r-md);min-height:200px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">
+                <div style="position:absolute;top:14px;left:16px;color:#87A0B9;font-size:11px;font-weight:600;z-index:2">Now teaching · Tutor Priya</div>
+                <div onClick="{{ toastPlayback }}" style="width:52px;height:52px;border-radius:50%;background:var(--teal);display:grid;place-items:center;cursor:pointer"><svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg></div>
+              </div>
+              <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">
+                <span style="font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:#EEF0F0;color:var(--ink-2)">26:05</span>
+                <span style="font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:#EEF0F0;color:var(--ink-2)">English</span>
+                <span style="font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:#EEF0F0;color:var(--ink-2)">Generated from 1 source file</span>
+              </div>
+            </div>
+            <div style="margin-bottom:18px">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">Source material</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-md);font-size:12.5px;color:var(--ink-2)">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--muted-2)" stroke-width="1.8" style="flex:none"><path d="M6 2h9l5 5v15H6z"></path><path d="M15 2v5h5"></path></svg>
+                <span style="flex:1">linkedlist_ch3.pdf · 5.1 MB</span>
+                <a onClick="{{ toastOpenSource }}" style="color:var(--teal);font-weight:600;cursor:pointer">Open</a>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">Generated MCQs — separate approval required</div>
+              <div style="display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);font-size:12.5px;line-height:1.55;border:1px solid #F3DDB0;background:var(--warning-soft);color:#8A560A">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+                <div><b style="display:block;margin-bottom:2px">10 questions awaiting approval</b>Approving this video publishes the lecture. The assessment stays locked until you approve the questions too.<br><a onClick="{{ goToMcqFromModal }}" style="color:#8A560A;font-weight:700;text-decoration:underline;cursor:pointer">Review MCQs now →</a></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="margin-bottom:18px">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">Decision</div>
+              <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:0">Approve to publish this chapter to students immediately, or send it back to the college admin with comments for a regenerate.</p>
+            </div>
+            <div style="margin-bottom:18px">
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">Comments <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted-3)">— optional to approve, required to send back</span></div>
+              <textarea placeholder="e.g. Slow the pacing on traversal and add one worked example…" style="width:100%;min-height:88px;padding:11px 13px;border:1px solid #DBE3EC;border-radius:2px;outline:none;font-size:12.5px;font-family:inherit;resize:vertical"></textarea>
+            </div>
+            <div>
+              <div style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);font-weight:700;margin-bottom:9px">History</div>
+              <div style="font-size:11.5px;color:var(--muted-2);line-height:1.9">
+                <div>Uploaded by ABC Engineering · 2 days ago</div>
+                <div>Text extracted &amp; embedded · 2 days ago</div>
+                <div>Video + MCQs generated · 2 days ago</div>
+                <div>Assigned to you · 2 days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 24px;border-top:1px solid var(--line-soft);background:#FBFCFC;position:sticky;bottom:0">
+          <button onClick="{{ closeReview }}" style="border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--ink-2)">Cancel</button>
+          <div style="display:flex;gap:10px">
+            <button onClick="{{ sendBack }}" style="border:1px solid #E9C8C4;background:var(--error-soft);cursor:pointer;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;color:var(--error);display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Send back</button>
+            <button onClick="{{ approvePublish }}" style="border:none;cursor:pointer;font-weight:600;font-size:13px;padding:10px 20px;border-radius:999px;background:var(--success);color:#fff;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>Approve &amp; publish</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toastMsg }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:var(--teal-dark);color:#fff;padding:11px 20px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 8px 28px rgba(16,34,40,.28);white-space:nowrap;max-width:90vw">{{ toastMsg }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    page: 'dashboard', role: 'hod', revTab: 'pending',
+    reviewOpen: false, reviewTitle: '', reviewCrumb: '',
+    toastMsg: null
+  };
+
+  showToast(msg) {
+    if (this._t) clearTimeout(this._t);
+    this.setState({ toastMsg: msg });
+    this._t = setTimeout(() => this.setState({ toastMsg: null }), 2800);
+  }
+
+  renderVals() {
+    const isFaculty = this.state.role === 'faculty';
+    const page = isFaculty && this.state.page === 'analytics' ? 'denied' : this.state.page;
+
+    const titles = {
+      dashboard: ['Dashboard', 'Review AI-generated content and track your departments.'],
+      review: ['Video Review', 'Approve chapter videos, or send them back with comments.'],
+      mcq: ['MCQ Review', 'Approve generated questions before students are assessed on them.'],
+      subjects: ['Subjects', 'Subjects in your scope and their review progress.'],
+      students: ['Students', 'Students within your scope.'],
+      interviews: ['Interview Assignments', 'Assign AI mock interviews to final-year students.'],
+      analytics: ['Department Analytics', 'Subject-wise engagement across your departments.'],
+      denied: ['Access denied', 'This module is not available to your role.']
+    };
+    const t = titles[page] || titles.dashboard;
+
+    const go = (id) => () => this.setState({ page: id });
+    const navDef = (id) => {
+      const active = page === id;
+      return {
+        onClick: go(id),
+        color: active ? '#fff' : 'rgba(255,255,255,.55)',
+        style: { display:'flex', alignItems:'center', gap:11, padding:'9px 12px', borderRadius:10, fontWeight: active?700:600, fontSize:13, margin:'1px 0', cursor:'pointer', background: active?'rgba(255,255,255,.12)':'transparent', color: active?'#fff':'rgba(255,255,255,.72)' }
+      };
+    };
+
+    const dashStats = [
+      { k: 'Videos pending', v: '5', s: 'Across 2 departments', color: '#C97A0E', icon: '▶', iconBg: '#FDF1E2', iconFg: '#C97A0E' },
+      { k: 'MCQ sets pending', v: '3', s: '38 questions total', color: '#C97A0E', icon: '✓', iconBg: '#FDF1E2', iconFg: '#C97A0E' },
+      { k: 'Published', v: '128', s: 'This semester', color: '#102228', icon: '↑', iconBg: '#E9F5EF', iconFg: '#0F6E56' },
+      { k: 'Sent back', v: '7', s: 'Awaiting re-upload', color: '#102228', icon: '↩', iconBg: '#FBEEEC', iconFg: '#A32D2D' },
+      { k: 'Students', v: '1,100', s: '620 CSE · 480 IT', color: '#102228', icon: '◉', iconBg: '#E8F0FB', iconFg: '#1D5FB8' }
+    ];
+
+    const waitingRows = [
+      { ch: 'Linked Lists', sub: 'Ch 3', subject: 'Data Structures', dept: 'CSE', waiting: '2 days' },
+      { ch: 'Normalization', sub: 'Ch 4', subject: 'DBMS', dept: 'CSE', waiting: 'Today' },
+      { ch: 'TCP/IP Model', sub: 'Ch 2', subject: 'Computer Networks', dept: 'IT', waiting: 'Today' },
+      { ch: 'Threads & Concurrency', sub: 'Ch 5', subject: 'Operating Systems', dept: 'CSE', waiting: '1 day' }
+    ];
+    const actionedRows = [
+      { ch: 'Arrays & Complexity', sub: 'Ch 1', subject: 'Data Structures', status: 'Published', bg: '#E9F5EF', fg: '#0B4B3A' },
+      { ch: 'Stacks & Queues', sub: 'Ch 2', subject: 'Data Structures', status: 'Published', bg: '#E9F5EF', fg: '#0B4B3A' },
+      { ch: 'Trees & BST', sub: 'Ch 5', subject: 'Data Structures', status: 'Sent back', bg: '#FBEEEC', fg: '#A32D2D' },
+      { ch: 'SQL Joins', sub: 'Ch 6', subject: 'DBMS', status: 'Sent back', bg: '#FBEEEC', fg: '#A32D2D' }
+    ];
+
+    const revTabDefs = [
+      { id: 'pending', label: 'Pending', count: 5 },
+      { id: 'sent', label: 'Sent back', count: 7 },
+      { id: 'done', label: 'Published', count: 128 }
+    ];
+    const revTabs = revTabDefs.map(tb => {
+      const active = this.state.revTab === tb.id;
+      return { ...tb,
+        onClick: () => this.setState({ revTab: tb.id }),
+        ctBg: active ? 'rgba(255,255,255,.25)' : '#EEF0F0', ctFg: active ? '#fff' : '#536064',
+        style: { padding:'10px 18px', borderRadius:999, cursor:'pointer', fontWeight:700, fontSize:12.5, background: active?'#0E5C6B':'#fff', color: active?'#fff':'#536064', border: active?'none':'1px solid #DEE0E1' }
+      };
+    });
+
+    const openReview = (nm, crumb) => () => this.setState({ reviewOpen: true, reviewTitle: nm, reviewCrumb: crumb });
+
+    const pendingGroups = [
+      { title: 'Data Structures', meta: 'CSE · Year 2 · Sem 4', items: [
+        { num: 3, nm: 'Linked Lists', video: 'Video 26:05', mcqs: '10 MCQs generated', uploaded: 'Uploaded 2 days ago', onReview: openReview('Linked Lists', 'Data Structures · CSE · Sem 4') },
+        { num: 5, nm: 'Threads & Concurrency', video: 'Video 31:20', mcqs: '8 MCQs generated', uploaded: 'Uploaded 1 day ago', onReview: openReview('Threads & Concurrency', 'Operating Systems · CSE · Sem 4') }
+      ]},
+      { title: 'Computer Networks', meta: 'IT · Year 2 · Sem 4', items: [
+        { num: 2, nm: 'TCP/IP Model', video: 'Video 19:44', mcqs: '9 MCQs generated', uploaded: 'Uploaded today', onReview: openReview('TCP/IP Model', 'Computer Networks · IT · Sem 4') },
+        { num: 3, nm: 'Routing Algorithms', video: 'Video 22:30', mcqs: '10 MCQs generated', uploaded: 'Uploaded today', onReview: openReview('Routing Algorithms', 'Computer Networks · IT · Sem 4') }
+      ]}
+    ];
+
+    const sentBackRows = [
+      { ch: 'Trees & BST', sub: 'Ch 5', subject: 'Data Structures', comment: '"Pacing too fast on traversal. Add one worked example."', when: '3 days ago', status: 'Awaiting re-upload', bg: '#EEF0F0', fg: '#33465C' },
+      { ch: 'SQL Joins', sub: 'Ch 6', subject: 'DBMS', comment: '"Outer join example is wrong. Please regenerate."', when: '4 days ago', status: 'Regenerating', bg: '#E8F0FB', fg: '#1D5FB8' }
+    ];
+    const publishedRows = [
+      { ch: 'Arrays & Complexity', sub: 'Ch 1', subject: 'Data Structures', dept: 'CSE', date: '18 Aug', note: '—' },
+      { ch: 'Stacks & Queues', sub: 'Ch 2', subject: 'Data Structures', dept: 'CSE', date: '18 Aug', note: '"Good clarity"' },
+      { ch: 'ER Modeling', sub: 'Ch 3', subject: 'DBMS', dept: 'CSE', date: '16 Aug', note: '—' },
+      { ch: 'OSI Layers', sub: 'Ch 1', subject: 'Computer Networks', dept: 'IT', date: '15 Aug', note: '—' }
+    ];
+
+    const mcqDefs = [
+      { n: 1, text: 'What is the time complexity of inserting a node at the head of a singly linked list?',
+        opts: [{ k:'A', label:'O(1)', correct:true }, { k:'B', label:'O(n)' }, { k:'C', label:'O(log n)' }, { k:'D', label:'O(n²)' }],
+        source: 'Chapter 3 · page 4 — "Insertion at head requires only pointer reassignment."' },
+      { n: 2, text: 'Which pointer does a doubly linked list node hold that a singly linked list node does not?',
+        opts: [{ k:'A', label:'A pointer to the head' }, { k:'B', label:'A pointer to the previous node', correct:true }, { k:'C', label:'A pointer to the tail' }, { k:'D', label:'A pointer to itself' }],
+        source: 'Chapter 3 · page 7 — "Each node stores prev and next references."' },
+      { n: 3, text: 'Which technique detects a cycle in a linked list in O(1) extra space?',
+        opts: [{ k:'A', label:'Storing visited nodes in a hash set' }, { k:'B', label:"Floyd's slow and fast pointer traversal", correct:true }, { k:'C', label:'Sorting the list first' }, { k:'D', label:'Recursive depth counting' }],
+        source: 'Chapter 3 · page 12 — "Two pointers advancing at different rates will meet inside a cycle."' }
+    ];
+    const mcqQuestions = mcqDefs.map(q => ({
+      n: q.n, text: q.text, source: q.source,
+      opts: q.opts.map(o => ({
+        k: o.k, label: o.label,
+        border: o.correct ? '#BFE0D2' : '#DEE0E1', bg: o.correct ? '#E9F5EF' : '#fff',
+        kbg: o.correct ? '#0F6E56' : '#EEF0F0', kfg: o.correct ? '#fff' : '#536064'
+      })),
+      toastEdit: () => this.showToast('Opens an inline editor for the stem, options, and correct answer.'),
+      toastReject: () => this.showToast('Rejected questions can never enter an assessment.'),
+      approve: () => this.showToast('Question ' + q.n + ' approved.')
+    }));
+
+    const subjectRows = [
+      { nm: 'Data Structures', code: 'CS204', deptSem: 'CSE · Sem 4', chapters: 6, videos: '2 / 6', mcqs: '18 / 58', pct: 33, barColor: '#0E5C6B' },
+      { nm: 'DBMS', code: 'CS206', deptSem: 'CSE · Sem 4', chapters: 7, videos: '3 / 7', mcqs: '24 / 71', pct: 43, barColor: '#0E5C6B' },
+      { nm: 'Operating Systems', code: 'CS205', deptSem: 'CSE · Sem 4', chapters: 5, videos: '4 / 5', mcqs: '36 / 44', pct: 80, barColor: '#0F6E56' },
+      { nm: 'Computer Networks', code: 'IT302', deptSem: 'IT · Sem 4', chapters: 6, videos: '1 / 6', mcqs: '9 / 54', pct: 16, barColor: '#C97A0E' }
+    ].map(s => ({ ...s, toastView: () => this.showToast('Opens the chapter list for ' + s.nm + '.') }));
+
+    const studentRows = [
+      { nm: 'Aravind R', email: 'aravind.r@abceng.edu', roll: '22CS118', sem: 'Sem 4', chapters: '14 / 32', watch: '42 hrs', qa: 128, score: 78, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Priya N', email: 'priya.n@abceng.edu', roll: '22CS204', sem: 'Sem 4', chapters: '19 / 32', watch: '55 hrs', qa: 176, score: 82, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Sneha K', email: 'sneha.k@abceng.edu', roll: '22CS150', sem: 'Sem 4', chapters: '16 / 32', watch: '48 hrs', qa: 140, score: 74, bg: '#E9F5EF', fg: '#0B4B3A' },
+      { nm: 'Rahul V', email: 'rahul.v@abceng.edu', roll: '23IT121', sem: 'Sem 3', chapters: '11 / 28', watch: '33 hrs', qa: 88, score: 67, bg: '#FDF1E2', fg: '#8A560A' }
+    ];
+
+    const assignmentRows = [
+      { nm: 'Placement readiness — CSE', role: 'Frontend Developer · Intermediate', cohort: 'B.Tech CSE · Sem 8', mode: 'Full', modeBg: '#EFEBFC', modeFg: '#5B3FD6', due: '30 Aug', pct: 82, barColor: '#0F6E56', done: '128 / 156', score: 74, scoreBg: '#E9F5EF', scoreFg: '#0B4B3A' },
+      { nm: 'Mock round 1 — IT', role: 'Backend Developer · Beginner', cohort: 'B.Tech IT · Sem 8', mode: 'Mock', modeBg: '#E8F0FB', modeFg: '#1D5FB8', due: '1 Sep', pct: 58, barColor: '#0E5C6B', done: '70 / 120', score: 68, scoreBg: '#FDF1E2', scoreFg: '#8A560A' }
+    ].map(a => ({ ...a, toastTrack: () => this.showToast('Opens per-student status and score breakdown.') }));
+
+    const analyticsStats = [
+      { k: 'Watch time', v: '2,525 hrs', s: '+9% vs last month', color: '#0F6E56' },
+      { k: 'Q&A asked', v: '8,040', s: '+6%', color: '#0F6E56' },
+      { k: 'Assessments taken', v: '3,180', s: 'Avg 74%', color: '#536064' },
+      { k: 'Interviews taken', v: '1,450', s: 'CSE 76% · IT 72%', color: '#536064' }
+    ];
+    const watchBySubject = [
+      { nm: 'Data Structures', pct: 100, val: 820, color: '#1D5FB8' },
+      { nm: 'DBMS', pct: 82, val: 670, color: '#4D8691' },
+      { nm: 'Operating Systems', pct: 64, val: 525, color: '#5B3FD6' },
+      { nm: 'Computer Networks', pct: 62, val: 510, color: '#C97A0E' }
+    ];
+    const qaBySubject = [
+      { nm: 'Data Structures', pct: 100, val: 2610, color: '#1D5FB8' },
+      { nm: 'DBMS', pct: 78, val: 2040, color: '#4D8691' },
+      { nm: 'Computer Networks', pct: 70, val: 1820, color: '#5B3FD6' },
+      { nm: 'Operating Systems', pct: 60, val: 1570, color: '#C97A0E' }
+    ];
+
+    const isHod = !isFaculty;
+
+    return {
+      isFaculty, isHod,
+      isDashboard: page === 'dashboard', isReview: page === 'review', isMcq: page === 'mcq',
+      isSubjects: page === 'subjects', isStudents: page === 'students', isInterviews: page === 'interviews',
+      isAnalytics: page === 'analytics', isDenied: page === 'denied',
+      titleMain: t[0], titleSub: t[1],
+      scopeLabel: isFaculty ? 'Faculty · 2 subjects' : 'HOD · 2 departments',
+      scopeText: isFaculty ? 'Data Structures, DBMS' : 'All my departments',
+      whoAv: isFaculty ? 'AP' : 'KA', whoName: isFaculty ? 'Ms. Anitha P' : 'Dr. Karthik',
+      whoRole: isFaculty ? 'Faculty · Data Structures, DBMS' : 'HOD · Computer Science, IT',
+      navDash: navDef('dashboard'), navReview: navDef('review'), navMcq: navDef('mcq'),
+      navSubjects: navDef('subjects'), navStudents: navDef('students'), navInterviews: navDef('interviews'),
+      navAnalytics: { onClick: isFaculty ? go('denied') : go('analytics'), color: page==='analytics'?'#fff':'rgba(255,255,255,.55)', style: navDef('analytics').style },
+      setRoleHod: () => this.setState({ role: 'hod' }),
+      setRoleFaculty: () => this.setState({ role: 'faculty', page: this.state.page === 'analytics' ? 'denied' : this.state.page }),
+      roleBtnHodStyle: { border:'none', padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: isHod?'#0E5C6B':'#fff', color: isHod?'#fff':'#536064' },
+      roleBtnFacultyStyle: { border:'none', padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: isFaculty?'#0E5C6B':'#fff', color: isFaculty?'#fff':'#536064' },
+      ring: () => this.showToast('Notifications — new content assigned for review.'),
+      dashStats, waitingRows, actionedRows,
+      revTab: this.state.revTab, revTabs,
+      isRevPending: this.state.revTab === 'pending', isRevSent: this.state.revTab === 'sent', isRevDone: this.state.revTab === 'done',
+      pendingGroups, sentBackRows, publishedRows,
+      toastRejectAll: () => this.showToast('Rejects the whole set and requests regeneration.'),
+      toastApproveAll: () => this.showToast('10 questions approved — assessment is now live for students.'),
+      toastShowMore: () => this.showToast('Loads the remaining 7 questions in this set.'),
+      mcqQuestions,
+      subjectRows, studentRows, assignmentRows,
+      toastNewAssignment: () => this.showToast('Same assignment flow as College Admin, scoped to your departments.'),
+      analyticsStats, watchBySubject, qaBySubject,
+      toastExport: () => this.showToast('Export honours the current scope and period.'),
+      reviewOpen: this.state.reviewOpen, reviewTitle: this.state.reviewTitle, reviewCrumb: this.state.reviewCrumb,
+      closeReview: () => this.setState({ reviewOpen: false }),
+      stop: e => e.stopPropagation(),
+      toastPlayback: () => this.showToast('Playback of the generated lecture.'),
+      toastOpenSource: () => this.showToast('Opens the original source file the video was generated from.'),
+      goToMcqFromModal: () => this.setState({ reviewOpen: false, page: 'mcq' }),
+      sendBack: () => { this.setState({ reviewOpen: false }); this.showToast('Sent back to college admin with comments.'); },
+      approvePublish: () => { this.setState({ reviewOpen: false }); this.showToast('Approved — video published to students.'); },
+      toastMsg: this.state.toastMsg
+    };
+  }
+}
+</script>
+</body>
+</html>

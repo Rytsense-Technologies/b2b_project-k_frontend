@@ -1,0 +1,315 @@
+
+===== PAGE 1/8 =====
+ 
+ 
+Project K — B2B Platform  
+Statement of Work (SOW)  
+1. Overview  
+This document defines the production -ready requirements for Project K, a next -generation AI -
+powered eLearning platform designed for higher education institutions across Tamil Nadu. The 
+system t ransforms traditional static academic content into AI -driven learning experiences and 
+includes an integrated AI Interview module.  
+ 
+The platform is built on a B2B institutional model. Knotopian (Super Admin) manages affiliated 
+universities and colleges. Eac h college is administered by  Admin &  HODs /Faculty. Students 
+access learning content, AI tutoring, assessments, and interview preparation through a 
+dedicated student portal.  
+ 
+2. Vision  
+To become the primary AI -powered academic companion for every college s tudent in Tamil 
+Nadu , transforming raw academic content into fully structured, a i-driven learning experiences 
+while enabling on -demand personalised tutoring and interview readiness.  
+ 
+3. Product Scope  
+The platform encompasses the following functional doma ins: 
+ 
+• Onboarding of affiliated universities and their member colleges  
+• Super Admin Portal — content upload, AI course generation, university/college 
+management  
+• College Admin Portal — content upload, AI course generation, multi -role access for  
+admin,  HOD and  Faculty /SME.  
+• Student Portal — Classroom (AI video lectures) + QnA AI Tutor + Assessments  
+• Content -to-Learning Automation: raw academic documents to AI video lessons  
+• English as the primary instruction language; Tamil language support for QnA interactions  
+• Desktop web browser as the primary delivery platform  
+• AI-generated MCQ knowledge checks with auto -evaluation  
+• Analytics dashboards for Super Admin and College Admin  
+• Student leaderboard  
+ 
+===== PAGE 2/8 =====
+ 
+ 
+• AI Interview Module — embedded within the B2B Student Portal (also availabl e as 
+standalone B2C product)  
+ 
+4. Business Model  
+The platform operates on a B2B institutional licensing model. Knotopian contracts directly with 
+universities and colleges. The platform is not consumer -facing from a billing perspective , 
+institutions pay Kn otopian for platform access, and students access the platform using 
+credentials provisioned by their institution.  
+ 
+The embedded AI Interview module within the Student Portal is available to B2B students (Fina l 
+year Students  only)  without separate subscription. The standalone B2C Interview Portal 
+operates independently with its own subscription model (covered in a separate SOW).  
+ 
+5. User Roles and Portals  
+5.1 Super Admin (Knotopian)  
+• Single, platform -wide administrator account  
+• Manages all universities, colleges, and users across the platform  
+• Uploads and manages academic content; triggers AI course generation  
+• Views platform -wide reports and monitors system health  
+• Accesses aggregated analytics: total institutions, active students, completion rates, 
+average assessmen t scores, top QnA queries, content engagement metrics (watch time ) 
+ 
+5.2 College Admin — HOD / Faculty (SME)  
+• Creates and manages academic hierarchy (Department, Program, Semester, Subject, 
+Chapter)  
+• Uploads raw academic content (PDFs, lecture note s, textbooks, question banks) and 
+triggers AI course generation  
+• Adds and manages students: single add or bulk import via CSV (up to 100 students)  
+• Assigns students to programs and semesters  
+• Views and downloads complete student  / cohort reports . 
+• Reviews and  approves pre -recorded AI -generated video modules . 
+• Reviews and approves AI -generated MCQs before student publication . 
+• Creates and manages interview assignments for student cohorts (B2B Interview -Final 
+year students ) 
+• Faculty role is restricted from accessing institution -wide das hboards (RBAC enforced)  
+ 
+ 
+ 
+===== PAGE 3/8 =====
+ 
+ 
+5.3 Student  
+• Accesses assigned programs, semesters, and subjects  
+• Watches AI -driven video lectures (Classroom)  
+• Interacts with the live QnA AI Tutor for doubt resolution  
+• Takes AI -generated MCQ assessments and downloads PDF reports post -submission  
+• Views leaderboard ranking after assessment submission  
+• Final year students t akes AI mock interview sessions (voice with avatar interviewer)  
+• Views interview score report, per -question feedback, and improvement pla n 
+ 
+6. Detailed Feature Spec ification  
+6.1 Content Upload and AI Course Generation Pipeline  
+The core content pipeline converts raw academic materials into structured AI -driven learning 
+content.  
+ 
+6.1.1 Content Ingestion  
+• Supported input formats: PDF ,Text files, ques tion banks ,PPTs.  
+• Content is tagged to a specific Chapter within the academic hierarchy  
+• Content upload is performed  either  by Super Admin or authorised Faculty/SME  
+ 
+6.1.2 RAG (Retrieval -Augmented Generation) Pipeline  
+• End-to-end RAG pipeline converts uploaded documents i nto a structured knowledge base  
+• Vector embeddings stored in Pinecone or Weaviate for semantic retrieval  
+• Knowledge base is chapter -scoped to ensure content relevance during generation  
+ 
+6.1.3 AI Avatar Video Course Generation  
+• System generates an AI video course per chapter, using the chapter knowledge base . 
+• Video generation is asynchronous , Faculty/SME is notified on completion . 
+• Generated modules undergo SME r eview and approval before student publication  
+• English is the primary language for video instruction . 
+ 
+6.1.4 MCQ Generation  
+• AI generates multiple -choice questions from chapter content  
+• MCQs go through a Subject Matter Expert review and approval workflow befor e being 
+activated for student assessments  
+• Approved MCQs are tagged to subject and chapter for structured delivery  
+ 
+===== PAGE 4/8 =====
+ 
+ 
+6.2 Super Admin Portal  
+• Create and manage University hierarchy: University > College > Department > Program > 
+Semester > Subject > Chapter  
+• Onboard affiliated universities and member colleges  
+• Upload academic content and trigger AI course generation pipeline  
+• Monitor platform health: system status, uptime, error logs  
+• View platform -wide analytics dashboard (see Section 6.7)  
+• Manage all users across i nstitutions  
+ 
+6.3 College Admin Portal  
+Accessible by two sub -roles: Admin , HOD (full college -level access) and Faculty/SME (subject -
+level access, no institution -wide dashboard).  
+ 
+• Create academic hierarchy below university level  
+• Upload raw content and trigger AI co urse generation  
+• Bulk student import via CSV (up to 100 students per batch)  
+• Single student add with manual data entry  
+• Student activation flow via email and SMS with assigned portal login credentials  
+• Assign students to programs and semesters  
+• Review and appro ve pre -recorded AI  video modules  
+• Review and approve AI -generated MCQs  
+• Create and assign interview sessions for student cohorts (B2B Interview module)  
+• View and download student -level and cohort -level reports  
+• RBAC enforcement: Faculty role cannot acce ss institution -wide dashboard or data of 
+other departments  
+ 
+6.4 Student Portal  
+6.4.1 Classroom — AI Avatar Video Lectures  
+• Students view AI driven video lectures for their assigned subjects and chapters  
+• Full chapter video playback with progress track ing. 
+• Content is displayed in the context of the academic hierarchy (Program > Semester > 
+Subject > Chapter)  
+ 
+6.4.2 QnA AI Tutor  
+• AI tutor available for doubt resolution after video sessions . 
+• Interaction supported via voice . 
+• AI tutor use s the chapter knowledge base  for contextually accurate responses . 
+• Interruption handling: student can interrupt mid -response to ask a follow -up 
+===== PAGE 5/8 =====
+ 
+ 
+• Multilingual support: English for primary instruction; Tamil language support for QnA 
+interactions . 
+• Session context  maintained throughout the QnA session  
+ 
+6.4.3 Assessments  
+• MCQ assessments generated from approved question bank  
+• Students attempt assessments after completing chapter content  
+• Auto-evaluation on submission with immediate score display  
+• Assessment PDF report g enerated and made available for download post -submission  
+ 
+6.4.4 Leaderboard  
+• Leaderboard ranking updated in real time after each assessment submission  
+• Ranking reflects correct scores across all students in the same cohort  
+• Students can view their position re lative to peers  
+ 
+6.4.5 AI Interview Module (B2B Embedded)  
+• Interview tab embedded within the Student Portal  
+• Students take AI mock interview sessions with voice interaction and avatar interviewer  
+• Interview assigned by Faculty/HOD for specific cohorts OR self -initiated by student . 
+• Interview score report with per -question feedback and personalised improvement plan 
+available post -session . 
+• For Complete Interview Module separate  SOW is maintained.  
+ 
+6.5 Analytics Dashboards  
+6.5.1 Super Admin Dashboar d 
+• Total institutions onboarded, active students, overall completion rates  
+• Average assessment scores across all institutions  
+• Top QnA queries across all institutions  
+• Content engagement metrics: watch time  
+• Platform health monit oring  
+ 
+6.5.2 College Admin Dashboard  
+• Course completion rates by department, subject, and individual student  
+• Assessment score distributions with pass/fail ratios  
+• QnA analytics: top 10 most -asked topics per subject  
+• Interview cohort analytics (B2B): per -stude nt readiness scores, completion rates, weak 
+areas, at -risk interview flags  
+• Downloadable reports at student and cohort level  
+===== PAGE 6/8 =====
+ 
+ 
+7. Notifications and Communication  
+• Student activation via email and  Whatsapp  on account creation  
+• Interview session results shared via e mail post -completion  
+• System notifications for content publication, assessment availability, and assignment 
+creation  
+• Admin notifications on content generation pipeline completion  
+ 
+8. Data and Security  
+• Role-Based Access Control (RBAC) enforced across all three portal type s 
+• OAuth2 / JWT for authentication and session management  
+• Data isolation enforced per institution , no cross -institution data access  
+ 
+9. AI Guardrails  
+The AI system across all modules (QnA Tutor, Interview Engine, Course Generation) shall 
+restrict generati on of  offensive, unsafe, or inappropriate content  
+ 
+The system shall ensure all AI responses remain within the defined academic or interview 
+context at all times.  
+ 
+10. Technology Stack  
+ 
+Layer  Technology  
+Frontend (Web)  ReactJS  
+Backend  Python FastAPI  
+Database  PostgreSQL  
+Vector Database  Pinecone / Weaviate  
+AI / LLM  External LLM API providers: OpenAI, Anthropic, Google  
+AI Avatar Engine  HeyGen, Synthesia, D -ID, or equivalent avatar generation framework  
+Speech -to-Text (STT)  Whisper, Deepgram, or equivalent  
+Text-to-Speech (TTS)  ElevenLabs, Deepgram, or equivalent  
+Real -Time Infrastructure  LiveKit / Vapi (as required)  
+===== PAGE 7/8 =====
+ 
+Authentication  OAuth2 / JWT  
+CI/CD  GitHub Actions  
+Cloud Hosting  AWS or GCP (cloud -native)  
+File Storage  AWS S3 (session recordings, uploaded content)  
+ 
+11. Phase 1 Milestones and Timeline  
+Total estimated duration: 6.5 months (26 weeks)  
+ 
+# Milestone  Duration  
+M1 Core Platform Foundation & Infrastructure Setup  1 week  
+M2 Content & Admin Portals  4 weeks  
+M3 Core Interview Engine  5 week s 
+M4 Scoring Intelligence Engine  3 weeks  
+M5 AI Course Generation Pipeline  5 weeks  
+M6 Student Portal  5 weeks  
+M7 Dashboards  2 weeks  
+M8 UAT, Refinements & Launch  1 week  
+ 
+ 
+12. Performance Requirements  
+• Scalable architecture to support concurrent student users across multiple institutions  
+• Asynchronous processing for AI content generation pipeline.  
+ 
+ 
+13. Terms and Conditions  
+1. The design will be done based on client references provided during the UI/UX discussion.  
+2. Server costs,  domain, hosting, SSL certificates, professional email, GPU  instance  shall 
+be borne by the Client. All third -party API costs  incurred during and after development 
+shall be borne by the Client.  
+===== PAGE 8/8 =====
+ 
+3. Any additional work outside the agreed scope will be treated as a Change Request (CR) 
+and charged separately based on the efforts required.  
+4. The total project duration is estimated based on the defined scope. Any additions to 
+scope will result in a revised  timeline communicated via a Change Order.  
+5. A 12-month software warranty is provided from the date of production deployment. 
+Warranty terms to be detailed in a separate Warranty Schedule.  
+6. Support and Maintenance post -launch will be governed by a separate Su pport SLA 
+document to be agreed prior to go -live. 
+ 
+14. Exclusions  
+The following are explicitly out of scope for Phase 1 and will be addressed in future phases or 
+separate engagements:  
+ 
+• Mobile application (iOS / Android)  
+• Offline access or downloaded content  
+• Live video classes or real -time faculty -to-student streaming  
+• B2C standalone Interview Portal subscription billing (covered in separate B2C SOW)  
+• On-premise deployment (available as an add -on at additional cost)  
+• Integration with third -party LMS platforms (e.g., Moodle, Canvas)  
+ 
+ 
+ 
+15. Accepta nce 
+This Statement of Work is accepted and agreed to by both parties.  
+ 
+ 
+For Knotopian  
+ 
+ 
+ 
+ 
+Signature: _______________________  
+ 
+Name: ___________________________  
+ 
+Title: ___________________________  
+ 
+Date: ____________________________   
+For Rytsense Technologies  
+ 
+Signature:  
+ 
+Name: RAMKUMAR P  
+ 
+Title: CEO & Co -Founder  
+ 
+Date:   01/04/26  
+ 

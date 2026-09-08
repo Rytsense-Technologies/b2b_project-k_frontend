@@ -2,7 +2,15 @@
 
 import { useEffect } from 'react';
 
-export default function QuirriModal({ open, onClose, title, children, wide = false }) {
+export default function QuirriModal({
+  open,
+  onClose,
+  title,
+  crumb,
+  children,
+  footer,
+  wide = false,
+}) {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -17,21 +25,25 @@ export default function QuirriModal({ open, onClose, title, children, wide = fal
   if (!open) return null;
 
   return (
-    <div className="quirri-modal show" onClick={onClose} role="presentation">
+    <div className="overlay show" onClick={onClose} role="presentation">
       <div
-        className={`quirri-modal-box ${wide ? 'quirri-modal-wide' : ''}`}
+        className={`modal${wide ? ' wide' : ''}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="quirri-modal-head">
-          <h2>{title}</h2>
-          <button type="button" className="quirri-close" onClick={onClose} aria-label="Close">
-            ×
+        <div className="modal-h">
+          <div>
+            <h3>{title}</h3>
+            {crumb ? <div className="crumb">{crumb}</div> : null}
+          </div>
+          <button type="button" className="modal-x" onClick={onClose} aria-label="Close">
+            &times;
           </button>
         </div>
-        {children}
+        <div className="modal-b">{children}</div>
+        {footer ? <div className="modal-f">{footer}</div> : null}
       </div>
     </div>
   );
