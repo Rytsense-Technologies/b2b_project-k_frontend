@@ -46,7 +46,15 @@ export {
   universityUpdateSchema,
 } from './schemas/universities';
 
-export { platformUserCreateSchema, tenantMemberCreateSchema } from './schemas/users';
+export {
+  platformUserCreateSchema,
+  tenantMemberCreateSchema,
+  tenantStudentCreateSchema,
+  tenantFacultyCreateSchema,
+  MAX_COURSE_DURATION_YEARS,
+  MAX_ASSIGNED_YEAR,
+  MAX_ASSIGNED_SEMESTER,
+} from './schemas/users';
 
 export {
   collegeCreateSchema,

@@ -424,7 +424,11 @@ export default function CollegesPage() {
                     <div className="sub">{college.code} · {[college.city, college.district, college.state].filter(Boolean).join(', ') || '—'}</div>
                   </td>
                   <td>{college.university || college.university_name || '—'}</td>
-                  <td className="num">{college.admins ?? college.admin_count ?? 0}</td>
+                  <td className="num">
+                    {Array.isArray(college.admins)
+                      ? college.admins.length
+                      : (college.admin_count ?? college.admins ?? 0)}
+                  </td>
                   <td className="num">—</td>
                   <td>
                     <span className="num">{students}</span>
@@ -525,10 +529,57 @@ export default function CollegesPage() {
           <>
             <QuirriPillList items={[
               `${viewCollege.students ?? viewCollege.student_count ?? 0} Students`,
-              `${viewCollege.admins ?? viewCollege.admin_count ?? 0} Administrators`,
+              `${Array.isArray(viewCollege.admins)
+                ? viewCollege.admins.length
+                : (viewCollege.admin_count ?? 0)} Administrators`,
               `${viewCollege.plan === 'premium' ? 'Premium' : 'Standard'} plan`,
               `Seat cap ${viewCollege.student_seat_cap ?? '—'}`,
             ]} />
+            <div className="lb" style={{ fontSize: 10.5, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--muted-2)', fontWeight: 800, marginBottom: 10, marginTop: 4 }}>
+              Administrators
+            </div>
+            <div className="card" style={{ marginBottom: 16 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!(Array.isArray(viewCollege.admins) && viewCollege.admins.length) ? (
+                    <tr><td colSpan={4}>No administrators on file.</td></tr>
+                  ) : null}
+                  {(viewCollege.admins || []).map((admin) => {
+                    const st = String(admin.status || '').toLowerCase();
+                    let variant = 'grey';
+                    let label = admin.status || '—';
+                    if (st === 'active') {
+                      variant = 'green';
+                      label = 'Active';
+                    } else if (st.includes('pending')) {
+                      variant = 'amber';
+                      label = 'Pending activation';
+                    } else if (st.includes('deactiv') || st === 'inactive') {
+                      variant = 'red';
+                      label = 'Deactivated';
+                    }
+                    return (
+                      <tr key={admin.id || admin.email}>
+                        <td><span className="strong">{admin.name || '—'}</span></td>
+                        <td>{admin.email || '—'}</td>
+                        <td>{admin.phone_number || '—'}</td>
+                        <td>
+                          <QuirriBadge variant={variant}>{label}</QuirriBadge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
             <div className="notice info" style={{ marginBottom: 12 }}>
               <div>
                 <b>Departments not available yet</b>

@@ -1,6 +1,7 @@
 export const ROLES = {
   SUPERADMIN:    'superadmin',
   COLLEGE_ADMIN: 'college_admin',
+  HOD:           'hod',
   FACULTY:       'faculty',
   STUDENT:       'student',
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriBadge from '@/components/superadmin/QuirriBadge';
@@ -19,6 +19,7 @@ const ROLE_OPTIONS = [
   { value: '', label: 'All roles' },
   { value: ROLES.SUPERADMIN, label: 'Super Admin' },
   { value: ROLES.COLLEGE_ADMIN, label: 'College Admin' },
+  { value: ROLES.HOD, label: 'HOD' },
   { value: ROLES.FACULTY, label: 'Faculty' },
   { value: ROLES.STUDENT, label: 'Student' },
 ];
@@ -34,6 +35,11 @@ const EMPTY_USER = {
   phone_number: '',
   role: ROLES.COLLEGE_ADMIN,
   college_id: '',
+  department: '',
+  course_duration_years: '',
+  year_of_study: '',
+  assigned_years: '',
+  assigned_semesters: '',
 };
 
 function statusVariant(user) {
@@ -55,8 +61,10 @@ function userStatusLabel(user) {
 function rolePill(role) {
   const r = String(role || '').toLowerCase();
   if (r.includes('super')) return 'violet';
-  if (r.includes('college') || r.includes('admin')) return 'violet';
+  if (r.includes('college') || r === 'admin') return 'violet';
+  if (r === 'hod') return 'teal';
   if (r.includes('faculty')) return 'grey';
+  if (r.includes('student')) return 'grey';
   return 'grey';
 }
 
@@ -89,11 +97,23 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
     mode: 'onBlur',
   });
   const [acting, setActing] = useState(false);
+  const selectedRole = useWatch({ control, name: 'role' });
+  const isStudent = selectedRole === ROLES.STUDENT;
+  const isTeaching = selectedRole === ROLES.FACULTY || selectedRole === ROLES.HOD;
+  const needsDept = isStudent || isTeaching;
 
   const onCreate = handleSubmit(async (values) => {
     setActing(true);
     try {
-      await usersApi.createUser(values);
+      await usersApi.createUser({
+        ...values,
+        department: values.department || undefined,
+        phone_number: values.phone_number || undefined,
+        course_duration_years: isStudent ? (values.course_duration_years ?? undefined) : undefined,
+        year_of_study: isStudent ? (values.year_of_study ?? undefined) : undefined,
+        assigned_years: isTeaching ? (values.assigned_years || undefined) : undefined,
+        assigned_semesters: isTeaching ? (values.assigned_semesters || undefined) : undefined,
+      });
       toast.success('User created — activation link sent');
       onSaved();
       onClose();
@@ -182,12 +202,63 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
                 name={field.name}
                 placeholder="Select institution"
                 error={fieldState.error?.message}
-                hint="Required for College Admin, Faculty, and Student. Optional for Super Admin."
+                hint="Required for College Admin, HOD, Faculty, and Student. Optional for Super Admin."
                 options={colleges.map((c) => ({ value: c.id, label: c.name }))}
               />
             )}
           />
         </div>
+        {needsDept ? (
+          <QuirriRHFField
+            control={control}
+            name="department"
+            fieldType="academicLabel"
+            label="Department"
+            placeholder="Optional until academic structure is live"
+            hint="Free-text for now — department picker arrives with EPIC-06."
+            full
+          />
+        ) : null}
+        {isStudent ? (
+          <div className="grid2">
+            <QuirriRHFField
+              control={control}
+              name="course_duration_years"
+              fieldType="positiveInt"
+              label="Program duration (years)"
+              placeholder="e.g. 4"
+              hint="Optional — e.g. 3 for Arts, 4 for BTech."
+            />
+            <QuirriRHFField
+              control={control}
+              name="year_of_study"
+              fieldType="positiveInt"
+              label="Current year of study"
+              placeholder="e.g. 2"
+              hint="Cannot exceed program duration when both are set."
+            />
+          </div>
+        ) : null}
+        {isTeaching ? (
+          <div className="grid2">
+            <QuirriRHFField
+              control={control}
+              name="assigned_years"
+              fieldType="search"
+              label="Assigned years"
+              placeholder="e.g. 1, 2, 3"
+              hint="Optional — comma-separated year numbers (1–8)."
+            />
+            <QuirriRHFField
+              control={control}
+              name="assigned_semesters"
+              fieldType="search"
+              label="Assigned semesters"
+              placeholder="e.g. 5, 6"
+              hint="Optional — comma-separated semester numbers (1–16)."
+            />
+          </div>
+        ) : null}
         {Object.keys(errors).length > 0 ? (
           <div className="hint field-error" role="alert" style={{ marginTop: 8 }}>
             Check the highlighted fields and try again.
