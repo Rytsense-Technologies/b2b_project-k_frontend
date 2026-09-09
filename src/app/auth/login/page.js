@@ -11,10 +11,10 @@ import { QuirriControlledField } from '@/components/superadmin/quirri-ui';
 import { loginSchema } from '@/lib/validations';
 import { FIELD_RULES } from '@/lib/validation';
 import { useAppDispatch } from '@/store/hooks';
-import { setCredentials, clearCredentials } from '@/store/slices/authSlice';
+import { setCredentials } from '@/store/slices/authSlice';
 import { loginWithRbac, authApi } from '@/lib/api/auth';
 import { getApiErrorMessage, isCredentialFailure } from '@/lib/api/errors';
-import { getPostLoginPath, isB2bRole } from '@/lib/auth/rbac';
+import { getPostLoginPath, isB2bRole, isPortalRole } from '@/lib/auth/rbac';
 import { setSessionCookie, setRoleCookie, setTenantCookie, clearTokens } from '@/lib/tokens';
 import { ROLES, getPermissions } from '@/lib/permissions';
 
@@ -162,6 +162,23 @@ function LoginForm() {
       const { user, role, tenant_id, permissions, plan } = session;
       const isB2b = isB2bRole(role);
 
+      if (!isPortalRole(role)) {
+        clearTokens();
+        try {
+          sessionStorage.removeItem('pk_user');
+          sessionStorage.removeItem('pk_plan');
+        } catch {
+          /* ignore */
+        }
+        try {
+          await authApi.logout();
+        } catch {
+          /* httpOnly cookies may still clear via Set-Cookie */
+        }
+        toast.error('This account cannot sign in to Quirri portals. Contact your administrator.');
+        return;
+      }
+
       sessionStorage.setItem('pk_user', JSON.stringify(user));
       sessionStorage.setItem('pk_plan', plan);
 
@@ -174,28 +191,6 @@ function LoginForm() {
         onboarding_complete: isB2b ? true : (session.onboarding_complete ?? true),
         plan_selected: isB2b ? true : (session.plan_selected ?? true),
       }));
-
-      if (role !== ROLES.SUPERADMIN) {
-        clearTokens();
-        dispatch(clearCredentials());
-        try {
-          sessionStorage.removeItem('pk_user');
-          sessionStorage.removeItem('pk_plan');
-        } catch {
-          /* ignore */
-        }
-        try {
-          await authApi.logout();
-        } catch {
-          /* httpOnly cookies may still clear via Set-Cookie */
-        }
-        const portalHint =
-          role === ROLES.COLLEGE_ADMIN
-            ? 'College Admins sign in at /admin/login.'
-            : 'Use the login page for your role.';
-        toast.error(`This portal is for Super Admin only. ${portalHint}`);
-        return;
-      }
 
       const displayName = user.first_name || user.name || 'there';
       toast.success(`Welcome back, ${displayName}!`);

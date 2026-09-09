@@ -165,7 +165,7 @@ export default function CollegeAdminSidebar() {
     dispatch(resetSession());
     queryClient.clear();
     toast.success('Logged out successfully');
-    router.push('/admin/login');
+    router.push('/auth/login');
   };
 
   const tipHandlers = (label, placement = 'right') => ({

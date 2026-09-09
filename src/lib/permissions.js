@@ -19,6 +19,11 @@ export const ROLE_PERMISSIONS = {
     'content.read', 'content.write', 'content.review',
     'students.read', 'qna.read', 'reports.read',
   ],
+  /** HOD uses the faculty portal shell until EPIC-06 subject scope. */
+  hod: [
+    'content.read', 'content.write', 'content.review',
+    'students.read', 'qna.read', 'reports.read',
+  ],
   student: [
     'interview.start', 'reports.read',
     'profile.write',   'content.read', 'jobs.read',
@@ -26,6 +31,7 @@ export const ROLE_PERMISSIONS = {
 };
 
 export function getPermissions(role) {
+  if (role === ROLES.HOD) return ROLE_PERMISSIONS.faculty;
   return ROLE_PERMISSIONS[role] ?? [];
 }
 

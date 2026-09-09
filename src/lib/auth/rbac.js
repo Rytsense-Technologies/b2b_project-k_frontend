@@ -27,12 +27,16 @@ export const BACKEND_USER_TYPES = {
 
 /**
  * Maps API user_type / role string to internal role used in Redux + middleware.
+ * Aliases (e.g. hod → faculty portal) are applied before exact ROLES matches.
  */
 export function mapUserTypeToRole(userType) {
   if (!userType) return ROLES.STUDENT;
   const key = String(userType).toLowerCase().trim();
+  if (Object.prototype.hasOwnProperty.call(BACKEND_USER_TYPE_TO_ROLE, key)) {
+    return BACKEND_USER_TYPE_TO_ROLE[key];
+  }
   if (Object.values(ROLES).includes(key)) return key;
-  return BACKEND_USER_TYPE_TO_ROLE[key] ?? ROLES.STUDENT;
+  return ROLES.STUDENT;
 }
 
 /** Resolve role from unified login payload (role, user_type on root or user). */
@@ -54,6 +58,7 @@ export const ROLE_HOME_PATHS = {
   [ROLES.SUPERADMIN]: '/superadmin/dashboard',
   [ROLES.COLLEGE_ADMIN]: '/admin/dashboard',
   [ROLES.FACULTY]: '/faculty/dashboard',
+  [ROLES.HOD]: '/faculty/dashboard',
   [ROLES.STUDENT]: '/student/home',
 };
 
@@ -62,7 +67,23 @@ export function isKnownRole(role) {
 }
 
 export function isB2bRole(role) {
-  return role === ROLES.SUPERADMIN || role === ROLES.COLLEGE_ADMIN || role === ROLES.FACULTY;
+  return (
+    role === ROLES.SUPERADMIN
+    || role === ROLES.COLLEGE_ADMIN
+    || role === ROLES.FACULTY
+    || role === ROLES.HOD
+  );
+}
+
+/** Any Phase 1 portal role that may sign in at /auth/login. */
+export function isPortalRole(role) {
+  return (
+    role === ROLES.SUPERADMIN
+    || role === ROLES.COLLEGE_ADMIN
+    || role === ROLES.FACULTY
+    || role === ROLES.HOD
+    || role === ROLES.STUDENT
+  );
 }
 
 /**

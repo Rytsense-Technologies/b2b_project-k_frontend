@@ -30,7 +30,7 @@ export async function adminLogin(email, password, tenantSlug) {
     clearRoleCookie();
     clearTenantCookie();
     throw new Error(
-      'This portal is for College Admin only. Super Admins sign in at /auth/login.',
+      'This account is not a College Admin. Sign in at /auth/login with your Quirri account.',
     );
   }
 
