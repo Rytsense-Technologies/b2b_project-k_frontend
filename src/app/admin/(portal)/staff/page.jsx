@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriBadge from '@/components/superadmin/QuirriBadge';
@@ -13,7 +13,13 @@ import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
-import { tenantMemberCreateSchema } from '@/lib/validation';
+import { tenantFacultyCreateSchema } from '@/lib/validation';
+import { getApiErrorMessage } from '@/lib/api/errors';
+
+const STAFF_ROLE_OPTIONS = [
+  { value: ROLES.FACULTY, label: 'Faculty' },
+  { value: ROLES.HOD, label: 'HOD' },
+];
 
 function statusVariant(user) {
   if (user?.is_active === false) return 'red';
@@ -47,8 +53,17 @@ function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(tenantMemberCreateSchema),
-    defaultValues: { first_name: '', last_name: '', email: '', department: '' },
+    resolver: zodResolver(tenantFacultyCreateSchema),
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone_number: '',
+      role: ROLES.FACULTY,
+      department: '',
+      assigned_years: '',
+      assigned_semesters: '',
+    },
     mode: 'onBlur',
   });
   const [acting, setActing] = useState(false);
@@ -63,14 +78,21 @@ function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
       await usersApi.createUser({
         ...values,
         department: values.department || undefined,
-        role: ROLES.FACULTY,
+        phone_number: values.phone_number || undefined,
+        assigned_years: values.assigned_years || undefined,
+        assigned_semesters: values.assigned_semesters || undefined,
+        role: values.role || ROLES.FACULTY,
         tenant_id: tenantId,
       });
-      toast.success('Faculty created — activation link sent');
+      toast.success(
+        values.role === ROLES.HOD
+          ? 'HOD created — activation link sent'
+          : 'Faculty created — activation link sent',
+      );
       onSaved();
       onClose();
     } catch (err) {
-      toast.error(err?.message || 'Failed to create faculty');
+      toast.error(getApiErrorMessage(err, 'Failed to create staff member'));
     } finally {
       setActing(false);
     }
@@ -80,8 +102,8 @@ function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
     <QuirriModal
       open={open}
       onClose={onClose}
-      title="Add faculty"
-      crumb="HOD assignment is not available until the academic hierarchy API is live"
+      title="Add staff"
+      crumb="College admins can create faculty or HOD — optional teaching scope until EPIC-06"
       footer={(
         <>
           <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
@@ -106,30 +128,63 @@ function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
           placeholder="faculty@college.edu"
           full
         />
+        <div className="grid2">
+          <QuirriRHFField
+            control={control}
+            name="phone_number"
+            fieldType="phone"
+            label="Phone number"
+            placeholder="+91…"
+          />
+          <Controller
+            control={control}
+            name="role"
+            render={({ field, fieldState }) => (
+              <QuirriSelect
+                id="staff-role"
+                label="Role"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+                error={fieldState.error?.message}
+                options={STAFF_ROLE_OPTIONS}
+              />
+            )}
+          />
+        </div>
         <QuirriRHFField
           control={control}
           name="department"
           fieldType="academicLabel"
           label="Department"
           placeholder="Optional until academic structure is live"
-          hint="Free-text for now — HOD / subject scope arrives with EPIC-06."
+          hint="Free-text for now — department picker arrives with EPIC-06."
           full
         />
+        <div className="grid2">
+          <QuirriRHFField
+            control={control}
+            name="assigned_years"
+            fieldType="search"
+            label="Assigned years"
+            placeholder="e.g. 1, 2, 3"
+            hint="Optional — comma-separated year numbers (1–8)."
+          />
+          <QuirriRHFField
+            control={control}
+            name="assigned_semesters"
+            fieldType="search"
+            label="Assigned semesters"
+            placeholder="e.g. 5, 6"
+            hint="Optional — comma-separated semester numbers (1–16)."
+          />
+        </div>
         {Object.keys(errors).length > 0 ? (
           <div className="hint field-error" role="alert" style={{ marginTop: 8 }}>
             Check the highlighted fields and try again.
           </div>
         ) : null}
-        <div className="notice info" style={{ marginTop: 8 }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 16v-4M12 8h.01" />
-          </svg>
-          <div>
-            <b>Faculty role only</b>
-            A separate HOD role is not in the backend matrix yet. Accounts are created as faculty.
-          </div>
-        </div>
       </form>
     </QuirriModal>
   );
@@ -144,20 +199,36 @@ export default function StaffPage() {
   const [acting, setActing] = useState(false);
 
   const { data, loading, error, reload } = useAsyncResource(async () => {
-    const res = await usersApi.getUsers({
-      page: 1,
-      limit: 50,
-      search,
-      role: ROLES.FACULTY,
-      status,
-      tenantId: tenantId || undefined,
+    const [facultyRes, hodRes] = await Promise.all([
+      usersApi.getUsers({
+        page: 1,
+        limit: 50,
+        search,
+        role: ROLES.FACULTY,
+        status,
+        tenantId: tenantId || undefined,
+      }),
+      usersApi.getUsers({
+        page: 1,
+        limit: 50,
+        search,
+        role: ROLES.HOD,
+        status,
+        tenantId: tenantId || undefined,
+      }),
+    ]);
+    const faculty = asList(unwrap(facultyRes)?.items || unwrap(facultyRes), []);
+    const hods = asList(unwrap(hodRes)?.items || unwrap(hodRes), []);
+    const byId = new Map();
+    [...faculty, ...hods].forEach((u) => {
+      if (u?.id) byId.set(u.id, u);
     });
-    return unwrap(res);
+    return { items: [...byId.values()] };
   }, [search, status, tenantId]);
 
   const staff = useMemo(() => {
     if (Array.isArray(data)) return data;
-    return asList(data?.users || data, []);
+    return asList(data?.items || data?.users || data, []);
   }, [data]);
 
   const handleToggleStatus = async (user) => {
@@ -196,7 +267,7 @@ export default function StaffPage() {
         <div>
           <div className="t">Staff &amp; HOD</div>
           <div className="d">
-            Faculty in your college. HOD assignment needs the academic structure API (EPIC-06) — not available yet.
+            Faculty and HOD accounts in your college. Subject-level assignment arrives with EPIC-06.
           </div>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setCreateOpen(true)}>

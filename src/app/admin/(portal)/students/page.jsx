@@ -13,7 +13,8 @@ import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
-import { tenantMemberCreateSchema } from '@/lib/validation';
+import { tenantStudentCreateSchema } from '@/lib/validation';
+import { getApiErrorMessage } from '@/lib/api/errors';
 
 function statusVariant(user) {
   if (user?.is_active === false) return 'red';
@@ -47,8 +48,16 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(tenantMemberCreateSchema),
-    defaultValues: { first_name: '', last_name: '', email: '', department: '' },
+    resolver: zodResolver(tenantStudentCreateSchema),
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone_number: '',
+      department: '',
+      course_duration_years: '',
+      year_of_study: '',
+    },
     mode: 'onBlur',
   });
   const [acting, setActing] = useState(false);
@@ -63,6 +72,9 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
       await usersApi.createUser({
         ...values,
         department: values.department || undefined,
+        phone_number: values.phone_number || undefined,
+        course_duration_years: values.course_duration_years ?? undefined,
+        year_of_study: values.year_of_study ?? undefined,
         role: ROLES.STUDENT,
         tenant_id: tenantId,
       });
@@ -70,7 +82,7 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
       onSaved();
       onClose();
     } catch (err) {
-      toast.error(err?.message || 'Failed to create student');
+      toast.error(getApiErrorMessage(err, 'Failed to create student'));
     } finally {
       setActing(false);
     }
@@ -108,6 +120,14 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
         />
         <QuirriRHFField
           control={control}
+          name="phone_number"
+          fieldType="phone"
+          label="Phone number"
+          placeholder="+91…"
+          full
+        />
+        <QuirriRHFField
+          control={control}
           name="department"
           fieldType="academicLabel"
           label="Department"
@@ -115,6 +135,24 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
           hint="Free-text for now — department picker arrives with EPIC-06."
           full
         />
+        <div className="grid2">
+          <QuirriRHFField
+            control={control}
+            name="course_duration_years"
+            fieldType="positiveInt"
+            label="Program duration (years)"
+            placeholder="e.g. 4"
+            hint="Optional — e.g. 3 for Arts, 4 for BTech."
+          />
+          <QuirriRHFField
+            control={control}
+            name="year_of_study"
+            fieldType="positiveInt"
+            label="Current year of study"
+            placeholder="e.g. 2"
+            hint="Cannot exceed program duration when both are set."
+          />
+        </div>
         {Object.keys(errors).length > 0 ? (
           <div className="hint field-error" role="alert" style={{ marginTop: 8 }}>
             Check the highlighted fields and try again.

@@ -41,12 +41,24 @@ export const usersApi = {
     const body = {
       email: payload.email,
       first_name: payload.first_name,
-      last_name: payload.last_name || undefined,
+      last_name: payload.last_name,
       role: payload.role,
       tenant_id: payload.tenant_id || payload.college_id || undefined,
       phone_number: payload.phone_number ?? payload.phone ?? undefined,
       department: payload.department || undefined,
     };
+    if (payload.course_duration_years != null && payload.course_duration_years !== '') {
+      body.course_duration_years = Number(payload.course_duration_years);
+    }
+    if (payload.year_of_study != null && payload.year_of_study !== '') {
+      body.year_of_study = Number(payload.year_of_study);
+    }
+    if (Array.isArray(payload.assigned_years) && payload.assigned_years.length) {
+      body.assigned_years = payload.assigned_years;
+    }
+    if (Array.isArray(payload.assigned_semesters) && payload.assigned_semesters.length) {
+      body.assigned_semesters = payload.assigned_semesters;
+    }
     return api.post('/users', body);
   },
 
