@@ -63,7 +63,7 @@ export default function StudentSidebar() {
       tenantTitle="Your college"
       tenantSubtitle="Student"
       fallbackInitials="ST"
-      loginPath="/student/login"
+      loginPath="/auth/login"
     />
   );
 }

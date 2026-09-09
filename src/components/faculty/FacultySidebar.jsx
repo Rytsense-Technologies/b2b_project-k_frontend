@@ -87,7 +87,7 @@ export default function FacultySidebar() {
       tenantTitle="Your department"
       tenantSubtitle="HOD / Faculty"
       fallbackInitials="HF"
-      loginPath="/faculty/login"
+      loginPath="/auth/login"
     />
   );
 }

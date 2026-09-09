@@ -4,6 +4,10 @@ const PUBLIC_PATHS = [
   '/auth/login',
   '/auth/forgot-password',
   '/auth/reset-password',
+];
+
+/** Legacy portal login URLs — always redirect to the unified login. */
+const LEGACY_LOGIN_PATHS = [
   '/admin/login',
   '/superadmin/login',
   '/faculty/login',
@@ -23,20 +27,24 @@ function withTenantHeader(req, tenant) {
 function homeForRole(role) {
   if (role === 'superadmin') return '/superadmin/dashboard';
   if (role === 'college_admin') return '/admin/dashboard';
-  if (role === 'faculty') return '/faculty/dashboard';
+  if (role === 'faculty' || role === 'hod') return '/faculty/dashboard';
   if (role === 'student') return '/student/home';
   return '/auth/login';
 }
 
-function loginForRole(role) {
-  if (role === 'college_admin') return '/admin/login';
-  if (role === 'faculty') return '/faculty/login';
-  if (role === 'student') return '/student/login';
+/** Single login URL for every portal role. */
+function loginForRole() {
   return '/auth/login';
 }
 
 export async function middleware(req) {
   const { pathname } = req.nextUrl;
+
+  if (LEGACY_LOGIN_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    const dest = new URL('/auth/login', req.url);
+    dest.search = req.nextUrl.search;
+    return NextResponse.redirect(dest);
+  }
 
   if (isPublicPath(pathname)) return NextResponse.next();
 
@@ -62,17 +70,20 @@ export async function middleware(req) {
   const portalGuards = [
     { prefix: '/admin', role: 'college_admin' },
     { prefix: '/superadmin', role: 'superadmin' },
-    { prefix: '/faculty', role: 'faculty' },
+    { prefix: '/faculty', roles: ['faculty', 'hod'] },
     { prefix: '/student', role: 'student' },
   ];
 
   for (const guard of portalGuards) {
     if (!pathname.startsWith(guard.prefix)) continue;
-    if (!session || role !== guard.role) {
+    const allowed = guard.roles
+      ? guard.roles.includes(role)
+      : role === guard.role;
+    if (!session || !allowed) {
       if (session && role) {
         return NextResponse.redirect(new URL(homeForRole(role), req.url));
       }
-      return NextResponse.redirect(new URL(loginForRole(guard.role), req.url));
+      return NextResponse.redirect(new URL(loginForRole(), req.url));
     }
     return withTenantHeader(req, tenant);
   }
