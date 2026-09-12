@@ -1,14 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriBadge from '@/components/superadmin/QuirriBadge';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import { SearchBox, IconPlus, QuirriRHFField, QuirriSelect } from '@/components/superadmin/quirri-ui';
+import { SearchBox, IconPlus, QuirriRHFField, QuirriSelect, QuirriCombobox } from '@/components/superadmin/quirri-ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { usersApi } from '@/lib/api/superadmin/users';
+import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,7 +43,7 @@ function isDeactivated(user) {
   return v.includes('deactiv') || v === 'inactive';
 }
 
-function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
+function CreateStudentModal({ open, tenantId, departmentOptions, onClose, onSaved }) {
   const {
     control,
     handleSubmit,
@@ -54,7 +55,7 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
       last_name: '',
       email: '',
       phone_number: '',
-      department: '',
+      department_id: '',
       course_duration_years: '',
       year_of_study: '',
     },
@@ -71,7 +72,7 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
     try {
       await usersApi.createUser({
         ...values,
-        department: values.department || undefined,
+        department_id: values.department_id || undefined,
         phone_number: values.phone_number || undefined,
         course_duration_years: values.course_duration_years ?? undefined,
         year_of_study: values.year_of_study ?? undefined,
@@ -126,14 +127,25 @@ function CreateStudentModal({ open, tenantId, onClose, onSaved }) {
           placeholder="+91…"
           full
         />
-        <QuirriRHFField
+        <Controller
           control={control}
-          name="department"
-          fieldType="academicLabel"
-          label="Department"
-          placeholder="Optional until academic structure is live"
-          hint="Free-text for now — department picker arrives with EPIC-06."
-          full
+          name="department_id"
+          render={({ field, fieldState }) => (
+            <QuirriCombobox
+              id="student-department"
+              label="Department"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              name={field.name}
+              error={fieldState.error?.message}
+              placeholder="Optional — type to search"
+              options={departmentOptions}
+              emptyMessage="No active departments yet"
+              hint="Pick a department from your college structure."
+              full
+            />
+          )}
         />
         <div className="grid2">
           <QuirriRHFField
@@ -170,6 +182,18 @@ export default function StudentsPage() {
   const [status, setStatus] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [acting, setActing] = useState(false);
+
+  const { data: deptData } = useAsyncResource(
+    () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
+    [tenantId],
+  );
+  const departmentOptions = useMemo(
+    () => asList(deptData, []).map((d) => ({
+      value: d.id,
+      label: d.code ? `${d.name} (${d.code})` : d.name,
+    })),
+    [deptData],
+  );
 
   const { data, loading, error, reload } = useAsyncResource(async () => {
     const res = await usersApi.getUsers({
@@ -298,7 +322,7 @@ export default function StudentsPage() {
                     <span className="strong">{name}</span>
                     <div className="sub">{user.email}</div>
                   </td>
-                  <td className="sub">{user.department || '—'}</td>
+                  <td className="sub">{user.department_name || user.department || '—'}</td>
                   <td>
                     <QuirriBadge variant={statusVariant(user)}>
                       {userStatusLabel(user)}
@@ -307,7 +331,15 @@ export default function StudentsPage() {
                   <td className="sub">{user.last_active || user.last_login || user.updated_at || 'Never'}</td>
                   <td className="actions">
                     {isPending(user) ? (
-                      <a onClick={() => !acting && handleResend(user)} role="button" tabIndex={0}>Resend invite</a>
+                      <a
+                        onClick={() => !acting && handleResend(user)}
+                        role="button"
+                        tabIndex={0}
+                        onMouseEnter={(e) => show(e, 'Resend activation email', 'top')}
+                        onMouseLeave={hide}
+                      >
+                        Resend invite
+                      </a>
                     ) : isDeactivated(user) ? (
                       <a onClick={() => !acting && handleToggleStatus(user)} role="button" tabIndex={0}>Reactivate</a>
                     ) : (
@@ -323,8 +355,10 @@ export default function StudentsPage() {
 
       {createOpen ? (
         <CreateStudentModal
+          key="create-student"
           open={createOpen}
           tenantId={tenantId}
+          departmentOptions={departmentOptions}
           onClose={() => setCreateOpen(false)}
           onSaved={reload}
         />

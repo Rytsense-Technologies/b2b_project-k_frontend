@@ -113,6 +113,12 @@ export const platformUserCreateSchema = z
     yearWithinDurationRefine(data, ctx);
   });
 
+const optionalDepartmentId = z
+  .string()
+  .optional()
+  .default('')
+  .transform((v) => (String(v || '').trim() ? String(v).trim() : ''));
+
 /** College Admin creates a student in their own tenant (no college picker). */
 export const tenantStudentCreateSchema = z
   .object({
@@ -120,7 +126,7 @@ export const tenantStudentCreateSchema = z
     last_name: personNameField('Last name'),
     email: emailField('Email'),
     phone_number: phoneField('Phone number', { required: false }),
-    department: academicLabelField('Department', { required: false }),
+    department_id: optionalDepartmentId,
     course_duration_years: positiveIntField('Program duration (years)', {
       required: false,
       max: MAX_COURSE_DURATION_YEARS,
@@ -139,7 +145,7 @@ export const tenantFacultyCreateSchema = z.object({
   email: emailField('Email'),
   phone_number: phoneField('Phone number', { required: false }),
   role: z.enum(['faculty', 'hod'], { required_error: 'Select a role' }),
-  department: academicLabelField('Department', { required: false }),
+  department_id: optionalDepartmentId,
   assigned_years: optionalIntListField('Assigned years', { maxItem: MAX_ASSIGNED_YEAR }),
   assigned_semesters: optionalIntListField('Assigned semesters', {
     maxItem: MAX_ASSIGNED_SEMESTER,

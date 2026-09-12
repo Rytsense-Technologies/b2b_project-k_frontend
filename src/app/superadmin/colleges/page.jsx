@@ -14,7 +14,7 @@ import {
   QuirriSelect,
   IndiaLocationFields,
 } from '@/components/superadmin/quirri-ui';
-import { collegesApi, universitiesApi, fetchData } from '@/lib/api/superadmin/modules';
+import { collegesApi, universitiesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { collegeCreateSchema, collegeUpdateSchema } from '@/lib/validation';
@@ -28,7 +28,6 @@ const EMPTY_FORM = {
   district: '',
   city: '',
   pincode: '',
-  plan: 'standard',
   student_seat_cap: '',
   university_id: '',
   admins: [{ name: '', email: '', mobile: '+91' }],
@@ -79,7 +78,6 @@ function CollegeFormModal({
         await collegesApi.update(editingId, {
           name: values.name,
           ...locationPayload(values),
-          plan: values.plan,
           student_seat_cap: values.student_seat_cap,
         });
       } else {
@@ -88,7 +86,6 @@ function CollegeFormModal({
           name: values.name,
           code: values.code,
           ...locationPayload(values),
-          plan: values.plan,
           student_seat_cap: values.student_seat_cap,
           admins: values.admins.map((a) => ({
             ...a,
@@ -160,26 +157,6 @@ function CollegeFormModal({
             disabled={Boolean(editingId)}
           />
           <IndiaLocationFields control={control} setValue={setValue} />
-          <Controller
-            control={control}
-            name="plan"
-            render={({ field, fieldState }) => (
-              <QuirriSelect
-                id="college-plan"
-                label="Plan"
-                hint="B2B institutional licence — institutions pay Knotopian; students never see billing."
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                name={field.name}
-                error={fieldState.error?.message}
-                options={[
-                  { value: 'standard', label: 'Standard' },
-                  { value: 'premium', label: 'Premium' },
-                ]}
-              />
-            )}
-          />
           <QuirriRHFField
             control={control}
             name="student_seat_cap"
@@ -250,6 +227,9 @@ export default function CollegesPage() {
   const [editingId, setEditingId] = useState(null);
   const [formDefaults, setFormDefaults] = useState(EMPTY_FORM);
   const [togglingId, setTogglingId] = useState(null);
+  const [viewDepts, setViewDepts] = useState([]);
+  const [viewDeptsLoading, setViewDeptsLoading] = useState(false);
+  const [viewDeptsError, setViewDeptsError] = useState('');
 
   const { data: uniData } = useAsyncResource(
     () => fetchData(() => universitiesApi.list({})),
@@ -291,7 +271,6 @@ export default function CollegesPage() {
       district: college.district ?? '',
       city: college.city ?? '',
       pincode: college.pincode ?? '',
-      plan: college.plan === 'premium' ? 'premium' : 'standard',
       student_seat_cap: college.student_seat_cap ?? college.student_limit ?? college.seat_cap ?? '',
       university_id: college.university_id ? String(college.university_id) : '',
       admins: [{ name: '', email: '', mobile: '+91' }],
@@ -300,12 +279,28 @@ export default function CollegesPage() {
   };
 
   const openView = async (college) => {
+    setViewDepts([]);
+    setViewDeptsError('');
+    setViewDeptsLoading(true);
     try {
       const detail = unwrap(await collegesApi.get(college.id));
       setViewCollege(detail || college);
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Could not load college details.'));
-      setViewCollege({ ...college, departments_list: [] });
+      setViewCollege(college);
+    }
+    try {
+      const deptData = unwrap(await departmentsApi.list({
+        college_id: college.id,
+        page: 1,
+        pageSize: 100,
+      }));
+      setViewDepts(asList(deptData, []));
+    } catch (err) {
+      setViewDepts([]);
+      setViewDeptsError(apiErrorMessage(err, 'Could not load departments.'));
+    } finally {
+      setViewDeptsLoading(false);
     }
   };
 
@@ -328,18 +323,13 @@ export default function CollegesPage() {
     }
   };
 
-  const deptRows = asList(
-    viewCollege?.departments_list || viewCollege?.departments || [],
-    [],
-  ).filter((row) => typeof row === 'object' && row !== null);
-
   return (
     <div className="animate-fade-in">
       <div className="section-head">
         <div>
           <div className="t">Colleges</div>
           <div className="d">
-            Onboard a member college under a university, provision its administrators, and set its licence entitlement.
+            Onboard a member college under a university, provision its administrators, and set its student seat cap.
           </div>
         </div>
         <button type="button" className="btn btn-primary" onClick={openCreate}>
@@ -400,17 +390,16 @@ export default function CollegesPage() {
               <th>Admins</th>
               <th>Depts</th>
               <th>Students / seat cap</th>
-              <th>Licence</th>
               <th>Status</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {loading && !colleges.length ? (
-              <tr><td colSpan={8}>Loading colleges…</td></tr>
+              <tr><td colSpan={7}>Loading colleges…</td></tr>
             ) : null}
             {!loading && !colleges.length ? (
-              <tr><td colSpan={8}>No colleges found.</td></tr>
+              <tr><td colSpan={7}>No colleges found.</td></tr>
             ) : null}
             {colleges.map((college) => {
               const students = Number(college.students ?? college.student_count ?? 0);
@@ -429,7 +418,7 @@ export default function CollegesPage() {
                       ? college.admins.length
                       : (college.admin_count ?? college.admins ?? 0)}
                   </td>
-                  <td className="num">—</td>
+                  <td className="num">{college.department_count ?? '—'}</td>
                   <td>
                     <span className="num">{students}</span>
                     {' '}
@@ -439,11 +428,6 @@ export default function CollegesPage() {
                         <i style={{ width: `${pct}%` }} />
                       </div>
                     ) : null}
-                  </td>
-                  <td>
-                    <QuirriBadge variant="teal" plain>
-                      {college.plan === 'premium' ? 'Premium' : 'Standard'}
-                    </QuirriBadge>
                   </td>
                   <td>
                     <QuirriBadge variant={statusVariant(active)}>
@@ -532,7 +516,6 @@ export default function CollegesPage() {
               `${Array.isArray(viewCollege.admins)
                 ? viewCollege.admins.length
                 : (viewCollege.admin_count ?? 0)} Administrators`,
-              `${viewCollege.plan === 'premium' ? 'Premium' : 'Standard'} plan`,
               `Seat cap ${viewCollege.student_seat_cap ?? '—'}`,
             ]} />
             <div className="lb" style={{ fontSize: 10.5, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--muted-2)', fontWeight: 800, marginBottom: 10, marginTop: 4 }}>
@@ -580,15 +563,17 @@ export default function CollegesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="notice info" style={{ marginBottom: 12 }}>
-              <div>
-                <b>Departments not available yet</b>
-                Academic hierarchy (Department → Program → …) is EPIC-06 and not started on the backend.
-              </div>
-            </div>
-            <div className="lb" style={{ fontSize: 10.5, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--muted-2)', fontWeight: 800, marginBottom: 10 }}>
+            <div className="lb" style={{ fontSize: 10.5, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--muted-2)', fontWeight: 800, marginBottom: 10, marginTop: 4 }}>
               Departments
             </div>
+            {viewDeptsError ? (
+              <div className="notice err" style={{ marginBottom: 12 }}>
+                <div>
+                  <b>Could not load departments</b>
+                  {viewDeptsError}
+                </div>
+              </div>
+            ) : null}
             <div className="card">
               <table>
                 <thead>
@@ -596,25 +581,27 @@ export default function CollegesPage() {
                     <th>Department</th>
                     <th>HOD</th>
                     <th>Students</th>
-                    <th>Final year</th>
-                    <th>Subjects</th>
-                    <th>Avg score</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {!deptRows.length ? (
-                    <tr><td colSpan={6}>No departments for this college.</td></tr>
+                  {viewDeptsLoading ? (
+                    <tr><td colSpan={4}>Loading departments…</td></tr>
                   ) : null}
-                  {deptRows.map((row) => (
-                    <tr key={row.id || row.department || row.name}>
-                      <td><span className="strong">{row.department || row.name}</span></td>
-                      <td>{row.hod || '—'}</td>
-                      <td className="num">{row.students ?? row.student_count ?? '—'}</td>
-                      <td className="num">{row.finalYear ?? row.final_year ?? '—'}</td>
-                      <td className="num">{row.subjects ?? '—'}</td>
+                  {!viewDeptsLoading && !viewDeptsError && !viewDepts.length ? (
+                    <tr><td colSpan={4}>No departments for this college.</td></tr>
+                  ) : null}
+                  {viewDepts.map((row) => (
+                    <tr key={row.id}>
                       <td>
-                        <QuirriBadge variant="green" plain>
-                          {row.avg_score || row.score || '—'}
+                        <span className="strong">{row.name}</span>
+                        <div className="sub">{row.code || '—'}</div>
+                      </td>
+                      <td>{row.hod_name || '—'}</td>
+                      <td className="num">{row.student_count ?? 0}</td>
+                      <td>
+                        <QuirriBadge variant={statusVariant(row.is_active !== false)}>
+                          {row.is_active !== false ? 'Active' : 'Inactive'}
                         </QuirriBadge>
                       </td>
                     </tr>

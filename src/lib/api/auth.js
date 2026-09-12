@@ -6,10 +6,7 @@ import {
   clearRoleCookie,
   clearTenantCookie,
 } from '@/lib/tokens';
-import { normalizeLoginSession, resolveRoleFromLoginPayload } from '@/lib/auth/rbac';
-import { superAdminLogin } from '@/lib/api/superadmin/auth';
-import { adminLogin } from '@/lib/api/admin/auth';
-import { facultyLogin } from '@/lib/api/faculty/auth';
+import { normalizeLoginSession } from '@/lib/auth/rbac';
 
 /** Login may return `{ user }` or a flat user object */
 export function parseLoginUser(data) {
@@ -19,78 +16,38 @@ export function parseLoginUser(data) {
   return u;
 }
 
-async function loginViaAuthEndpoint(email, password, tenantSlug) {
-  const body = { email, password };
-  if (tenantSlug) body.tenant_slug = tenantSlug;
-  const res = await api.post('/auth/login', body);
-  const d = res.data ?? {};
-
-  setSessionCookie();
-
-  const session = normalizeLoginSession(d);
-  if (!session) return null;
-
-  if (session.role) {
-    setRoleCookie(session.role);
-    setTenantCookie(session.tenant_id ?? null);
-  } else {
-    clearRoleCookie();
-    clearTenantCookie();
-  }
-
-  return session;
-}
-
 /**
- * Single sign-in for all roles (B2C + B2B).
- * Tries `/auth/login` first, then legacy portal endpoints until one succeeds.
+ * Unified sign-in for every portal role (superadmin, college_admin, faculty/hod, student).
+ * Live: POST /api/v1/auth/login only — no legacy /superadmin/auth/login fallbacks.
  */
 export async function loginWithRbac(email, password, tenantSlug) {
-  const legacyProviders = [
-    () => superAdminLogin(email, password),
-    () => adminLogin(email, password),
-    () => facultyLogin(email, password),
-  ];
+  const body = { email, password };
+  if (tenantSlug) body.tenant_slug = tenantSlug;
 
-  try {
-    const session = await loginViaAuthEndpoint(email, password, tenantSlug);
-    if (session) return session;
-  } catch (err) {
-    const status = err.response?.status;
-    if (status && status !== 401 && status !== 403 && status !== 404) {
-      throw err;
-    }
+  const res = await api.post('/auth/login', body);
+  const session = normalizeLoginSession(res.data ?? {});
+  if (!session?.user?.email) {
+    throw new Error('Unexpected login response from server.');
   }
 
-  let lastError;
-  for (const provider of legacyProviders) {
-    try {
-      const result = await provider();
-      const session = normalizeLoginSession({
-        user: result.user,
-        role: result.role,
-        tenant_id: result.tenant_id,
-        permissions: result.permissions,
-      });
-      if (session) return session;
-    } catch (err) {
-      lastError = err;
-      const status = err.response?.status ?? err.status;
-      if (status === 401 || status === 403 || status === 404) continue;
-      throw err;
-    }
-  }
-
-  if (lastError?.message && lastError.message !== 'Not Found') {
-    throw lastError;
-  }
-  throw new Error('Invalid email or password.');
+  setSessionCookie();
+  setRoleCookie(session.role);
+  setTenantCookie(session.tenant_id ?? null);
+  return session;
 }
 
 export const authApi = {
   login: async (data) => {
     const session = await loginWithRbac(data.email, data.password);
-    return { data: { ...session.user, user: session.user, role: session.role, tenant_id: session.tenant_id, permissions: session.permissions } };
+    return {
+      data: {
+        ...session.user,
+        user: session.user,
+        role: session.role,
+        tenant_id: session.tenant_id,
+        permissions: session.permissions,
+      },
+    };
   },
 
   register: () => {

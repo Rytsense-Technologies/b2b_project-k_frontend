@@ -279,18 +279,25 @@ export function pincodeField(label = 'Pincode', { required = false } = {}) {
     .pipe(valid);
 }
 
-export function codeField(label = 'Code') {
+export function codeField(label = 'Code', { required = true } = {}) {
   const rule = FIELD_RULES.code;
+  const valid = z
+    .string()
+    .min(rule.min, `${label} must be at least ${rule.min} characters`)
+    .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
+    .regex(rule.pattern, `${label} may only contain letters, numbers, underscore, and hyphen`);
+
+  if (!required) {
+    return z
+      .string()
+      .transform(normalizeCode)
+      .pipe(z.union([z.literal(''), valid]));
+  }
+
   return z
     .string({ required_error: `${label} is required` })
     .transform(normalizeCode)
-    .pipe(
-      z
-        .string()
-        .min(rule.min, `${label} must be at least ${rule.min} characters`)
-        .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
-        .regex(rule.pattern, `${label} may only contain letters, numbers, underscore, and hyphen`),
-    );
+    .pipe(valid);
 }
 
 export function emailField(label = 'Email') {

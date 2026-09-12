@@ -59,4 +59,5 @@ Only use Read/Grep/Glob when:
 - Post-login UI follows `new_updated_design_four` (dark sidebar, Plus Jakarta Sans, mist `#F4F6F7`)
 - No static/mock portal data in `src/` — APIs only; show loading/error/empty
 - Do not reintroduce Skill Courses, Email Management CRUD, AI Usage ₹ dashboard, or student billing UI
+- **No plan / licence / subscription product** in Phase 1 B2B — see `.cursor/rules/quirri-no-plans.mdc`
 - Follow Quirri tokens in `src/styles/quirri-design.css`

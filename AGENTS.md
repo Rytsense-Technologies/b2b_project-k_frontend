@@ -19,6 +19,7 @@ This file orients Cursor agents. Prefer it plus graphify over scanning the whole
 - `.cursor/rules/quirri-forms.mdc` — field catalog, Zod, charset/length (do not invent per-page validation)
 - `.cursor/rules/quirri-product-ui.mdc` — dropdowns, text alignment, product must-haves
 - `.cursor/rules/quirri-india-location.mdc` — India-only country/state/district/pincode/+91
+- `.cursor/rules/quirri-no-plans.mdc` — no plan/licence/subscription product in Phase 1 B2B
 
 ## Product UI rules (dropdowns + text)
 
@@ -52,6 +53,7 @@ This file orients Cursor agents. Prefer it plus graphify over scanning the whole
 - Dark teal sidebar + Plus Jakarta Sans + mist `#F4F6F7` + `PortalHero` / `.q-app-shell`
 - No mocks in `src/` — loading / error / empty only
 - Do not reintroduce Skill Courses, Email CRUD, AI Usage ₹ dashboard, or student billing UI
+- **No plan / licence / subscription product** in Phase 1 B2B — see `.cursor/rules/quirri-no-plans.mdc` (seat cap only; never Standard/Premium college plan UI)
 
 ## Tooltips & hover hints
 

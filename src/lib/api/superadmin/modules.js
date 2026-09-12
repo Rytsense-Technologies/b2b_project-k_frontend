@@ -53,15 +53,42 @@ export const collegesApi = {
   reactivate: (id) => api.post(`/colleges/${id}/reactivate`),
 };
 
-/** EPIC-06 not started — UI should not pretend departments exist. */
+/**
+ * Live: /api/v1/departments (Department module).
+ * SA: any college · CA: own college only (server-scoped).
+ */
 export const departmentsApi = {
-  list: (params = {}) =>
-    api.get(`/superadmin/departments?${buildParams(params)}`),
-  exportData: (params = {}) =>
-    downloadBlob(
-      () => api.get(`/superadmin/departments/export?${buildParams(params)}`, { responseType: 'blob' }),
-      'departments.csv',
-    ),
+  list: ({
+    page = 1,
+    pageSize = 25,
+    q = '',
+    search = '',
+    college_id = '',
+    collegeId = '',
+    is_active,
+    status = '',
+  } = {}) => {
+    const query = {
+      page,
+      page_size: pageSize,
+      q: q || search || undefined,
+      college_id: college_id || collegeId || undefined,
+    };
+    if (is_active !== undefined && is_active !== '') {
+      query.is_active = is_active;
+    } else if (status) {
+      const s = String(status).toLowerCase();
+      if (s === 'active' || s === 'true') query.is_active = true;
+      if (s === 'inactive' || s.includes('deactiv') || s === 'false') query.is_active = false;
+    }
+    return api.get(`/departments?${buildParams(query)}`);
+  },
+  get: (id) => api.get(`/departments/${id}`),
+  create: (payload) => api.post('/departments', payload),
+  update: (id, payload) => api.patch(`/departments/${id}`, payload),
+  deactivate: (id, { force = false } = {}) =>
+    api.post(`/departments/${id}/deactivate${force ? '?force=true' : ''}`),
+  reactivate: (id) => api.post(`/departments/${id}/reactivate`),
 };
 
 /** Out of Phase 1 Super Admin nav — do not reintroduce in UI. */

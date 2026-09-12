@@ -45,6 +45,11 @@ const nextConfig = {
         source: '/api/v1/:path*',
         destination: `${apiProxyTarget}/api/v1/:path*`,
       },
+      // edu_video is mounted outside /api/v1 on FastAPI
+      {
+        source: '/edu_video/:path*',
+        destination: `${apiProxyTarget}/edu_video/:path*`,
+      },
     ];
   },
 };
