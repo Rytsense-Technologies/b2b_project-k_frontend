@@ -46,6 +46,7 @@ export const usersApi = {
       tenant_id: payload.tenant_id || payload.college_id || undefined,
       phone_number: payload.phone_number ?? payload.phone ?? undefined,
       department: payload.department || undefined,
+      department_id: payload.department_id || undefined,
     };
     if (payload.course_duration_years != null && payload.course_duration_years !== '') {
       body.course_duration_years = Number(payload.course_duration_years);

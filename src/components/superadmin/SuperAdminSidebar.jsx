@@ -50,6 +50,16 @@ const NAV = [
     ),
   },
   {
+    href: '/superadmin/departments',
+    label: 'Departments',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M4 6h16M4 12h10M4 18h14" />
+        <circle cx="18" cy="12" r="2" />
+      </svg>
+    ),
+  },
+  {
     href: '/superadmin/users',
     label: 'Platform Users',
     icon: (

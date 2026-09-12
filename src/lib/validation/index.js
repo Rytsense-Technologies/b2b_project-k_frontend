@@ -62,6 +62,12 @@ export {
 } from './schemas/colleges';
 
 export {
+  departmentCreateSchema,
+  departmentUpdateSchema,
+  tenantDepartmentCreateSchema,
+} from './schemas/departments';
+
+export {
   settingsProfileSchema,
   settingsPasswordSchema,
 } from './schemas/settings';

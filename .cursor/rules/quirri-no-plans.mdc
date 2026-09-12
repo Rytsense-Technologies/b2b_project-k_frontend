@@ -1,0 +1,30 @@
+---
+description: Phase 1 B2B has no plan, licence tier, or subscription product UI
+alwaysApply: true
+---
+
+# Quirri — no plan / licence / subscription (Phase 1 B2B)
+
+**Contract:** `assets/ProjectK_B2B_SOW_v1.0.pdf` — institutional B2B only. Students never see billing. There is **no** Standard/Premium college plan, upgrade funnel, or licence-tier product in Phase 1.
+
+## Hard rules
+
+1. **Do not** add Plan / Licence / Subscription / Upgrade UI on Super Admin, College Admin, Faculty, or Student portals.
+2. **Colleges:** create/edit/list/detail use location + **student seat cap** only. Never collect or display `plan` / Standard / Premium.
+3. **API clients:** do not send `plan` on college create/update. Backend may still persist a silent DB default — treat it as internal, not product.
+4. **Do not** build or reintroduce:
+   - Plan pickers, plan badges on institution tables, “Upgrade plan”, Premium feature gates, pricing pages, or `/plans` checkout flows for B2B portals
+   - Copy that implies institutions choose a licence tier in-app
+5. **Not this rule:** edu_video / interview **lesson “plan”** (script/scene JSON) — that is content pipeline naming, not billing.
+
+## Allowed
+
+- **Student seat cap** (capacity entitlement) — this is not a plan
+- Ignoring legacy `user.plan` / `pk_plan` session fields from the API if present — do not surface them in B2B chrome
+- Leaving unused legacy B2C files untouched until deleted — **do not wire them** into portals
+
+## Forbidden
+
+- New `plan` fields on forms, Zod schemas, or table columns for colleges/universities/tenants in UI
+- Fake premium locks or blurred “upgrade” overlays in B2B modules
+- Docs or Swagger examples that teach clients to set college `plan`

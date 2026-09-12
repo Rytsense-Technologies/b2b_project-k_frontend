@@ -10,7 +10,7 @@ export const PAGE_META = {
   },
   '/admin/content': {
     title: 'Upload & Content',
-    subtitle: 'Upload chapter material and track HOD approvals.',
+    subtitle: 'Upload chapter material to generate a video lecture and follow status here.',
   },
   '/admin/students': {
     title: 'Students',

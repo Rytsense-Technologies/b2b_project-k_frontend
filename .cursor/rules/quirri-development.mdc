@@ -51,6 +51,7 @@ Before modifying or creating code:
 - Post-login chrome matches `new_updated_design_four`: dark teal sidebar, Plus Jakarta Sans, mist `#F4F6F7`, `PortalHero`
 - Nav modules follow the design pack tables in `docs/QUIRRI_UI_REFERENCE.md`
 - Do not reintroduce Skill Courses, Email Management CRUD, AI Usage ₹ dashboard, or student billing UI
+- **No plan / licence / subscription product** in Phase 1 B2B — colleges use seat cap only; see `.cursor/rules/quirri-no-plans.mdc`
 
 ---
 

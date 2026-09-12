@@ -6,9 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriBadge from '@/components/superadmin/QuirriBadge';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import { SearchBox, IconPlus, QuirriRHFField, QuirriSelect } from '@/components/superadmin/quirri-ui';
+import { SearchBox, IconPlus, QuirriRHFField, QuirriSelect, QuirriCombobox } from '@/components/superadmin/quirri-ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { usersApi } from '@/lib/api/superadmin/users';
+import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
@@ -47,7 +48,13 @@ function isDeactivated(user) {
   return v.includes('deactiv') || v === 'inactive';
 }
 
-function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
+function roleLabel(user) {
+  const role = String(user?.role || '').toLowerCase();
+  if (role === ROLES.HOD || role === 'hod') return 'HOD';
+  return 'Faculty';
+}
+
+function CreateFacultyModal({ open, tenantId, departmentOptions, onClose, onSaved }) {
   const {
     control,
     handleSubmit,
@@ -60,7 +67,7 @@ function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
       email: '',
       phone_number: '',
       role: ROLES.FACULTY,
-      department: '',
+      department_id: '',
       assigned_years: '',
       assigned_semesters: '',
     },
@@ -77,7 +84,7 @@ function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
     try {
       await usersApi.createUser({
         ...values,
-        department: values.department || undefined,
+        department_id: values.department_id || undefined,
         phone_number: values.phone_number || undefined,
         assigned_years: values.assigned_years || undefined,
         assigned_semesters: values.assigned_semesters || undefined,
@@ -153,14 +160,25 @@ function CreateFacultyModal({ open, tenantId, onClose, onSaved }) {
             )}
           />
         </div>
-        <QuirriRHFField
+        <Controller
           control={control}
-          name="department"
-          fieldType="academicLabel"
-          label="Department"
-          placeholder="Optional until academic structure is live"
-          hint="Free-text for now — department picker arrives with EPIC-06."
-          full
+          name="department_id"
+          render={({ field, fieldState }) => (
+            <QuirriCombobox
+              id="staff-department"
+              label="Department"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              name={field.name}
+              error={fieldState.error?.message}
+              placeholder="Optional — type to search"
+              options={departmentOptions}
+              emptyMessage="No active departments yet"
+              hint="Pick a department from your college structure."
+              full
+            />
+          )}
         />
         <div className="grid2">
           <QuirriRHFField
@@ -197,6 +215,18 @@ export default function StaffPage() {
   const [status, setStatus] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [acting, setActing] = useState(false);
+
+  const { data: deptData } = useAsyncResource(
+    () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
+    [tenantId],
+  );
+  const departmentOptions = useMemo(
+    () => asList(deptData, []).map((d) => ({
+      value: d.id,
+      label: d.code ? `${d.name} (${d.code})` : d.name,
+    })),
+    [deptData],
+  );
 
   const { data, loading, error, reload } = useAsyncResource(async () => {
     const [facultyRes, hodRes] = await Promise.all([
@@ -322,6 +352,7 @@ export default function StaffPage() {
             ) : null}
             {staff.map((user) => {
               const name = user.name || [user.first_name, user.last_name].filter(Boolean).join(' ') || '—';
+              const isHod = String(user.role || '').toLowerCase() === 'hod';
               return (
                 <tr key={user.id}>
                   <td>
@@ -329,9 +360,11 @@ export default function StaffPage() {
                     <div className="sub">{user.email}</div>
                   </td>
                   <td>
-                    <QuirriBadge variant="grey" plain>Faculty</QuirriBadge>
+                    <QuirriBadge variant={isHod ? 'teal' : 'grey'} plain>
+                      {roleLabel(user)}
+                    </QuirriBadge>
                   </td>
-                  <td className="sub">{user.department || '—'}</td>
+                  <td className="sub">{user.department_name || user.department || '—'}</td>
                   <td>
                     <QuirriBadge variant={statusVariant(user)}>
                       {userStatusLabel(user)}
@@ -356,8 +389,10 @@ export default function StaffPage() {
 
       {createOpen ? (
         <CreateFacultyModal
+          key="create-staff"
           open={createOpen}
           tenantId={tenantId}
+          departmentOptions={departmentOptions}
           onClose={() => setCreateOpen(false)}
           onSaved={reload}
         />
