@@ -19,6 +19,9 @@ node_modules
 Thumbs.db
 *.pem
 
+# temporary Next edu-video handoff bridge (HOD→CA pending edits)
+.data/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
