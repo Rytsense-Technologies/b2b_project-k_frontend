@@ -184,6 +184,17 @@ export const FIELD_RULES = {
     type: 'text',
     filter: (incoming) => incoming.replace(/[^\p{L}\d\s&.,()\-’']/gu, ''),
   },
+  /** Lesson-plan / slide copy (narration, bullet lists) — long free text */
+  lessonText: {
+    id: 'lessonText',
+    labelHint: 'Lesson narration or slide points',
+    min: 0,
+    max: 4000,
+    inputMode: 'text',
+    autoComplete: 'off',
+    type: 'text',
+    filter: (incoming) => String(incoming ?? '').slice(0, 4000),
+  },
   positiveInt: {
     id: 'positiveInt',
     labelHint: 'Whole number greater than zero',

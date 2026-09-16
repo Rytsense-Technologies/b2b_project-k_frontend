@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import QuirriBadge from '@/components/superadmin/QuirriBadge';
 import PortalHero from '@/components/shared/PortalHero';
 import { usersApi } from '@/lib/api/superadmin/users';
+import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,7 +31,16 @@ function pickTotal(payload, list) {
 
 export default function AdminDashboardPage() {
   const { user, tenantId } = useAuth();
-  const college = user?.college_name || user?.tenant_name || 'your college';
+
+  // Auth state hydrates from the store before React can reconcile the
+  // server-rendered HTML, so the very first client render already differs
+  // from the server's (which has no user yet) - a hydration mismatch, not a
+  // data bug. Rendering the same neutral fallback until after mount keeps
+  // the first paint identical on both sides; the real name swaps in right
+  // after, same as any other client-only personalization.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const college = mounted ? (user?.college_name || user?.tenant_name || 'your college') : 'your college';
 
   const { data: studentData, loading: studentsLoading, error: studentsError } = useAsyncResource(async () => {
     const res = await usersApi.getUsers({
@@ -52,6 +62,11 @@ export default function AdminDashboardPage() {
     return unwrap(res);
   }, [tenantId]);
 
+  const { data: deptData, loading: deptLoading } = useAsyncResource(
+    () => fetchData(() => departmentsApi.list({ page: 1, pageSize: 1, is_active: true })),
+    [tenantId],
+  );
+
   const students = useMemo(() => {
     if (Array.isArray(studentData)) return studentData;
     return asList(studentData?.users || studentData, []);
@@ -62,6 +77,7 @@ export default function AdminDashboardPage() {
     facultyData,
     Array.isArray(facultyData) ? facultyData : asList(facultyData?.users || facultyData, []),
   );
+  const departmentTotal = pickTotal(deptData, asList(deptData, []));
 
   const loadingPeople = studentsLoading || facultyLoading;
 
@@ -105,8 +121,8 @@ export default function AdminDashboardPage() {
         </div>
         <div className="stat">
           <div className="k">Departments</div>
-          <div className="v">—</div>
-          <div className="s">Needs EPIC-06</div>
+          <div className="v">{deptLoading ? '…' : departmentTotal.toLocaleString('en-IN')}</div>
+          <div className="s">Active in your college</div>
         </div>
         <div className="stat">
           <div className="k">Watch time</div>
@@ -182,7 +198,7 @@ export default function AdminDashboardPage() {
                     <span className="strong">{name}</span>
                     <div className="sub">{row.email}</div>
                   </td>
-                  <td className="sub">{row.department || '—'}</td>
+                  <td className="sub">{row.department_name || row.department || '—'}</td>
                   <td>
                     <QuirriBadge variant={statusVariant(row)}>
                       {userStatusLabel(row)}

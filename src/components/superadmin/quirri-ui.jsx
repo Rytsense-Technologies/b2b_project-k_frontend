@@ -148,6 +148,8 @@ export function QuirriControlledField({
   placeholder,
   id,
   inputRef,
+  multiline = false,
+  rows = 4,
   ...rest
 }) {
   const rule = getFieldRule(fieldType);
@@ -160,6 +162,20 @@ export function QuirriControlledField({
     }
   };
 
+  const shared = {
+    ref: inputRef,
+    id: fieldId,
+    name,
+    disabled,
+    placeholder,
+    value: value ?? '',
+    onChange: handleChange,
+    onBlur,
+    'aria-invalid': Boolean(error),
+    maxLength: rule.max,
+    ...rest,
+  };
+
   return (
     <QuirriField
       label={label}
@@ -168,22 +184,16 @@ export function QuirriControlledField({
       error={typeof error === 'string' ? error : error?.message}
       hint={hint}
     >
-      <input
-        ref={inputRef}
-        id={fieldId}
-        name={name}
-        type={rule.type || 'text'}
-        inputMode={rule.inputMode}
-        autoComplete={rule.autoComplete}
-        maxLength={rule.max}
-        disabled={disabled}
-        placeholder={placeholder}
-        value={value ?? ''}
-        onChange={handleChange}
-        onBlur={onBlur}
-        aria-invalid={Boolean(error)}
-        {...rest}
-      />
+      {multiline ? (
+        <textarea {...shared} rows={rows} style={{ minHeight: rows * 22, resize: 'vertical' }} />
+      ) : (
+        <input
+          type={rule.type || 'text'}
+          inputMode={rule.inputMode}
+          autoComplete={rule.autoComplete}
+          {...shared}
+        />
+      )}
     </QuirriField>
   );
 }
