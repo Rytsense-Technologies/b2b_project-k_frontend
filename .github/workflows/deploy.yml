@@ -1,4 +1,4 @@
-name: Deploy Frontend (video_demo)
+name: Deploy Frontend (b2b_project-k_frontend)
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE: ghcr.io/rytsense-technologies/video_demo-frontend
+  IMAGE: ghcr.io/rytsense-technologies/b2b_project-k_frontend
   FRONTEND_PORT: 3100
   # Backend runs on host port 8100 - see b2b_projectk deploy workflow.
   BACKEND_PORT: 8100
@@ -26,9 +26,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          # GITHUB_TOKEN works if the org/repo allows package pushes; if not,
-          # create a PAT (read:packages, write:packages) and set GHCR_TOKEN.
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -42,7 +40,7 @@ jobs:
           context: .
           push: true
           build-args: |
-            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://xplains.quirri.ai' }}
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
