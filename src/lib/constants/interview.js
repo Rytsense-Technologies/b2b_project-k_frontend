@@ -12,24 +12,45 @@ export function setSkipDosDontsDialog(skip) {
   else localStorage.removeItem(HIDE_DOS_DONTS_STORAGE_KEY);
 }
 
-/** Discrete experience values for POST /livekit-interview/start */
+/** Discrete experience values for POST /livekit-interview/start (guide §3.1) */
 export const EXPERIENCE_OPTIONS = [
-  { value: '0', label: 'Fresher (0 years)' },
-  ...Array.from({ length: 14 }, (_, i) => {
-    const years = i + 1;
-    return {
-      value: String(years),
-      label: years === 1 ? '1 year' : `${years} years`,
-    };
-  }),
-  { value: '15', label: '15+ years' },
+  { value: '0-1', label: 'Fresher (0–1 years)' },
+  { value: '1-2', label: 'Junior (1–2 years)' },
+  { value: '2-4', label: 'Mid-level (2–4 years)' },
+  { value: '4-7', label: 'Senior (4–7 years)' },
+  { value: '7+', label: 'Expert (7+ years)' },
+];
+
+export const DIFFICULTY_OPTIONS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+  { value: 'adaptive', label: 'Adaptive' },
+];
+
+export const INTERVIEW_MODES = [
+  {
+    id: 'mock',
+    title: 'Mock interview',
+    description: 'Three focused questions with instant feedback. Good for daily practice.',
+    duration: '3–5 min · uses 1 mock',
+  },
+  {
+    id: 'full',
+    title: 'Full interview',
+    description: 'More questions, follow-ups, and a detailed post-interview report.',
+    duration: '10–15 min · uses 1 full',
+  },
 ];
 
 export function experienceLabel(value) {
   return EXPERIENCE_OPTIONS.find((o) => o.value === value)?.label ?? value;
 }
 
-/** Build request body for POST /livekit-interview/start */
+/**
+ * Build request body for POST /livekit-interview/start
+ * @param {{ resumeId: string, role: string, experience: string, mode: 'mock'|'full', difficulty: string, jobDescription?: string, acknowledgedRoleMismatch?: boolean }} opts
+ */
 export function buildLivekitStartPayload({
   resumeId,
   role,
@@ -37,13 +58,15 @@ export function buildLivekitStartPayload({
   mode,
   difficulty,
   jobDescription,
+  acknowledgedRoleMismatch = false,
 }) {
   return {
     resume_id: resumeId,
-    position: role.trim(),
+    position: String(role || '').trim(),
     experience: String(experience),
-    mode,
+    mode: mode === 'full' ? 'full' : 'mock',
     difficulty,
     job_description: jobDescription?.trim() || undefined,
+    acknowledged_role_mismatch: Boolean(acknowledgedRoleMismatch),
   };
 }

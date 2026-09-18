@@ -1,24 +1,46 @@
 import api from '@/lib/axios';
 import { resolveLivekitBrowserUrl } from '@/lib/livekitUrl';
+import { unwrap } from '@/lib/api/superadmin/http';
 
 export const interviewApi = {
   /** POST /livekit-interview/start — creates session + LiveKit token */
-  startLivekitInterview: (data) => api.post('/livekit-interview/start', data),
+  startLivekitInterview(data) {
+    return api.post('/livekit-interview/start', data).then((res) => {
+      const body = res?.data;
+      // LiveKit start is a flat payload — do not unwrap a nested `data` key
+      // if session credentials are already at the top level.
+      if (body && typeof body === 'object' && body.token && (body.session_id || body.id)) {
+        return body;
+      }
+      return unwrap(res);
+    });
+  },
+
   /**
-   * POST /interviews/livekit/normalize-and-score
-   * Post-interview pipeline: normalize transcript → score → generate report.
+   * POST /livekit-interview/{session_id}/abort
+   * Only when the candidate never spoke with the interviewer.
+   * Call before room.disconnect().
    */
-  normalizeAndScoreInterview: (sessionId) =>
-    api.post('/interviews/livekit/normalize-and-score', { session_id: sessionId }),
-  /** @deprecated Use normalizeAndScoreInterview — kept as alias */
-  endLivekitInterview: (sessionId) =>
-    api.post('/interviews/livekit/normalize-and-score', { session_id: sessionId }),
-  createSession:   (data)      => api.post('/interview/sessions', data),
-  startSession:    (sessionId) => api.post(`/interview/sessions/${sessionId}/start`),
-  submitAnswer:    (data)      => api.post('/interview/answers', data),
-  completeSession: (sessionId) => api.post(`/interview/sessions/${sessionId}/complete`),
-  endSession:      (sessionId) => api.post(`/interview/sessions/${sessionId}/complete`),
-  getSessions:     ()          => api.get('/interview/sessions'),
+  abortLivekitInterview(sessionId) {
+    return api
+      .post(`/livekit-interview/${encodeURIComponent(sessionId)}/abort`)
+      .then(unwrap);
+  },
+
+  /**
+   * @deprecated Agent-only. Do not call from the student UI.
+   * Kept for legacy imports.
+   */
+  normalizeAndScoreInterview(sessionId) {
+    return api
+      .post('/interviews/livekit/normalize-and-score', { session_id: sessionId })
+      .then(unwrap);
+  },
+
+  /** @deprecated */
+  endLivekitInterview(sessionId) {
+    return interviewApi.normalizeAndScoreInterview(sessionId);
+  },
 };
 
 /** Normalize start response — backend may use session_id or id */

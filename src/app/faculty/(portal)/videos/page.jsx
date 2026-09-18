@@ -10,9 +10,15 @@ import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 
-const POLL_INTERVAL_MS = 4000;
+const POLL_ACTIVE_MS = 4000;
+const POLL_IDLE_MS = 20000;
 
 const canPreview = (job) => job?.status === JOB_STATUS.DONE && Boolean(job?.output_path);
+
+function isJobGenerating(job) {
+  const s = job?.status;
+  return Boolean(s) && s !== JOB_STATUS.DONE && s !== JOB_STATUS.FAILED;
+}
 
 /**
  * Same post-render workflow as the College Admin content page
@@ -69,21 +75,56 @@ export default function FacultyVideosPage() {
     [jobs, reviewQueue, published],
   );
 
-  // Live-refresh the queue - a chapter can arrive from a College Admin, or
-  // move once a colleague (another HOD/Faculty, or this same user in
-  // another tab) publishes it.
+  // Live-refresh without flipping loading (that was re-rendering the page
+  // every poll). Faster while generation is active; slower when idle.
   const jobsPollInFlight = useRef(false);
+  const reloadJobsRef = useRef(reloadJobs);
+  const jobsRef = useRef(jobs);
+  reloadJobsRef.current = reloadJobs;
+  jobsRef.current = jobs;
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (jobsPollInFlight.current) return;
+    let cancelled = false;
+    let timer = null;
+
+    const schedule = (ms) => {
+      clearTimeout(timer);
+      timer = setTimeout(tick, ms);
+    };
+
+    const tick = () => {
+      if (cancelled) return;
+      if (typeof document !== 'undefined' && document.hidden) {
+        schedule(POLL_IDLE_MS);
+        return;
+      }
+      if (jobsPollInFlight.current) {
+        schedule(POLL_ACTIVE_MS);
+        return;
+      }
       jobsPollInFlight.current = true;
-      reloadJobs()
+      reloadJobsRef.current({ silent: true })
         .catch(() => {})
         .finally(() => {
           jobsPollInFlight.current = false;
+          if (!cancelled) {
+            const next = jobsRef.current.some(isJobGenerating) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
+            schedule(next);
+          }
         });
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
+    };
+
+    const initial = jobsRef.current.some(isJobGenerating) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
+    schedule(initial);
+    const onVis = () => {
+      if (!document.hidden && !jobsPollInFlight.current) schedule(250);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [reloadJobs]);
 
   const publish = async (jobId) => {

@@ -32,7 +32,9 @@ export default function StudentLayout({ children }) {
     }
   }, [dispatch]);
 
-  const matchedRoute = Object.keys(PAGE_META).find((k) => pathname?.startsWith(k));
+  const matchedRoute = Object.keys(PAGE_META)
+    .filter((k) => pathname?.startsWith(k))
+    .sort((a, b) => b.length - a.length)[0];
   const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'Student', subtitle: '' };
 
   return (
