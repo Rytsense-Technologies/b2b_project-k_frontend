@@ -7,45 +7,163 @@ import { QuirriControlledField } from '@/components/superadmin/quirri-ui';
 import { eduVideoApi, JOB_STATUS } from '@/lib/api/admin/eduVideo';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 
-/** Visual.type → editable fields shown in the slide editor (matches review screenshots). */
+/**
+ * visual.type → editable visual fields (schemas.py Visual docstring).
+ * Scene-level topic + narration are always shown separately.
+ * key_idea is appended for types in KEY_IDEA_TYPES.
+ *
+ * Field shapes:
+ * - text | multiline | list | numberList | number | bool | readOnly
+ * - cards | table_rows | branches (object lists)
+ */
+const KEY_IDEA_TYPES = new Set([
+  'concept',
+  'comparison',
+  'process_flow',
+  'energy_flow',
+  'direction_arrows',
+  'waveform',
+  'concept_map',
+  'quiz',
+]);
+
+/** @type {Record<string, Array<{ path: string, label: string, kind?: string }>>} */
+const VISUAL_FIELDS_BY_TYPE = {
+  title: [
+    { path: 'icon', label: 'Icon', kind: 'text' },
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'subtitle', label: 'Subtitle', kind: 'text' },
+    { path: 'tags', label: 'Tags', kind: 'list' },
+  ],
+  energy_flow: [
+    { path: 'input_label', label: 'Input label', kind: 'text' },
+    { path: 'output_label', label: 'Output label', kind: 'text' },
+  ],
+  direction_arrows: [
+    { path: 'label', label: 'Label', kind: 'text' },
+    { path: 'directions', label: 'Directions', kind: 'list' },
+  ],
+  waveform: [
+    { path: 'label', label: 'Label', kind: 'text' },
+    { path: 'flat', label: 'Flat line (DC-style)', kind: 'bool' },
+  ],
+  comparison: [
+    { path: 'left_title', label: 'Left title', kind: 'text' },
+    { path: 'left_points', label: 'Left points', kind: 'list' },
+    { path: 'right_title', label: 'Right title', kind: 'text' },
+    { path: 'right_points', label: 'Right points', kind: 'list' },
+  ],
+  concept_map: [
+    { path: 'root', label: 'Root', kind: 'text' },
+    { path: 'branches', label: 'Branches', kind: 'branches' },
+  ],
+  process_flow: [
+    { path: 'steps', label: 'Steps', kind: 'list' },
+  ],
+  quiz: [
+    { path: 'question', label: 'Question', kind: 'multiline' },
+    { path: 'options', label: 'Options', kind: 'list' },
+    { path: 'correct_index', label: 'Correct option index (0-based)', kind: 'number' },
+  ],
+  recap: [
+    { path: 'points', label: 'Points', kind: 'list' },
+  ],
+  summary: [
+    { path: 'points', label: 'Points', kind: 'list' },
+  ],
+  code: [
+    { path: 'code', label: 'Code', kind: 'multiline' },
+    { path: 'language', label: 'Language', kind: 'text' },
+  ],
+  card: [
+    { path: 'label', label: 'Label', kind: 'text' },
+    { path: 'value', label: 'Value', kind: 'text' },
+  ],
+  concept: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'label', label: 'Label', kind: 'text' },
+    { path: 'value', label: 'Value', kind: 'text' },
+    { path: 'caption', label: 'Caption', kind: 'text' },
+  ],
+  cards: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'cards', label: 'Cards', kind: 'cards' },
+  ],
+  diagram_cards: [
+    { path: 'root', label: 'Root', kind: 'text' },
+    { path: 'cards', label: 'Cards', kind: 'cards' },
+    { path: 'caption', label: 'Caption', kind: 'text' },
+  ],
+  waveform_cards: [
+    { path: 'label', label: 'Label', kind: 'text' },
+    { path: 'flat', label: 'Flat line (DC-style)', kind: 'bool' },
+    { path: 'points', label: 'Points', kind: 'list' },
+    { path: 'cards', label: 'Cards', kind: 'cards' },
+    { path: 'caption', label: 'Caption', kind: 'text' },
+  ],
+  chart: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'chart_labels', label: 'Chart labels', kind: 'list' },
+    { path: 'chart_values', label: 'Chart values', kind: 'numberList' },
+    { path: 'caption', label: 'Caption', kind: 'text' },
+  ],
+  source_image: [
+    { path: 'image_path', label: 'Image path', kind: 'readOnly' },
+    { path: 'title', label: 'Title', kind: 'readOnly' },
+    { path: 'caption', label: 'Caption', kind: 'readOnly' },
+  ],
+  concept_code: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'explanation', label: 'Explanation', kind: 'multiline' },
+    { path: 'points', label: 'Points', kind: 'list' },
+    { path: 'code', label: 'Code', kind: 'multiline' },
+    { path: 'language', label: 'Language', kind: 'text' },
+  ],
+  illustration: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'image_prompt', label: 'Image prompt', kind: 'multiline' },
+    { path: 'points', label: 'Points', kind: 'list' },
+    { path: 'caption', label: 'Caption', kind: 'text' },
+  ],
+  table: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'table_rows', label: 'Table rows', kind: 'table_rows' },
+  ],
+  execution_trace: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'trace_steps', label: 'Trace steps', kind: 'list' },
+  ],
+  diagram_3d: [
+    { path: 'title', label: 'Title', kind: 'text' },
+    { path: 'shape3d', label: 'Shape (cube, coil, sphere, vector_pair)', kind: 'text' },
+    { path: 'caption', label: 'Caption', kind: 'text' },
+  ],
+};
+
+const SCENE_FIELDS = [
+  { path: 'topic', label: 'Topic', kind: 'text', scope: 'scene' },
+  { path: 'narration', label: 'Narration', kind: 'multiline', scope: 'scene' },
+];
+
+function normalizeVisualType(type) {
+  const t = String(type || '').toLowerCase().trim();
+  if (t === 'compare' || t === 'vs') return 'comparison';
+  if (t === 'flow') return 'energy_flow';
+  return t || 'title';
+}
+
 function fieldsForVisualType(type) {
-  switch (String(type || '').toLowerCase()) {
-    case 'compare':
-    case 'comparison':
-    case 'vs':
-      return [
-        { path: 'narration', label: 'Narration', multiline: true, scope: 'scene' },
-        { path: 'left_title', label: 'Left title', scope: 'visual' },
-        { path: 'right_title', label: 'Right title', scope: 'visual' },
-        { path: 'key_idea', label: 'Key idea', scope: 'visual' },
-        { path: 'left_points', label: 'Left points', multiline: true, list: true, scope: 'visual' },
-        { path: 'right_points', label: 'Right points', multiline: true, list: true, scope: 'visual' },
-      ];
-    case 'energy_flow':
-    case 'flow':
-      return [
-        { path: 'narration', label: 'Narration', multiline: true, scope: 'scene' },
-        { path: 'input_label', label: 'Input label', scope: 'visual' },
-        { path: 'output_label', label: 'Output label', scope: 'visual' },
-        { path: 'key_idea', label: 'Key idea', scope: 'visual' },
-      ];
-    case 'illustration':
-      return [
-        { path: 'topic', label: 'Topic', scope: 'scene' },
-        { path: 'narration', label: 'Narration', multiline: true, scope: 'scene' },
-        { path: 'title', label: 'Title', scope: 'visual' },
-        { path: 'points', label: 'Points', multiline: true, list: true, scope: 'visual' },
-      ];
-    case 'title':
-    default:
-      return [
-        { path: 'topic', label: 'Topic', scope: 'scene' },
-        { path: 'narration', label: 'Narration', multiline: true, scope: 'scene' },
-        { path: 'title', label: 'Title', scope: 'visual' },
-        { path: 'subtitle', label: 'Subtitle', scope: 'visual' },
-        { path: 'tags', label: 'Tags', multiline: true, list: true, scope: 'visual' },
-      ];
+  const normalized = normalizeVisualType(type);
+  const visualFields = (VISUAL_FIELDS_BY_TYPE[normalized] || VISUAL_FIELDS_BY_TYPE.title)
+    .map((f) => ({ ...f, scope: 'visual', kind: f.kind || 'text' }));
+
+  const out = [...SCENE_FIELDS];
+  out.push(...visualFields);
+
+  if (KEY_IDEA_TYPES.has(normalized)) {
+    out.push({ path: 'key_idea', label: 'Key idea', kind: 'text', scope: 'visual' });
   }
+  return out;
 }
 
 function listToText(value) {
@@ -60,6 +178,22 @@ function textToList(value) {
     .filter(Boolean);
 }
 
+function numberListToText(value) {
+  if (Array.isArray(value)) return value.map((v) => String(v ?? '')).join('\n');
+  return value == null ? '' : String(value);
+}
+
+function textToNumberList(value) {
+  return String(value || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const n = Number(line);
+      return Number.isFinite(n) ? n : line;
+    });
+}
+
 function canPersistPlan(job) {
   const status = job?.status;
   return (
@@ -71,6 +205,13 @@ function canPersistPlan(job) {
 function isNotFoundOrNotAllowed(err) {
   const status = err?.response?.status;
   return status === 404 || status === 405 || status === 501;
+}
+
+function ensureVisual(scene) {
+  if (!scene.visual || typeof scene.visual !== 'object') {
+    scene.visual = {};
+  }
+  return scene.visual;
 }
 
 /**
@@ -98,7 +239,7 @@ export default function EduVideoPlanEditor({
     [plan],
   );
   const scene = scenes[sceneIndex] || null;
-  const visualType = scene?.visual?.type || 'title';
+  const visualType = normalizeVisualType(scene?.visual?.type);
   const fields = useMemo(() => fieldsForVisualType(visualType), [visualType]);
   const legacyEditable = canPersistPlan(job);
 
@@ -115,10 +256,10 @@ export default function EduVideoPlanEditor({
 
     const applyPlan = (data) => {
       if (cancelled) return;
+      // Deep clone once — later writes only overwrite fields that have inputs.
       setPlan(data && typeof data === 'object' ? structuredClone(data) : null);
     };
 
-    // Prefer HOD-edited plan from the Next bridge queue when present.
     if (job?.pending_bridge_plan && typeof job.pending_bridge_plan === 'object') {
       applyPlan(job.pending_bridge_plan);
       setLoading(false);
@@ -137,29 +278,89 @@ export default function EduVideoPlanEditor({
     return () => { cancelled = true; };
   }, [open, jobId, job?.pending_bridge_plan]);
 
-  const readField = (field) => {
-    if (!scene) return '';
-    if (field.scope === 'scene') {
-      const raw = scene[field.path];
-      return field.list ? listToText(raw) : (raw ?? '');
-    }
-    const visual = scene.visual || {};
-    const raw = visual[field.path];
-    return field.list ? listToText(raw) : (raw ?? '');
-  };
-
-  const writeField = (field, nextValue) => {
+  const updateScene = (mutator) => {
     setPlan((prev) => {
       if (!prev?.scenes?.[sceneIndex]) return prev;
       const next = structuredClone(prev);
-      const targetScene = next.scenes[sceneIndex];
-      if (field.scope === 'scene') {
-        targetScene[field.path] = field.list ? textToList(nextValue) : nextValue;
-      } else {
-        targetScene.visual = targetScene.visual || {};
-        targetScene.visual[field.path] = field.list ? textToList(nextValue) : nextValue;
-      }
+      mutator(next.scenes[sceneIndex]);
       return next;
+    });
+  };
+
+  const readSimple = (field) => {
+    if (!scene) return '';
+    const raw = field.scope === 'scene'
+      ? scene[field.path]
+      : (scene.visual || {})[field.path];
+
+    if (field.kind === 'list') return listToText(raw);
+    if (field.kind === 'numberList') return numberListToText(raw);
+    if (field.kind === 'bool') {
+      if (raw === true) return 'true';
+      if (raw === false) return 'false';
+      return '';
+    }
+    if (field.kind === 'number') {
+      return raw == null || raw === '' ? '' : String(raw);
+    }
+    return raw == null ? '' : String(raw);
+  };
+
+  const writeSimple = (field, nextValue) => {
+    updateScene((targetScene) => {
+      let parsed = nextValue;
+      if (field.kind === 'list') parsed = textToList(nextValue);
+      else if (field.kind === 'numberList') parsed = textToNumberList(nextValue);
+      else if (field.kind === 'bool') {
+        const v = String(nextValue || '').trim().toLowerCase();
+        if (v === 'true' || v === 'yes' || v === '1') parsed = true;
+        else if (v === 'false' || v === 'no' || v === '0') parsed = false;
+        else parsed = null;
+      } else if (field.kind === 'number') {
+        const n = Number(String(nextValue).trim());
+        parsed = Number.isFinite(n) ? n : null;
+      }
+
+      if (field.scope === 'scene') {
+        targetScene[field.path] = parsed;
+      } else {
+        ensureVisual(targetScene)[field.path] = parsed;
+      }
+    });
+  };
+
+  const writeCardField = (cardIndex, key, value) => {
+    updateScene((targetScene) => {
+      const visual = ensureVisual(targetScene);
+      const cards = Array.isArray(visual.cards) ? [...visual.cards] : [];
+      const card = { ...(cards[cardIndex] || { title: '', points: [] }) };
+      if (key === 'points') card.points = textToList(value);
+      else card[key] = value;
+      cards[cardIndex] = card;
+      visual.cards = cards;
+    });
+  };
+
+  const writeTableRowField = (rowIndex, key, value) => {
+    updateScene((targetScene) => {
+      const visual = ensureVisual(targetScene);
+      const rows = Array.isArray(visual.table_rows) ? [...visual.table_rows] : [];
+      const row = { ...(rows[rowIndex] || { label: '', value: '' }) };
+      row[key] = value;
+      rows[rowIndex] = row;
+      visual.table_rows = rows;
+    });
+  };
+
+  const writeBranchField = (branchIndex, key, value) => {
+    updateScene((targetScene) => {
+      const visual = ensureVisual(targetScene);
+      const branches = Array.isArray(visual.branches) ? [...visual.branches] : [];
+      const branch = { ...(branches[branchIndex] || { label: '', children: [] }) };
+      if (key === 'children') branch.children = textToList(value);
+      else branch[key] = value;
+      branches[branchIndex] = branch;
+      visual.branches = branches;
     });
   };
 
@@ -168,9 +369,6 @@ export default function EduVideoPlanEditor({
     setSaving(true);
     try {
       if (isReviewer) {
-        // FastAPI request-changes when present; otherwise Next.js bridge
-        // (eduVideoApi.requestChanges falls back automatically). Do not
-        // PUT /plan on DONE — backend rejects it and the toast looked like failure.
         await eduVideoApi.requestChanges(jobId, {
           plan,
           meta: {
@@ -183,7 +381,6 @@ export default function EduVideoPlanEditor({
         });
         toast.success('Edits sent to your College Admin. They can regenerate the video from these changes.');
       } else {
-        // Prefer regenerate endpoint; fall back to legacy putPlan + submit (pre-render only).
         try {
           await eduVideoApi.regenerate(jobId, { plan });
         } catch (err) {
@@ -220,6 +417,193 @@ export default function EduVideoPlanEditor({
     } finally {
       setSaving(false);
     }
+  };
+
+  const renderField = (field) => {
+    const key = `${sceneIndex}-${field.scope}-${field.path}`;
+
+    if (field.kind === 'cards') {
+      const cards = Array.isArray(scene?.visual?.cards) ? scene.visual.cards : [];
+      if (!cards.length) {
+        return (
+          <div key={key} className="notice info" style={{ marginBottom: 12 }}>
+            <div>
+              <b>No cards on this slide</b>
+              This {visualType} scene has an empty cards list in the plan.
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div key={key} className="edu-plan-groups">
+          <div className="edu-plan-groups-h">{field.label}</div>
+          {cards.map((card, i) => (
+            <div key={`${key}-card-${i}`} className="edu-plan-group">
+              <div className="edu-plan-group-h">Card {i + 1}</div>
+              <QuirriControlledField
+                label="Icon"
+                fieldType="lessonText"
+                name={`${key}-card-${i}-icon`}
+                value={card?.icon ?? ''}
+                onChange={(v) => writeCardField(i, 'icon', v)}
+                full
+                disabled={saving}
+              />
+              <QuirriControlledField
+                label="Title"
+                fieldType="lessonText"
+                name={`${key}-card-${i}-title`}
+                value={card?.title ?? ''}
+                onChange={(v) => writeCardField(i, 'title', v)}
+                full
+                disabled={saving}
+              />
+              <QuirriControlledField
+                label="Points"
+                fieldType="lessonText"
+                name={`${key}-card-${i}-points`}
+                value={listToText(card?.points)}
+                onChange={(v) => writeCardField(i, 'points', v)}
+                multiline
+                rows={3}
+                full
+                disabled={saving}
+              />
+              {card?.code != null && card.code !== '' ? (
+                <QuirriControlledField
+                  label="Code chip"
+                  fieldType="lessonText"
+                  name={`${key}-card-${i}-code`}
+                  value={card.code ?? ''}
+                  onChange={(v) => writeCardField(i, 'code', v)}
+                  multiline
+                  rows={2}
+                  full
+                  disabled={saving}
+                />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (field.kind === 'table_rows') {
+      const rows = Array.isArray(scene?.visual?.table_rows) ? scene.visual.table_rows : [];
+      if (!rows.length) {
+        return (
+          <div key={key} className="notice info" style={{ marginBottom: 12 }}>
+            <div>
+              <b>No table rows on this slide</b>
+              This table scene has an empty table_rows list in the plan.
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div key={key} className="edu-plan-groups">
+          <div className="edu-plan-groups-h">{field.label}</div>
+          {rows.map((row, i) => (
+            <div key={`${key}-row-${i}`} className="edu-plan-group">
+              <div className="edu-plan-group-h">Row {i + 1}</div>
+              <QuirriControlledField
+                label="Label"
+                fieldType="lessonText"
+                name={`${key}-row-${i}-label`}
+                value={row?.label ?? ''}
+                onChange={(v) => writeTableRowField(i, 'label', v)}
+                full
+                disabled={saving}
+              />
+              <QuirriControlledField
+                label="Value"
+                fieldType="lessonText"
+                name={`${key}-row-${i}-value`}
+                value={row?.value ?? ''}
+                onChange={(v) => writeTableRowField(i, 'value', v)}
+                full
+                disabled={saving}
+              />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (field.kind === 'branches') {
+      const branches = Array.isArray(scene?.visual?.branches) ? scene.visual.branches : [];
+      if (!branches.length) {
+        return (
+          <div key={key} className="notice info" style={{ marginBottom: 12 }}>
+            <div>
+              <b>No branches on this slide</b>
+              This concept map has an empty branches list in the plan.
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div key={key} className="edu-plan-groups">
+          <div className="edu-plan-groups-h">{field.label}</div>
+          {branches.map((branch, i) => (
+            <div key={`${key}-branch-${i}`} className="edu-plan-group">
+              <div className="edu-plan-group-h">Branch {i + 1}</div>
+              <QuirriControlledField
+                label="Label"
+                fieldType="lessonText"
+                name={`${key}-branch-${i}-label`}
+                value={branch?.label ?? ''}
+                onChange={(v) => writeBranchField(i, 'label', v)}
+                full
+                disabled={saving}
+              />
+              <QuirriControlledField
+                label="Children"
+                fieldType="lessonText"
+                name={`${key}-branch-${i}-children`}
+                value={listToText(branch?.children)}
+                onChange={(v) => writeBranchField(i, 'children', v)}
+                multiline
+                rows={3}
+                full
+                disabled={saving}
+              />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    const multiline = field.kind === 'multiline'
+      || field.kind === 'list'
+      || field.kind === 'numberList';
+    const rows = field.kind === 'list' || field.kind === 'numberList'
+      ? 4
+      : (field.kind === 'multiline' ? 5 : 1);
+
+    return (
+      <QuirriControlledField
+        key={key}
+        label={field.label}
+        fieldType="lessonText"
+        name={`scene-${sceneIndex}-${field.path}`}
+        value={readSimple(field)}
+        onChange={(v) => writeSimple(field, v)}
+        multiline={multiline}
+        rows={rows}
+        full
+        disabled={saving || field.kind === 'readOnly'}
+        hint={
+          field.kind === 'list' || field.kind === 'numberList'
+            ? 'One item per line'
+            : field.kind === 'bool'
+              ? 'Use true or false'
+              : field.kind === 'readOnly'
+                ? 'Set by the backend — not editable here'
+                : undefined
+        }
+      />
+    );
   };
 
   return (
@@ -260,17 +644,18 @@ export default function EduVideoPlanEditor({
         <>
           <div className="notice info" style={{ marginBottom: 16 }}>
             <div>
-                  {isReviewer ? (
+              {isReviewer ? (
                 <>
                   <b>Edit slides, then send to College Admin</b>
                   Change the fields you need, then use <b>Save &amp; send to admin</b>.
-                  Only the College Admin regenerates the video — you do not re-render here.
+                  Only fields for this slide’s visual type are shown — unused slots stay out of the form.
                   Your edits are queued for College Admin even when the video status is already Done.
                 </>
               ) : (
                 <>
                   <b>Edit slides, then regenerate</b>
                   Apply HOD/Faculty feedback (or your own fixes), then <b>Save &amp; regenerate</b>.
+                  Only fields for this slide’s visual type are shown.
                   {!legacyEditable ? (
                     <>
                       {' '}
@@ -291,7 +676,7 @@ export default function EduVideoPlanEditor({
               </div>
               {scenes.map((s, idx) => {
                 const active = idx === sceneIndex;
-                const typeLabel = s?.visual?.type || 'slide';
+                const typeLabel = normalizeVisualType(s?.visual?.type);
                 return (
                   <button
                     key={s.scene_id ?? idx}
@@ -312,7 +697,11 @@ export default function EduVideoPlanEditor({
                 <>
                   <div className="edu-plan-detail-h">
                     <span>{scene.topic || scene.visual?.title || `Slide ${sceneIndex + 1}`}</span>
-                    <span className="sub">{sceneIndex + 1} / {scenes.length}</span>
+                    <span className="sub">
+                      {visualType}
+                      {' · '}
+                      {sceneIndex + 1} / {scenes.length}
+                    </span>
                   </div>
 
                   <div className="edu-plan-preview">
@@ -324,20 +713,7 @@ export default function EduVideoPlanEditor({
                     />
                   </div>
 
-                  {fields.map((field) => (
-                    <QuirriControlledField
-                      key={`${sceneIndex}-${field.scope}-${field.path}`}
-                      label={field.label}
-                      fieldType="lessonText"
-                      name={`scene-${sceneIndex}-${field.path}`}
-                      value={readField(field)}
-                      onChange={(v) => writeField(field, v)}
-                      multiline={Boolean(field.multiline || field.list)}
-                      rows={field.list ? 4 : (field.multiline ? 5 : 1)}
-                      full
-                      disabled={saving}
-                    />
-                  ))}
+                  {fields.map((field) => renderField(field))}
                 </>
               ) : (
                 <div className="notice info">

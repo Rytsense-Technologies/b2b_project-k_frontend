@@ -999,6 +999,33 @@ td .edu-video-error{
   max-height:220px;
   object-fit:contain;
 }
+.edu-plan-groups{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-bottom:12px;
+}
+.edu-plan-groups-h{
+  font-size:13px;
+  font-weight:700;
+  color:var(--ink);
+  text-align:left;
+}
+.edu-plan-group{
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:12px;
+  background:var(--mist, #F4F6F7);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.edu-plan-group-h{
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted-2);
+  text-align:left;
+}
 .num{font-variant-numeric:tabular-nums}
 
 .actions{display:flex;gap:14px;align-items:center}
