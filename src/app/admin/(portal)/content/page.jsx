@@ -24,7 +24,8 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { FIELD_RULES } from '@/lib/validation';
 
-const POLL_INTERVAL_MS = 4000;
+const POLL_ACTIVE_MS = 4000;
+const POLL_IDLE_MS = 20000;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 function fileExtension(name = '') {
@@ -45,6 +46,11 @@ function validateFile(file) {
 }
 
 const canPreview = (job) => job?.status === JOB_STATUS.DONE && Boolean(job?.output_path);
+
+function isJobGenerating(job) {
+  const s = job?.status;
+  return Boolean(s) && s !== JOB_STATUS.DONE && s !== JOB_STATUS.FAILED;
+}
 
 /**
  * Generation (`status`) now runs fully automatically end to end (see
@@ -162,30 +168,61 @@ export default function ContentPage() {
     [jobs],
   );
 
-  // Simple periodic refresh - depends only on reloadJobs, which stays
-  // referentially stable (the loader above has no dependencies), so this
-  // sets up the interval exactly once and genuinely waits
-  // POLL_INTERVAL_MS between ticks (an earlier version depended on `jobs`
-  // itself, which gets a new array reference on every fetch, so the effect
-  // re-armed on every single poll instead of waiting - that showed up as
-  // the table "blinking").
+  // Silent poll — do not set loading (that re-rendered the whole page every 4s).
   const jobsPollInFlight = useRef(false);
+  const reloadJobsRef = useRef(reloadJobs);
+  const jobsRef = useRef(jobs);
+  reloadJobsRef.current = reloadJobs;
+  jobsRef.current = jobs;
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (jobsPollInFlight.current) return;
+    let cancelled = false;
+    let timer = null;
+
+    const schedule = (ms) => {
+      clearTimeout(timer);
+      timer = setTimeout(tick, ms);
+    };
+
+    const tick = () => {
+      if (cancelled) return;
+      if (typeof document !== 'undefined' && document.hidden) {
+        schedule(POLL_IDLE_MS);
+        return;
+      }
+      if (jobsPollInFlight.current) {
+        schedule(POLL_ACTIVE_MS);
+        return;
+      }
       jobsPollInFlight.current = true;
-      reloadJobs()
+      reloadJobsRef.current({ silent: true })
         .catch(() => {})
         .finally(() => {
           jobsPollInFlight.current = false;
+          if (!cancelled) {
+            const next = jobsRef.current.some(isJobGenerating) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
+            schedule(next);
+          }
         });
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
+    };
+
+    const initial = jobsRef.current.some(isJobGenerating) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
+    schedule(initial);
+    const onVis = () => {
+      if (!document.hidden && !jobsPollInFlight.current) schedule(250);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [reloadJobs]);
 
-  const reloadPending = async () => {
-    setPendingLoading(true);
-    setPendingError('');
+  const pendingPollInFlight = useRef(false);
+  const reloadPending = async ({ silent = false } = {}) => {
+    if (!silent) setPendingLoading(true);
+    if (!silent) setPendingError('');
     try {
       let bridgeItems = [];
       try {
@@ -194,21 +231,61 @@ export default function ContentPage() {
       } catch {
         bridgeItems = [];
       }
-      setPendingItems(bridgeItems);
+      setPendingItems((prev) => {
+        try {
+          if (JSON.stringify(prev) === JSON.stringify(bridgeItems)) return prev;
+        } catch {
+          /* fall through */
+        }
+        return bridgeItems;
+      });
+      if (!silent) setPendingError('');
     } catch (err) {
-      setPendingError(apiErrorMessage(err, 'Could not load HOD feedback.'));
-      setPendingItems([]);
+      if (!silent) {
+        setPendingError(apiErrorMessage(err, 'Could not load HOD feedback.'));
+        setPendingItems([]);
+      }
     } finally {
-      setPendingLoading(false);
+      if (!silent) setPendingLoading(false);
     }
   };
+  const reloadPendingRef = useRef(reloadPending);
+  reloadPendingRef.current = reloadPending;
 
   useEffect(() => {
-    reloadPending().catch(() => {});
-    const timer = setInterval(() => {
-      reloadPending().catch(() => {});
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
+    let cancelled = false;
+    let timer = null;
+
+    const schedule = (ms) => {
+      clearTimeout(timer);
+      timer = setTimeout(tick, ms);
+    };
+
+    const tick = () => {
+      if (cancelled) return;
+      if (typeof document !== 'undefined' && document.hidden) {
+        schedule(POLL_IDLE_MS);
+        return;
+      }
+      if (pendingPollInFlight.current) {
+        schedule(POLL_IDLE_MS);
+        return;
+      }
+      pendingPollInFlight.current = true;
+      reloadPendingRef.current({ silent: true })
+        .catch(() => {})
+        .finally(() => {
+          pendingPollInFlight.current = false;
+          if (!cancelled) schedule(POLL_IDLE_MS);
+        });
+    };
+
+    reloadPendingRef.current({ silent: false }).catch(() => {});
+    schedule(POLL_IDLE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   const hodFeedbackItems = useMemo(() => {

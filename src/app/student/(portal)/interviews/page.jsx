@@ -1,13 +1,23 @@
 'use client';
 
-import AdminEmptyModule from '@/components/admin/AdminEmptyModule';
+import { Suspense } from 'react';
+import StudentInterviewsPage from './InterviewsClient';
 
-export default function StudentInterviewsPage() {
+export default function StudentInterviewsRoute() {
   return (
-    <AdminEmptyModule
-      title="Interviews"
-      description="Mock and full AI interviews assigned by your college."
-      epic="EPIC-18"
-    />
+    <Suspense
+      fallback={(
+        <div className="animate-fade-in">
+          <div className="notice info">
+            <div>
+              <b>Loading interviews</b>
+              Preparing your interview workspace…
+            </div>
+          </div>
+        </div>
+      )}
+    >
+      <StudentInterviewsPage />
+    </Suspense>
   );
 }

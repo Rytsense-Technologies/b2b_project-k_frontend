@@ -14,8 +14,13 @@ export const PAGE_META = {
   },
   '/student/interviews': {
     title: 'Interviews',
-    subtitle: 'Mock and full AI interviews assigned by your college.',
+    subtitle: 'Practice with an AI interviewer using your semester allocation.',
   },
+  '/student/interviews/live': {
+    title: 'Live interview',
+    subtitle: 'Stay present — speak clearly and take a breath between answers.',
+  },
+
   '/student/progress': {
     title: 'My Progress',
     subtitle: 'Chapter completion, assessments and interview readiness.',

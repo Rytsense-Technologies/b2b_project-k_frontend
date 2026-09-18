@@ -1494,3 +1494,135 @@ table td.num,table th.num{
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms !important;transition-duration:.01ms !important}
 }
+
+/* ---------- Student interviews (LiveKit) ---------- */
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.linkish{
+  background:none;border:none;padding:0;cursor:pointer;
+  color:var(--teal);font-weight:600;font-size:12px;font-family:inherit;
+}
+.linkish:hover{text-decoration:underline}
+.linkish:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+
+.si-page .si-card-title{font-size:14.5px;font-weight:700;margin:0 0 4px;text-align:left}
+.si-page .si-card-sub{color:var(--muted);font-size:12px;margin:0 0 16px;text-align:left;line-height:1.45}
+
+.si-mode-info{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;margin-bottom:18px;
+}
+.si-info-card{padding:18px 20px}
+.si-info-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.si-info-title{font-weight:700;font-size:13.5px;text-align:left}
+.si-info-body{margin:0;font-size:12px;color:var(--muted);line-height:1.45;text-align:left}
+.si-badge{
+  font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:999px;flex:none;
+}
+.si-badge.teal{background:var(--teal-50);color:var(--teal-700)}
+.si-badge.muted{background:#EEF0F0;color:var(--ink-2)}
+.si-kpi-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px}
+.si-kpi-num{font-size:22px;font-weight:700;line-height:1.1}
+.si-kpi-label{font-size:11px;color:var(--muted);margin-top:2px}
+
+.si-resume-list{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}
+.si-resume-item{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;
+}
+.si-resume-item.is-current{border-color:var(--teal-200);background:var(--teal-50)}
+.si-resume-name{font-weight:600;font-size:13px;text-align:left}
+.si-resume-meta{font-size:11.5px;color:var(--muted);margin-top:2px;text-align:left}
+.si-resume-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.si-mode-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;margin-bottom:18px;
+}
+.si-mode-tile{
+  text-align:left;cursor:pointer;padding:16px;border-radius:12px;
+  border:1.5px solid var(--line);background:#fff;font-family:inherit;
+  transition:border-color .15s ease, box-shadow .15s ease;
+  min-height:44px;
+}
+.si-mode-tile:hover{border-color:var(--teal-200)}
+.si-mode-tile.is-selected{
+  border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,92,107,.12);
+  background:#f7fbfc;
+}
+.si-mode-tile:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.si-mode-tile-title{font-weight:700;font-size:13.5px;margin-bottom:4px}
+.si-mode-tile-desc{font-size:11.5px;color:var(--muted);margin-bottom:8px;line-height:1.5}
+.si-mode-tile-dur{font-size:11px;color:var(--teal);font-weight:700}
+.si-start-btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:12px 24px;border-radius:999px}
+.si-score-pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;padding:3px 11px;border-radius:999px;
+}
+
+/* Report modal */
+.si-report{
+  display:grid;grid-template-columns:minmax(0,1.2fr) minmax(240px,.85fr);
+  gap:20px;align-items:start;
+}
+.si-report-section-label{
+  font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted-2);font-weight:700;margin-bottom:10px;text-align:left;
+}
+.si-turn-list{list-style:none;margin:0;padding:0;display:grid;gap:12px;max-height:52vh;overflow:auto}
+.si-turn{
+  border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;background:#fff;
+}
+.si-turn-q{font-weight:600;font-size:13px;margin-bottom:6px;text-align:left}
+.si-turn-fb{margin:0 0 10px;font-size:12.5px;color:var(--ink-2);line-height:1.5;text-align:left}
+.si-turn-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.si-turn-tag{font-size:11px;color:var(--muted);font-weight:600}
+.si-overall{text-align:center;margin-bottom:18px}
+.si-overall-ring{
+  width:96px;height:96px;border-radius:50%;display:grid;place-items:center;margin:0 auto 10px;
+}
+.si-overall-inner{
+  width:76px;height:76px;border-radius:50%;background:#fff;display:grid;place-items:center;
+}
+.si-overall-num{font-size:24px;font-weight:700}
+.si-overall-label{font-size:12px;font-weight:600;color:var(--muted)}
+.si-overall-summary{font-size:12px;color:var(--ink-2);line-height:1.45;margin:10px 0 0;text-align:left}
+.si-dims{margin-bottom:16px}
+.si-dim{margin-bottom:10px}
+.si-dim-row{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;margin-bottom:5px}
+.si-dim-weak{color:var(--amber-700)}
+.si-dim-track{height:8px;background:#EAEFF1;border-radius:999px;overflow:hidden}
+.si-dim-track i{display:block;height:100%;border-radius:999px}
+.si-plan ol{margin:0;padding-left:18px;font-size:12.5px;line-height:1.5;color:var(--ink-2);text-align:left}
+.si-plan li{margin-bottom:8px}
+
+/* Live room */
+.si-live-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.si-live-grid{
+  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);
+  gap:16px;align-items:stretch;
+}
+.si-live-stage{
+  position:relative;min-height:320px;padding:0;overflow:hidden;
+  background:linear-gradient(160deg,#06252B,#0E5C6B 55%,#4D8691);
+}
+.si-live-video{width:100%;height:100%;min-height:320px;object-fit:cover;background:transparent}
+.si-live-status{
+  position:absolute;left:16px;bottom:16px;
+  background:rgba(255,255,255,.92);color:var(--ink);
+  font-size:12px;font-weight:600;padding:8px 12px;border-radius:999px;
+}
+.si-live-transcript{padding-bottom:8px}
+.si-transcript-list{
+  list-style:none;margin:0;padding:8px 16px 16px;display:grid;gap:10px;
+  max-height:420px;overflow:auto;
+}
+.si-transcript-line{display:grid;gap:2px;text-align:left;font-size:13px;line-height:1.45}
+.si-transcript-who{font-size:11px;font-weight:700;color:var(--teal)}
+.si-transcript-line.is-you .si-transcript-who{color:var(--amber-700)}
+
+@media (max-width:980px){
+  .si-report,.si-live-grid{grid-template-columns:1fr}
+}

@@ -61,11 +61,25 @@ export function asList(data, fallback = []) {
 export function apiErrorMessage(err, fallback = 'Something went wrong') {
   const detail = err?.response?.data?.detail;
   if (typeof detail === 'string' && detail.trim()) return detail;
+  if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+    if (typeof detail.message === 'string' && detail.message.trim()) return detail.message;
+  }
   if (Array.isArray(detail) && detail.length) {
     return detail
       .map((d) => (typeof d === 'string' ? d : d?.msg || d?.message))
       .filter(Boolean)
       .join('; ') || fallback;
+  }
+  const raw = err?.response?.data;
+  if (typeof raw === 'string' && raw.trim() && raw.trim() !== 'Internal Server Error') {
+    return raw.trim();
+  }
+  // Next.js rewrite to a down FastAPI often returns plain "Internal Server Error"
+  if (err?.response?.status === 500 && (!raw || raw === 'Internal Server Error')) {
+    return 'The API server returned an error. Check that the backend is running on :8000.';
+  }
+  if (err?.code === 'ERR_NETWORK' || err?.message === 'Network Error') {
+    return 'Cannot reach the API. Check that the backend is running on :8000.';
   }
   if (err?.message && err.message !== 'Network Error') return err.message;
   return fallback;
