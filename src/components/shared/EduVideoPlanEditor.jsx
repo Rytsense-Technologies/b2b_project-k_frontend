@@ -8,13 +8,15 @@ import { eduVideoApi, JOB_STATUS } from '@/lib/api/admin/eduVideo';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 
 /**
- * visual.type → editable visual fields (schemas.py Visual docstring).
- * Scene-level topic + narration are always shown separately.
- * key_idea is appended for types in KEY_IDEA_TYPES.
+ * visual.type → editable visual fields.
+ * Source of truth: app/edu_video/schemas.py → Visual docstring.
+ * Binding fix: docs/VIDEO_EDITING_INPUT_BINDING_FIX.md (and Downloads handoff).
  *
- * Field shapes:
- * - text | multiline | list | numberList | number | bool | readOnly
- * - cards | table_rows | branches (object lists)
+ * Scene-level topic + narration always shown via SCENE_META_FIELDS.
+ * key_idea appended for KEY_IDEA_TYPES only.
+ *
+ * Nested object lists (cards / branches / table_rows) are editable here as a
+ * follow-up to §7 of the binding handoff — not force-fit into plain text lists.
  */
 const KEY_IDEA_TYPES = new Set([
   'concept',
@@ -63,7 +65,7 @@ const VISUAL_FIELDS_BY_TYPE = {
   quiz: [
     { path: 'question', label: 'Question', kind: 'multiline' },
     { path: 'options', label: 'Options', kind: 'list' },
-    { path: 'correct_index', label: 'Correct option index (0-based)', kind: 'number' },
+    { path: 'correct_index', label: 'Correct option index (0-based)', kind: 'numeric' },
   ],
   recap: [
     { path: 'points', label: 'Points', kind: 'list' },
@@ -104,7 +106,7 @@ const VISUAL_FIELDS_BY_TYPE = {
   chart: [
     { path: 'title', label: 'Title', kind: 'text' },
     { path: 'chart_labels', label: 'Chart labels', kind: 'list' },
-    { path: 'chart_values', label: 'Chart values', kind: 'numberList' },
+    { path: 'chart_values', label: 'Chart values', kind: 'numericList' },
     { path: 'caption', label: 'Caption', kind: 'text' },
   ],
   source_image: [
@@ -119,11 +121,10 @@ const VISUAL_FIELDS_BY_TYPE = {
     { path: 'code', label: 'Code', kind: 'multiline' },
     { path: 'language', label: 'Language', kind: 'text' },
   ],
+  // image_prompt / image_path are pipeline-owned — not exposed (binding handoff §6).
   illustration: [
     { path: 'title', label: 'Title', kind: 'text' },
-    { path: 'image_prompt', label: 'Image prompt', kind: 'multiline' },
     { path: 'points', label: 'Points', kind: 'list' },
-    { path: 'caption', label: 'Caption', kind: 'text' },
   ],
   table: [
     { path: 'title', label: 'Title', kind: 'text' },
@@ -140,25 +141,18 @@ const VISUAL_FIELDS_BY_TYPE = {
   ],
 };
 
-const SCENE_FIELDS = [
+const SCENE_META_FIELDS = [
   { path: 'topic', label: 'Topic', kind: 'text', scope: 'scene' },
   { path: 'narration', label: 'Narration', kind: 'multiline', scope: 'scene' },
 ];
 
-function normalizeVisualType(type) {
-  const t = String(type || '').toLowerCase().trim();
-  if (t === 'compare' || t === 'vs') return 'comparison';
-  if (t === 'flow') return 'energy_flow';
-  return t || 'title';
-}
-
 function fieldsForVisualType(type) {
-  const normalized = normalizeVisualType(type);
+  // Backend VisualType literal only — no compare/vs/flow aliases (handoff §5.2).
+  const normalized = String(type || '').toLowerCase().trim() || 'title';
   const visualFields = (VISUAL_FIELDS_BY_TYPE[normalized] || VISUAL_FIELDS_BY_TYPE.title)
     .map((f) => ({ ...f, scope: 'visual', kind: f.kind || 'text' }));
 
-  const out = [...SCENE_FIELDS];
-  out.push(...visualFields);
+  const out = [...SCENE_META_FIELDS, ...visualFields];
 
   if (KEY_IDEA_TYPES.has(normalized)) {
     out.push({ path: 'key_idea', label: 'Key idea', kind: 'text', scope: 'visual' });
@@ -239,7 +233,7 @@ export default function EduVideoPlanEditor({
     [plan],
   );
   const scene = scenes[sceneIndex] || null;
-  const visualType = normalizeVisualType(scene?.visual?.type);
+  const visualType = String(scene?.visual?.type || '').toLowerCase().trim() || 'title';
   const fields = useMemo(() => fieldsForVisualType(visualType), [visualType]);
   const legacyEditable = canPersistPlan(job);
 
@@ -294,13 +288,13 @@ export default function EduVideoPlanEditor({
       : (scene.visual || {})[field.path];
 
     if (field.kind === 'list') return listToText(raw);
-    if (field.kind === 'numberList') return numberListToText(raw);
+    if (field.kind === 'numericList') return numberListToText(raw);
     if (field.kind === 'bool') {
       if (raw === true) return 'true';
       if (raw === false) return 'false';
       return '';
     }
-    if (field.kind === 'number') {
+    if (field.kind === 'numeric') {
       return raw == null || raw === '' ? '' : String(raw);
     }
     return raw == null ? '' : String(raw);
@@ -310,13 +304,13 @@ export default function EduVideoPlanEditor({
     updateScene((targetScene) => {
       let parsed = nextValue;
       if (field.kind === 'list') parsed = textToList(nextValue);
-      else if (field.kind === 'numberList') parsed = textToNumberList(nextValue);
+      else if (field.kind === 'numericList') parsed = textToNumberList(nextValue);
       else if (field.kind === 'bool') {
         const v = String(nextValue || '').trim().toLowerCase();
         if (v === 'true' || v === 'yes' || v === '1') parsed = true;
         else if (v === 'false' || v === 'no' || v === '0') parsed = false;
         else parsed = null;
-      } else if (field.kind === 'number') {
+      } else if (field.kind === 'numeric') {
         const n = Number(String(nextValue).trim());
         parsed = Number.isFinite(n) ? n : null;
       }
@@ -576,8 +570,8 @@ export default function EduVideoPlanEditor({
 
     const multiline = field.kind === 'multiline'
       || field.kind === 'list'
-      || field.kind === 'numberList';
-    const rows = field.kind === 'list' || field.kind === 'numberList'
+      || field.kind === 'numericList';
+    const rows = field.kind === 'list' || field.kind === 'numericList'
       ? 4
       : (field.kind === 'multiline' ? 5 : 1);
 
@@ -594,7 +588,7 @@ export default function EduVideoPlanEditor({
         full
         disabled={saving || field.kind === 'readOnly'}
         hint={
-          field.kind === 'list' || field.kind === 'numberList'
+          field.kind === 'list' || field.kind === 'numericList'
             ? 'One item per line'
             : field.kind === 'bool'
               ? 'Use true or false'
@@ -676,7 +670,7 @@ export default function EduVideoPlanEditor({
               </div>
               {scenes.map((s, idx) => {
                 const active = idx === sceneIndex;
-                const typeLabel = normalizeVisualType(s?.visual?.type);
+                const typeLabel = String(s?.visual?.type || 'slide').toLowerCase();
                 return (
                   <button
                     key={s.scene_id ?? idx}

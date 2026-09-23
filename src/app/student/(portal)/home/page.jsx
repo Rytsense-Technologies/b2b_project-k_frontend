@@ -35,7 +35,7 @@ export default function StudentHomePage() {
         <div className="stat">
           <div className="k">Assessments</div>
           <div className="v">—</div>
-          <div className="s">Needs assessment API</div>
+          <div className="s">Open from My Subjects</div>
         </div>
         <div className="stat">
           <div className="k">Interviews left</div>

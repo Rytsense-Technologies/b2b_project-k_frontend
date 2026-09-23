@@ -20,6 +20,10 @@ export const PAGE_META = {
     title: 'Live interview',
     subtitle: 'Stay present — speak clearly and take a breath between answers.',
   },
+  '/student/assessment': {
+    title: 'Assessment',
+    subtitle: 'Chapter quiz — one attempt, scored by Quirri.',
+  },
 
   '/student/progress': {
     title: 'My Progress',

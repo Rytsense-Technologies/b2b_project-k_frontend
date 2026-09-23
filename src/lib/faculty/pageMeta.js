@@ -10,7 +10,7 @@ export const PAGE_META = {
   },
   '/faculty/mcq': {
     title: 'MCQ Review',
-    subtitle: 'Approve generated questions before assessments go live.',
+    subtitle: 'Review generated questions for each chapter quiz.',
   },
   '/faculty/subjects': {
     title: 'Subjects',

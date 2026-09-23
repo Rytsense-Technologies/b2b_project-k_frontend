@@ -20,6 +20,7 @@ import {
   computeJobProgress,
   summarizeEduVideoError,
 } from '@/lib/api/admin/eduVideo';
+import { mcqApi, mcqErrorMessage } from '@/lib/api/mcq';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { FIELD_RULES } from '@/lib/validation';
@@ -116,6 +117,7 @@ export default function ContentPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [removingId, setRemovingId] = useState(null);
   const [sendingId, setSendingId] = useState(null);
+  const [generatingMcqId, setGeneratingMcqId] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
   const [editJob, setEditJob] = useState(null);
   const [pendingItems, setPendingItems] = useState([]);
@@ -358,6 +360,22 @@ export default function ContentPage() {
       toast.error(apiErrorMessage(err, 'Could not send this chapter to your department HOD.'));
     } finally {
       setSendingId(null);
+    }
+  };
+
+  const generateMcq = async (jobId) => {
+    setGeneratingMcqId(jobId);
+    try {
+      const doc = await mcqApi.generate(jobId);
+      toast.success(
+        doc?.generated_count
+          ? `MCQs ready (${doc.generated_count} questions). HOD/Faculty can review them under MCQ Review.`
+          : 'MCQs generated. HOD/Faculty can review them under MCQ Review.',
+      );
+    } catch (err) {
+      toast.error(mcqErrorMessage(err, 'Could not generate MCQs for this chapter.'));
+    } finally {
+      setGeneratingMcqId(null);
     }
   };
 
@@ -701,6 +719,15 @@ export default function ContentPage() {
                           <a
                             role="button"
                             tabIndex={0}
+                            onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
+                            onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
+                            style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
+                          >
+                            {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
+                          </a>
+                          <a
+                            role="button"
+                            tabIndex={0}
                             onClick={() => sendingId !== job.job_id && sendToHod(job.job_id)}
                             onKeyDown={(e) => e.key === 'Enter' && sendToHod(job.job_id)}
                             style={{ opacity: sendingId === job.job_id ? 0.5 : 1 }}
@@ -718,19 +745,39 @@ export default function ContentPage() {
                           >
                             Edit
                           </a>
+                          <a
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
+                            onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
+                            style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
+                          >
+                            {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
+                          </a>
                           <span className="sub">Awaiting approval</span>
                         </>
                       ) : stage === 'failed' || stage === 'published' ? (
                         <>
                           {previewable ? (
-                            <a
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => setEditJob(job)}
-                              onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                            >
-                              Edit
-                            </a>
+                            <>
+                              <a
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => setEditJob(job)}
+                                onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
+                              >
+                                Edit
+                              </a>
+                              <a
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
+                                onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
+                                style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
+                              >
+                                {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
+                              </a>
+                            </>
                           ) : null}
                           <a
                             role="button"
@@ -743,14 +790,25 @@ export default function ContentPage() {
                           </a>
                         </>
                       ) : previewable ? (
-                        <a
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setEditJob(job)}
-                          onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                        >
-                          Edit
-                        </a>
+                        <>
+                          <a
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setEditJob(job)}
+                            onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
+                          >
+                            Edit
+                          </a>
+                          <a
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
+                            onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
+                            style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
+                          >
+                            {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
+                          </a>
+                        </>
                       ) : (
                         <span className="sub">Working…</span>
                       )}
