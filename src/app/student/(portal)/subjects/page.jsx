@@ -1,11 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import VideoPreviewModal from '@/components/shared/VideoPreviewModal';
 import { eduVideoApi } from '@/lib/api/admin/eduVideo';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { QuirriBtn } from '@/components/superadmin/quirri-ui';
 
 const SUBJECT_GRADIENTS = [
   'linear-gradient(125deg,#0E5C6B,#4D8691)',
@@ -32,6 +34,7 @@ function subjectLabel(job, fallbackDeptName) {
 }
 
 export default function StudentSubjectsPage() {
+  const router = useRouter();
   const [activeSubjectKey, setActiveSubjectKey] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
   const [subTab, setSubTab] = useState('classroom');
@@ -214,8 +217,9 @@ export default function StudentSubjectsPage() {
               <path d="M12 16v-4M12 8h.01" />
             </svg>
             <div>
-              <b>Quizzes and AI tutor connect when those modules are live</b>
-              Classroom video lectures are available now for published chapters. Assessments and tutor chat stay empty until their APIs ship — nothing is mocked here.
+              <b>Assessments open from each subject</b>
+              Open a subject, then use the Assessment tab or Take assessment on a chapter.
+              The AI tutor stays empty until its API is live — nothing is mocked here.
             </div>
           </div>
         </>
@@ -286,6 +290,17 @@ export default function StudentSubjectsPage() {
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
               Ask your AI Tutor
+            </button>
+            <button
+              type="button"
+              onClick={() => setSubTab('assessment')}
+              style={tabStyle(subTab === 'assessment', '#0E5C6B')}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M9 11l3 3 8-8" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+              Assessment
             </button>
           </div>
 
@@ -458,6 +473,29 @@ export default function StudentSubjectsPage() {
                       Watch lecture
                     </button>
                     {activeJob ? (
+                      <QuirriBtn
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          const qs = new URLSearchParams({
+                            job: activeJob.job_id,
+                            title: activeJob.chapter_title || 'Chapter quiz',
+                          });
+                          router.push(`/student/assessment?${qs.toString()}`);
+                        }}
+                        style={{
+                          borderRadius: 999,
+                          minHeight: 36,
+                          padding: '8px 16px',
+                          background: 'rgba(255,255,255,0.08)',
+                          color: '#fff',
+                          borderColor: 'rgba(255,255,255,0.2)',
+                        }}
+                      >
+                        Take assessment
+                      </QuirriBtn>
+                    ) : null}
+                    {activeJob ? (
                       <a
                         href={eduVideoApi.getDownloadUrl(activeJob.job_id)}
                         target="_blank"
@@ -468,6 +506,57 @@ export default function StudentSubjectsPage() {
                       </a>
                     ) : null}
                   </div>
+                </div>
+              </div>
+            ) : subTab === 'assessment' ? (
+              <div>
+                <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--muted)', textAlign: 'left' }}>
+                  Chapter quizzes use the same published lectures. One attempt per chapter.
+                </p>
+                <div className="card" style={{ overflow: 'hidden' }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Chapter</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!activeChapters.length ? (
+                        <tr><td colSpan={2}>No published chapters yet.</td></tr>
+                      ) : null}
+                      {activeChapters.map((job) => (
+                        <tr key={job.job_id}>
+                          <td>
+                            <span className="strong">{job.chapter_title || 'Untitled chapter'}</span>
+                          </td>
+                          <td className="actions">
+                            <a
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
+                                const qs = new URLSearchParams({
+                                  job: job.job_id,
+                                  title: job.chapter_title || 'Chapter quiz',
+                                });
+                                router.push(`/student/assessment?${qs.toString()}`);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key !== 'Enter') return;
+                                const qs = new URLSearchParams({
+                                  job: job.job_id,
+                                  title: job.chapter_title || 'Chapter quiz',
+                                });
+                                router.push(`/student/assessment?${qs.toString()}`);
+                              }}
+                            >
+                              Open assessment
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             ) : (

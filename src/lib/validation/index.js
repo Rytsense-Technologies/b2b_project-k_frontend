@@ -78,3 +78,5 @@ export {
   INTERVIEW_DIFFICULTY_VALUES,
   INTERVIEW_EXPERIENCE_VALUES,
 } from './schemas/interview';
+
+export { mcqSubmitSchema } from './schemas/mcq';
