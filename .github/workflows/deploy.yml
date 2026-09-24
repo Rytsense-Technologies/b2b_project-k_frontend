@@ -20,6 +20,7 @@ jobs:
     # Action majors below use the Node 24 Actions runtime (Node 20 removed
     # on runners as of 2026-09-23). Requires self-hosted runner ≥ v2.327.1.
     # App image Node stays on node:22-alpine in the Dockerfile — unrelated.
+    # CI trigger: Node 24 actions
     steps:
       - name: Checkout
         uses: actions/checkout@v5
