@@ -8,6 +8,7 @@ import { QuirriBtn } from '@/components/superadmin/quirri-ui';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { interviewApi } from '@/lib/api/interview';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
+import { Icon, SectionState } from '@/components/student/ui';
 import {
   clearLivekitSessionStorage,
   readLivekitSession,
@@ -65,7 +66,7 @@ export default function StudentInterviewLivePage() {
 
   const goToReport = useCallback((sessionId) => {
     clearLivekitSessionStorage();
-    router.replace(`/student/interviews?session=${encodeURIComponent(sessionId)}`);
+    router.replace(`/student/interviews/report?session=${encodeURIComponent(sessionId)}`);
   }, [router]);
 
   const safeAbort = useCallback(async (sessionId) => {
@@ -255,7 +256,7 @@ export default function StudentInterviewLivePage() {
       }
       endingRef.current = true;
       clearLivekitSessionStorage();
-      router.replace(`/student/interviews?session=${encodeURIComponent(stored.sessionId)}`);
+      router.replace(`/student/interviews/report?session=${encodeURIComponent(stored.sessionId)}`);
     };
 
     room.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
@@ -339,6 +340,21 @@ export default function StudentInterviewLivePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Display-only: elapsed time since the room connected, and transcript autoscroll. */
+  const transcriptRef = useRef(null);
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (connecting || connectError) return undefined;
+    const t0 = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [connecting, connectError]);
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [transcript.length]);
+  const elapsedLabel = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`;
+
   const toggleMic = async () => {
     const room = roomRef.current;
     if (!room) return;
@@ -371,88 +387,119 @@ export default function StudentInterviewLivePage() {
 
   if (connectError) {
     return (
-      <div className="animate-fade-in">
-        <div className="notice err">
-          <div>
-            <b>Could not start the live interview</b>
-            {connectError}
-          </div>
-        </div>
-        <QuirriBtn type="button" variant="primary" onClick={() => router.replace('/student/interviews')}>
-          Back to Interviews
-        </QuirriBtn>
+      <div className="animate-fade-in sp">
+        <SectionState
+          tone="err"
+          title="Could not start the live interview"
+          action={(
+            <button type="button" className="sd-btn sd-btn--amber sd-btn--sm" onClick={() => router.replace('/student/interviews')}>
+              <Icon name="back" size={16} /> Back to Interviews
+            </button>
+          )}
+        >
+          {connectError}
+        </SectionState>
       </div>
     );
   }
 
+  const initials = String(personaName).replace(/^your /i, '').trim().slice(0, 1).toUpperCase() || 'Q';
+  const stateKey = connecting ? 'connecting' : String(agentState).toLowerCase();
+
   return (
-    <div className="animate-fade-in si-live">
-      <div className="section-head">
-        <div>
-          <div className="t">{session?.position || 'Live interview'}</div>
-          <div className="d">
-            {session?.mode === 'full' ? 'Full interview' : 'Mock interview'}
-            {' · '}
-            with {personaName}
+    <div className="animate-fade-in si-live sp iv-live">
+      <section className="iv-live-bar">
+        <div className="iv-live-title">
+          <span className={`iv-live-dot is-${stateKey}`} aria-hidden="true" />
+          <div>
+            <div className="sp-banner-eyebrow">
+              {session?.mode === 'full' ? 'Full interview' : 'Mock interview'} · Live
+            </div>
+            <h2>{session?.position || 'Live interview'}</h2>
           </div>
         </div>
-        <div className="si-live-actions">
-          <QuirriBtn type="button" variant="ghost" onClick={toggleMic} disabled={connecting}>
-            {micOn ? 'Mute mic' : 'Unmute mic'}
-          </QuirriBtn>
-          <QuirriBtn type="button" variant="primary" onClick={onUserEnd} disabled={connecting}>
-            End interview
-          </QuirriBtn>
+        <div className="iv-live-meta">
+          <span className="sp-pill sp-pill--glass"><Icon name="user" size={14} /> with {personaName}</span>
+          <span className="sp-pill sp-pill--glass iv-timer" aria-label="Elapsed time">
+            <Icon name="clock" size={14} /> {elapsedLabel}
+          </span>
         </div>
-      </div>
+      </section>
 
       {connecting ? (
-        <div className="notice info">
-          <div>
-            <b>Connecting</b>
-            Joining the interview room…
-          </div>
-        </div>
+        <SectionState title="Connecting">Joining the interview room…</SectionState>
       ) : null}
 
-      <div className="si-live-grid">
-        <div className="card si-live-stage">
-          <video
-            ref={videoRef}
-            className="si-live-video"
-            autoPlay
-            playsInline
-            muted={false}
-          />
-          {!connecting ? (
-            <div className="si-live-status" aria-live="polite">
-              {stateLabel}
+      <div className="iv-live-grid">
+        <div className="iv-stage-col">
+          <div className={`si-live-stage iv-stage is-${stateKey}`}>
+            <div className="iv-avatar" aria-hidden="true">
+              <span className="iv-avatar-ring" />
+              <span className="iv-avatar-face">{initials}</span>
             </div>
-          ) : null}
+            <video
+              ref={videoRef}
+              className="si-live-video"
+              autoPlay
+              playsInline
+              muted={false}
+            />
+            {!connecting ? (
+              <div className="si-live-status iv-status" aria-live="polite">
+                <span className={`iv-live-dot is-${stateKey}`} aria-hidden="true" />
+                {stateLabel}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="iv-controls">
+            <button
+              type="button"
+              className={`iv-ctrl${micOn ? '' : ' is-off'}`}
+              onClick={toggleMic}
+              disabled={connecting}
+              aria-pressed={!micOn}
+            >
+              <span className="iv-ctrl-ic"><Icon name={micOn ? 'mic' : 'micOff'} size={20} /></span>
+              {micOn ? 'Mute mic' : 'Unmute mic'}
+            </button>
+            <button
+              type="button"
+              className="iv-ctrl iv-ctrl--end"
+              onClick={onUserEnd}
+              disabled={connecting}
+            >
+              <span className="iv-ctrl-ic"><Icon name="phone" size={20} /></span>
+              End interview
+            </button>
+          </div>
         </div>
 
-        <div className="card si-live-transcript">
-          <div className="card-h"><h3>Live transcript</h3></div>
-          {!transcript.length ? (
-            <div className="notice info" style={{ margin: 16 }}>
-              <div>
-                <b>Captions will appear here</b>
-                The interviewer greets you first — wait for them to speak.
-              </div>
+        <section className="sp-panel si-live-transcript iv-transcript">
+          <div className="sp-panel-h">
+            <div>
+              <h3>Live transcript</h3>
+              <p>{transcript.length ? `${transcript.length} line${transcript.length === 1 ? '' : 's'}` : 'Captions appear as you talk'}</p>
             </div>
-          ) : (
-            <ul className="si-transcript-list">
-              {transcript.map((line, i) => (
-                <li key={`${i}-${line.role}`} className={`si-transcript-line is-${line.role}`}>
-                  <span className="si-transcript-who">
-                    {line.role === 'you' ? 'You' : personaName}
-                  </span>
-                  <span>{line.text}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          </div>
+          <div className="sp-chat" ref={transcriptRef}>
+            {!transcript.length ? (
+              <SectionState title="Captions will appear here">
+                The interviewer greets you first — wait for them to speak.
+              </SectionState>
+            ) : (
+              transcript.map((line, i) => (
+                <div
+                  key={`${i}-${line.role}`}
+                  className={`sp-bubble ${line.role === 'you' ? 'sp-bubble--me' : 'sp-bubble--ai'}`}
+                >
+                  <small className="iv-who">{line.role === 'you' ? 'You' : personaName}</small>
+                  {line.text}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
       </div>
 
       <QuirriModal

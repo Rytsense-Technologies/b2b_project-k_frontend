@@ -50,6 +50,11 @@ const nextConfig = {
         source: '/edu_video/:path*',
         destination: `${apiProxyTarget}/edu_video/:path*`,
       },
+      // Voice Q&A is mounted at /voice_qna (not under /api/v1).
+      {
+        source: '/voice_qna/:path*',
+        destination: `${apiProxyTarget}/voice_qna/:path*`,
+      },
     ];
   },
 };

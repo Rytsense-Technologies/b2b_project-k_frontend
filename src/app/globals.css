@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* Quirri design tokens (quirri-design.css) own Super Admin / auth visuals.
-   Portal default = Plus Jakarta Sans (--font); auth remaps --font to Poppins. */
+   Portal default = Poppins (--font), Brand Guidelines v1.0. */
 @layer base {
   html {
     font-family: var(--font), system-ui, sans-serif;

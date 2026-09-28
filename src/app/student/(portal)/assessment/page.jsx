@@ -3,6 +3,7 @@
 import { Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import McqStudentQuiz from '@/components/shared/McqStudentQuiz';
+import { Icon, SectionState } from '@/components/student/ui';
 
 function AssessmentInner() {
   const router = useRouter();
@@ -17,11 +18,18 @@ function AssessmentInner() {
 
   if (!jobId) {
     return (
-      <div className="notice err">
-        <div>
-          <b>Missing chapter</b>
+      <div className="sp-quiz">
+        <SectionState
+          tone="err"
+          title="Missing chapter"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={leave}>
+              <Icon name="back" size={16} /> Go to My Subjects
+            </button>
+          )}
+        >
           Open an assessment from My Subjects.
-        </div>
+        </SectionState>
       </div>
     );
   }
@@ -37,7 +45,7 @@ function AssessmentInner() {
 
 export default function StudentAssessmentPage() {
   return (
-    <Suspense fallback={<div className="card-p">Loading assessment…</div>}>
+    <Suspense fallback={<div className="sp-quiz"><SectionState title="Loading assessment…" /></div>}>
       <AssessmentInner />
     </Suspense>
   );

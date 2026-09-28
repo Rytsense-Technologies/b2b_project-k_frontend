@@ -50,7 +50,7 @@ This file orients Cursor agents. Prefer it plus graphify over scanning the whole
 | HOD / Faculty | `/faculty/*` · `FacultySidebar` | `HodFaculty.dc.html` |
 | Student | `/student/*` · `StudentSidebar` | `Student.dc.html` |
 
-- Dark teal sidebar + Plus Jakarta Sans + mist `#F4F6F7` + `PortalHero` / `.q-app-shell`
+- White sidebar + Poppins + mist `#F8F8F9` + `PortalHero` / `.q-app-shell`
 - No mocks in `src/` — loading / error / empty only
 - Do not reintroduce Skill Courses, Email CRUD, AI Usage ₹ dashboard, or student billing UI
 - **No plan / licence / subscription product** in Phase 1 B2B — see `.cursor/rules/quirri-no-plans.mdc` (seat cap only; never Standard/Premium college plan UI)
@@ -71,7 +71,7 @@ This file orients Cursor agents. Prefer it plus graphify over scanning the whole
 ## Non-negotiables (summary)
 
 - Quirri Teal / Deep Teal / Signal Amber / Mist / Ink
-- Post-login: Plus Jakarta Sans; login cards: Poppins
+- Poppins everywhere (Brand Guidelines v1.0). Login cards keep the frozen centered layout.
 - One amber CTA per view; WCAG 2.2 AA; calm UX copy
 - Four portals match `new_updated_design_four` shells; logins stay existing card pattern
 

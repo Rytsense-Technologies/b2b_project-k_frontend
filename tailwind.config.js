@@ -36,15 +36,15 @@ module.exports = {
         error: 'var(--color-error)',
       },
       fontFamily: {
-        // Resolves via CSS vars: Plus Jakarta on portals; Poppins inside .auth (--font remapped)
+        // Poppins via --font (Brand Guidelines v1.0)
         sans: ['var(--font)', 'system-ui', 'sans-serif'],
         auth: ['var(--font-auth)', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        quirri: '12px',
+        quirri: '8px',
         'quirri-sm': '2px',
-        'quirri-lg': '18px',
+        'quirri-lg': '16px',
       },
       boxShadow: {
         quirri: '0 1px 2px rgba(16, 34, 40, 0.06)',

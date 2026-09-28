@@ -48,7 +48,7 @@ AST-only, no API cost. Cursor `afterFileEdit`/`stop` hooks and git post-commit h
 Main app rules:
 
 - No mocks in `src/`; login via API; centered Quirri login card (unchanged)
-- Post-login: dark teal sidebar, Plus Jakarta Sans, mist `#F4F6F7`, `PortalHero`
+- Post-login: white sidebar, Poppins, mist `#F8F8F9`, `PortalHero` (Brand Guidelines v1.0)
 - Four portals: `/superadmin`, `/admin`, `/faculty`, `/student`
 - Forms: `src/lib/validation` `FIELD_RULES` + `QuirriRHFField` — `.cursor/rules/quirri-forms.mdc`
 - Product UI: `docs/QUIRRI_PRODUCT_UI_RULES.md` — dropdowns (`QuirriSelect`), text alignment

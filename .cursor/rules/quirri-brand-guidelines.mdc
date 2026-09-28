@@ -1,0 +1,74 @@
+---
+description: Quirri AI Brand Guidelines v1.0 (July 2026) — colours, type, layout, voice, and components for all UI and brand work
+alwaysApply: true
+---
+
+# Quirri AI Brand Guidelines v1.0 (July 2026)
+
+Source of truth for UI, UX, frontend, marketing, dashboards, email, documents, and visual assets. Do not invent colours, fonts, logo variants, gradients, or spacing when a rule below covers it. Accessibility wins if it conflicts with appearance.
+
+**Product chrome exception (owner):** portal sidebars are **white** (`Neutral 0`), Ink text, Teal structure. Do not paint the app sidebar Deep Teal.
+
+Login cards stay the frozen centered pattern (`.cursor/rules/quirri-login-freeze.mdc`) but use these same tokens and Poppins.
+
+## Foundation and voice
+
+Positioning: “AI that helps people prove what they're capable of.” Products: Quirri Prep, Quirri Xplains, Quirri Shortlist (`Quirri` + one plain word).
+
+Pillars: practice over pressure · evidence over assumption · clarity over cleverness · everyone, not a few.
+
+Voice: warm, plain, encouraging, grounded — “the calm, well-prepared friend who wants you to do well.” Sentence case. Short sentences. No hype, pressure, jargon, or guarantees. Sign off **Team Quirri** (never “The Quirri Team” or “Quirri Support”).
+
+## Colour (use these exact values)
+
+| Token | Hex |
+|---|---|
+| Quirri Teal | `#0E5C6B` |
+| Deep Teal | `#06252B` |
+| Signal Amber | `#F5821F` accent only — never white text on this fill |
+| Amber 700 (white-label buttons) | `#AC5B16` |
+| Mist | `#F8F8F9` |
+| Ink | `#102228` (never pure black body text) |
+| Success / Warning / Error | `#0F6E56` / `#C97A0E` / `#A32D2D` |
+
+Teal ramp: 50 `#F1F5F6` · 100 `#DDE8EA` · 200 `#B7CED3` · 300 `#86AEB5` · 400 `#4D8691` · 500 `#0E5C6B` · 600 `#0B4B58` · 700 `#0A3F49` · 800 `#08323A` · 900 `#06252B`
+
+Amber ramp: 50 `#FEF6EF` · 100 `#FDE8D7` · 200 `#FBD0AA` · 500 `#F5821F` · 600 `#CE6D1A` · 700 `#AC5B16`
+
+Neutral: 0 `#FFFFFF` · 50 `#F8F8F9` · 100 `#EEF0F0` · 200 `#DEE0E1` · 300 `#BCC1C3` · 400 `#939C9E` · 500 `#707A7E` · 600 `#536064` · 900 `#102228`
+
+60% neutral/white · 30% teal · 10% amber. **One amber action per view.** No second accent (no purple, no random blue). No gradients across brand colours. No hand-mixed tints. Do not put teal text on amber or amber text on teal.
+
+Buttons with white text: Amber 700 `#AC5B16` (primary) or Teal 500 (secondary). Tertiary: Teal outline + Teal label. Disabled: Neutral 200 fill, Neutral 400 label.
+
+## Type
+
+**Poppins only** — Light 300, Regular 400, Medium 500, Bold 700. Fallback: `Poppins, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`.
+
+Display XL 56/60 Bold −2% · Display L 44/50 Bold −1.5% · H1 36/44 Bold −1% · H2 28/36 Bold −0.5% · H3 22/30 Medium · H4 18/26 Medium · Body L 18/30 · Body 16/26 · Body S 14/22 · Caption 12/18 · Overline 11/16 Medium +8% · Button 15/20 Medium +1%.
+
+Below 768px step display sizes down (XL 36, L 30, H1 26, H2 22, H3 18). Body never below 16px on mobile. Measure 55–75 characters. Sentence case. Left align, ragged right. Centre only buttons, badges, and short card labels. Uppercase only overlines. Two weights per view typical. No justified text, no italic emphasis, no stretched type.
+
+Dates: `22 July 2026`. Time: `9:00 am`. Currency: `₹1,20,000`. Ranges use an en dash.
+
+## Layout and components
+
+Spacing only: 4, 8, 12, 16, 24, 32, 48, 64, 96. Grid 12 / 8 / 4. Left-weighted. One idea per view.
+
+Radius: 2px inputs/chips · 8px cards · 16px panels/modals · full pills for buttons, badges, avatars.
+
+Borders: 1px Neutral 200 on light, 1px Teal 700 on dark. Shadows use Ink alpha only: `0 1px 2px rgba(16,34,40,0.06)` · `0 4px 12px rgba(16,34,40,0.08)` · `0 12px 32px rgba(16,34,40,0.12)`.
+
+Buttons 40–48px tall, full radius, horizontal padding ≥24px. Motion: 200ms ease-out in, 150ms out, no bounce. Honour `prefers-reduced-motion`.
+
+Icons: outline only, 1.75px stroke, Teal 500, one optional amber accent. Do not mix filled and outline, or unrelated icon libraries, in one view.
+
+## Accessibility
+
+WCAG 2.2 AA. Focus: 2px Teal 500 outline. Touch target ≥44×44px. Do not use colour alone. Signal Amber on white fails contrast — do not use it for text or white-on-amber buttons.
+
+## Tokens in this repo
+
+Prefer `src/styles/quirri-design.css` variables (`--teal-*`, `--amber-*`, `--neutral-*`, `--ink`, `--mist`) over raw hex. Suggested names: `quirri-teal`, `deep-teal`, `signal-amber`, `amber-700`, `mist`, `ink`.
+
+If a request contradicts this file, say so briefly and use the closest compliant option unless the user explicitly overrides the brand.

@@ -39,6 +39,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build and push image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -51,19 +52,34 @@ jobs:
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
 
+      # buildx push does not refresh the host's local :latest tag. Always pull the
+      # commit-sha image from GHCR so deploy cannot reuse a stale local layer.
       - name: Deploy frontend
         run: |
+          set -euo pipefail
+          IMAGE_REF="${{ env.IMAGE }}:${{ github.sha }}"
+          echo "Pulling $IMAGE_REF"
+          docker pull "$IMAGE_REF"
           docker rm -f xplains-frontend 2>/dev/null || true
           docker run -d --name xplains-frontend \
             --restart unless-stopped \
             -p ${{ env.FRONTEND_PORT }}:3000 \
-            ${{ env.IMAGE }}:latest
+            "$IMAGE_REF"
+          echo "Running image:"
+          docker inspect --format='{{.Image}} {{index .Config.Image}} {{.Created}}' xplains-frontend
 
       - name: Wait for frontend
         run: |
+          set -euo pipefail
           for i in $(seq 1 30); do
             if curl -sf "http://localhost:${{ env.FRONTEND_PORT }}"; then
               echo "Frontend is up"
+              # Confirm Assessment UI is in this image (stale-build guard).
+              if docker exec xplains-frontend sh -c "grep -Rql 'Take assessment\\|Open assessment' /app/.next 2>/dev/null"; then
+                echo "Assessment UI present in image"
+              else
+                echo "WARNING: Assessment strings not found under /app/.next — image may be stale or build omitted MCQ" >&2
+              fi
               exit 0
             fi
             sleep 2

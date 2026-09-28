@@ -29,16 +29,16 @@
   --amber-600:#CE6D1A;
   --amber-700:#AC5B16;   /* Primary CTA with white text */
 
-  /* Neutrals — mist matches new design pack (#F4F6F7) */
+  /* Neutrals — Brand Guidelines v1.0 Mist */
   --neutral-0:#FFFFFF;
-  --neutral-50:#F4F6F7;
+  --neutral-50:#F8F8F9;
   --neutral-100:#EEF0F0;
   --neutral-200:#DEE0E1;
   --neutral-300:#BCC1C3;
   --neutral-400:#939C9E;
   --neutral-500:#707A7E;
   --neutral-600:#536064;
-  --neutral-700:#33465C;
+  --neutral-700:#536064;
   --neutral-900:#102228;
 
   /* Semantic (system feedback only) */
@@ -49,8 +49,8 @@
   --success-soft:#E9F5EF;
   --warning-soft:#FDF1E2;
   --error-soft:#FBEEEC;
-  --blue-accent:#1D5FB8;
-  --blue-accent-soft:#E8F0FB;
+  --blue-accent:var(--teal-500);
+  --blue-accent-soft:var(--teal-50);
 
   /* Legacy aliases → Quirri (keep classnames stable) */
   --teal:var(--teal-500);
@@ -77,13 +77,13 @@
   --amber:var(--amber-700);     --amber-soft:#FCEEDD;
   --amber-signal:var(--amber-500);
   --red:var(--color-error);     --red-soft:var(--error-soft);
-  --violet:#5B3FD6;             --violet-soft:#EFEBFC;
+  --violet:var(--teal-500);      --violet-soft:var(--teal-50);
 
-  /* Radius: new design uses 12 / 18 / full (login card still uses larger soft radius) */
-  --radius:12px;
+  /* Radius — Brand v1.0: 2 inputs · 8 cards · 16 panels · full pills */
+  --radius:8px;
   --radius-sm:2px;
-  --radius-md:12px;
-  --radius-lg:18px;
+  --radius-md:8px;
+  --radius-lg:16px;
   --radius-full:9999px;
 
   /* Elevation — cool low-contrast Ink-based shadows */
@@ -94,10 +94,10 @@
   --sidebar:258px;
   --sidebar-collapsed:72px;
 
-  /* Portal UI = sidebar font (Plus Jakarta Sans). Auth remaps to Poppins. */
-  --font:var(--font-portal),'Plus Jakarta Sans',system-ui,"Segoe UI",sans-serif;
-  --font-display:var(--font-portal),'Plus Jakarta Sans',system-ui,"Segoe UI",sans-serif;
-  --font-auth:var(--font-login),Poppins,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  /* Brand v1.0 — Poppins only (Light 300, Regular 400, Medium 500, Bold 700). */
+  --font:var(--font-portal),Poppins,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-display:var(--font);
+  --font-auth:var(--font);
 
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
   --space-5:24px; --space-6:32px; --space-7:48px; --space-8:64px; --space-9:96px;
@@ -119,8 +119,8 @@ body{
   -moz-osx-font-smoothing:grayscale;
 }
 /*
-  Portal global font = same face as sidebar module listing (Plus Jakarta Sans).
-  Descendants inherit so cards/tables/links cannot drift to system or Poppins.
+  Portal and auth share Poppins (Brand Guidelines v1.0).
+  Descendants inherit so cards and tables cannot drift to another face.
 */
 .app,
 .q-app-shell{
@@ -478,15 +478,12 @@ textarea{resize:vertical;min-height:92px}
 .btn-light:hover{background:rgba(255,255,255,.22)}
 
 /* ==========================================================================
-   APP SHELL — dark teal sidebar (new_updated_design_four)
+   APP SHELL — white sidebar (Brand Guidelines v1.0 + owner lock)
    ========================================================================== */
 .app{display:flex;min-height:100vh;min-height:100dvh}
 .app.q-app-shell,
 .q-app-shell{
-  background:
-    radial-gradient(80% 50% at 100% 0%, rgba(14, 92, 107, 0.06), transparent 55%),
-    radial-gradient(60% 40% at 0% 100%, rgba(172, 91, 22, 0.04), transparent 50%),
-    var(--mist);
+  background:var(--mist);
 }
 
 .sidebar{
@@ -495,9 +492,9 @@ textarea{resize:vertical;min-height:92px}
   max-width:var(--sidebar);
   height:100vh;
   height:100dvh;
-  background:var(--teal-900);
-  border-right:1px solid rgba(255,255,255,.08);
-  color:#fff;
+  background:#FFFFFF;
+  border-right:1px solid var(--line);
+  color:var(--ink);
   position:fixed;
   inset:0 auto 0 0;
   z-index:30;
@@ -567,19 +564,19 @@ textarea{resize:vertical;min-height:92px}
 .sidebar-toggle:hover{color:var(--ink);border-color:#b6c4d6;box-shadow:var(--shadow)}
 .sidebar-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
 
-/* tenant / platform context — dark sidebar chip */
+/* tenant / platform context — white sidebar chip */
 .tenant-box{
-  margin:4px 14px 10px;padding:11px 12px;border:1px solid rgba(255,255,255,.12);
-  border-radius:var(--radius-md);background:rgba(255,255,255,.06);display:flex;gap:10px;align-items:center;
+  margin:4px 14px 10px;padding:11px 12px;border:1px solid var(--line);
+  border-radius:var(--radius-md);background:var(--neutral-50);display:flex;gap:10px;align-items:center;
 }
 .tenant-box .mark{
-  width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.14);color:#fff;
+  width:28px;height:28px;border-radius:7px;background:var(--teal-50);color:var(--teal-500);
   display:grid;place-items:center;font-size:10px;font-weight:700;flex:none;
 }
 .tenant-box .txt{min-width:0;flex:1}
-.tenant-box .nm{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
-.tenant-box .sc{font-size:10.5px;color:rgba(255,255,255,.55);font-weight:500;text-transform:none;letter-spacing:0}
-.tenant-box.platform .mark{background:rgba(255,255,255,.14)}
+.tenant-box .nm{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.tenant-box .sc{font-size:10.5px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+.tenant-box.platform .mark{background:var(--teal-50)}
 .sidebar.is-collapsed .tenant-box{
   margin:0 8px 8px;padding:8px;justify-content:center;
 }
@@ -594,7 +591,7 @@ textarea{resize:vertical;min-height:92px}
   overflow-x:hidden;
 }
 .nav-label{
-  font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.38);
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--neutral-400);
   padding:16px 12px 6px;font-weight:700;
 }
 .nav-label:first-child{padding-top:6px}
@@ -607,7 +604,7 @@ textarea{resize:vertical;min-height:92px}
 }
 .nav a{
   display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
-  color:rgba(255,255,255,.78);font-weight:600;font-size:13px;margin:1px 0;cursor:pointer;
+  color:var(--ink);font-weight:500;font-size:13px;margin:1px 0;cursor:pointer;
   transition:background .14s ease,color .14s ease;position:relative;
   white-space:nowrap;overflow:hidden;min-width:0;flex-wrap:nowrap;
 }
@@ -653,14 +650,14 @@ textarea{resize:vertical;min-height:92px}
   flex:none;stroke-width:1.8;display:block;overflow:visible;
   stroke:currentColor;
 }
-.nav a:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav a:hover{background:var(--teal-50);color:var(--teal-700)}
 .nav a.active{
-  background:rgba(255,255,255,.12);
-  color:#fff;
+  background:var(--teal-50);
+  color:var(--teal-700);
   font-weight:700;
-  box-shadow:inset 3px 0 0 0 var(--amber-700);
+  box-shadow:inset 3px 0 0 0 var(--teal-500);
 }
-.nav a.active svg{stroke:#fff}
+.nav a.active svg{stroke:var(--teal-500)}
 .nav a .badge{
   margin-left:auto;background:var(--warning-soft);color:var(--color-warning);
   font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;border:1px solid rgba(201,122,14,.18);
@@ -668,12 +665,12 @@ textarea{resize:vertical;min-height:92px}
 .sidebar.is-collapsed .nav a .badge{display:none}
 .nav a.locked{opacity:.45;cursor:not-allowed}
 .nav a.locked:hover{background:transparent}
-.nav a .lockicon{margin-left:auto;width:13px;height:13px;stroke:rgba(255,255,255,.4)}
+.nav a .lockicon{margin-left:auto;width:13px;height:13px;stroke:var(--neutral-400)}
 
 .side-foot{
   flex:none;
   margin-top:auto;
-  border-top:1px solid rgba(255,255,255,.1);
+  border-top:1px solid var(--line);
   padding:13px 16px;
 }
 .sidebar.is-collapsed .side-foot{
@@ -691,25 +688,25 @@ textarea{resize:vertical;min-height:92px}
 }
 .sidebar.is-collapsed .who-meta{display:none}
 .who .av{
-  width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;
+  width:32px;height:32px;border-radius:50%;background:var(--teal-50);color:var(--teal-700);
   display:grid;place-items:center;font-weight:700;font-size:11px;flex:none;
 }
 .who-meta{min-width:0;flex:1}
 .who .n{
-  font-weight:700;font-size:12.5px;line-height:1.25;color:#fff;
+  font-weight:700;font-size:12.5px;line-height:1.25;color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .who .r{
-  color:rgba(255,255,255,.55);font-size:10.5px;line-height:1.25;
+  color:var(--muted);font-size:10.5px;line-height:1.25;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .logout{
   display:inline-flex;align-items:center;justify-content:center;
   width:28px;height:28px;min-width:28px;min-height:28px;flex:none;margin:0;padding:0;
   border:none;border-radius:7px;background:transparent;
-  color:#F0A8A4;cursor:pointer;transition:background .12s,color .12s;
+  color:var(--color-error);cursor:pointer;transition:background .12s,color .12s;
 }
-.logout:hover{background:rgba(163,45,45,.22);color:#F8C4C0}
+.logout:hover{background:var(--error-soft);color:var(--color-error)}
 .logout svg{width:15px;height:15px;stroke-width:1.9;display:block}
 
 /* ---------- Quirri tooltip (never use native HTML title for UI hints) ---------- */
@@ -1015,7 +1012,7 @@ td .edu-video-error{
   border:1px solid var(--line);
   border-radius:var(--radius);
   padding:12px;
-  background:var(--mist, #F4F6F7);
+  background:var(--mist, #F8F8F9);
   display:flex;
   flex-direction:column;
   gap:8px;

@@ -17,7 +17,7 @@ alwaysApply: true
 6. Missing backend epic → empty/error (see `docs/BACKEND_STATUS_REPORT.md`)  
 7. Playwright-check UI changes after portal login  
 8. Post-login UI follows `new_updated_design_four/` (`docs/QUIRRI_UI_REFERENCE.md`); login cards stay existing centered pattern  
-9. Portal font Plus Jakarta Sans; auth cards Poppins; mist `#F4F6F7`; dark teal sidebar  
+9. Portal font Poppins; mist `#F8F8F9`; **white** sidebar (Ink text, Teal active)  
 
 ## Dropdown (“drop”) rules
 

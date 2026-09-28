@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import McqQuestionBlock from '@/components/shared/McqQuestionBlock';
-import { QuirriBtn } from '@/components/superadmin/quirri-ui';
-import { mcqApi, mcqErrorMessage } from '@/lib/api/mcq';
+import { Icon, SectionState } from '@/components/student/ui';
+import {
+  mcqApi,
+  mcqErrorMessage,
+  optionEntries,
+  isMultiSelect,
+} from '@/lib/api/mcq';
 import { mcqSubmitSchema } from '@/lib/validation';
 
 /**
@@ -120,21 +124,27 @@ export default function McqStudentQuiz({
   };
 
   if (loading) {
-    return <div className="card-p">Loading assessment…</div>;
+    return (
+      <div className="sp-quiz">
+        <SectionState title="Loading assessment…" />
+      </div>
+    );
   }
 
   if (loadError) {
     return (
-      <div className="notice err">
-        <div>
-          <b>Assessment unavailable</b>
+      <div className="sp-quiz">
+        <SectionState
+          tone="err"
+          title="Assessment unavailable"
+          action={onLeave ? (
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={onLeave}>
+              <Icon name="back" size={16} /> Back to subjects
+            </button>
+          ) : null}
+        >
           {loadError}
-        </div>
-        {onLeave ? (
-          <div style={{ marginTop: 12 }}>
-            <QuirriBtn type="button" variant="ghost" onClick={onLeave}>Back</QuirriBtn>
-          </div>
-        ) : null}
+        </SectionState>
       </div>
     );
   }
@@ -142,115 +152,72 @@ export default function McqStudentQuiz({
   if (result) {
     const pct = Number(result.percentage) || 0;
     const passed = pct >= 50;
+    const r = 52;
+    const c = 2 * Math.PI * r;
     return (
-      <div className="mcq-result animate-fade-in" style={{ maxWidth: 820, margin: '0 auto', textAlign: 'left' }}>
+      <div className="sp-quiz animate-fade-in">
         {onLeave ? (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={onLeave}
-            style={{ marginBottom: 16 }}
-          >
-            Leave assessment
+          <button type="button" className="sp-back" onClick={onLeave}>
+            <Icon name="back" size={16} /> Leave assessment
           </button>
         ) : null}
-        <div className="section-head" style={{ marginBottom: 18 }}>
-          <div>
-            <div className="t">Assessment complete</div>
-            <div className="d">
-              {view?.title || chapterTitle || 'Chapter quiz'}
+
+        <section className="sp-result" aria-label="Assessment result">
+          <div className="sp-result-ring" role="img" aria-label={`Score ${pct.toFixed(1)} percent`}>
+            <svg viewBox="0 0 120 120">
+              <circle className="trk" cx="60" cy="60" r={r} />
+              {pct > 0 ? (
+                <circle
+                  className={`fil ${passed ? 'is-good' : 'is-low'}`}
+                  cx="60"
+                  cy="60"
+                  r={r}
+                  strokeDasharray={`${(Math.min(100, pct) / 100) * c} ${c}`}
+                />
+              ) : null}
+            </svg>
+            <span className="num">
+              {pct.toFixed(1)}%
+              <small>Score</small>
+            </span>
+          </div>
+          <div className="sp-result-copy">
+            <div className="sp-banner-eyebrow">Assessment complete</div>
+            <h2>{view?.title || chapterTitle || 'Chapter quiz'}</h2>
+            <p>
               {result.submitted_at
-                ? ` · submitted ${new Date(result.submitted_at).toLocaleString()}`
-                : null}
+                ? `Submitted ${new Date(result.submitted_at).toLocaleString()} · `
+                : ''}
+              One attempt only — your score is final for this chapter quiz.
+            </p>
+            <div className="sp-result-stats">
+              <div className="sp-result-stat">
+                <small>Correct</small>
+                <b>{result.correct_count} / {result.total_questions}</b>
+              </div>
+              <div className="sp-result-stat">
+                <small>Result</small>
+                <b>
+                  <span className={`sp-pill ${passed ? 'sp-pill--good' : 'sp-pill--low'}`}>
+                    {passed ? 'Passed' : 'Needs improvement'}
+                  </span>
+                </b>
+              </div>
             </div>
+          </div>
+        </section>
+
+        <div className="sp-section-h">
+          <div>
+            <h3>Question breakdown</h3>
+            <p>Review what you got right and where to look again.</p>
           </div>
         </div>
 
-        <div className="card" style={{ padding: 24, marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap' }}>
-            <div
-              style={{
-                width: 140,
-                height: 140,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                flex: 'none',
-                background: `conic-gradient(var(--success) 0 ${pct}%, #EAEFF1 ${pct}% 100%)`,
-              }}
-            >
-              <div
-                style={{
-                  width: 110,
-                  height: 110,
-                  borderRadius: '50%',
-                  background: '#fff',
-                  display: 'grid',
-                  placeItems: 'center',
-                  textAlign: 'center',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1 }} className="num">
-                    {pct.toFixed(1)}%
-                  </div>
-                  <div style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, marginTop: 2 }}>
-                    Score
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted-2)', fontWeight: 700 }}>
-                    Correct
-                  </div>
-                  <div style={{ fontSize: 24, fontWeight: 700, marginTop: 5 }} className="num">
-                    {result.correct_count}
-                    <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>
-                      {' '}
-                      / {result.total_questions}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted-2)', fontWeight: 700 }}>
-                    Result
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: '4px 12px',
-                        borderRadius: 999,
-                        background: passed ? 'var(--success-soft)' : 'var(--error-soft)',
-                        color: passed ? 'var(--success)' : 'var(--error)',
-                      }}
-                    >
-                      {passed ? 'Passed' : 'Needs improvement'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.5 }}>
-                One attempt only — your score is final for this chapter quiz.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: '17px 20px 20px' }}>
-          <h3 style={{ fontSize: 14.5, fontWeight: 700, margin: '0 0 4px', textAlign: 'left' }}>
-            Question breakdown
-          </h3>
-          <p style={{ color: 'var(--muted)', fontSize: 11.5, margin: '0 0 14px', textAlign: 'left' }}>
-            Review what you got right and where to look again.
-          </p>
+        <div className="sp-breakdown">
           {questions.length
             ? questions.map((q, i) => (
-              <McqQuestionBlock
+              <StudentQuestionCard
                 key={q.id}
                 question={q}
                 index={i}
@@ -260,30 +227,23 @@ export default function McqStudentQuiz({
               />
             ))
             : (result.answers || []).map((row, i) => (
-              <div key={row.question_id || i} className="card" style={{ marginBottom: 12, padding: 16, textAlign: 'left' }}>
-                <div
-                  style={{
-                    fontSize: 10.5,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    fontWeight: 700,
-                    marginBottom: 8,
-                    color: row.is_correct ? 'var(--success)' : 'var(--error)',
-                  }}
-                >
-                  Question {i + 1} · {row.is_correct ? 'Correct' : 'Incorrect'}
+              <div key={row.question_id || i} className="sp-qcard">
+                <div className="sp-qcard-label">
+                  Question {i + 1}
+                  <span className={`sp-mark ${row.is_correct ? 'sp-mark--good' : 'sp-mark--bad'}`}>
+                    <Icon name={row.is_correct ? 'tick' : 'x'} size={14} />
+                    {row.is_correct ? 'Correct' : 'Incorrect'}
+                  </span>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 8 }}>
-                  Your answer: {(row.selected_options || []).join(', ') || '—'}
+                <div className="sp-qcard-hint">
+                  Your answer: <b>{(row.selected_options || []).join(', ') || '—'}</b>
                   {' · '}
-                  Correct: {(row.correct_options || []).join(', ') || '—'}
+                  Correct: <b>{(row.correct_options || []).join(', ') || '—'}</b>
                 </div>
                 {row.explanation ? (
-                  <div className="notice info" style={{ margin: 0 }}>
-                    <div>
-                      <b>Explanation</b>
-                      {row.explanation}
-                    </div>
+                  <div className="sp-explain">
+                    <Icon name="info" size={16} />
+                    <div><b>Explanation</b>{row.explanation}</div>
                   </div>
                 ) : null}
               </div>
@@ -295,50 +255,48 @@ export default function McqStudentQuiz({
 
   if (view?.status === 'not_attempted' && questions.length) {
     return (
-      <div className="mcq-attempt animate-fade-in" style={{ maxWidth: 740, margin: '0 auto', textAlign: 'left' }}>
+      <div className="sp-quiz animate-fade-in">
         {onLeave ? (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={onLeave}
-            style={{ marginBottom: 16 }}
-          >
-            Leave assessment
+          <button type="button" className="sp-back" onClick={onLeave}>
+            <Icon name="back" size={16} /> Leave assessment
           </button>
         ) : null}
 
-        <div className="section-head" style={{ marginBottom: 14 }}>
-          <div>
-            <div className="t">{view.title || chapterTitle || 'Chapter quiz'}</div>
-            <div className="d">
-              {questions.length} question{questions.length === 1 ? '' : 's'}
-              {' · '}
-              one attempt only
+        <section className="sp-quiz-h">
+          <div className="sp-quiz-h-top">
+            <div>
+              <div className="sp-banner-eyebrow">Chapter assessment</div>
+              <h2>{view.title || chapterTitle || 'Chapter quiz'}</h2>
+              <p>
+                {questions.length} question{questions.length === 1 ? '' : 's'}
+                {' · '}
+                one attempt only
+              </p>
             </div>
+            <span className="sp-pill sp-pill--glass">{answeredCount} of {questions.length} answered</span>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', flex: 'none' }}>
-            Question {index + 1} of {questions.length}
-          </span>
-          <div style={{ flex: 1, height: 7, background: '#EAEFF1', borderRadius: 6, overflow: 'hidden' }}>
-            <i
-              style={{
-                display: 'block',
-                height: '100%',
-                width: `${progressPct}%`,
-                background: 'var(--teal)',
-                borderRadius: 6,
-              }}
-            />
+          <div className="sp-quiz-progress">
+            <span>Question {index + 1} of {questions.length}</span>
+            <span className="sp-quiz-bar" aria-hidden="true"><i style={{ width: `${progressPct}%` }} /></span>
           </div>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--muted)', flex: 'none' }}>
-            {answeredCount} answered
-          </span>
-        </div>
+          <nav className="sp-qnav" aria-label="Jump to question">
+            {questions.map((q, i) => (
+              <button
+                key={q.id}
+                type="button"
+                className={(answers[q.id] || []).length ? 'is-answered' : ''}
+                aria-current={i === index}
+                aria-label={`Question ${i + 1}${(answers[q.id] || []).length ? ', answered' : ''}`}
+                disabled={submitting}
+                onClick={() => setIndex(i)}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </nav>
+        </section>
 
-        <McqQuestionBlock
+        <StudentQuestionCard
           question={current}
           index={index}
           total={questions.length}
@@ -348,54 +306,130 @@ export default function McqStudentQuiz({
           disabled={submitting}
         />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
-          <QuirriBtn
+        <div className="sp-quiz-nav">
+          <button
             type="button"
-            variant="ghost"
+            className="sd-btn sd-btn--ghost"
             disabled={index <= 0 || submitting}
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
           >
-            Previous
-          </QuirriBtn>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {index < questions.length - 1 ? (
-              <QuirriBtn
-                type="button"
-                variant="primary"
-                disabled={submitting}
-                onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}
-              >
-                Next question
-              </QuirriBtn>
-            ) : (
-              <QuirriBtn
-                type="button"
-                variant="primary"
-                disabled={submitting}
-                onClick={handleSubmit}
-              >
-                {submitting ? 'Submitting…' : 'Submit assessment'}
-              </QuirriBtn>
-            )}
-          </div>
+            <Icon name="back" size={16} /> Previous
+          </button>
+          {index < questions.length - 1 ? (
+            <button
+              type="button"
+              className="sd-btn sd-btn--teal"
+              disabled={submitting}
+              onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}
+            >
+              Next question <Icon name="arrow" size={16} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="sd-btn sd-btn--amber"
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? 'Submitting…' : 'Submit assessment'}
+            </button>
+          )}
         </div>
 
-        <div className="notice info" style={{ marginTop: 18 }}>
-          <div>
-            <b>Answer every question before you submit</b>
-            You get one attempt. After submit, scores and explanations come from the server — not graded in the browser.
-          </div>
-        </div>
+        <SectionState title="Answer every question before you submit">
+          You get one attempt. After submit, scores and explanations come from the server — not graded in the browser.
+        </SectionState>
       </div>
     );
   }
 
   return (
-    <div className="notice info">
-      <div>
-        <b>No questions to show</b>
+    <div className="sp-quiz">
+      <SectionState
+        title="No questions to show"
+        action={onLeave ? (
+          <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={onLeave}>
+            <Icon name="back" size={16} /> Back to subjects
+          </button>
+        ) : null}
+      >
         This quiz has no ready questions yet.
+      </SectionState>
+    </div>
+  );
+}
+
+/**
+ * Student-portal question card (attempt + result). The faculty review screen
+ * keeps using McqQuestionBlock, so its look is unchanged.
+ */
+function StudentQuestionCard({
+  question,
+  index,
+  total,
+  selected = [],
+  onToggle,
+  mode = 'attempt',
+  resultRow = null,
+  disabled = false,
+}) {
+  const options = optionEntries(question);
+  const multi = isMultiSelect(question);
+  const selectedSet = new Set((selected || []).map((x) => String(x).toUpperCase()));
+  const correctSet = new Set((resultRow?.correct_options || question?.correct_options || []).map((x) => String(x).toUpperCase()));
+  const pickedSet = new Set((resultRow?.selected_options || []).map((x) => String(x).toUpperCase()));
+  const interactive = mode === 'attempt' && typeof onToggle === 'function' && !disabled;
+  const explanation = resultRow?.explanation || question?.explanation;
+
+  return (
+    <div className="sp-qcard">
+      <div className="sp-qcard-label">
+        Question {index + 1}{total ? ` of ${total}` : ''}
+        {question?.question_type ? (
+          <span className="sp-pill">{String(question.question_type).replace(/_/g, ' ')}</span>
+        ) : null}
+        {mode === 'result' && resultRow ? (
+          <span className={`sp-mark ${resultRow.is_correct ? 'sp-mark--good' : 'sp-mark--bad'}`}>
+            <Icon name={resultRow.is_correct ? 'tick' : 'x'} size={14} />
+            {resultRow.is_correct ? 'Correct' : 'Incorrect'}
+          </span>
+        ) : null}
       </div>
+      <div className="sp-qcard-text">{question?.question_text || '—'}</div>
+      {multi && mode === 'attempt' ? <p className="sp-qcard-hint">Select all options that apply.</p> : null}
+
+      <div className="sp-opts" role={mode === 'attempt' ? (multi ? 'group' : 'radiogroup') : undefined}>
+        {options.map((opt) => {
+          const isSelected = mode === 'attempt' ? selectedSet.has(opt.key) : pickedSet.has(opt.key);
+          const isCorrect = mode === 'result' ? correctSet.has(opt.key) : false;
+          const cls = mode === 'attempt'
+            ? (isSelected ? ' is-selected' : '')
+            : isCorrect ? ' is-correct' : isSelected ? ' is-wrong' : '';
+          return (
+            <button
+              key={opt.key}
+              type="button"
+              className={`sp-opt${cls}`}
+              disabled={!interactive}
+              role={mode === 'attempt' ? (multi ? 'checkbox' : 'radio') : undefined}
+              aria-checked={mode === 'attempt' ? isSelected : undefined}
+              onClick={() => interactive && onToggle(opt.key, multi)}
+            >
+              <span className="sp-opt-key">{opt.key}</span>
+              <span className="sp-opt-label">{opt.label}</span>
+              {mode === 'result' && isSelected && !isCorrect ? <span className="sp-opt-tag">Your answer</span> : null}
+              {mode === 'result' && isCorrect ? <span className="sp-opt-tag">{isSelected ? 'Your answer · Correct' : 'Correct'}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+
+      {mode === 'result' && explanation ? (
+        <div className="sp-explain">
+          <Icon name="info" size={16} />
+          <div><b>Explanation</b>{explanation}</div>
+        </div>
+      ) : null}
     </div>
   );
 }

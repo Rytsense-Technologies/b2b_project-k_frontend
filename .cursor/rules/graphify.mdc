@@ -56,7 +56,7 @@ Only use Read/Grep/Glob when:
 - Super Admin login must use real API (`NEXT_PUBLIC_DEV_BYPASS_AUTH=false` unless user explicitly enables bypass)
 - Four portals: SA `/superadmin/*`, CA `/admin/*`, Faculty `/faculty/*`, Student `/student/*` — middleware by role
 - Login UI stays centered Quirri card (Poppins) — do not restyle from `Login.dc.html`
-- Post-login UI follows `new_updated_design_four` (dark sidebar, Plus Jakarta Sans, mist `#F4F6F7`)
+- Post-login UI: white sidebar, Poppins, mist `#F8F8F9` (Brand Guidelines v1.0). Design-pack dark sidebar is not used.
 - No static/mock portal data in `src/` — APIs only; show loading/error/empty
 - Do not reintroduce Skill Courses, Email Management CRUD, AI Usage ₹ dashboard, or student billing UI
 - **No plan / licence / subscription product** in Phase 1 B2B — see `.cursor/rules/quirri-no-plans.mdc`

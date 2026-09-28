@@ -8,6 +8,7 @@ import { selectSidebarOpen } from '@/store/slices/uiSlice';
 import { getRoleCookie, getTenantCookie, clearRoleCookie, clearTenantCookie } from '@/lib/tokens';
 import { PAGE_META } from '@/lib/student/pageMeta';
 import StudentSidebar from '@/components/student/StudentSidebar';
+import '@/styles/student-portal.css';
 
 export default function StudentLayout({ children }) {
   const pathname = usePathname();
@@ -38,7 +39,7 @@ export default function StudentLayout({ children }) {
   const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'Student', subtitle: '' };
 
   return (
-    <div className="app q-app-shell">
+    <div className="app q-app-shell q-student">
       <StudentSidebar />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
         <div className="topbar">

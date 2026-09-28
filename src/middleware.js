@@ -96,5 +96,5 @@ export async function middleware(req) {
 
 export const config = {
   // Skip Next auth redirects for FastAPI mounts proxied on :3000 and static assets.
-  matcher: ['/((?!_next|favicon\\.ico|api|edu_video|.*\\.png|.*\\.jpg|.*\\.svg).*)'],
+  matcher: ['/((?!_next|favicon\\.ico|api|edu_video|voice_qna|.*\\.png|.*\\.jpg|.*\\.svg).*)'],
 };

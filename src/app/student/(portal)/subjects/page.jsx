@@ -3,18 +3,21 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import VideoPreviewModal from '@/components/shared/VideoPreviewModal';
+import VoiceQnaPanel from '@/components/student/VoiceQnaPanel';
+import { Icon, Kpi, SectionState } from '@/components/student/ui';
 import { eduVideoApi } from '@/lib/api/admin/eduVideo';
+import { mcqApi } from '@/lib/api/mcq';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { QuirriBtn } from '@/components/superadmin/quirri-ui';
 
+/* Brand teal-family gradients for subject cards (Brand v1.0 palette only). */
 const SUBJECT_GRADIENTS = [
-  'linear-gradient(125deg,#0E5C6B,#4D8691)',
-  'linear-gradient(125deg,#06252B,#0B4B58)',
-  'linear-gradient(125deg,#0B4B3A,#0F6E56)',
-  'linear-gradient(125deg,#0A3F49,#86AEB5)',
-  'linear-gradient(125deg,#0E5C6B,#B7CED3)',
+  'linear-gradient(125deg,#0A3F49,#0E5C6B 60%,#4D8691)',
+  'linear-gradient(125deg,#06252B,#0B4B58 60%,#0E5C6B)',
+  'linear-gradient(125deg,#08323A,#0F6E56 70%,#4D8691)',
+  'linear-gradient(125deg,#0A3F49,#4D8691 70%,#86AEB5)',
+  'linear-gradient(125deg,#0B4B58,#0E5C6B 55%,#B7CED3)',
 ];
 
 function formatDuration(seconds) {
@@ -25,12 +28,65 @@ function formatDuration(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+function formatDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function subjectKey(job) {
   return String(job?.department_id || job?.department_name || 'my-lectures');
 }
 
 function subjectLabel(job, fallbackDeptName) {
   return job?.department_name || fallbackDeptName || 'Video lectures';
+}
+
+function assessmentHref(job) {
+  const qs = new URLSearchParams({
+    job: job.job_id,
+    title: job.chapter_title || 'Chapter quiz',
+  });
+  return `/student/assessment?${qs.toString()}`;
+}
+
+/** Quiz status for one chapter — read-only GET /mcq/jobs/{id}. */
+async function quizStatus(jobId) {
+  try {
+    const view = await mcqApi.get(jobId);
+    if (view?.status === 'already_attempted') {
+      const pct = Number(view?.result?.percentage);
+      return { state: 'done', pct: Number.isFinite(pct) ? Math.round(pct) : null };
+    }
+    if (view?.status === 'not_attempted') return { state: 'open' };
+    return { state: 'unavailable' };
+  } catch {
+    return { state: 'unavailable' };
+  }
+}
+
+function SubjectArt() {
+  return (
+    <svg className="sp-subject-art" viewBox="0 0 140 88" aria-hidden="true">
+      <circle cx="112" cy="70" r="46" fill="rgba(255,255,255,.08)" />
+      <rect x="70" y="30" width="56" height="38" rx="5" fill="rgba(255,255,255,.18)" />
+      <path d="M93 42l12 7-12 7z" fill="rgba(255,255,255,.85)" />
+      <circle cx="124" cy="18" r="4" fill="#F5821F" />
+    </svg>
+  );
+}
+
+function ScreenArt() {
+  return (
+    <svg className="sp-screen-art" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <circle cx="640" cy="80" r="180" fill="rgba(134,174,181,.10)" />
+      <circle cx="120" cy="380" r="160" fill="rgba(77,134,145,.12)" />
+      <rect x="80" y="70" width="220" height="14" rx="7" fill="rgba(255,255,255,.08)" />
+      <rect x="80" y="98" width="160" height="14" rx="7" fill="rgba(255,255,255,.06)" />
+      <rect x="520" y="280" width="200" height="12" rx="6" fill="rgba(255,255,255,.06)" />
+    </svg>
+  );
 }
 
 export default function StudentSubjectsPage() {
@@ -49,6 +105,7 @@ export default function StudentSubjectsPage() {
     data,
     loading,
     error,
+    reload,
   } = useAsyncResource(
     () => eduVideoApi.listStudentVideos({ pageSize: 100 }),
     [],
@@ -87,6 +144,22 @@ export default function StudentSubjectsPage() {
   const activeSubject = subjects.find((s) => s.key === activeSubjectKey) || null;
   const activeChapters = activeSubject?.chapters || [];
   const activeJob = activeChapters.find((j) => j.job_id === activeJobId) || activeChapters[0] || null;
+  const activeIndex = activeJob ? activeChapters.findIndex((j) => j.job_id === activeJob.job_id) : -1;
+
+  /* Per-chapter quiz status — only loaded while the Assessment tab is open. */
+  const quizKey = subTab === 'assessment' ? activeChapters.map((c) => c.job_id).join(',') : '';
+  const { data: quizMap, loading: quizLoading } = useAsyncResource(async () => {
+    if (!quizKey) return {};
+    const ids = quizKey.split(',').filter(Boolean);
+    const rows = await Promise.all(ids.map((id) => quizStatus(id)));
+    return Object.fromEntries(ids.map((id, i) => [id, rows[i]]));
+  }, [quizKey]);
+
+  const totalChapters = videos.length;
+  const latest = useMemo(
+    () => [...videos].sort((a, b) => (Date.parse(b.published_at || '') || 0) - (Date.parse(a.published_at || '') || 0))[0] || null,
+    [videos],
+  );
 
   const openSubject = (subject) => {
     setActiveSubjectKey(subject.key);
@@ -94,482 +167,334 @@ export default function StudentSubjectsPage() {
     setSubTab('classroom');
   };
 
-  const tabStyle = (active, accent) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '10px 16px',
-    borderRadius: '12px 12px 0 0',
-    border: '1px solid var(--line)',
-    borderBottom: active ? '1px solid #fff' : '1px solid var(--line)',
-    background: active ? '#fff' : 'transparent',
-    color: active ? accent : 'var(--muted)',
-    fontWeight: 600,
-    fontSize: 13,
-    cursor: 'pointer',
-  });
+  const TABS = [
+    { id: 'classroom', label: 'Classroom', icon: 'doc' },
+    { id: 'tutor', label: 'Ask your AI Tutor', icon: 'chat' },
+    { id: 'assessment', label: 'Assessment', icon: 'check' },
+  ];
 
-  return (
-    <div className="animate-fade-in">
-      {!activeSubject ? (
-        <>
-          {error ? (
-            <div className="notice err" style={{ marginBottom: 16 }}>
-              <div>
-                <b>Could not load your subjects</b>
-                {apiErrorMessage(error, 'Please try again.')}
-              </div>
-            </div>
-          ) : null}
+  /* ------------------------------------------------------------ list view */
+  if (!activeSubject) {
+    return (
+      <div className="sp animate-fade-in">
+        <section className="sd-kpis" aria-label="Subjects summary">
+          <Kpi icon="book" label="My Subjects" value={loading ? null : subjects.length} sub={studentDepartmentName || 'Your department'} />
+          <Kpi icon="play" label="Chapters Published" value={loading ? null : totalChapters} sub="Video lectures ready to watch" />
+          <Kpi
+            icon="calendar"
+            label="Latest Lecture"
+            value={latest ? (latest.chapter_title || 'Untitled chapter') : null}
+            sub={latest ? formatDate(latest.published_at) || 'Recently published' : 'Appears when published'}
+            tone="text"
+          />
+          <Kpi icon="check" label="Assessments" value="1 attempt" sub="Per chapter, scored by Quirri" tone="text" />
+        </section>
 
-          {loading ? (
-            <div className="card card-p">Loading your published lectures…</div>
-          ) : null}
+        {error ? (
+          <SectionState
+            tone="err"
+            title="Could not load your subjects"
+            action={(
+              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}>
+                <Icon name="refresh" size={16} /> Try again
+              </button>
+            )}
+          >
+            {apiErrorMessage(error, 'Please try again.')}
+          </SectionState>
+        ) : null}
 
-          {!loading && !error && !subjects.length ? (
-            <div className="notice info" style={{ marginBottom: 16 }}>
-              <div>
-                <b>Nothing published for your department yet</b>
-                {studentDepartmentName || studentDepartmentId
-                  ? ` Lectures appear here only after an HOD/Faculty publishes them for ${studentDepartmentName || 'your department'}. Content published for other departments will not show on this account.`
-                  : ' Your college admin needs to assign you to a department first. Published lectures are scoped to that department only.'}
-              </div>
-            </div>
-          ) : null}
+        <div className="sp-section-h">
+          <div>
+            <h3>Your subjects</h3>
+            <p>Open a subject to watch lectures, ask the AI tutor, or take a chapter assessment.</p>
+          </div>
+        </div>
 
-          {subjects.length ? (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: 16,
-              }}
-            >
-              {subjects.map((subject) => (
+        {loading ? (
+          <SectionState title="Loading your published lectures…" />
+        ) : null}
+
+        {!loading && !error && !subjects.length ? (
+          <SectionState title="Nothing published for your department yet">
+            {studentDepartmentName || studentDepartmentId
+              ? `Lectures appear here only after an HOD/Faculty publishes them for ${studentDepartmentName || 'your department'}. Content published for other departments will not show on this account.`
+              : 'Your college admin needs to assign you to a department first. Published lectures are scoped to that department only.'}
+          </SectionState>
+        ) : null}
+
+        {subjects.length ? (
+          <div className="sp-grid">
+            {subjects.map((subject) => {
+              const newest = subject.chapters[0];
+              return (
                 <button
                   key={subject.key}
                   type="button"
-                  className="q-card-lift"
+                  className="sp-subject"
                   onClick={() => openSubject(subject)}
-                  style={{
-                    textAlign: 'left',
-                    padding: 0,
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    border: '1px solid var(--line)',
-                    background: '#fff',
-                    fontFamily: 'inherit',
-                  }}
                 >
-                  <div style={{ height: 64, background: subject.grad, position: 'relative' }}>
-                    <span
-                      style={{
-                        position: 'absolute',
-                        left: 14,
-                        top: 12,
-                        color: 'rgba(255,255,255,.9)',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: '.05em',
-                      }}
-                    >
-                      {subject.code}
-                    </span>
+                  <div className="sp-subject-top" style={{ background: subject.grad }}>
+                    <span className="sp-subject-code">{subject.code}</span>
+                    <SubjectArt />
                   </div>
-                  <div style={{ padding: '13px 15px' }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5 }}>{subject.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted-3)', margin: '3px 0 11px' }}>
-                      {subject.chapters.length} chapter{subject.chapters.length === 1 ? '' : 's'} published
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <div
-                        style={{
-                          flex: 1,
-                          height: 6,
-                          background: '#EAEFF1',
-                          borderRadius: 6,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <i
-                          style={{
-                            display: 'block',
-                            height: '100%',
-                            width: '100%',
-                            background: '#0E5C6B',
-                            borderRadius: 6,
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>
-                        Watch
+                  <div className="sp-subject-body">
+                    <h3>{subject.name}</h3>
+                    <div className="sp-subject-meta">
+                      <span>
+                        <Icon name="play" size={14} />
+                        {subject.chapters.length} chapter{subject.chapters.length === 1 ? '' : 's'}
                       </span>
+                      <span><Icon name="chat" size={14} /> AI tutor</span>
+                      <span><Icon name="check" size={14} /> Quizzes</span>
+                    </div>
+                    {newest ? (
+                      <div className="sp-subject-latest">
+                        Latest chapter
+                        <b>{newest.chapter_title || 'Untitled chapter'}</b>
+                      </div>
+                    ) : null}
+                    <div className="sp-subject-foot">
+                      Open subject
+                      <Icon name="arrow" size={16} />
                     </div>
                   </div>
                 </button>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="notice info" style={{ marginTop: 18 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 16v-4M12 8h.01" />
-            </svg>
-            <div>
-              <b>Assessments open from each subject</b>
-              Open a subject, then use the Assessment tab or Take assessment on a chapter.
-              The AI tutor stays empty until its API is live — nothing is mocked here.
-            </div>
+              );
+            })}
           </div>
-        </>
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubjectKey(null);
-              setActiveJobId(null);
-              setSubTab('classroom');
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              color: 'var(--muted)',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: 14,
-              border: 'none',
-              background: 'transparent',
-              padding: 0,
-              fontFamily: 'inherit',
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            Back to subjects
-          </button>
+        ) : null}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ fontSize: 16.5, fontWeight: 700 }}>{activeSubject.name}</div>
-            <span
-              style={{
-                fontSize: 10.5,
-                fontWeight: 700,
-                padding: '4px 11px',
-                borderRadius: 999,
-                background: '#EEF0F0',
-                color: 'var(--muted)',
-              }}
-            >
-              {activeSubject.code} · {activeChapters.length} chapter{activeChapters.length === 1 ? '' : 's'}
+        <SectionState title="Assessments open from each subject">
+          Open a subject, then use the Assessment tab or Ask your AI Tutor on a chapter.
+        </SectionState>
+
+        <VideoPreviewModal
+          open={Boolean(previewJob)}
+          onClose={() => setPreviewJob(null)}
+          title={previewJob?.chapter_title || 'Video preview'}
+          src={previewJob ? eduVideoApi.getDownloadUrl(previewJob.job_id) : null}
+        />
+      </div>
+    );
+  }
+
+  /* ---------------------------------------------------------- subject view */
+  const duration = formatDuration(activeJob?.video_duration_seconds);
+  const published = formatDate(activeJob?.published_at);
+
+  return (
+    <div className="sp animate-fade-in">
+      <button
+        type="button"
+        className="sp-back"
+        onClick={() => {
+          setActiveSubjectKey(null);
+          setActiveJobId(null);
+          setSubTab('classroom');
+        }}
+      >
+        <Icon name="back" size={16} />
+        Back to subjects
+      </button>
+
+      <section className="sp-banner">
+        <div className="sp-banner-ic" aria-hidden="true">{activeSubject.code}</div>
+        <div className="sp-banner-copy">
+          <div className="sp-banner-eyebrow">Subject</div>
+          <h2>{activeSubject.name}</h2>
+          <div className="sp-banner-meta">
+            <span className="sp-pill sp-pill--glass">
+              <Icon name="play" size={14} />
+              {activeChapters.length} chapter{activeChapters.length === 1 ? '' : 's'}
             </span>
+            {studentDepartmentName ? (
+              <span className="sp-pill sp-pill--glass">{studentDepartmentName}</span>
+            ) : null}
           </div>
+        </div>
+      </section>
 
-          <div style={{ display: 'flex', gap: 4, marginBottom: -1, position: 'relative', zIndex: 2 }}>
-            <button
-              type="button"
-              onClick={() => setSubTab('classroom')}
-              style={tabStyle(subTab === 'classroom', '#0E5C6B')}
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-                <path d="M15 3v5h5" />
-              </svg>
-              Classroom
-            </button>
-            <button
-              type="button"
-              onClick={() => setSubTab('tutor')}
-              style={tabStyle(subTab === 'tutor', '#0E5C6B')}
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              Ask your AI Tutor
-            </button>
-            <button
-              type="button"
-              onClick={() => setSubTab('assessment')}
-              style={tabStyle(subTab === 'assessment', '#0E5C6B')}
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M9 11l3 3 8-8" />
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-              </svg>
-              Assessment
-            </button>
-          </div>
-
-          <div
-            style={{
-              background: '#fff',
-              border: '1px solid var(--line)',
-              borderRadius: '0 18px 18px 18px',
-              boxShadow: 'var(--shadow-xs)',
-              padding: 18,
-            }}
+      <div className="sp-tabs" role="tablist" aria-label="Subject sections">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={subTab === t.id}
+            className="sp-tab"
+            onClick={() => setSubTab(t.id)}
           >
-            {subTab === 'classroom' ? (
-              <div className="student-classroom-grid">
-                <div style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      padding: '14px 16px',
-                      borderBottom: '1px solid var(--line-soft)',
-                      fontWeight: 700,
-                      fontSize: 13,
-                    }}
-                  >
-                    Chapters
-                    <div style={{ fontSize: 11, color: 'var(--muted-3)', fontWeight: 500, marginTop: 2 }}>
-                      {activeChapters.length} published for your department
-                    </div>
-                  </div>
-                  {activeChapters.map((job) => {
-                    const selected = activeJob?.job_id === job.job_id;
-                    return (
-                      <button
-                        key={job.job_id}
-                        type="button"
-                        onClick={() => setActiveJobId(job.job_id)}
-                        style={{
-                          display: 'flex',
-                          width: '100%',
-                          alignItems: 'center',
-                          gap: 11,
-                          padding: '11px 16px',
-                          cursor: 'pointer',
-                          background: selected ? '#F1F5F6' : 'transparent',
-                          border: 'none',
-                          borderBottom: '1px solid var(--line-soft)',
-                          textAlign: 'left',
-                          fontFamily: 'inherit',
-                        }}
-                      >
-                        <span style={{ width: 18, height: 18, flex: 'none', color: selected ? '#0E5C6B' : '#707A7E' }}>
-                          {selected ? '●' : '▶'}
-                        </span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontWeight: 600,
-                              fontSize: 12,
-                              color: '#102228',
-                            }}
-                          >
-                            {job.chapter_title || 'Untitled chapter'}
-                          </div>
-                          <div style={{ fontSize: 10.5, color: 'var(--muted-3)', marginTop: 1 }}>
-                            {formatDuration(job.video_duration_seconds) || 'Video lecture'}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+            <Icon name={t.icon} size={16} />
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-                <div
-                  style={{
-                    background: '#0E1A2B',
-                    borderRadius: 12,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    minHeight: 340,
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setSubTab('tutor')}
-                    style={{
-                      position: 'absolute',
-                      right: 18,
-                      top: 16,
-                      background: '#fff',
-                      color: 'var(--ink)',
-                      border: 'none',
-                      borderRadius: 999,
-                      padding: '8px 15px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 7,
-                      cursor: 'pointer',
-                      zIndex: 2,
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--teal)" strokeWidth="2">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                    Ask your AI Tutor
-                  </button>
-
-                  <div style={{ padding: '20px 22px', flex: 1 }}>
-                    <div
-                      style={{
-                        color: '#87A0B9',
-                        fontSize: 10.5,
-                        letterSpacing: '.08em',
-                        textTransform: 'uppercase',
-                        fontWeight: 600,
-                      }}
-                    >
-                      Now teaching
-                    </div>
-                    <h3 style={{ color: '#fff', fontSize: 19, fontWeight: 600, margin: '7px 0 12px' }}>
-                      {activeJob?.chapter_title || 'Select a chapter'}
-                    </h3>
-                    <ul
-                      style={{
-                        listStyle: 'none',
-                        color: '#BCCDDF',
-                        fontSize: 12.5,
-                        padding: 0,
-                        margin: 0,
-                        display: 'grid',
-                        gap: 6,
-                      }}
-                    >
-                      <li>› {activeJob?.source_filename || 'Published lecture'}</li>
-                      <li>
-                        › Published{' '}
-                        {activeJob?.published_at
-                          ? new Date(activeJob.published_at).toLocaleDateString()
-                          : '—'}
-                      </li>
-                      {formatDuration(activeJob?.video_duration_seconds) ? (
-                        <li>› Duration {formatDuration(activeJob.video_duration_seconds)}</li>
-                      ) : null}
-                    </ul>
-                  </div>
-
-                  <div
-                    style={{
-                      background: '#08111E',
-                      padding: '13px 20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                    }}
-                  >
+      {subTab === 'classroom' ? (
+        <div className="sp-classroom" role="tabpanel">
+          <div className="sp-panel">
+            <div className="sp-panel-h">
+              <div>
+                <h3>Chapters</h3>
+                <p>{activeChapters.length} published for your department</p>
+              </div>
+            </div>
+            <ul className="sp-chapters">
+              {activeChapters.map((job, i) => {
+                const selected = activeJob?.job_id === job.job_id;
+                return (
+                  <li key={job.job_id}>
                     <button
                       type="button"
-                      className="btn btn-primary"
-                      disabled={!activeJob}
-                      onClick={() => setPreviewJob(activeJob)}
-                      style={{
-                        borderRadius: 999,
-                        minHeight: 36,
-                        padding: '8px 16px',
-                      }}
+                      className="sp-chapter"
+                      aria-current={selected}
+                      onClick={() => setActiveJobId(job.job_id)}
                     >
-                      Watch lecture
+                      <span className="sp-chapter-n">{i + 1}</span>
+                      <span className="sp-chapter-t">
+                        <b>{job.chapter_title || 'Untitled chapter'}</b>
+                        <small>
+                          <Icon name="clock" size={12} />
+                          {formatDuration(job.video_duration_seconds) || 'Video lecture'}
+                        </small>
+                      </span>
+                      <Icon name={selected ? 'playFill' : 'chev'} size={16} className="sp-chapter-go" />
                     </button>
-                    {activeJob ? (
-                      <QuirriBtn
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          const qs = new URLSearchParams({
-                            job: activeJob.job_id,
-                            title: activeJob.chapter_title || 'Chapter quiz',
-                          });
-                          router.push(`/student/assessment?${qs.toString()}`);
-                        }}
-                        style={{
-                          borderRadius: 999,
-                          minHeight: 36,
-                          padding: '8px 16px',
-                          background: 'rgba(255,255,255,0.08)',
-                          color: '#fff',
-                          borderColor: 'rgba(255,255,255,0.2)',
-                        }}
-                      >
-                        Take assessment
-                      </QuirriBtn>
-                    ) : null}
-                    {activeJob ? (
-                      <a
-                        href={eduVideoApi.getDownloadUrl(activeJob.job_id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#87A0B9', fontSize: 12, fontWeight: 600 }}
-                      >
-                        Download
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            ) : subTab === 'assessment' ? (
-              <div>
-                <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--muted)', textAlign: 'left' }}>
-                  Chapter quizzes use the same published lectures. One attempt per chapter.
-                </p>
-                <div className="card" style={{ overflow: 'hidden' }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Chapter</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {!activeChapters.length ? (
-                        <tr><td colSpan={2}>No published chapters yet.</td></tr>
-                      ) : null}
-                      {activeChapters.map((job) => (
-                        <tr key={job.job_id}>
-                          <td>
-                            <span className="strong">{job.chapter_title || 'Untitled chapter'}</span>
-                          </td>
-                          <td className="actions">
-                            <a
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => {
-                                const qs = new URLSearchParams({
-                                  job: job.job_id,
-                                  title: job.chapter_title || 'Chapter quiz',
-                                });
-                                router.push(`/student/assessment?${qs.toString()}`);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key !== 'Enter') return;
-                                const qs = new URLSearchParams({
-                                  job: job.job_id,
-                                  title: job.chapter_title || 'Chapter quiz',
-                                });
-                                router.push(`/student/assessment?${qs.toString()}`);
-                              }}
-                            >
-                              Open assessment
-                            </a>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : (
-              <div className="notice info" style={{ margin: 0 }}>
-                <div>
-                  <b>AI tutor is not available yet</b>
-                  Answers will come only from your {activeSubject.name} material when the tutor API is live.
-                  Nothing is mocked here.
-                </div>
-              </div>
-            )}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-        </>
+
+          <div className="sp-stage">
+            <div className="sp-screen">
+              <ScreenArt />
+              <span className="sp-screen-tag sp-pill sp-pill--glass">
+                Chapter {activeIndex >= 0 ? activeIndex + 1 : '—'} of {activeChapters.length}
+              </span>
+              <button
+                type="button"
+                className="sd-btn sd-btn--glass sd-btn--sm sp-screen-tutor"
+                onClick={() => setSubTab('tutor')}
+              >
+                <Icon name="chat" size={14} /> Ask your AI Tutor
+              </button>
+              <button
+                type="button"
+                className="sp-play"
+                disabled={!activeJob}
+                onClick={() => setPreviewJob(activeJob)}
+                aria-label={activeJob ? `Watch ${activeJob.chapter_title || 'lecture'}` : 'Select a chapter'}
+              >
+                <Icon name="playFill" size={30} />
+              </button>
+              {duration ? <span className="sp-screen-dur">{duration}</span> : null}
+            </div>
+
+            <div className="sp-stage-body">
+              <div className="sp-banner-eyebrow">Now teaching</div>
+              <h3>{activeJob?.chapter_title || 'Select a chapter'}</h3>
+              <div className="sp-stage-meta">
+                <span><Icon name="doc" size={14} /> {activeJob?.source_filename || 'Published lecture'}</span>
+                <span><Icon name="calendar" size={14} /> Published {published || '—'}</span>
+                {duration ? <span><Icon name="clock" size={14} /> {duration}</span> : null}
+              </div>
+            </div>
+
+            <div className="sp-stage-actions">
+              <button
+                type="button"
+                className="sd-btn sd-btn--amber"
+                disabled={!activeJob}
+                onClick={() => setPreviewJob(activeJob)}
+              >
+                <Icon name="playFill" size={16} /> Watch lecture
+              </button>
+              {activeJob ? (
+                <button
+                  type="button"
+                  className="sd-btn sd-btn--glass"
+                  onClick={() => router.push(assessmentHref(activeJob))}
+                >
+                  <Icon name="check" size={16} /> Take assessment
+                </button>
+              ) : null}
+              {activeJob ? (
+                <a
+                  className="sp-link"
+                  href={eduVideoApi.getDownloadUrl(activeJob.job_id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Icon name="download" size={16} /> Download
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : subTab === 'assessment' ? (
+        <div className="sp-panel" role="tabpanel">
+          <div className="sp-panel-h">
+            <div>
+              <h3>Chapter assessments</h3>
+              <p>Chapter quizzes use the same published lectures. One attempt per chapter.</p>
+            </div>
+            <span className="sp-pill sp-pill--teal">{activeChapters.length} chapter{activeChapters.length === 1 ? '' : 's'}</span>
+          </div>
+          {!activeChapters.length ? (
+            <div className="sp-panel-b"><SectionState title="No published chapters yet." /></div>
+          ) : (
+            <ul className="sp-rows">
+              {activeChapters.map((job, i) => {
+                const q = quizMap?.[job.job_id];
+                const state = q?.state;
+                return (
+                  <li key={job.job_id} className="sp-row">
+                    <span className={`sp-row-ic${state === 'done' ? ' sp-row-ic--good' : state === 'unavailable' ? ' sp-row-ic--muted' : ''}`}>
+                      <Icon name={state === 'done' ? 'tick' : state === 'unavailable' ? 'lock' : 'check'} size={18} />
+                    </span>
+                    <div className="sp-row-main">
+                      <b>{job.chapter_title || 'Untitled chapter'}</b>
+                      <div className="sp-row-meta">
+                        <span>Chapter {i + 1}</span>
+                        {formatDuration(job.video_duration_seconds) ? <span>· {formatDuration(job.video_duration_seconds)} lecture</span> : null}
+                        {quizLoading && !q ? <span className="sp-pill">Checking…</span> : null}
+                        {state === 'open' ? <span className="sp-pill sp-pill--teal">Ready to attempt</span> : null}
+                        {state === 'done' ? <span className="sp-pill sp-pill--good">Completed</span> : null}
+                        {state === 'unavailable' ? <span className="sp-pill">Not ready yet</span> : null}
+                      </div>
+                    </div>
+                    <div className="sp-row-side">
+                      {state === 'done' && q.pct != null ? (
+                        <span className={`sp-score${q.pct >= 75 ? ' sp-score--good' : q.pct < 50 ? ' sp-score--low' : ''}`}>
+                          {q.pct}<small>%</small>
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={`sd-btn sd-btn--sm ${state === 'done' ? 'sd-btn--ghost' : 'sd-btn--outline'}`}
+                        onClick={() => router.push(assessmentHref(job))}
+                      >
+                        {state === 'done' ? 'View result' : 'Open assessment'}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ) : (
+        <div role="tabpanel">
+          <VoiceQnaPanel
+            jobId={activeJob?.job_id}
+            chapterTitle={activeJob?.chapter_title || ''}
+            subjectName={activeSubject.name}
+            chapters={activeChapters}
+            onSelectChapter={setActiveJobId}
+          />
+        </div>
       )}
 
       <VideoPreviewModal

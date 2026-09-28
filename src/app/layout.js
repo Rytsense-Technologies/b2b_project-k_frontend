@@ -1,21 +1,13 @@
-import { Plus_Jakarta_Sans, Poppins } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 import '../styles/quirri-design.css';
 import Providers from './Providers';
 
-/** Portal chrome (sidebar + all post-login UI) — matches new_updated_design_four */
-const portalFont = Plus_Jakarta_Sans({
+/** Brand Guidelines v1.0 — Poppins only (300, 400, 500, 700). */
+const portalFont = Poppins({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['300', '400', '500', '700'],
   variable: '--font-portal',
-  display: 'swap',
-});
-
-/** Auth login cards only */
-const authFont = Poppins({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-login',
   display: 'swap',
 });
 
@@ -26,7 +18,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${portalFont.variable} ${authFont.variable}`}>
+    <html lang="en" className={portalFont.variable}>
       <body className={portalFont.className}>
         <Providers>{children}</Providers>
       </body>

@@ -48,7 +48,7 @@ Before modifying or creating code:
 - College Admin `/admin/login` · Faculty `/faculty/login` · Student `/student/login` — **same centered Quirri card** (do not adopt `Login.dc.html` split layout)
 - Middleware by role: `superadmin` → `/superadmin/*`, `college_admin` → `/admin/*`, `faculty` → `/faculty/*`, `student` → `/student/*`
 - No static/mock portal data in `src/` — APIs only; show loading/error/empty
-- Post-login chrome matches `new_updated_design_four`: dark teal sidebar, Plus Jakarta Sans, mist `#F4F6F7`, `PortalHero`
+- Post-login chrome: **white sidebar**, Poppins, mist `#F8F8F9`, `PortalHero` — Brand Guidelines v1.0 (`.cursor/rules/quirri-brand-guidelines.mdc`)
 - Nav modules follow the design pack tables in `docs/QUIRRI_UI_REFERENCE.md`
 - Do not reintroduce Skill Courses, Email Management CRUD, AI Usage ₹ dashboard, or student billing UI
 - **No plan / licence / subscription product** in Phase 1 B2B — colleges use seat cap only; see `.cursor/rules/quirri-no-plans.mdc`
@@ -59,8 +59,8 @@ Before modifying or creating code:
 
 Follow `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` sections 3–76, reconciled with `new_updated_design_four/quirri-ui.css`:
 
-- **Colours:** Quirri Teal `#0E5C6B`, Deep Teal `#06252B`, Signal Amber `#F5821F` (action only), Mist `#F4F6F7`, Ink `#102228` — use defined ramps only
-- **Typography:** **Plus Jakarta Sans** for post-login portals; **Poppins** for auth login cards only
+- **Colours:** Brand v1.0 — Teal `#0E5C6B`, Deep Teal `#06252B`, Signal Amber `#F5821F` (accent only), Amber 700 `#AC5B16` for white-label buttons, Mist `#F8F8F9`, Ink `#102228`. No second accent, no brand-colour gradients.
+- **Typography:** **Poppins** everywhere (300 / 400 / 500 / 700). Login cards stay the frozen centered layout.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 24, 32, 48, 64, 96)
 - **Radius (portals):** 12 / 18 / full pill CTAs
 - **One amber CTA per view** — Amber 700 `#AC5B16` for buttons with white text (not Signal Amber)
@@ -126,7 +126,7 @@ For **any** design change or visual/layout bug report:
 
 - **Forbidden:** native HTML `title` attributes for hover hints (OS black/yellow tooltips).
 - **Required:** Quirri floating tips via `useQuirriTip` / `QuirriTooltip` (`src/components/superadmin/QuirriTooltip.jsx`).
-- **Look:** white card, Ink text, `--line` border, `--shadow-md`, Plus Jakarta Sans 12px / medium, `--radius` (8px), calm — never solid black panels.
+- **Look:** white card, Ink text, `--line` border, `--shadow-md`, Poppins 12px / medium, `--radius` (8px), calm — never solid black panels.
 - Icon-only controls still need `aria-label`; the tip is supplementary.
 - Use for collapsed sidebar labels, icon buttons, and any truncated name that needs a hover reveal.
 
@@ -136,7 +136,7 @@ Full contract: `docs/QUIRRI_PRODUCT_UI_RULES.md` · rule file: `.cursor/rules/qu
 
 - **Dropdowns:** `QuirriSelect` (or labeled `quirri-select`); first option `All…` / `Select…`; 44px min-height; `aria-label` if no visible label.
 - **Text:** left-align titles/labels/body; right-align `.num`; center only login brand card; label → control → hint|error.
-- **Fonts:** post-login = Plus Jakarta Sans (sidebar module listing face, via `next/font` `--font-portal`); auth cards = Poppins only.
+- **Fonts:** Poppins for portals and auth (Brand v1.0).
 - **Must-haves:** no mocks, one amber CTA, catalog fields, empty/error when API missing, Playwright for UI checks.
 - Applies to **existing and all future** builds — do not invent per-page layout or select styles.
 

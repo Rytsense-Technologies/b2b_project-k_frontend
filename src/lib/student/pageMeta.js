@@ -16,6 +16,14 @@ export const PAGE_META = {
     title: 'Interviews',
     subtitle: 'Practice with an AI interviewer using your semester allocation.',
   },
+  '/student/interviews/reports': {
+    title: 'Interviews',
+    subtitle: 'Every scored interview, your trend and per-question feedback.',
+  },
+  '/student/interviews/report': {
+    title: 'Interview report',
+    subtitle: 'Your overall score, feedback on each answer and what to practise next.',
+  },
   '/student/interviews/live': {
     title: 'Live interview',
     subtitle: 'Stay present — speak clearly and take a breath between answers.',

@@ -177,8 +177,8 @@ export default function SuperAdminSidebar() {
     <aside className={`sidebar${sidebarOpen ? '' : ' is-collapsed'}`}>
       <div className="brand">
         <div className="brand-mark">
-          <QuirriLogo className="logo-full" size="sm" onDark priority />
-          <QuirriLogo className="logo-mark" compact onDark aria-hidden={!sidebarOpen} />
+          <QuirriLogo className="logo-full" size="sm" priority />
+          <QuirriLogo className="logo-mark" compact aria-hidden={!sidebarOpen} />
         </div>
       </div>
 
