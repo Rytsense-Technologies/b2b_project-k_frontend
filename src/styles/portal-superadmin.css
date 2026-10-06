@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Quirri — superadmin portal module styles (.su-*). Builds on portal-modules.css.
+   Spec: docs/agent/design-system.md. Tokens only; 6/8/16 radii; Poppins 400/500.
+   ========================================================================== */
+
+/* ---- shared helpers (.sa-*) ---- */
+.sa-grid{gap:24px}
+.sa-card-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.un-card-stats b.sa-stat-text{font-size:14px;line-height:30px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sa-grid .un-card-main{flex:1}
+.sa-form .un-form-sec > .field:last-child,
+.sa-form .un-form-sec > .grid2:last-child > .field:nth-last-child(-n+2){margin-bottom:0}
+.sa-muted{color:var(--muted-2)}
+.pm-person .pm-av.sa-av--muted{background:var(--neutral-100);color:var(--ink-2)}
+.sa-role-who{padding:12px 16px;border-radius:var(--radius-card);background:var(--neutral-50);border:1px solid var(--line)}
+.sa-users-table td.sa-nowrap{white-space:nowrap}
+.sa-users-table td:last-child{width:1%;white-space:nowrap}
+.sa-users-table .pm-person{max-width:280px}
+.pm-banner .sd-btn--glass:disabled{background:rgba(255,255,255,.08);color:var(--teal-200);border-color:rgba(255,255,255,.2)}
+
+/* ---- dashboard ---- */
+.sa-kpis--5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.sa-cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:start}
+.sa-cols > .sp-panel{height:100%}
+.sa-empty{display:flex;align-items:flex-start;gap:16px;padding:24px}
+.sa-empty-ic{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-300)}
+.sa-empty b{display:block;font-size:16px;line-height:26px;font-weight:500;color:var(--ink)}
+.sa-empty p{margin:2px 0 0;max-width:48ch;font-size:14px;line-height:22px;color:var(--muted-2)}
+.sp-panel-b > .sa-empty{padding:8px 0}
+.sa-bars .cmp .nm{width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sa-bars .cmp .val{width:48px}
+.sa-bars .cmp .track > i{background:var(--teal-500)}
+.sa-bars .cmp:first-child{padding-top:0}
+.sa-bars .cmp:last-child{padding-bottom:0}
+.sa-progress{display:flex;align-items:center;gap:12px;min-width:160px}
+.sa-progress .bar{flex:1}
+.sa-progress small{width:40px;text-align:right;font-size:12px;line-height:18px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.sa-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.sa-shortcut{display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card);color:inherit;text-decoration:none;transition:box-shadow .2s ease-out}
+.sa-shortcut:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
+.sa-shortcut:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
+.sa-shortcut-t{flex:1;min-width:0}
+.sa-shortcut-t b{display:block;font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.sa-shortcut-t small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-shortcut .sa-shortcut-go{color:var(--muted-2)}
+.sa-shortcut:hover .sa-shortcut-go{color:var(--teal-500)}
+.sa-dash .pm-person .sp-row-ic{width:36px;height:36px}
+
+@media (max-width:1200px){
+  .sa-kpis--5{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sa-cols{grid-template-columns:1fr}
+  .sa-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .sa-kpis--5,.sa-shortcuts{grid-template-columns:1fr}
+  .sa-shortcuts,.sa-cols{gap:16px}
+}
+.sa-dash .q-hero-split{margin-bottom:0}
+.sa-table-tight th,.sa-table-tight td{padding-left:16px;padding-right:16px}
+.sa-table-tight th:first-child,.sa-table-tight td:first-child{padding-left:24px}
+.sa-table-tight th:last-child,.sa-table-tight td:last-child{padding-right:24px}
+.sa-page .sp-panel-h .sp-link{white-space:nowrap;flex:none}
+.sa-err-text{color:var(--color-error)}
+.sa-kpi-unit{font-size:14px;line-height:22px;font-weight:400;color:var(--ink-2);margin-left:2px}
+.sa-nowrap{white-space:nowrap}
+.sp-row-ic.sa-svc-ic--amber{background:var(--warning-soft);color:var(--amber-700)}
+.sp-row-ic.sa-svc-ic--red{background:var(--error-soft);color:var(--color-error)}
+.sa-page .sp-rows .sp-row{padding:16px 24px}
+
+/* ---- settings (Prep: underline tabs + account card + side card) ---- */
+.sa-settings .tabs{margin-bottom:0}
+.sa-account-h{padding:24px;border-bottom:1px solid var(--line-soft)}
+.sa-account-who{flex:1;min-width:0}
+.sa-account-who b,.sa-account-who small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sa-account-b{padding:24px;display:flex;flex-direction:column;gap:16px}
+.sa-fieldset{border:0;padding:0;margin:0;min-width:0}
+.sa-account-sec{margin-bottom:16px}
+.sa-account-b > .sa-account-sec{margin-bottom:0}
+.sa-account-sec h3{font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.sa-account-sec p{margin-top:2px;font-size:14px;line-height:22px;color:var(--muted-2)}
+.sa-account-f{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:12px;padding-top:16px;border-top:1px solid var(--line-soft)}
+.sa-locked,.sa-locked:disabled{background:var(--neutral-100);color:var(--ink-2)}
+.sa-sec-row{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);border-radius:var(--radius-card)}
+.sa-side-list{list-style:none;margin:16px 0 0;padding:16px 0 0;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:12px}
+.sa-side-list li{display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:22px;color:var(--ink-2)}
+.sa-side-list .sd-i{color:var(--teal-500);margin-top:3px;flex:none}
+.sa-chips{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:760px){
+  .sa-account-h{flex-wrap:wrap}
+  .sa-sec-row{flex-wrap:wrap}
+  .sa-account-f .sd-btn{flex:1}
+}
+
+/* ---- mobile ---- */
+@media (max-width:760px){
+  .sa-page .pm-filter .un-seg{align-self:stretch;max-width:100%;overflow-x:auto}
+  .sa-page .pm-filter .un-seg .sp-tab{flex:1 1 auto;justify-content:center;padding:0 10px}
+  .sa-account-who{flex:1 1 calc(100% - 80px)}
+  .sa-account-h .sp-pill{margin-left:80px}
+  .sa-page .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .sa-page .sd-kpis.pm-kpis--3{grid-template-columns:1fr}
+  .sa-page .sp-table-wrap > table{min-width:640px}
+}
+.sa-page .pm-chips > span{height:auto;min-height:28px;padding-top:4px;padding-bottom:4px}
+.sa-page .sd-state .sd-btn .sd-i{color:currentColor}

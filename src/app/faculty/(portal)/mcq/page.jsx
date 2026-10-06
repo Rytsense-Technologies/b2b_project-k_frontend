@@ -2,11 +2,27 @@
 
 import { useMemo, useState } from 'react';
 import McqDocumentReview from '@/components/shared/McqDocumentReview';
-import { QuirriBtn } from '@/components/superadmin/quirri-ui';
-import QuirriBadge from '@/components/superadmin/QuirriBadge';
+import {
+  ModulePage,
+  ModuleBanner,
+  KpiRow,
+  FilterBar,
+  SegTabs,
+  Panel,
+  Icon,
+  SectionState,
+  SearchBox,
+  countLabel,
+} from '@/components/shared/module-ui';
 import { eduVideoApi, JOB_STATUS } from '@/lib/api/admin/eduVideo';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+
+const STATUS_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'published', label: 'Published' },
+  { value: 'pending', label: 'Not published' },
+];
 
 /**
  * HOD / Faculty — review generated MCQs for chapters in scope.
@@ -14,6 +30,8 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
  */
 export default function FacultyMcqPage() {
   const [selectedId, setSelectedId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState('all');
 
   const { data, loading, error, reload } = useAsyncResource(
     () => eduVideoApi.listJobs({ pageSize: 100 }),
@@ -31,69 +49,152 @@ export default function FacultyMcqPage() {
 
   const selected = chapters.find((j) => j.job_id === selectedId) || null;
 
+  /* ---- client-side filters over the chapters already loaded ---- */
+  const publishedCount = chapters.filter((j) => j.published_at).length;
+  const inReviewCount = chapters.filter((j) => !j.published_at && j.sent_to_hod_at).length;
+  const deptCount = new Set(chapters.map((j) => j.department_id || j.department_name).filter(Boolean)).size;
+  const needle = search.trim().toLowerCase();
+  const shown = chapters.filter((j) => {
+    if (tab === 'published' && !j.published_at) return false;
+    if (tab === 'pending' && j.published_at) return false;
+    if (!needle) return true;
+    return [j.chapter_title, j.source_filename, j.department_name]
+      .some((v) => String(v || '').toLowerCase().includes(needle));
+  });
+  const filtering = Boolean(needle) || tab !== 'all';
+  const ready = !loading || jobs.length > 0;
+  const kpi = (n) => (ready && !error ? countLabel(n) : null);
+
   return (
-    <div className="animate-fade-in">
-      <div className="section-head">
-        <div>
-          <div className="t">MCQ Review</div>
-          <div className="d">
-            Review AI-generated questions for each chapter. Correct answers are shown for SME review.
-          </div>
-        </div>
-        <QuirriBtn type="button" variant="ghost" onClick={reload} disabled={loading}>
-          Refresh list
-        </QuirriBtn>
-      </div>
+    <ModulePage className="fa-page">
+      <ModuleBanner
+        icon="check"
+        eyebrow="Content review"
+        title="MCQ review"
+        lede="Review AI-generated questions for each rendered chapter. Correct answers are shown so you can check them before students take the quiz."
+        actions={(
+          <button type="button" className="sd-btn sd-btn--glass" onClick={reload} disabled={loading}>
+            <Icon name="refresh" size={16} /> Refresh list
+          </button>
+        )}
+      />
+
+      <KpiRow
+        label="MCQ review summary"
+        items={[
+          { icon: 'book', label: 'Rendered chapters', value: kpi(chapters.length), sub: 'Ready for a question set' },
+          { icon: 'clock', label: 'In your review', value: kpi(inReviewCount), sub: 'Sent, not yet published' },
+          { icon: 'tick', label: 'Published', value: kpi(publishedCount), sub: 'Students can take the quiz' },
+          { icon: 'layers', label: 'Departments', value: kpi(deptCount), sub: 'With rendered chapters' },
+        ]}
+      />
+
+      <FilterBar label="Filter chapters">
+        <SearchBox
+          placeholder="Search chapter, file or department…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <SegTabs
+          label="Filter by status"
+          value={tab}
+          onChange={setTab}
+          options={STATUS_TABS.map((t) => ({
+            ...t,
+            count: !ready || error ? null : t.value === 'published' ? publishedCount
+              : t.value === 'pending' ? chapters.length - publishedCount
+                : null,
+          }))}
+        />
+      </FilterBar>
 
       {error ? (
-        <div className="notice err" style={{ marginBottom: 16 }}>
-          <div>
-            <b>Could not load chapters</b>
-            {apiErrorMessage(error, 'Please try again.')}
-          </div>
-        </div>
+        <SectionState
+          tone="err"
+          title="Could not load chapters"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
+              <Icon name="refresh" size={16} /> Try again
+            </button>
+          )}
+        >
+          {apiErrorMessage(error, 'Please try again.')}
+        </SectionState>
       ) : null}
 
-      <div className="edu-plan-editor" style={{ marginTop: 8 }}>
-        <div className="edu-plan-scenes">
-          <div className="edu-plan-scenes-h">
-            Chapters
-            <span className="sub">{loading ? '…' : `${chapters.length} total`}</span>
-          </div>
-          {!loading && !chapters.length ? (
-            <div className="card-p" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-              No rendered chapters yet. Finish a video in Content / Videos first.
+      <div className="fa-split">
+        <Panel
+          className="fa-chapters"
+          title="Chapters"
+          sub={loading && !jobs.length ? 'Loading…' : `${countLabel(shown.length)} of ${countLabel(chapters.length)} shown`}
+          bodyClassName=""
+        >
+          {loading && !jobs.length ? (
+            <div className="sp-panel-b"><SectionState title="Loading chapters…" /></div>
+          ) : null}
+          {ready && !error && !chapters.length ? (
+            <div className="sp-panel-b">
+              <SectionState title="No rendered chapters yet">
+                Chapters appear here once their video has finished rendering.
+              </SectionState>
             </div>
           ) : null}
-          {chapters.map((job) => {
-            const active = job.job_id === selectedId;
-            return (
-              <button
-                key={job.job_id}
-                type="button"
-                className={`edu-plan-scene${active ? ' is-active' : ''}`}
-                onClick={() => setSelectedId(job.job_id)}
-              >
-                <span className="edu-plan-scene-t">
-                  {job.chapter_title || job.source_filename || 'Chapter'}
-                </span>
-                <span className="edu-plan-scene-type">
-                  {job.department_name || '—'}
-                  {job.published_at ? ' · published' : job.sent_to_hod_at ? ' · in review' : ''}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+          {ready && chapters.length > 0 && !shown.length ? (
+            <div className="sp-panel-b">
+              <SectionState title="No matches">
+                {filtering ? 'Try a different name, department or status.' : null}
+              </SectionState>
+            </div>
+          ) : null}
+          {shown.length ? (
+            <ul className="pm-list">
+              {shown.map((job) => {
+                const active = job.job_id === selectedId;
+                const tag = job.published_at
+                  ? { cls: 'is-good', label: 'Published' }
+                  : job.sent_to_hod_at
+                    ? { cls: 'is-low', label: 'In review' }
+                    : { cls: 'is-muted', label: 'Not sent yet' };
+                return (
+                  <li key={job.job_id}>
+                    <button
+                      type="button"
+                      className="pm-list-btn"
+                      aria-current={active ? 'true' : undefined}
+                      onClick={() => setSelectedId(job.job_id)}
+                    >
+                      <span className="sp-chapter-n" aria-hidden="true"><Icon name="doc" size={16} /></span>
+                      <div>
+                        <b>{job.chapter_title || job.source_filename || 'Chapter'}</b>
+                        <small>{job.department_name || '—'}</small>
+                        <span className={`fa-chapter-tag ${tag.cls}`}>
+                          <i className="un-dot" aria-hidden="true" /> {tag.label}
+                        </span>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </Panel>
 
-        <div className="edu-plan-detail">
+        <div className="fa-review-col">
           {selected ? (
             <>
-              <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="fa-chapter-bar">
+                <span className="sp-row-ic" aria-hidden="true"><Icon name="book" size={20} /></span>
+                <div>
+                  <small>Chapter</small>
+                  <b>{selected.chapter_title || selected.source_filename || 'Chapter'}</b>
+                  <span className="fa-sub">
+                    {[selected.department_name, selected.source_filename].filter(Boolean).join(' · ') || '—'}
+                  </span>
+                </div>
                 {selected.published_at ? (
-                  <QuirriBadge variant="green">Published to students</QuirriBadge>
+                  <span className="sp-pill sp-pill--good"><i className="un-dot" aria-hidden="true" />Published to students</span>
                 ) : (
-                  <QuirriBadge variant="amber">Not published yet</QuirriBadge>
+                  <span className="sp-pill sp-pill--low"><i className="un-dot" aria-hidden="true" />Not published yet</span>
                 )}
               </div>
               <McqDocumentReview
@@ -103,15 +204,20 @@ export default function FacultyMcqPage() {
               />
             </>
           ) : (
-            <div className="notice info">
-              <div>
-                <b>Select a chapter</b>
-                Choose a chapter on the left to review or generate its MCQ set.
+            <section className="sp-empty-hero pm-soon fa-pick">
+              <div className="pm-soon-art" aria-hidden="true">
+                <span className="pm-soon-ring" />
+                <span className="pm-soon-tile"><Icon name="check" size={32} /></span>
+                <span className="pm-soon-dot" />
               </div>
-            </div>
+              <div className="pm-soon-copy">
+                <h2>Select a chapter</h2>
+                <p>Choose a chapter from the list to review its questions, or generate a question set if it does not have one yet.</p>
+              </div>
+            </section>
           )}
         </div>
       </div>
-    </div>
+    </ModulePage>
   );
 }

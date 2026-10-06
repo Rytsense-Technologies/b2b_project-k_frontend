@@ -7,6 +7,13 @@ import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { QuirriRHFField, QuirriField } from '@/components/superadmin/quirri-ui';
+import {
+  Icon,
+  Panel,
+  InfoList,
+  SectionState,
+  initials,
+} from '@/components/shared/module-ui';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppDispatch } from '@/store/hooks';
@@ -24,6 +31,7 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
   const [pwSaving, setPwSaving] = useState(false);
+  const [tab, setTab] = useState('profile');
 
   const {
     control,
@@ -131,64 +139,159 @@ export default function AdminSettingsPage() {
     }
   });
 
+  const displayName = user?.name
+    || [user?.first_name, user?.last_name].filter(Boolean).join(' ')
+    || 'College admin';
+  const collegeName = user?.college_name || user?.tenant_name || null;
+
   return (
-    <div className="animate-fade-in">
-      <div className="section-head">
-        <div>
-          <div className="t">Settings</div>
-          <div className="d">Your own profile. Role and institution are not self-editable.</div>
-        </div>
+    <div className="animate-fade-in sp pm-page ad-page">
+      <div className="tabs" role="tablist" aria-label="Settings sections">
+        {[
+          { id: 'profile', label: 'Profile' },
+          { id: 'security', label: 'Security' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`tab${tab === t.id ? ' active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <div className="card card-p" style={{ maxWidth: 640 }}>
-        {loading ? <p style={{ color: 'var(--muted)', marginBottom: 12 }}>Loading settings…</p> : null}
-        <form onSubmit={onSave} noValidate>
-          <div className="grid2">
-            <QuirriRHFField
-              control={control}
-              name="first_name"
-              fieldType="personName"
-              label="First name"
-            />
-            <QuirriRHFField
-              control={control}
-              name="last_name"
-              fieldType="personName"
-              label="Last name"
-            />
-          </div>
-          <QuirriRHFField
-            control={control}
-            name="email"
-            fieldType="email"
-            label="Email address"
-            hint="Email change needs a separate re-verification flow — not available yet."
-            disabled
-            full
-          />
-          <QuirriRHFField
-            control={control}
-            name="phone"
-            fieldType="phone"
-            label="Phone number"
-            full
-          />
-          <QuirriField
-            label="Role"
-            hint="Roles are assigned by Super Admin and cannot be changed here."
-          >
-            <input value="College Admin" disabled style={{ background: 'var(--line-soft)', color: 'var(--muted)' }} readOnly />
-          </QuirriField>
-          <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-            <button className="btn btn-primary" type="submit" disabled={saving || loading}>
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-            <button className="btn btn-ghost" type="button" onClick={() => setPwOpen(true)}>
-              Change password
-            </button>
-          </div>
-        </form>
-      </div>
+      {tab === 'profile' ? (
+        <div className="pm-settings">
+          <section className="sp-panel ad-set-card" aria-label="Profile">
+            <div className="ad-set-h">
+              <div className="pm-account">
+                <span className="pm-av-lg" aria-hidden="true">{initials(displayName, 'C')}</span>
+                <div>
+                  <b>{displayName}</b>
+                  <small>{user?.email || 'College admin account'}</small>
+                </div>
+              </div>
+              <span className="sp-pill sp-pill--teal">College admin</span>
+            </div>
+
+            <div className="ad-set-b">
+              {loading ? <SectionState title="Loading settings…" /> : null}
+              <form onSubmit={onSave} noValidate>
+                <div className="ad-set-sec">
+                  <h3>Personal details</h3>
+                  <p>Your name and phone number as other people in your college see them.</p>
+                </div>
+                <div className="grid2">
+                  <QuirriRHFField
+                    control={control}
+                    name="first_name"
+                    fieldType="personName"
+                    label="First name"
+                  />
+                  <QuirriRHFField
+                    control={control}
+                    name="last_name"
+                    fieldType="personName"
+                    label="Last name"
+                  />
+                  <QuirriRHFField
+                    control={control}
+                    name="email"
+                    fieldType="email"
+                    label="Email address"
+                    hint="Changing your email needs a separate verification step — not available yet."
+                    disabled
+                  />
+                  <QuirriRHFField
+                    control={control}
+                    name="phone"
+                    fieldType="phone"
+                    label="Phone number"
+                  />
+                  <QuirriField
+                    label="Role"
+                    hint="Roles are assigned by Super Admin and cannot be changed here."
+                    full
+                  >
+                    <input value="College Admin" disabled readOnly />
+                  </QuirriField>
+                </div>
+                <div className="ad-set-foot">
+                  <button className="sd-btn sd-btn--amber" type="submit" disabled={saving || loading}>
+                    <Icon name="tick" size={16} />
+                    {saving ? 'Saving…' : 'Save changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <aside className="ad-set-side">
+            <Panel title="Your college" sub="Set by Super Admin. You cannot change these here.">
+              <InfoList
+                items={[
+                  { label: 'College', value: collegeName, full: true },
+                  { label: 'University', value: user?.university_name, full: true },
+                  { label: 'Role', value: 'College admin' },
+                ]}
+              />
+            </Panel>
+            <Panel
+              title="Password"
+              sub="Change it any time from the Security tab."
+              action={(
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setTab('security')}>
+                  <Icon name="lock" size={14} /> Security
+                </button>
+              )}
+            >
+              <p className="ad-muted">Changing your password signs you out on all other devices.</p>
+            </Panel>
+          </aside>
+        </div>
+      ) : (
+        <div className="pm-settings">
+          <section className="sp-panel ad-set-card" aria-label="Security">
+            <div className="ad-set-h">
+              <div className="pm-account">
+                <span className="pm-av-lg ad-av-ic" aria-hidden="true"><Icon name="lock" size={26} /></span>
+                <div>
+                  <b>Password</b>
+                  <small>Use a strong password you don&apos;t use anywhere else.</small>
+                </div>
+              </div>
+            </div>
+            <div className="ad-set-b">
+              <ul className="ad-set-list">
+                <li>
+                  <Icon name="key" size={18} />
+                  <div>
+                    <b>Change password</b>
+                    <small>You need your current password. Other devices are signed out afterwards.</small>
+                  </div>
+                  <button type="button" className="sd-btn sd-btn--amber" onClick={() => setPwOpen(true)}>
+                    Change password
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <aside className="ad-set-side">
+            <Panel title="Keeping your account safe">
+              <ul className="ad-set-tips">
+                <li><Icon name="tick" size={16} /> Never share your password, even with Quirri staff.</li>
+                <li><Icon name="tick" size={16} /> Sign out on shared computers when you are done.</li>
+                <li><Icon name="tick" size={16} /> If something looks wrong, change your password straight away.</li>
+              </ul>
+            </Panel>
+          </aside>
+        </div>
+      )}
 
       <QuirriModal
         open={pwOpen}
@@ -197,9 +300,9 @@ export default function AdminSettingsPage() {
         crumb="Requires your current password, then signs out all other devices."
         footer={(
           <>
-            <button type="button" className="btn btn-ghost" onClick={() => setPwOpen(false)}>Cancel</button>
+            <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setPwOpen(false)}>Cancel</button>
             <div className="right">
-              <button type="button" className="btn btn-primary" onClick={onPassword} disabled={pwSaving}>
+              <button type="button" className="sd-btn sd-btn--amber" onClick={onPassword} disabled={pwSaving}>
                 {pwSaving ? 'Updating…' : 'Update password'}
               </button>
             </div>

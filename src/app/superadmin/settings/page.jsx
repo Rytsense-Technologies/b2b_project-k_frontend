@@ -1,12 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { QuirriRHFField, QuirriField } from '@/components/superadmin/quirri-ui';
+import {
+  ModulePage,
+  Panel,
+  InfoList,
+  Icon,
+  SectionState,
+  initials,
+} from '@/components/shared/module-ui';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import {
@@ -14,6 +22,11 @@ import {
   settingsPasswordSchema,
   FIELD_RULES,
 } from '@/lib/validation';
+
+const TABS = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'security', label: 'Security' },
+];
 
 function formatRoleLabel(role) {
   const r = String(role || '').toLowerCase();
@@ -31,6 +44,7 @@ export default function SettingsPage() {
   const [pwOpen, setPwOpen] = useState(false);
   const [pwSaving, setPwSaving] = useState(false);
   const [roleLabel, setRoleLabel] = useState('—');
+  const [tab, setTab] = useState('profile');
 
   const {
     control,
@@ -47,6 +61,9 @@ export default function SettingsPage() {
     },
     mode: 'onBlur',
   });
+
+  const [firstName, lastName, email] = useWatch({ control, name: ['first_name', 'last_name', 'email'] });
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
 
   const {
     register: registerPw,
@@ -129,89 +146,166 @@ export default function SettingsPage() {
     }
   });
 
+  const accountHead = (
+    <div className="pm-account sa-account-h">
+      <span className="pm-av-lg">{initials(fullName || email || '', 'S')}</span>
+      <div className="sa-account-who">
+        <b>{loading ? 'Loading…' : fullName || 'Your profile'}</b>
+        <small>{email || '—'}</small>
+      </div>
+      <span className="sp-pill sp-pill--teal"><Icon name="shield" size={13} /> {roleLabel}</span>
+    </div>
+  );
+
   return (
-    <div className="animate-fade-in">
-      <div className="section-head">
-        <div>
-          <div className="t">Settings</div>
-          <div className="d">Your own profile. Role and institution are not self-editable.</div>
-        </div>
+    <ModulePage className="sa-page sa-settings">
+      <div className="tabs" role="tablist" aria-label="Settings sections">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`tab${tab === t.id ? ' active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {loadError ? (
-        <div className="notice err" style={{ marginBottom: 12, maxWidth: 640 }}>
-          <div>
-            <b>Could not load settings</b>
-            {loadError}
-            <div style={{ marginTop: 10 }}>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={loadProfile}>
-                Try again
-              </button>
-            </div>
-          </div>
-        </div>
+        <SectionState
+          tone="err"
+          title="Could not load settings"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={loadProfile}>
+              <Icon name="refresh" size={16} /> Try again
+            </button>
+          )}
+        >
+          {loadError}
+        </SectionState>
       ) : null}
 
-      <div className="card card-p" style={{ maxWidth: 640 }}>
-        {loading ? <p style={{ color: 'var(--muted)', marginBottom: 12 }}>Loading settings…</p> : null}
-        <form onSubmit={onSave} noValidate>
-          <fieldset disabled={Boolean(loadError) || loading} style={{ border: 0, padding: 0, margin: 0 }}>
-            <div className="grid2">
-              <QuirriRHFField
-                control={control}
-                name="first_name"
-                fieldType="personName"
-                label="First name"
-              />
-              <QuirriRHFField
-                control={control}
-                name="last_name"
-                fieldType="personName"
-                label="Last name"
-              />
+      <div className="pm-settings">
+        {tab === 'profile' ? (
+          <section className="sp-panel sa-account">
+            {accountHead}
+            <form onSubmit={onSave} noValidate className="sa-account-b">
+              <fieldset disabled={Boolean(loadError) || loading} className="sa-fieldset">
+                <div className="sa-account-sec">
+                  <h3>Personal details</h3>
+                  <p>Your name and phone number. Email and role are managed by Quirri.</p>
+                </div>
+                <div className="grid2">
+                  <QuirriRHFField
+                    control={control}
+                    name="first_name"
+                    fieldType="personName"
+                    label="First name"
+                  />
+                  <QuirriRHFField
+                    control={control}
+                    name="last_name"
+                    fieldType="personName"
+                    label="Last name"
+                  />
+                </div>
+                <QuirriRHFField
+                  control={control}
+                  name="email"
+                  fieldType="email"
+                  label="Email address"
+                  hint="Email change needs a separate re-verification flow — not available yet."
+                  disabled
+                  full
+                />
+                <div className="grid2">
+                  <QuirriRHFField
+                    control={control}
+                    name="phone"
+                    fieldType="phone"
+                    label="Phone number"
+                  />
+                  <QuirriField
+                    label="Role"
+                    hint="Assigned by an administrator. Cannot be changed here."
+                  >
+                    <input
+                      value={roleLabel}
+                      disabled
+                      className="sa-locked"
+                      readOnly
+                    />
+                  </QuirriField>
+                </div>
+              </fieldset>
+              <div className="sa-account-f">
+                <button
+                  className="sd-btn sd-btn--ghost"
+                  type="button"
+                  onClick={() => setPwOpen(true)}
+                  disabled={Boolean(loadError) || loading}
+                >
+                  <Icon name="key" size={16} /> Change password
+                </button>
+                <button className="sd-btn sd-btn--amber" type="submit" disabled={saving || loading || Boolean(loadError)}>
+                  <Icon name="tick" size={16} />
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </section>
+        ) : (
+          <section className="sp-panel sa-account">
+            {accountHead}
+            <div className="sa-account-b">
+              <div className="sa-account-sec">
+                <h3>Sign-in and security</h3>
+                <p>Keep your account safe. Changing your password signs you out everywhere else.</p>
+              </div>
+              <div className="sa-sec-row">
+                <span className="sp-row-ic"><Icon name="key" size={18} /></span>
+                <div className="sp-row-main">
+                  <b>Password</b>
+                  <div className="sp-row-meta"><span>Requires your current password.</span></div>
+                </div>
+                <button
+                  className="sd-btn sd-btn--amber sd-btn--sm"
+                  type="button"
+                  onClick={() => setPwOpen(true)}
+                  disabled={Boolean(loadError) || loading}
+                >
+                  Change password
+                </button>
+              </div>
+              <div className="sa-sec-row">
+                <span className="sp-row-ic"><Icon name="mail" size={18} /></span>
+                <div className="sp-row-main">
+                  <b>Sign-in email</b>
+                  <div className="sp-row-meta"><span>{email || '—'}</span></div>
+                </div>
+                <span className="sp-pill">Locked</span>
+              </div>
             </div>
-            <QuirriRHFField
-              control={control}
-              name="email"
-              fieldType="email"
-              label="Email address"
-              hint="Email change needs a separate re-verification flow — not available yet."
-              disabled
-              full
-            />
-            <QuirriRHFField
-              control={control}
-              name="phone"
-              fieldType="phone"
-              label="Phone number"
-              full
-            />
-            <QuirriField
-              label="Role"
-              hint="Roles are assigned by an administrator and cannot be changed here."
-            >
-              <input
-                value={roleLabel}
-                disabled
-                style={{ background: 'var(--line-soft)', color: 'var(--muted)' }}
-                readOnly
-              />
-            </QuirriField>
-            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <button className="btn btn-primary" type="submit" disabled={saving || loading || Boolean(loadError)}>
-                {saving ? 'Saving…' : 'Save changes'}
-              </button>
-              <button
-                className="btn btn-ghost"
-                type="button"
-                onClick={() => setPwOpen(true)}
-                disabled={Boolean(loadError) || loading}
-              >
-                Change password
-              </button>
-            </div>
-          </fieldset>
-        </form>
+          </section>
+        )}
+
+        <Panel title="About your account" sub="What you can and cannot change here.">
+          <InfoList
+            items={[
+              { label: 'Role', value: roleLabel },
+              { label: 'Access', value: 'All institutions' },
+              { label: 'Email', value: email, full: true },
+            ]}
+          />
+          <ul className="sa-side-list">
+            <li><Icon name="tick" size={16} /> Name and phone number are yours to edit.</li>
+            <li><Icon name="lock" size={16} /> Role and institution are not self-editable.</li>
+            <li><Icon name="shield" size={16} /> A password change signs out your other sessions.</li>
+          </ul>
+        </Panel>
       </div>
 
       <QuirriModal
@@ -221,9 +315,9 @@ export default function SettingsPage() {
         crumb="Requires your current password. The server revokes other active sessions for this account."
         footer={(
           <>
-            <button type="button" className="btn btn-ghost" onClick={() => setPwOpen(false)}>Cancel</button>
+            <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setPwOpen(false)}>Cancel</button>
             <div className="right">
-              <button type="button" className="btn btn-primary" onClick={onPassword} disabled={pwSaving}>
+              <button type="button" className="sd-btn sd-btn--amber" onClick={onPassword} disabled={pwSaving}>
                 {pwSaving ? 'Updating…' : 'Update password'}
               </button>
             </div>
@@ -257,6 +351,6 @@ export default function SettingsPage() {
           </QuirriField>
         </form>
       </QuirriModal>
-    </div>
+    </ModulePage>
   );
 }

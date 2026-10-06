@@ -3,8 +3,9 @@
 import Link from 'next/link';
 
 /**
- * Portal hero matching new_updated_design_four dark teal banner + optional side card.
- * Keep CTAs to one amber primary when both primary and secondary are present.
+ * Portal hero — Quirri Prep welcome banner pattern (docs/agent/design-system.md §Banner).
+ * Solid Teal 500 card · white H2 · CTA row = white secondary + ONE Amber 700 primary.
+ * Optional side panel (Teal 500) for a short list such as "Top improvement areas".
  */
 export default function PortalHero({
   eyebrow,
@@ -40,46 +41,31 @@ export default function PortalHero({
       </div>
 
       {hasSide ? (
-        <div className="q-card-lift" style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column' }}>
+        <aside className="q-hero-side">
           {sideTitle ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
-              <h3 style={{ fontSize: 14.5, fontWeight: 700, margin: 0 }}>{sideTitle}</h3>
-              {sideBadge ? (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
-                  background: 'var(--warning-soft)', color: 'var(--color-warning)',
-                }}
-                >
-                  {sideBadge}
-                </span>
-              ) : null}
+            <div className="q-hero-side__h">
+              <h3>{sideTitle}</h3>
+              {sideBadge ? <span className="q-hero-side__badge">{sideBadge}</span> : null}
             </div>
           ) : null}
-          {children}
+          {children ? <div className="q-hero-side__body">{children}</div> : null}
           {Array.isArray(sideItems) && sideItems.length ? (
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+            <ul>
               {sideItems.map((item) => (
-                <li key={item.id || item.title} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <li key={item.id || item.title}>
                   <span
-                    style={{
-                      width: 7, height: 7, borderRadius: '50%', flex: 'none', marginTop: 6,
-                      background: item.tone === 'error' ? 'var(--color-error)'
-                        : item.tone === 'info' ? 'var(--blue-accent)'
-                          : 'var(--color-warning)',
-                    }}
+                    className={`q-hero-side__dot${item.tone ? ` is-${item.tone}` : ''}`}
                     aria-hidden="true"
                   />
                   <div>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>{item.title}</div>
-                    {item.body ? (
-                      <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2, lineHeight: 1.45 }}>{item.body}</div>
-                    ) : null}
+                    <div className="q-hero-side__t">{item.title}</div>
+                    {item.body ? <div className="q-hero-side__b">{item.body}</div> : null}
                   </div>
                 </li>
               ))}
             </ul>
           ) : null}
-        </div>
+        </aside>
       ) : null}
     </div>
   );

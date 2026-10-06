@@ -15,7 +15,7 @@ const NAV = [
   },
   {
     href: '/student/subjects',
-    label: 'My Subjects',
+    label: 'My subjects',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
@@ -46,7 +46,7 @@ const NAV = [
   },
   {
     href: '/student/progress',
-    label: 'My Progress',
+    label: 'My progress',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />

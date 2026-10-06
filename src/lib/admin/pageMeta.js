@@ -5,11 +5,11 @@ export const PAGE_META = {
     subtitle: 'Departments, content pipeline, and student activity across your college.',
   },
   '/admin/structure': {
-    title: 'Academic Structure',
+    title: 'Academic structure',
     subtitle: 'Build and manage your Department → Program → Semester → Subject tree.',
   },
   '/admin/content': {
-    title: 'Upload & Content',
+    title: 'Upload & content',
     subtitle: 'Upload chapter material to generate a video lecture and follow status here.',
   },
   '/admin/students': {
@@ -21,7 +21,7 @@ export const PAGE_META = {
     subtitle: 'Add faculty and assign HODs who review and approve content.',
   },
   '/admin/interviews': {
-    title: 'Interview Assignments',
+    title: 'Interview assignments',
     subtitle: 'Assign AI mock interviews to final-year cohorts.',
   },
   '/admin/analytics': {

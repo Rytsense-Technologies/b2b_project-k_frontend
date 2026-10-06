@@ -9,7 +9,7 @@ export default function EmptyState({ icon: Icon, title, description, cta, onCta 
         </div>
       )}
       <div>
-        <h3 className="font-semibold text-slate-700 mb-1">{title}</h3>
+        <h3 className="font-medium text-slate-700 mb-1">{title}</h3>
         {description && <p className="text-sm text-slate-500 max-w-xs">{description}</p>}
       </div>
       {cta && (

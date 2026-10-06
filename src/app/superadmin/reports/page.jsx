@@ -2,11 +2,48 @@
 
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import QuirriBadge from '@/components/superadmin/QuirriBadge';
-import { SearchBox, QuirriSelect } from '@/components/superadmin/quirri-ui';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
+import {
+  ModulePage,
+  ModuleBanner,
+  KpiRow,
+  FilterBar,
+  Panel,
+  Icon,
+  SectionState,
+  SearchBox,
+  countLabel,
+} from '@/components/shared/module-ui';
 import { reportsApi, collegesApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+
+const REPORT_TYPES = [
+  { value: 'institution', label: 'Institution report' },
+  { value: 'department', label: 'Department report' },
+  { value: 'student', label: 'Student performance' },
+  { value: 'qa', label: 'Q&A report' },
+  { value: 'interview', label: 'Interview report' },
+];
+
+const RANGES = [
+  { value: 'last_30_days', label: 'Last 30 days' },
+  { value: 'this_semester', label: 'This semester' },
+  { value: 'custom', label: 'Custom range' },
+];
+
+/** Empty panel body: Teal 300 outline icon, title, one line. */
+function PanelEmpty({ icon, title, children }) {
+  return (
+    <div className="sa-empty">
+      <span className="sa-empty-ic" aria-hidden="true"><Icon name={icon} size={24} /></span>
+      <div>
+        <b>{title}</b>
+        {children ? <p>{children}</p> : null}
+      </div>
+    </div>
+  );
+}
 
 export default function ReportsPage() {
   const [search, setSearch] = useState('');
@@ -40,21 +77,49 @@ export default function ReportsPage() {
     }
   };
 
-  return (
-    <div className="animate-fade-in">
-      <div className="section-head">
-        <div>
-          <div className="t">Reports</div>
-          <div className="d">Search across institutions, preview the result set, then export exactly what you previewed.</div>
-        </div>
-        <div style={{ display: 'flex', gap: 9 }}>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleDownload('csv')} disabled={unavailable}>CSV</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleDownload('xlsx')} disabled={unavailable}>Excel</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleDownload('pdf')} disabled={unavailable}>PDF</button>
-        </div>
-      </div>
+  const typeLabel = REPORT_TYPES.find((t) => t.value === reportType)?.label || 'Report';
+  const rangeLabel = RANGES.find((r) => r.value === range)?.label || '—';
+  const collegeLabel = college ? (collegeOptions.find((c) => c.id === college)?.name || 'One institution') : 'All institutions';
 
-      <div className="toolbar">
+  return (
+    <ModulePage className="sa-page">
+      <ModuleBanner
+        icon="doc"
+        eyebrow="Reporting"
+        title="Reports"
+        lede="Search across institutions, preview the result set, then export exactly what you previewed."
+        chips={(
+          <>
+            <span className="is-on">{typeLabel}</span>
+            <span>{collegeLabel}</span>
+            <span>{rangeLabel}</span>
+          </>
+        )}
+        actions={(
+          <>
+            <button type="button" className="sd-btn sd-btn--glass" onClick={() => handleDownload('xlsx')} disabled={unavailable}>
+              Excel
+            </button>
+            <button type="button" className="sd-btn sd-btn--glass" onClick={() => handleDownload('pdf')} disabled={unavailable}>
+              PDF
+            </button>
+            <button type="button" className="sd-btn sd-btn--amber" onClick={() => handleDownload('csv')} disabled={unavailable}>
+              <Icon name="download" size={16} /> Export CSV
+            </button>
+          </>
+        )}
+      />
+
+      <KpiRow
+        label="Report summary"
+        items={[
+          { icon: 'list', label: 'Rows in preview', value: data ? countLabel(total) : null, sub: data ? `Page ${page} of ${pages}` : 'Preview not loaded' },
+          { icon: 'doc', label: 'Report type', value: typeLabel, sub: 'Change it in the filters', tone: 'text' },
+          { icon: 'calendar', label: 'Date range', value: rangeLabel, sub: collegeLabel, tone: 'text' },
+        ]}
+      />
+
+      <FilterBar label="Report filters">
         <SearchBox
           placeholder="Search student, college, department, subject…"
           value={search}
@@ -64,13 +129,7 @@ export default function ReportsPage() {
           ariaLabel="Report type"
           value={reportType}
           onChange={(e) => setReportType(e.target.value)}
-          options={[
-            { value: 'institution', label: 'Institution report' },
-            { value: 'department', label: 'Department report' },
-            { value: 'student', label: 'Student performance' },
-            { value: 'qa', label: 'Q&A report' },
-            { value: 'interview', label: 'Interview report' },
-          ]}
+          options={REPORT_TYPES}
         />
         <QuirriSelect
           ariaLabel="Filter by institution"
@@ -86,83 +145,67 @@ export default function ReportsPage() {
           ariaLabel="Date range"
           value={range}
           onChange={(e) => setRange(e.target.value)}
-          options={[
-            { value: 'last_30_days', label: 'Last 30 days' },
-            { value: 'this_semester', label: 'This semester' },
-            { value: 'custom', label: 'Custom range' },
-          ]}
+          options={RANGES}
         />
-      </div>
+      </FilterBar>
 
       {unavailable ? (
-        <div className="notice info" style={{ marginBottom: 12 }}>
-          <div>
-            <b>Report preview not available</b>
-            Report APIs are not reachable. Filters are ready; preview and export stay empty until the backend responds.
-          </div>
-        </div>
+        <SectionState title="Report preview not available">
+          Report APIs are not reachable. Filters are ready; preview and export stay empty until the backend responds.
+        </SectionState>
       ) : reportType !== 'institution' ? (
-        <div className="notice info" style={{ marginBottom: 12 }}>
-          <div>
-            <b>Learning reports need analytics</b>
-            Institution report uses live college and student counts. Department, Q&amp;A, student, and interview reports stay empty until learning analytics ship.
-          </div>
-        </div>
+        <SectionState title="Learning reports need analytics">
+          Institution report uses live college and student counts. Department, Q&amp;A, student, and interview reports stay empty until learning analytics ship.
+        </SectionState>
       ) : null}
 
       {error ? (
-        <div className="notice err" style={{ marginBottom: 12 }}>
-          <div>
-            <b>Could not load report preview</b>
-            {apiErrorMessage(error, 'Please try again.')}
-          </div>
-        </div>
+        <SectionState tone="err" title="Could not load report preview">
+          {apiErrorMessage(error, 'Please try again.')}
+        </SectionState>
       ) : null}
 
-      <div className="card">
-        <div className="card-h">
-          <h3>Report preview</h3>
-          <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-            {total} rows · page {page} of {pages}
-          </span>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Institution</th>
-              <th>Department</th>
-              <th>Students</th>
-              <th>Watch time</th>
-              <th>Q&amp;A</th>
-              <th>Assessments</th>
-              <th>Avg score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && !rows.length ? (
-              <tr><td colSpan={7}>Loading preview…</td></tr>
-            ) : null}
-            {!loading && !rows.length ? (
-              <tr><td colSpan={7}>No report rows for these filters.</td></tr>
-            ) : null}
-            {rows.map((row) => (
-              <tr key={`${row.college}-${row.department}-${row.id || ''}`}>
-                <td>{row.college || row.institution}</td>
-                <td>{row.department}</td>
-                <td className="num">{row.students}</td>
-                <td className="num">{row.duration || row.watch_time}</td>
-                <td className="num">{row.questions || row.qa}</td>
-                <td className="num">{row.interviews || row.assessments}</td>
-                <td>
-                  <QuirriBadge variant="green" plain>
-                    {row.score || row.avg_score || '—'}
-                  </QuirriBadge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <Panel
+        title="Report preview"
+        sub="Exports contain exactly these rows."
+        action={<span className="sp-pill sp-pill--teal">{countLabel(total)} rows · page {page} of {pages}</span>}
+        bodyClassName={null}
+      >
+        {rows.length ? (
+          <div className="sp-table-wrap">
+            <table className="sp-table un-table sa-table-tight">
+              <thead>
+                <tr>
+                  <th>Institution</th>
+                  <th>Department</th>
+                  <th className="num">Students</th>
+                  <th className="num">Watch time</th>
+                  <th className="num">Q&amp;A</th>
+                  <th className="num">Assessments</th>
+                  <th>Avg score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={`${row.college}-${row.department}-${row.id || ''}`}>
+                    <td><b>{row.college || row.institution}</b></td>
+                    <td>{row.department}</td>
+                    <td className="num">{row.students}</td>
+                    <td className="num">{row.duration || row.watch_time}</td>
+                    <td className="num">{row.questions || row.qa}</td>
+                    <td className="num">{row.interviews || row.assessments}</td>
+                    <td><span className="sp-pill sp-pill--good">{row.score || row.avg_score || '—'}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <PanelEmpty icon="doc" title={loading ? 'Loading preview…' : 'No report rows for these filters'}>
+            {loading ? null : 'Change the report type, institution or date range to preview a different set.'}
+          </PanelEmpty>
+        )}
+      </Panel>
+    </ModulePage>
   );
 }

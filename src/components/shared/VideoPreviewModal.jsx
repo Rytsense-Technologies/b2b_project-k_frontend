@@ -1,6 +1,7 @@
 'use client';
 
 import QuirriModal from '@/components/superadmin/QuirriModal';
+import { Icon } from '@/components/student/ui';
 
 /**
  * Plays a finished edu_video job inline instead of only offering a bare
@@ -17,22 +18,20 @@ export default function VideoPreviewModal({ open, onClose, title, src }) {
   return (
     <QuirriModal open={open} onClose={onClose} title={title || 'Video preview'} wide>
       {src ? (
-        <>
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video
-            controls
-            autoPlay
-            style={{ width: '100%', maxHeight: '70vh', borderRadius: 8, background: '#000', display: 'block' }}
-            src={src}
-          >
-            Your browser does not support embedded video playback.
-          </video>
-          <div style={{ marginTop: 12, textAlign: 'right' }}>
-            <a href={src} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
-              Open in a new tab
+        <div className="fa-video">
+          <div className="fa-video-stage">
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <video controls autoPlay src={src}>
+              Your browser does not support embedded video playback.
+            </video>
+          </div>
+          <div className="fa-video-foot">
+            <span><Icon name="info" size={16} /> If the video does not play here, open it in a new tab.</span>
+            <a href={src} target="_blank" rel="noopener noreferrer" className="sd-btn sd-btn--ghost sd-btn--sm">
+              Open in a new tab <Icon name="arrow" size={16} />
             </a>
           </div>
-        </>
+        </div>
       ) : null}
     </QuirriModal>
   );

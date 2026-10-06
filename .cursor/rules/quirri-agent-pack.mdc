@@ -1,0 +1,19 @@
+---
+description: Agent pack before/after protocol — token-optimized Code Graph workflow
+alwaysApply: true
+---
+
+# Quirri Agent Pack (mandatory)
+
+Canonical pack: `docs/agent/` — `prod.md` · `architecture.md` · `rules.md` · `design.md` · `design-system.md` · `task.md` · `memory.md`
+
+## Every turn
+
+1. Follow **`docs/agent/task.md`** BEFORE / DURING / AFTER checklists.
+2. Memory: **`docs/agent/memory.md`** — Code Graph first (`graphify query` budget 1500); update after edits.
+3. Scope: **`docs/agent/prod.md`** — out of scope → ask user (also `quirri-sow-scope.mdc`).
+4. Existing always-apply rules still apply (`quirri-forms`, `quirri-product-ui`, brand, login freeze, no-plans, India, graphify, development). This pack **indexes** them; it does not override them.
+5. Token protocol: Code Graph → Semantic search on hits → Context packing (only needed agent docs + hit files) → Symbol-aware edits → SOW/API intelligence. Do not dump the whole repo or `GRAPH_REPORT.md` into context.
+6. Altering existing code: bring touched files into compliance with `rules.md` / `design.md` / `design-system.md`.
+7. Any UI change: `design-system.md` §6 BEFORE and §7 AFTER checklists are mandatory (`quirri-design-system.mdc`).
+8. Entry: `AGENTS.md` points here.

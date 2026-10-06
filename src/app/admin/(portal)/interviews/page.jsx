@@ -2,6 +2,7 @@
 
 import AdminEmptyModule from '@/components/admin/AdminEmptyModule';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
+import { Icon, KpiRow, Panel } from '@/components/shared/module-ui';
 
 export default function InterviewsPage() {
   const { show, hide, TipLayer } = useQuirriTip();
@@ -9,13 +10,19 @@ export default function InterviewsPage() {
   return (
     <>
       <AdminEmptyModule
-        title="Interview Assignments"
+        icon="mic"
+        title="Interview assignments"
         description="Assign AI mock interviews to final-year cohorts and track completion. Only final-year students are eligible."
-        epic="EPIC-18 (interview assignments)"
+        epic="the interview assignments service"
+        steps={[
+          { title: 'Pick a cohort', body: 'Choose final-year students by department and year.' },
+          { title: 'Assign an interview', body: 'Set the interview mode and a due date for the cohort.' },
+          { title: 'Track completion', body: 'See who has finished, their scores and who needs support.' },
+        ]}
         actions={(
           <button
             type="button"
-            className="btn btn-primary"
+            className="sd-btn sd-btn--amber"
             disabled
             aria-label="New assignment — not available yet"
             onMouseEnter={(e) => show(e, 'Available when interview assignment API is live', 'top')}
@@ -23,52 +30,43 @@ export default function InterviewsPage() {
             onFocus={(e) => show(e, 'Available when interview assignment API is live', 'top')}
             onBlur={hide}
           >
-            New assignment
+            <Icon name="plus" size={16} /> New assignment
           </button>
         )}
       >
-        <div className="stats c4" style={{ marginTop: 4 }}>
-          <div className="stat">
-            <div className="k">Final-year students</div>
-            <div className="v">—</div>
-            <div className="s">Needs EPIC-06 + EPIC-18</div>
-          </div>
-          <div className="stat">
-            <div className="k">Assigned</div>
-            <div className="v">—</div>
-            <div className="s">No live data</div>
-          </div>
-          <div className="stat">
-            <div className="k">Completed</div>
-            <div className="v">—</div>
-            <div className="s">No live data</div>
-          </div>
-          <div className="stat">
-            <div className="k">At risk</div>
-            <div className="v">—</div>
-            <div className="s">Score below 60%</div>
-          </div>
-        </div>
+        <div className="ad-page ad-soon-body">
+          <KpiRow
+            label="Interview summary"
+            items={[
+              { icon: 'users', label: 'Final-year students', value: null, sub: 'Not connected yet' },
+              { icon: 'calendar', label: 'Assigned', value: null, sub: 'No live data' },
+              { icon: 'tick', label: 'Completed', value: null, sub: 'No live data' },
+              { icon: 'alert', label: 'Needs support', value: null, sub: 'Score below 60%' },
+            ]}
+          />
 
-        <div className="card">
-          <div className="card-h"><h3>Active assignments</h3></div>
-          <table>
-            <thead>
-              <tr>
-                <th>Assignment</th>
-                <th>Cohort</th>
-                <th>Mode</th>
-                <th>Due</th>
-                <th>Completion</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={6}>No assignments yet. Create one when EPIC-18 is connected.</td>
-              </tr>
-            </tbody>
-          </table>
+          <Panel title="Active assignments" sub="Assignments you create will be listed here." bodyClassName={null}>
+            <div className="sp-table-wrap">
+              <table className="sp-table">
+                <thead>
+                  <tr>
+                    <th>Assignment</th>
+                    <th>Cohort</th>
+                    <th>Mode</th>
+                    <th>Due</th>
+                    <th className="num">Completion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={5} className="ad-table-empty">
+                      No assignments yet. You can create one once interview assignments are available.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Panel>
         </div>
       </AdminEmptyModule>
       <TipLayer />

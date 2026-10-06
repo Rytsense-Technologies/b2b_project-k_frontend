@@ -61,7 +61,7 @@ const NAV = [
   },
   {
     href: '/superadmin/users',
-    label: 'Platform Users',
+    label: 'Platform users',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="9" cy="8" r="3.2" />
@@ -84,20 +84,10 @@ const NAV = [
   { group: 'Operations' },
   {
     href: '/superadmin/health',
-    label: 'Platform Health',
+    label: 'Platform health',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-      </svg>
-    ),
-  },
-  {
-    href: '/superadmin/audit',
-    label: 'Audit Logs',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M9 11l3 3 8-8" />
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
       </svg>
     ),
   },

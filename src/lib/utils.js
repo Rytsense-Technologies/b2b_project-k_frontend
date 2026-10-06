@@ -25,9 +25,9 @@ export function formatDuration(seconds) {
 
 /** Get score color class */
 export function getScoreColor(score) {
-  if (score >= 80) return '#22c55e';
-  if (score >= 60) return '#f59e0b';
-  return '#ef4444';
+  if (score >= 80) return '#0F6E56';
+  if (score >= 60) return '#C97A0E';
+  return '#A32D2D';
 }
 
 /** Get plan rank */

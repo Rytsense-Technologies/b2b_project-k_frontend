@@ -55,7 +55,6 @@ Backend API (local): `http://localhost:8000/api/v1` — see `src/lib/apiConfig.j
 | `/superadmin/users` | Platform users (live API; bulk CSV gated) |
 | `/superadmin/reports` | Reports (institution + CSV live; learning types empty) |
 | `/superadmin/health` | Platform health (DB/API status live) |
-| `/superadmin/audit` | Audit logs (live append-only) |
 | `/superadmin/notifications` | Notifications (SOW catalogue live; deliveries empty) |
 | `/superadmin/settings` | Settings (live `/auth/me`) |
 

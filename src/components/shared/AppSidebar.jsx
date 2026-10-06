@@ -38,16 +38,16 @@ function SidebarSupportContent({ plan }) {
   const isPremium = plan === 'premium';
   return (
     <div className="space-y-1">
-      <p className="text-[11px] text-[#7b7f8c] leading-tight">
+      <p className="text-[11px] text-[#707A7E] leading-tight">
         {isPremium ? 'Premium account' : 'Standard account'}
       </p>
       {isPremium ? (
-        <p className="text-xs font-medium text-[#2b3240] leading-snug">
+        <p className="text-xs font-medium text-[#102228] leading-snug">
           Chat with Support Team
         </p>
       ) : (
         <>
-          <p className="text-xs font-medium text-[#2b3240] leading-snug">
+          <p className="text-xs font-medium text-[#102228] leading-snug">
             Email to Support Team
           </p>
           <a
@@ -192,7 +192,7 @@ export default function AppSidebar() {
   return (
     <aside
       ref={sidebarRef}
-      className="sidebar transition-all duration-300 bg-white border-r border-[#e3e7ee] flex-shrink-0 relative z-50"
+      className="sidebar transition-all duration-300 bg-white border-r border-[#DEE0E1] flex-shrink-0 relative z-50"
       style={{
         width: sidebarWidth,
         minWidth: sidebarWidth,
@@ -211,7 +211,7 @@ export default function AppSidebar() {
       {/* ── Collapse toggle — circular, sits just below the header ── */}
       <button
         onClick={() => dispatch(toggleSidebar())}
-        className="absolute right-0 top-[29px] translate-x-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#e3e7ee] shadow-sm text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
+        className="absolute right-0 top-[29px] translate-x-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#DEE0E1] shadow-sm text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
       >
         {sidebarOpen ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
       </button>
@@ -235,7 +235,7 @@ export default function AppSidebar() {
               } ${
                 active
                   ? 'text-[#0E5C6B]'
-                  : 'text-[#7b7f8c] hover:text-[#2b3240]'
+                  : 'text-[#707A7E] hover:text-[#102228]'
               }`}
               onMouseEnter={!sidebarOpen ? (e) => showNavTooltip(e, label) : undefined}
               onMouseLeave={!sidebarOpen ? () => setTooltip(null) : undefined}
@@ -265,16 +265,16 @@ export default function AppSidebar() {
             className="w-0 h-0 shrink-0 border-y-[5px] border-y-transparent border-r-[6px] border-r-white"
             style={{ marginRight: -1 }}
           />
-          <span className="whitespace-nowrap rounded-r-md rounded-l-none bg-white px-2.5 py-1 text-[11px] font-semibold text-[#2b3240] border border-[#e3e7ee] border-l-0 shadow-sm">
+          <span className="whitespace-nowrap rounded-r-md rounded-l-none bg-white px-2.5 py-1 text-[11px] font-medium text-[#102228] border border-[#DEE0E1] border-l-0 shadow-sm">
             {tooltip.label}
           </span>
         </div>
       )}
 
       {/* ── Footer: support + profile ── */}
-      <div className="mt-auto shrink-0 border-t border-[#e3e7ee]" ref={menuRef}>
+      <div className="mt-auto shrink-0 border-t border-[#DEE0E1]" ref={menuRef}>
         {sidebarOpen && (
-          <div className="px-3 pt-3 pb-3 border-b border-[#e3e7ee] text-left">
+          <div className="px-3 pt-3 pb-3 border-b border-[#DEE0E1] text-left">
             <SidebarSupportContent plan={displayPlan} />
           </div>
         )}
@@ -293,10 +293,10 @@ export default function AppSidebar() {
             {/* Menu header */}
             <div className="px-4 py-3 border-b border-slate-200">
               {menuTitle && (
-                <p className="text-[#2b3240] text-sm font-semibold truncate">{menuTitle}</p>
+                <p className="text-[#102228] text-sm font-medium truncate">{menuTitle}</p>
               )}
               {menuSubtitle && (menuTitle ? menuSubtitle !== menuTitle : true) && (
-                <p className={`text-slate-500 text-xs truncate ${menuTitle ? 'mt-0.5' : 'text-sm font-semibold text-[#2b3240]'}`}>
+                <p className={`text-slate-500 text-xs truncate ${menuTitle ? 'mt-0.5' : 'text-sm font-medium text-[#102228]'}`}>
                   {menuSubtitle}
                 </p>
               )}
@@ -309,7 +309,7 @@ export default function AppSidebar() {
                   key={href}
                   href={href}
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#2b3240] hover:bg-[#f4f6fa] transition-colors"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#102228] hover:bg-[#F8F8F9] transition-colors"
                 >
                   <Icon size={16} className="flex-shrink-0" />
                   <span className="flex-1">{label}</span>
@@ -342,12 +342,12 @@ export default function AppSidebar() {
               sidebarOpen
                 ? 'px-3 py-3 rounded-none'
                 : 'justify-center p-2 rounded-xl'
-            } ${menuOpen ? 'bg-[#d9dde4]' : 'hover:bg-[#eaedf3]'}`}
+            } ${menuOpen ? 'bg-[#DEE0E1]' : 'hover:bg-[#EEF0F0]'}`}
             title={!sidebarOpen ? `${a11yAccount} — click for menu` : undefined}
             aria-label={`${a11yAccount} account menu`}
             aria-expanded={menuOpen}
           >
-            <div className="w-8 h-8 rounded-full bg-[#2f3f55] flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#0E5C6B] flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xs font-bold">{initials}</span>
             </div>
 
@@ -355,7 +355,7 @@ export default function AppSidebar() {
               <>
                 <div className="flex-1 min-w-0 overflow-hidden text-left">
                   {!!shortName && (
-                    <p className="text-[#1f2937] text-sm font-medium truncate leading-tight">{shortName}</p>
+                    <p className="text-[#102228] text-sm font-medium truncate leading-tight">{shortName}</p>
                   )}
                   <PlanBadge plan={displayPlan} className={shortName ? 'mt-1' : ''} />
                 </div>

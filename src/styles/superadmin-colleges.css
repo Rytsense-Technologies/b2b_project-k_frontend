@@ -3,18 +3,18 @@
    styles and the shared .sd-/.sp- primitives.
    ========================================================================== */
 .co-uni-filter{flex:0 0 220px;min-width:180px}
-.co-uni-filter .quirri-dd__trigger,.co-uni-filter .quirri-dd{border-radius:9999px}
+.co-uni-filter .quirri-dd__trigger,.co-uni-filter .quirri-dd{border-radius:var(--radius-control)}
 
 .co-card-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:4px}
 .co-card-stats > div{padding:8px 10px;border-radius:var(--radius-md);background:var(--teal-50)}
 .un-card.is-inactive .co-card-stats > div{background:var(--neutral-100)}
-.co-card-stats b{display:block;font-size:18px;line-height:24px;font-weight:700;color:var(--teal-700);font-variant-numeric:tabular-nums}
-.co-card-stats small{font-size:11px;color:var(--ink-2)}
+.co-card-stats b{display:block;font-size:18px;line-height:26px;font-weight:500;color:var(--teal-700);font-variant-numeric:tabular-nums}
+.co-card-stats small{font-size:12px;color:var(--ink-2)}
 
 .co-seat{display:flex;flex-direction:column;gap:6px}
-.co-seat-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--ink-2)}
-.co-seat-h b{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
-.co-seat-pct{font-size:12px;font-weight:700;color:var(--teal-700);font-variant-numeric:tabular-nums}
+.co-seat-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-2)}
+.co-seat-h b{font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.co-seat-pct{font-size:12px;font-weight:500;color:var(--teal-700);font-variant-numeric:tabular-nums}
 .co-seat-bar{height:8px;border-radius:9999px;background:var(--neutral-100);overflow:hidden}
 .co-seat-bar i{display:block;height:100%;border-radius:inherit;background:var(--teal-500);transition:width .6s ease-out}
 .co-seat.is-high .co-seat-bar i{background:var(--amber-500)}
@@ -25,22 +25,22 @@
 
 .co-drawer{width:min(600px,100%)}
 .co-drawer-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.co-drawer-stats > div{padding:14px 16px;border-radius:var(--radius-md);background:#fff;border:1px solid var(--line)}
+.co-drawer-stats > div{padding:14px 16px;border-radius:var(--radius-md);background:#fff;border:0;box-shadow:var(--shadow-card)}
 .co-drawer-stats small{display:block;font-size:12px;color:var(--ink-2)}
-.co-drawer-stats b{font-size:22px;font-weight:700;color:var(--teal-700);font-variant-numeric:tabular-nums}
+.co-drawer-stats b{font-size:22px;line-height:30px;font-weight:500;color:var(--teal-700);font-variant-numeric:tabular-nums}
 
 .co-people,.co-depts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .co-people li,.co-depts li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line-soft)}
 .co-people li:first-child,.co-depts li:first-child{border-top:0}
-.co-avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-700);font-size:12px;font-weight:700}
-.co-dept-code{min-width:44px;height:32px;padding:0 8px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--neutral-100);color:var(--ink);font-size:11.5px;font-weight:700;letter-spacing:.04em}
+.co-avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-700);font-size:12px;font-weight:500}
+.co-dept-code{min-width:44px;height:32px;padding:0 8px;border-radius:var(--radius-control);display:grid;place-items:center;flex:none;background:var(--neutral-100);color:var(--ink);font-size:12px;font-weight:500;letter-spacing:.04em}
 .co-depts .sp-row-meta span{display:inline-flex;align-items:center;gap:4px}
 
 .co-admins-form{display:flex;flex-direction:column;gap:10px}
-.co-admin-card{padding:12px 14px;border-radius:var(--radius-md);background:#fff;border:1px solid var(--line)}
+.co-admin-card{padding:12px 14px;border-radius:var(--radius-md);background:#fff;border:0;box-shadow:var(--shadow-card)}
 .co-admin-card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .co-admin-n{font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-700)}
-.co-remove{color:var(--color-error);font-size:12.5px}
+.co-remove{color:var(--color-error);font-size:12px}
 .co-add-admin{min-height:48px}
 
 @media (max-width:760px){

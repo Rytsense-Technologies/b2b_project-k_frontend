@@ -178,11 +178,11 @@ export default function StudentSubjectsPage() {
     return (
       <div className="sp animate-fade-in">
         <section className="sd-kpis" aria-label="Subjects summary">
-          <Kpi icon="book" label="My Subjects" value={loading ? null : subjects.length} sub={studentDepartmentName || 'Your department'} />
-          <Kpi icon="play" label="Chapters Published" value={loading ? null : totalChapters} sub="Video lectures ready to watch" />
+          <Kpi icon="book" label="My subjects" value={loading ? null : subjects.length} sub={studentDepartmentName || 'Your department'} />
+          <Kpi icon="play" label="Chapters published" value={loading ? null : totalChapters} sub="Video lectures ready to watch" />
           <Kpi
             icon="calendar"
-            label="Latest Lecture"
+            label="Latest lecture"
             value={latest ? (latest.chapter_title || 'Untitled chapter') : null}
             sub={latest ? formatDate(latest.published_at) || 'Recently published' : 'Appears when published'}
             tone="text"

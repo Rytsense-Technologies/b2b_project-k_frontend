@@ -8,7 +8,7 @@ export default function ConfirmDialog({ open, title = 'Are you sure?', message, 
     <div className={`fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm ${overlayClassName}`}>
       <div className="card p-6 w-full max-w-sm mx-4 animate-slide-up">
         <div className="flex items-start justify-between mb-4">
-          <h3 className="font-semibold text-slate-800">{title}</h3>
+          <h3 className="font-medium text-slate-800">{title}</h3>
           <button onClick={onCancel} className="text-slate-400 hover:text-slate-600">
             <X size={18} />
           </button>

@@ -2,9 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import QuirriBadge from '@/components/superadmin/QuirriBadge';
 import VideoPreviewModal from '@/components/shared/VideoPreviewModal';
 import EduVideoPlanEditor from '@/components/shared/EduVideoPlanEditor';
+import {
+  ModulePage,
+  ModuleBanner,
+  KpiRow,
+  FilterBar,
+  SegTabs,
+  Panel,
+  IconButton,
+  Icon,
+  SectionState,
+  SearchBox,
+  countLabel,
+} from '@/components/shared/module-ui';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { eduVideoApi, JOB_STATUS, computeJobProgress, summarizeEduVideoError } from '@/lib/api/admin/eduVideo';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
@@ -31,20 +44,73 @@ function isJobGenerating(job) {
  * almost instantly and this page no longer relies on.
  */
 function statusBadge(job) {
-  if (job.status === JOB_STATUS.FAILED) return { label: 'Failed', variant: 'red', progress: null, error: job.error };
+  if (job.status === JOB_STATUS.FAILED) return { label: 'Failed', tone: 'err', progress: null, error: job.error };
   if (!canPreview(job)) {
     return {
       label: job.status === JOB_STATUS.RENDERING ? 'Rendering' : 'Generating',
-      variant: 'blue', progress: computeJobProgress(job), error: null,
+      tone: 'teal', progress: computeJobProgress(job), error: null,
     };
   }
-  return { label: 'Rendered', variant: 'blue', progress: null, error: null };
+  return { label: 'Rendered', tone: 'teal', progress: null, error: null };
+}
+
+/** 5 Oct 2026 · 9:00 am */
+function formatWhen(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+  return `${date} · ${time}`;
+}
+
+const deptKey = (job) => job?.department_id || job?.department_name || '';
+
+const VIEW_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'review', label: 'Awaiting review' },
+  { value: 'progress', label: 'In progress' },
+  { value: 'published', label: 'Published' },
+];
+
+/** One chapter row: icon tile · title + meta · status · actions. */
+function ChapterRow({ icon = 'video', iconTone = '', title, meta, status, actions }) {
+  return (
+    <li className="fa-row">
+      <span className={`sp-row-ic${iconTone ? ` sp-row-ic--${iconTone}` : ''}`} aria-hidden="true">
+        <Icon name={icon} size={18} />
+      </span>
+      <div className="fa-row-main">
+        <b>{title}</b>
+        <div className="sp-row-meta">{meta}</div>
+      </div>
+      {status ? <div className="fa-row-status">{status}</div> : null}
+      {actions ? <div className="fa-row-actions">{actions}</div> : null}
+    </li>
+  );
+}
+
+function RowMeta({ job, when, whenLabel }) {
+  return (
+    <>
+      {job.source_filename ? (
+        <span className="sd-meta-i"><Icon name="doc" size={14} /> {job.source_filename}</span>
+      ) : null}
+      <span className="sd-meta-i"><Icon name="building" size={14} /> {job.department_name || 'No department'}</span>
+      {when ? (
+        <span className="sd-meta-i"><Icon name="clock" size={14} /> {whenLabel} {formatWhen(when)}</span>
+      ) : null}
+    </>
+  );
 }
 
 export default function FacultyVideosPage() {
   const [publishingId, setPublishingId] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
   const [editJob, setEditJob] = useState(null);
+  const [search, setSearch] = useState('');
+  const [dept, setDept] = useState('');
+  const [view, setView] = useState('all');
   const { show, hide, TipLayer } = useQuirriTip();
 
   const {
@@ -143,187 +209,271 @@ export default function FacultyVideosPage() {
     }
   };
 
+  /* ---- client-side filters over the jobs already loaded ---- */
+  const departments = useMemo(() => {
+    const seen = new Map();
+    jobs.forEach((j) => {
+      const key = deptKey(j);
+      if (key && !seen.has(key)) seen.set(key, j.department_name || 'Department');
+    });
+    return [...seen.entries()].map(([value, label]) => ({ value, label }));
+  }, [jobs]);
+
+  const needle = search.trim().toLowerCase();
+  const matches = (j) => {
+    if (dept && deptKey(j) !== dept) return false;
+    if (!needle) return true;
+    return [j.chapter_title, j.source_filename, j.department_name]
+      .some((v) => String(v || '').toLowerCase().includes(needle));
+  };
+  const shownReview = reviewQueue.filter(matches);
+  const shownProgress = inProgress.filter(matches);
+  const shownPublished = published.filter(matches);
+  const filtering = Boolean(needle || dept);
+
+  const showReview = view === 'all' || view === 'review';
+  const showProgress = (view === 'all' && inProgress.length > 0) || view === 'progress';
+  const showPublished = view === 'all' || view === 'published';
+
+  const ready = (!jobsLoading || jobs.length > 0) && !(jobsError && !jobs.length);
+  const kpi = (n) => (ready && !jobsError ? countLabel(n) : null);
+  const nextUp = reviewQueue[0] || null;
+
+  const emptyNote = (base) => (filtering ? 'No chapters match these filters. Try a different name or department.' : base);
+
   return (
-    <div className="animate-fade-in">
-      {jobsError ? (
-        <div className="notice err" style={{ marginBottom: 18 }}>
-          <div>
-            <b>Could not load videos</b>
-            {apiErrorMessage(jobsError, 'Please try again.')}
+    <ModulePage className="fa-page">
+      <ModuleBanner
+        icon="video"
+        eyebrow="Content review"
+        title="Video review"
+        lede="Chapters your College Admin sends land here. Preview each one, fix slides if needed, then publish. Nothing reaches students until you do."
+        chips={(
+          <>
+            <span>Generated</span>
+            <Icon name="chev" size={14} />
+            <span>Sent by College Admin</span>
+            <Icon name="chev" size={14} />
+            <span className="is-on">Your review</span>
+            <Icon name="chev" size={14} />
+            <span>Published</span>
+          </>
+        )}
+        actions={nextUp ? (
+          <button type="button" className="sd-btn sd-btn--amber" onClick={() => setPreviewJob(nextUp)}>
+            <Icon name="play" size={16} /> Preview next chapter
+          </button>
+        ) : null}
+      />
+
+      <KpiRow
+        label="Video review summary"
+        items={[
+          { icon: 'clock', label: 'Awaiting your review', value: kpi(reviewQueue.length), sub: 'Sent by your College Admin' },
+          { icon: 'refresh', label: 'In progress', value: kpi(inProgress.length), sub: 'Generating or not yet sent' },
+          { icon: 'tick', label: 'Published', value: kpi(published.length), sub: 'Live for students' },
+          { icon: 'layers', label: 'Departments', value: kpi(departments.length), sub: 'With chapters in your scope' },
+        ]}
+      />
+
+      <FilterBar label="Filter chapters">
+        <SearchBox
+          placeholder="Search chapter, file or department…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {departments.length > 1 ? (
+          <div className="fa-filter-select">
+            <QuirriSelect
+              ariaLabel="Filter by department"
+              value={dept}
+              onChange={(e) => setDept(e.target.value)}
+              placeholder="All departments"
+              options={[{ value: '', label: 'All departments' }, ...departments]}
+            />
           </div>
-        </div>
+        ) : null}
+        <SegTabs
+          label="Show"
+          value={view}
+          onChange={setView}
+          options={VIEW_TABS.map((t) => ({
+            ...t,
+            count: !ready ? null : t.value === 'review' ? reviewQueue.length
+              : t.value === 'progress' ? inProgress.length
+                : t.value === 'published' ? published.length
+                  : null,
+          }))}
+        />
+      </FilterBar>
+
+      {jobsError ? (
+        <SectionState
+          tone="err"
+          title="Could not load videos"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reloadJobs().catch(() => {})}>
+              <Icon name="refresh" size={16} /> Try again
+            </button>
+          )}
+        >
+          {apiErrorMessage(jobsError, 'Please try again.')}
+        </SectionState>
       ) : null}
 
-      <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-h"><h3>Awaiting your review</h3></div>
-        <div className="card-sub">
-          Preview a chapter, edit slides if needed (Save &amp; send to admin), then publish — or send edits back for the College Admin to regenerate.
-        </div>
-        {!jobsLoading && !reviewQueue.length ? (
-          <div className="notice info" style={{ margin: 16 }}>
-            <div><b>Nothing to review</b> Chapters your College Admin sends will appear here.</div>
-          </div>
-        ) : null}
-        {reviewQueue.length ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Chapter</th>
-                <th>Department</th>
-                <th>Sent</th>
-                <th>Preview</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reviewQueue.map((job) => (
-                <tr key={job.job_id}>
-                  <td>
-                    <span className="strong">{job.chapter_title || '—'}</span>
-                    <div className="sub">{job.source_filename}</div>
-                  </td>
-                  <td>{job.department_name || '—'}</td>
-                  <td className="sub">{job.sent_to_hod_at ? new Date(job.sent_to_hod_at).toLocaleString() : '—'}</td>
-                  <td className="actions">
-                    <a
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setPreviewJob(job)}
-                      onKeyDown={(e) => e.key === 'Enter' && setPreviewJob(job)}
-                    >
-                      Preview
-                    </a>
-                  </td>
-                  <td className="actions">
-                    <a
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setEditJob(job)}
-                      onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                    >
-                      Edit
-                    </a>
-                    <a
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => publishingId !== job.job_id && publish(job.job_id)}
-                      onKeyDown={(e) => e.key === 'Enter' && publish(job.job_id)}
-                      style={{ opacity: publishingId === job.job_id ? 0.5 : 1 }}
-                    >
-                      {publishingId === job.job_id ? 'Publishing…' : 'Publish to students'}
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : null}
-      </div>
+      {jobsLoading && !jobs.length ? <SectionState title="Loading chapters…" /> : null}
 
-      {inProgress.length ? (
-        <div className="card" style={{ marginBottom: 18 }}>
-          <div className="card-h"><h3>In progress</h3></div>
-          <div className="card-sub">Still drafting or rendering at the College Admin&apos;s side.</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Chapter</th>
-                <th>Department</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inProgress.map((job) => {
+      {ready && showReview ? (
+        <Panel
+          title="Awaiting your review"
+          sub="Preview a chapter and edit slides if needed (Save & send to admin), then publish — or send edits back for the College Admin to regenerate."
+          action={<span className="sp-pill sp-pill--low">{countLabel(shownReview.length)} to review</span>}
+          bodyClassName=""
+        >
+          {!shownReview.length ? (
+            <div className="sp-panel-b">
+              <SectionState title={filtering ? 'No matches' : 'Nothing to review'}>
+                {emptyNote('Chapters your College Admin sends will appear here.')}
+              </SectionState>
+            </div>
+          ) : (
+            <ul className="fa-rows">
+              {shownReview.map((job) => (
+                <ChapterRow
+                  key={job.job_id}
+                  title={job.chapter_title || '—'}
+                  meta={<RowMeta job={job} when={job.sent_to_hod_at} whenLabel="Sent" />}
+                  status={<span className="sp-pill sp-pill--low"><i className="un-dot" aria-hidden="true" />Awaiting review</span>}
+                  actions={(
+                    <>
+                      <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setPreviewJob(job)}>
+                        <Icon name="eye" size={16} /> Preview
+                      </button>
+                      <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
+                      <button
+                        type="button"
+                        className="sd-btn sd-btn--teal sd-btn--sm"
+                        onClick={() => publishingId !== job.job_id && publish(job.job_id)}
+                        disabled={publishingId === job.job_id}
+                      >
+                        <Icon name="send" size={16} />
+                        {publishingId === job.job_id ? 'Publishing…' : 'Publish to students'}
+                      </button>
+                    </>
+                  )}
+                />
+              ))}
+            </ul>
+          )}
+        </Panel>
+      ) : null}
+
+      {ready && showProgress ? (
+        <Panel
+          title="In progress"
+          sub="Still drafting or rendering at the College Admin's side. Nothing to do here yet."
+          bodyClassName=""
+        >
+          {!shownProgress.length ? (
+            <div className="sp-panel-b">
+              <SectionState title={filtering ? 'No matches' : 'Nothing in progress'}>
+                {emptyNote('Chapters being generated will show here until they are ready.')}
+              </SectionState>
+            </div>
+          ) : (
+            <ul className="fa-rows">
+              {shownProgress.map((job) => {
                 const badge = statusBadge(job);
+                const err = badge.error ? summarizeEduVideoError(badge.error) : null;
                 return (
-                  <tr key={job.job_id}>
-                    <td>
-                      <span className="strong">{job.chapter_title || '—'}</span>
-                      <div className="sub">{job.source_filename}</div>
-                    </td>
-                    <td>{job.department_name || '—'}</td>
-                    <td>
-                      <QuirriBadge variant={badge.variant}>{badge.label}</QuirriBadge>
-                      {typeof badge.progress === 'number' ? (
-                        <div className="sub" style={{ marginTop: 4 }}>{badge.progress}%</div>
-                      ) : null}
-                      {badge.error ? (
-                        <div
-                          className="sub edu-video-error"
-                          style={{ marginTop: 4, color: 'var(--danger, #b42318)' }}
-                          onMouseEnter={(e) => {
-                            const { detail } = summarizeEduVideoError(badge.error);
-                            if (detail) show(e, detail, 'top');
-                          }}
-                          onMouseLeave={hide}
-                        >
-                          {summarizeEduVideoError(badge.error).summary}
-                        </div>
-                      ) : null}
-                    </td>
-                  </tr>
+                  <ChapterRow
+                    key={job.job_id}
+                    icon={badge.tone === 'err' ? 'alert' : 'refresh'}
+                    iconTone="muted"
+                    title={job.chapter_title || '—'}
+                    meta={(
+                      <>
+                        <RowMeta job={job} />
+                        {err ? (
+                          <span
+                            className="fa-err"
+                            onMouseEnter={(e) => {
+                              if (err.detail) show(e, err.detail, 'top');
+                            }}
+                            onMouseLeave={hide}
+                          >
+                            {err.summary}
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                    status={(
+                      <div className="fa-status-stack">
+                        <span className={`sp-pill sp-pill--${badge.tone}`}>
+                          <i className="un-dot" aria-hidden="true" />
+                          {badge.label}
+                        </span>
+                        {typeof badge.progress === 'number' ? (
+                          <span className="fa-progress" aria-label={`${badge.progress}% done`}>
+                            <span className="fa-progress-bar"><i style={{ width: `${badge.progress}%` }} /></span>
+                            <small>{badge.progress}%</small>
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
+                  />
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+          )}
+        </Panel>
       ) : null}
 
-      <div className="card">
-        <div className="card-h"><h3>Published</h3></div>
-        <div className="card-sub">Live for students in this college.</div>
-        {!jobsLoading && !published.length ? (
-          <div className="notice info" style={{ margin: 16 }}>
-            <div><b>Nothing published yet</b> Chapters you publish will appear here.</div>
-          </div>
-        ) : null}
-        {published.length ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Chapter</th>
-                <th>Department</th>
-                <th>Preview</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {published.map((job) => (
-                <tr key={job.job_id}>
-                  <td>
-                    <span className="strong">{job.chapter_title || '—'}</span>
-                    <div className="sub">{job.source_filename}</div>
-                  </td>
-                  <td>{job.department_name || '—'}</td>
-                  <td className="actions">
-                    <a
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setPreviewJob(job)}
-                      onKeyDown={(e) => e.key === 'Enter' && setPreviewJob(job)}
-                    >
-                      Preview
-                    </a>
-                  </td>
-                  <td className="actions">
-                    <a
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setEditJob(job)}
-                      onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                    >
-                      Edit
-                    </a>
-                    <a href={eduVideoApi.getDownloadUrl(job.job_id)} target="_blank" rel="noopener noreferrer">
-                      Download
-                    </a>
-                  </td>
-                </tr>
+      {ready && showPublished ? (
+        <Panel
+          title="Published"
+          sub="Live for students in this college."
+          action={<span className="sp-pill sp-pill--good">{countLabel(shownPublished.length)} live</span>}
+          bodyClassName=""
+        >
+          {!shownPublished.length ? (
+            <div className="sp-panel-b">
+              <SectionState title={filtering ? 'No matches' : 'Nothing published yet'}>
+                {emptyNote('Chapters you publish will appear here.')}
+              </SectionState>
+            </div>
+          ) : (
+            <ul className="fa-rows">
+              {shownPublished.map((job) => (
+                <ChapterRow
+                  key={job.job_id}
+                  iconTone="good"
+                  title={job.chapter_title || '—'}
+                  meta={<RowMeta job={job} when={job.published_at} whenLabel="Published" />}
+                  status={<span className="sp-pill sp-pill--good"><i className="un-dot" aria-hidden="true" />Published</span>}
+                  actions={(
+                    <>
+                      <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setPreviewJob(job)}>
+                        <Icon name="eye" size={16} /> Preview
+                      </button>
+                      <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
+                      <a
+                        className="un-icon-btn"
+                        href={eduVideoApi.getDownloadUrl(job.job_id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Download ${job.chapter_title || 'video'}`}
+                      >
+                        <Icon name="download" size={16} />
+                      </a>
+                    </>
+                  )}
+                />
               ))}
-            </tbody>
-          </table>
-        ) : null}
-      </div>
+            </ul>
+          )}
+        </Panel>
+      ) : null}
 
       <VideoPreviewModal
         open={Boolean(previewJob)}
@@ -339,6 +489,6 @@ export default function FacultyVideosPage() {
         onSaved={() => reloadJobs()}
       />
       <TipLayer />
-    </div>
+    </ModulePage>
   );
 }

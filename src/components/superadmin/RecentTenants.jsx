@@ -3,22 +3,22 @@ import Link from 'next/link';
 import { ArrowRight, Building2 } from 'lucide-react';
 
 const PLAN_STYLE = {
-  trial:    { label: 'Trial',    bg: '#fff7ed', text: '#c2410c' },
+  trial:    { label: 'Trial',    bg: '#FEF6EF', text: '#AC5B16' },
   standard: { label: 'Standard', bg: '#eff6ff', text: '#0B4B58' },
-  premium:  { label: 'Premium',  bg: '#f5f3ff', text: '#6d28d9' },
+  premium:  { label: 'Premium',  bg: '#F1F5F6', text: '#0E5C6B' },
 };
 
 const STATUS_STYLE = {
-  active:    { label: 'Active',    bg: '#f0fdf4', text: '#15803d' },
-  suspended: { label: 'Suspended', bg: '#fef2f2', text: '#b91c1c' },
-  trial:     { label: 'Trial',     bg: '#fefce8', text: '#a16207' },
+  active:    { label: 'Active',    bg: '#E9F5EF', text: '#0F6E56' },
+  suspended: { label: 'Suspended', bg: '#FBEEEC', text: '#A32D2D' },
+  trial:     { label: 'Trial',     bg: '#FDF1E2', text: '#AC5B16' },
 };
 
 function Badge({ value, map }) {
-  const style = map[value?.toLowerCase()] ?? { label: value, bg: '#f1f5f9', text: '#475569' };
+  const style = map[value?.toLowerCase()] ?? { label: value, bg: '#EEF0F0', text: '#536064' };
   return (
     <span
-      className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium"
       style={{ backgroundColor: style.bg, color: style.text }}
     >
       {style.label}
@@ -54,11 +54,11 @@ export default function RecentTenants({ tenants = [], loading = false }) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <Building2 size={16} className="text-slate-400" />
-          <h3 className="font-semibold text-slate-800 text-[15px]">Recent Tenants</h3>
+          <h3 className="font-medium text-slate-800 text-[15px]">Recent Tenants</h3>
         </div>
         <Link
           href="/superadmin/tenants"
-          className="flex items-center gap-1 text-xs text-[#0E5C6B] font-semibold hover:opacity-75 transition-opacity"
+          className="flex items-center gap-1 text-xs text-[#0E5C6B] font-medium hover:opacity-75 transition-opacity"
         >
           View All <ArrowRight size={13} />
         </Link>
@@ -68,19 +68,19 @@ export default function RecentTenants({ tenants = [], loading = false }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60">
-              <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+              <th className="px-4 py-2.5 text-left text-[11px] font-medium text-slate-400 uppercase tracking-wide">
                 College Name
               </th>
-              <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+              <th className="px-4 py-2.5 text-left text-[11px] font-medium text-slate-400 uppercase tracking-wide">
                 Plan
               </th>
-              <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+              <th className="px-4 py-2.5 text-left text-[11px] font-medium text-slate-400 uppercase tracking-wide">
                 Users
               </th>
-              <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+              <th className="px-4 py-2.5 text-left text-[11px] font-medium text-slate-400 uppercase tracking-wide">
                 Status
               </th>
-              <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+              <th className="px-4 py-2.5 text-left text-[11px] font-medium text-slate-400 uppercase tracking-wide">
                 Joined
               </th>
             </tr>

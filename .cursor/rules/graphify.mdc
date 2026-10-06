@@ -5,6 +5,8 @@ alwaysApply: true
 
 # Graphify + Project K References
 
+Full agent pack (before/after + packing): `docs/agent/` — especially `memory.md` and `task.md`.
+
 ## 1. GRAPHIFY (query first)
 
 This project has a graphify knowledge graph at `graphify-out/`. Use it as persistent memory so prompts do not re-scan the repo.
@@ -47,7 +49,7 @@ Only use Read/Grep/Glob when:
 | **4 (UI shell — post-login)** | `new_updated_design_four/` | Primary client design for four portals after login (`docs/QUIRRI_UI_REFERENCE.md`) |
 | **4b (legacy demo)** | `ProjectK_Client_Demo/` | Older static click-through — keep as-is |
 
-**Rule:** Phase 1 delivery = **B2B SOW only**. Do not implement FRS-only B2C billing, standalone B2C portal, or appendix-only pipelines unless a Change Request says so.
+**Rule:** Phase 1 delivery = **B2B SOW only** (`assets/ProjectK_B2B_SOW_v1.0.pdf`). Before building, check SOW scope (`.cursor/rules/quirri-sow-scope.mdc`). Out of scope → ask the user first; do not implement FRS-only B2C billing, standalone B2C portal, mobile apps, LMS integrations, or appendix-only pipelines unless a Change Request / explicit user approval says so.
 
 ---
 

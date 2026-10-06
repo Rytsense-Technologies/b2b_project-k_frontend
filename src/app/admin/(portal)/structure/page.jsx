@@ -4,15 +4,28 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import QuirriBadge from '@/components/superadmin/QuirriBadge';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import {
-  IconPlus,
   QuirriRHFField,
-  QuirriSelect,
   QuirriCombobox,
 } from '@/components/superadmin/quirri-ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
+import {
+  Icon,
+  ModulePage,
+  ModuleBanner,
+  KpiRow,
+  FilterBar,
+  SegTabs,
+  SearchBox,
+  Panel,
+  StatusPill,
+  Mono,
+  FormSection,
+  ConfirmNote,
+  SectionState,
+  countLabel,
+} from '@/components/shared/module-ui';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
@@ -27,11 +40,17 @@ const EMPTY_FORM = {
   hod_user_id: '',
 };
 
-function statusVariant(isActive) {
-  if (isActive === true) return 'green';
-  if (isActive === false) return 'red';
-  return 'amber';
-}
+const STATUS_FILTERS = [
+  { value: '', label: 'All' },
+  { value: 'true', label: 'Active' },
+  { value: 'false', label: 'Inactive' },
+];
+
+const LEVELS_LATER = [
+  { title: 'Programmes', body: 'Degree programmes inside each department, such as B.E. Computer Science.' },
+  { title: 'Years and semesters', body: 'The year and semester calendar each programme follows.' },
+  { title: 'Subjects and chapters', body: 'Subjects per semester, with the chapter videos you upload.' },
+];
 
 function personLabel(user) {
   const name = user?.name || [user?.first_name, user?.last_name].filter(Boolean).join(' ');
@@ -66,6 +85,7 @@ async function loadHodOptions(tenantId) {
   return [...byId.values()].map((u) => ({ value: u.id, label: personLabel(u) }));
 }
 
+/* ------------------------------------------------------------------ form */
 function DepartmentFormModal({
   open,
   editingId,
@@ -148,55 +168,66 @@ function DepartmentFormModal({
       crumb="Departments sit under your college"
       footer={(
         <>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose}>Cancel</button>
           <div className="right">
-            <button type="button" className="btn btn-primary" onClick={onSave} disabled={saving}>
+            <button type="button" className="sd-btn sd-btn--amber" onClick={onSave} disabled={saving}>
+              <Icon name="tick" size={16} />
               {saving ? 'Saving…' : editingId ? 'Save changes' : 'Create department'}
             </button>
           </div>
         </>
       )}
     >
-      <form onSubmit={onSave} noValidate>
-        <QuirriRHFField
-          control={control}
-          name="name"
-          fieldType="academicLabel"
-          label="Department name"
-          placeholder="e.g. Computer Science"
-          full
-        />
-        <QuirriRHFField
-          control={control}
-          name="code"
-          fieldType="code"
-          label="Department code"
-          placeholder="Optional"
-          full
-        />
-        <Controller
-          control={control}
-          name="hod_user_id"
-          render={({ field, fieldState }) => (
-            <QuirriCombobox
-              id="ca-dept-hod"
-              label="HOD"
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              name={field.name}
-              error={fieldState.error?.message}
-              disabled={hodLoading}
-              placeholder={hodLoading ? 'Loading staff…' : 'Optional — type to search'}
-              options={hodOptions}
-              emptyMessage="No faculty or HOD yet"
-              full
+      <form onSubmit={onSave} noValidate className="un-form">
+        <FormSection n={1} title="Department" sub="The name staff and students see, and an optional short code.">
+          <div className="grid2">
+            <QuirriRHFField
+              control={control}
+              name="name"
+              fieldType="academicLabel"
+              label="Department name"
+              placeholder="e.g. Computer Science"
             />
-          )}
-        />
+            <QuirriRHFField
+              control={control}
+              name="code"
+              fieldType="code"
+              label="Department code"
+              placeholder="Optional"
+            />
+          </div>
+        </FormSection>
+        <FormSection n={2} title="Head of department" sub="Optional. Pick an active faculty member or HOD from your college.">
+          <Controller
+            control={control}
+            name="hod_user_id"
+            render={({ field, fieldState }) => (
+              <QuirriCombobox
+                id="ca-dept-hod"
+                label="HOD"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+                error={fieldState.error?.message}
+                disabled={hodLoading}
+                placeholder={hodLoading ? 'Loading staff…' : 'Optional — type to search'}
+                options={hodOptions}
+                emptyMessage="No faculty or HOD yet"
+                full
+              />
+            )}
+          />
+        </FormSection>
         {Object.keys(errors).length > 0 ? (
-          <div className="hint field-error" role="alert" style={{ marginTop: 8 }}>
+          <div className="hint field-error" role="alert">
             Check the highlighted fields and try again.
+          </div>
+        ) : null}
+        {editingId ? (
+          <div className="un-form-note">
+            <Icon name="info" size={16} />
+            Use Deactivate or Reactivate to change the department&apos;s status.
           </div>
         ) : null}
       </form>
@@ -204,16 +235,19 @@ function DepartmentFormModal({
   );
 }
 
+/* ---------------------------------------------------------------- page */
 export default function StructurePage() {
   const { tenantId } = useAuth();
   const { show, hide, TipLayer } = useQuirriTip();
   const [status, setStatus] = useState('true');
+  const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formDefaults, setFormDefaults] = useState(EMPTY_FORM);
   const [togglingId, setTogglingId] = useState(null);
   const [forceTarget, setForceTarget] = useState(null);
+  const [confirmDept, setConfirmDept] = useState(null);
 
   const listParams = useMemo(() => ({
     is_active: status === '' ? undefined : status === 'true',
@@ -227,13 +261,24 @@ export default function StructurePage() {
   );
 
   const departments = useMemo(() => asList(data, []), [data]);
-  const selected = departments.find((d) => d.id === selectedId) || departments[0] || null;
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return departments;
+    return departments.filter((d) => [d.name, d.code, d.hod_name]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(q)));
+  }, [departments, search]);
+  const selected = visible.find((d) => d.id === selectedId) || visible[0] || null;
 
   useEffect(() => {
     if (!selectedId && departments[0]?.id) {
       setSelectedId(departments[0].id);
     }
   }, [departments, selectedId]);
+
+  const withHod = departments.filter((d) => d.hod_name || d.hod_user_id).length;
+  const enrolled = departments.reduce((acc, d) => acc + (Number(d.student_count) || 0), 0);
+  const listLabel = status === 'true' ? 'Active' : status === 'false' ? 'Inactive' : 'All';
 
   const openCreate = () => {
     setEditingId(null);
@@ -287,141 +332,223 @@ export default function StructurePage() {
     }
   };
 
-  return (
-    <div className="animate-fade-in">
-      <div className="section-head">
-        <div>
-          <div className="t">Academic Structure</div>
-          <div className="d">
-            Departments for your college. Program → Year → Semester → Subject → Chapter arrives later.
-          </div>
-        </div>
-        <button type="button" className="btn btn-primary" onClick={openCreate}>
-          {IconPlus}
-          New department
-        </button>
-      </div>
+  const confirmToggle = async () => {
+    const dept = confirmDept;
+    if (!dept) return;
+    setConfirmDept(null);
+    await handleToggleActive(dept);
+  };
 
-      <div className="toolbar">
-        <QuirriSelect
-          ariaLabel="Filter by status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          placeholder="All statuses"
-          options={[
-            { value: 'true', label: 'Active' },
-            { value: 'false', label: 'Inactive' },
-          ]}
+  const selectedActive = selected ? selected.is_active !== false : false;
+
+  return (
+    <ModulePage className="ad-page">
+      <ModuleBanner
+        icon="tree"
+        eyebrow="Academic structure"
+        title="Departments"
+        lede="Departments are the first level under your college. Each one has an HOD who reviews chapters before students see them."
+        chips={(
+          <>
+            <span>College</span>
+            <Icon name="chev" size={14} />
+            <span className="is-on">Department</span>
+            <Icon name="chev" size={14} />
+            <span>Programme</span>
+            <Icon name="chev" size={14} />
+            <span>Semester</span>
+            <Icon name="chev" size={14} />
+            <span>Subject</span>
+          </>
+        )}
+        actions={(
+          <button type="button" className="sd-btn sd-btn--amber" onClick={openCreate}>
+            <Icon name="plus" size={16} /> New department
+          </button>
+        )}
+      />
+
+      <KpiRow
+        label="Departments summary"
+        items={[
+          {
+            icon: 'tree',
+            label: `${listLabel} departments`,
+            value: loading && !departments.length ? null : countLabel(departments.length),
+            sub: 'In this list',
+          },
+          {
+            icon: 'user',
+            label: 'HOD assigned',
+            value: loading && !departments.length ? null : countLabel(withHod),
+            sub: 'Ready to review chapters',
+          },
+          {
+            icon: 'alert',
+            label: 'No HOD yet',
+            value: loading && !departments.length ? null : countLabel(departments.length - withHod),
+            sub: 'Assign one from Edit',
+          },
+          {
+            icon: 'users',
+            label: 'Students enrolled',
+            value: loading && !departments.length ? null : countLabel(enrolled),
+            sub: 'Across listed departments',
+          },
+        ]}
+      />
+
+      <FilterBar label="Filter departments">
+        <SearchBox
+          placeholder="Search department, code or HOD…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-      </div>
+        <SegTabs
+          label="Filter by status"
+          options={STATUS_FILTERS}
+          value={status}
+          onChange={(v) => {
+            setSelectedId(null);
+            setStatus(v);
+          }}
+        />
+      </FilterBar>
 
       {error ? (
-        <div className="notice err" style={{ marginBottom: 12 }}>
-          <div>
-            <b>Could not load departments</b>
-            {apiErrorMessage(error, 'Please try again.')}
-          </div>
-        </div>
+        <SectionState
+          tone="err"
+          title="Could not load departments"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
+              <Icon name="refresh" size={16} /> Try again
+            </button>
+          )}
+        >
+          {apiErrorMessage(error, 'Please try again.')}
+        </SectionState>
       ) : null}
 
-      <div className="tree-wrap" style={{ marginTop: 8 }}>
-        <div className="card card-p">
-          <div className="card-h"><h3>Departments</h3></div>
-          {loading && !departments.length ? (
-            <p className="card-sub">Loading departments…</p>
-          ) : null}
-          {!loading && !departments.length && !error ? (
-            <div className="notice info">
-              <div>
-                <b>No departments yet</b>
-                Create your first department to organise students and staff.
-              </div>
-            </div>
-          ) : null}
-          <ul className="lvl-dept" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {departments.map((dept) => {
-              const active = selected?.id === dept.id;
-              return (
-                <li key={dept.id} style={{ marginBottom: 4 }}>
-                  <button
-                    type="button"
-                    className={`tree-node${active ? ' active' : ''}`}
-                    onClick={() => setSelectedId(dept.id)}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      border: '1px solid var(--line)',
-                      background: active ? 'var(--teal-50)' : '#fff',
-                      borderRadius: 8,
-                      padding: '10px 12px',
-                      cursor: 'pointer',
-                      font: 'inherit',
-                    }}
-                  >
-                    <span className="strong">{dept.name}</span>
-                    <div className="sub">{dept.code || 'No code'} · {dept.student_count ?? 0} students</div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="notice info" style={{ marginTop: 16 }}>
-            <div>
-              <b>Programs and below</b>
-              Program → Year → Semester → Subject → Chapter is not available yet. Departments are live.
-            </div>
-          </div>
-        </div>
+      {loading && !departments.length ? <SectionState title="Loading departments…" /> : null}
 
-        <div className="card card-p">
-          <div className="crumb" style={{ marginBottom: 8 }}>College · Department</div>
+      {!loading && !error && !departments.length ? (
+        <SectionState
+          title={status === '' ? 'No departments yet' : `No ${listLabel.toLowerCase()} departments`}
+          action={status !== 'false' ? (
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={openCreate}>
+              <Icon name="plus" size={16} /> Add the first department
+            </button>
+          ) : null}
+        >
+          Create a department to organise students and staff.
+        </SectionState>
+      ) : null}
+
+      {departments.length ? (
+        <div className="pm-split">
+          <Panel
+            title="Departments"
+            sub={`${countLabel(visible.length)} of ${countLabel(departments.length)} shown`}
+            bodyClassName={null}
+          >
+            {visible.length ? (
+              <ul className="pm-list" aria-label="Departments">
+                {visible.map((dept) => {
+                  const isActive = dept.is_active !== false;
+                  return (
+                    <li key={dept.id}>
+                      <button
+                        type="button"
+                        className="pm-list-btn"
+                        aria-current={selected?.id === dept.id ? 'true' : undefined}
+                        onClick={() => setSelectedId(dept.id)}
+                      >
+                        <Mono name={dept.name} size="sm" muted={!isActive} />
+                        <div>
+                          <b>{dept.name}</b>
+                          <small>
+                            {dept.code || 'No code'} · {countLabel(dept.student_count ?? 0)} {Number(dept.student_count) === 1 ? 'student' : 'students'}
+                          </small>
+                        </div>
+                        <Icon name="chev" size={16} className="ad-list-chev" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="sp-panel-b">
+                <SectionState title="No departments match">Try a different name, code or HOD.</SectionState>
+              </div>
+            )}
+          </Panel>
+
           {selected ? (
-            <>
-              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{selected.name}</h3>
-              <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>
-                Code {selected.code || '—'} · {selected.student_count ?? 0} enrolled students
-              </p>
-              <div style={{ marginBottom: 12 }}>
-                <QuirriBadge variant={statusVariant(selected.is_active !== false)}>
-                  {selected.is_active !== false ? 'Active' : 'Inactive'}
-                </QuirriBadge>
+            <section className="sp-panel ad-detail" aria-label={`${selected.name} details`}>
+              <div className="ad-detail-h">
+                <Mono name={selected.name} size="lg" muted={!selectedActive} />
+                <div className="ad-detail-t">
+                  <span className="ad-overline">Department</span>
+                  <h3>{selected.name}</h3>
+                  <div className="ad-detail-meta">
+                    {selected.code ? <span className="un-code">{selected.code}</span> : null}
+                    <StatusPill active={selectedActive} />
+                  </div>
+                </div>
               </div>
-              <div className="lb" style={{ fontSize: 10.5, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--muted-2)', fontWeight: 800, marginBottom: 8 }}>
-                HOD
+
+              <div className="ad-detail-stats">
+                <div><small>Enrolled students</small><b>{countLabel(selected.student_count ?? 0)}</b></div>
+                <div><small>Head of department</small><b className="ad-detail-name">{selected.hod_name || 'Not assigned'}</b></div>
               </div>
-              <p style={{ marginBottom: 16, fontSize: 14 }}>
-                {selected.hod_name || 'No HOD assigned'}
-              </p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => openEdit(selected)}>
-                  Edit
-                </button>
+
+              <div className="ad-detail-sec">
+                <h4>Below this department</h4>
+                <p className="ad-muted">These levels are not available yet. Departments are live today.</p>
+                <ol className="ad-levels">
+                  {LEVELS_LATER.map((lvl, i) => (
+                    <li key={lvl.title}>
+                      <span className="pm-step-n">{i + 1}</span>
+                      <div>
+                        <b>{lvl.title}</b>
+                        <small>{lvl.body}</small>
+                      </div>
+                      <span className="sp-pill">Not available yet</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="ad-detail-foot">
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
+                  className={`sd-btn sd-btn--sm ${selectedActive ? 'sd-btn--danger' : 'sd-btn--outline'}`}
                   disabled={togglingId === selected.id}
-                  onClick={() => handleToggleActive(selected)}
-                  onMouseEnter={(e) => show(e, selected.is_active !== false ? 'Archive this department' : 'Restore this department', 'top')}
+                  onClick={() => setConfirmDept(selected)}
+                  onMouseEnter={(e) => show(e, selectedActive ? 'Archive this department' : 'Restore this department', 'top')}
                   onMouseLeave={hide}
                 >
+                  <Icon name={selectedActive ? 'lock' : 'refresh'} size={16} />
                   {togglingId === selected.id
-                    ? '…'
-                    : selected.is_active !== false
+                    ? 'Updating…'
+                    : selectedActive
                       ? 'Deactivate'
                       : 'Reactivate'}
                 </button>
+                <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={() => openEdit(selected)}>
+                  <Icon name="edit" size={16} /> Edit department
+                </button>
               </div>
-            </>
+            </section>
           ) : (
-            <>
-              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Department detail</h3>
-              <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-                Select a department to see HOD assignment and status.
-              </p>
-            </>
+            <Panel title="Department details">
+              <SectionState title="Select a department">
+                Pick a department on the left to see its HOD and status.
+              </SectionState>
+            </Panel>
           )}
         </div>
-      </div>
+      ) : null}
 
       {modalOpen ? (
         <DepartmentFormModal
@@ -436,19 +563,53 @@ export default function StructurePage() {
       ) : null}
 
       <QuirriModal
+        open={Boolean(confirmDept)}
+        onClose={() => setConfirmDept(null)}
+        title={confirmDept?.is_active !== false ? 'Deactivate department?' : 'Reactivate department?'}
+        crumb={confirmDept ? [confirmDept.name, confirmDept.code].filter(Boolean).join(' · ') : null}
+        footer={(
+          <>
+            <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setConfirmDept(null)}>
+              Cancel
+            </button>
+            <div className="right">
+              <button
+                type="button"
+                className={`sd-btn ${confirmDept?.is_active !== false ? 'un-btn-danger' : 'sd-btn--teal'}`}
+                onClick={confirmToggle}
+              >
+                {confirmDept?.is_active !== false ? 'Deactivate' : 'Reactivate'}
+              </button>
+            </div>
+          </>
+        )}
+      >
+        {confirmDept ? (
+          <ConfirmNote
+            danger={confirmDept.is_active !== false}
+            title={confirmDept.is_active !== false ? 'This is a soft delete.' : 'The department becomes active again.'}
+          >
+            {confirmDept.is_active !== false
+              ? `${confirmDept.name} is hidden from active lists. Its records are kept and you can reactivate it at any time.`
+              : `${confirmDept.name} will appear in active lists and can take new students and staff again.`}
+          </ConfirmNote>
+        ) : null}
+      </QuirriModal>
+
+      <QuirriModal
         open={Boolean(forceTarget)}
         onClose={() => setForceTarget(null)}
         title="Archive with enrolled students?"
         crumb={forceTarget?.name}
         footer={(
           <>
-            <button type="button" className="btn btn-ghost" onClick={() => setForceTarget(null)}>
+            <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setForceTarget(null)}>
               Cancel
             </button>
             <div className="right">
               <button
                 type="button"
-                className="btn btn-primary"
+                className="sd-btn un-btn-danger"
                 disabled={togglingId === forceTarget?.id}
                 onClick={() => forceTarget && runDeactivate(forceTarget, true)}
               >
@@ -458,13 +619,13 @@ export default function StructurePage() {
           </>
         )}
       >
-        <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14, lineHeight: 1.6 }}>
-          {forceTarget
-            ? `This department has ${forceTarget.student_count ?? 'enrolled'} student(s). Archiving keeps their records but hides the department from active lists. This action is audited.`
-            : null}
-        </p>
+        {forceTarget ? (
+          <ConfirmNote danger title="This department still has enrolled students.">
+            {`This department has ${forceTarget.student_count ?? 'enrolled'} student(s). Archiving keeps their records but hides the department from active lists. This action is audited.`}
+          </ConfirmNote>
+        ) : null}
       </QuirriModal>
       <TipLayer />
-    </div>
+    </ModulePage>
   );
 }

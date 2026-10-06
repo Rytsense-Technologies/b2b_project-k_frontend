@@ -16,14 +16,14 @@ alwaysApply: true
 5. WCAG 2.2 AA; calm sentence-case copy  
 6. Missing backend epic → empty/error (see `docs/BACKEND_STATUS_REPORT.md`)  
 7. Playwright-check UI changes after portal login  
-8. Post-login UI follows `new_updated_design_four/` (`docs/QUIRRI_UI_REFERENCE.md`); login cards stay existing centered pattern  
-9. Portal font Poppins; mist `#F8F8F9`; **white** sidebar (Ink text, Teal active)  
+8. Post-login UI follows **`docs/agent/design-system.md`** (Brand v1.0 + Quirri Prep patterns); module/nav content from `new_updated_design_four/` (`docs/QUIRRI_UI_REFERENCE.md`); login cards stay existing centered pattern  
+9. Portal font Poppins 400/500; canvas `#EEF0F0`; **white** sidebar (Ink text, Teal 50 active fill + Teal 500 label); 6px controls · 8px cards · 16px modals  
 
 ## Dropdown (“drop”) rules
 
 - Use **`QuirriSelect`** custom listbox (`src/components/superadmin/QuirriSelect.jsx`) — **not** the OS native `<select>` menu (cannot brand; shows system blue)
 - Long searchable lists (India state/district): **`QuirriCombobox`** — type-to-filter; same chrome as QuirriSelect
-- Trigger + menu: white, 8px radius, soft shadow; selected row = teal-50 + check — never browser blue
+- Trigger: white, 6px radius, 1px Neutral 200, 44px · Menu: white, 8px radius, `--shadow-md`; selected row = teal-50 + check — never browser blue
 - Forms/modals: **visible label above** (sentence case)
 - Toolbar filters: visible label optional **only** with `aria-label`
 - First option: `All …` (filters) or `Select …` (required forms), `value=""`
@@ -37,7 +37,7 @@ alwaysApply: true
 - **Center** only the auth login brand card  
 - Stack: label → control → hint **or** error  
 - Section head: title/description left, actions right  
-- Toolbar: search flexes; selects `min-width: 165px`  
+- Toolbar (filter bar): Teal 500 card, search flexes, selects `min-width: 168px`, Clear = Teal 400, primary = Amber 700  
 - Forms: `grid2` / `QuirriFormGrid`; long fields `full`  
 - Spacing: 4px scale only  
 

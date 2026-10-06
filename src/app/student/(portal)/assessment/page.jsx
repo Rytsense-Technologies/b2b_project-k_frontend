@@ -24,11 +24,11 @@ function AssessmentInner() {
           title="Missing chapter"
           action={(
             <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={leave}>
-              <Icon name="back" size={16} /> Go to My Subjects
+              <Icon name="back" size={16} /> Go to My subjects
             </button>
           )}
         >
-          Open an assessment from My Subjects.
+          Open an assessment from My subjects.
         </SectionState>
       </div>
     );

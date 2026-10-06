@@ -3,9 +3,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import McqQuestionBlock from '@/components/shared/McqQuestionBlock';
-import { QuirriBtn } from '@/components/superadmin/quirri-ui';
-import QuirriBadge from '@/components/superadmin/QuirriBadge';
+import { Icon } from '@/components/student/ui';
 import { mcqApi, mcqErrorMessage } from '@/lib/api/mcq';
+
+/** "ready" → "Ready", "in_progress" → "In progress" */
+function statusText(status) {
+  const t = String(status || 'unknown').replace(/_/g, ' ');
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
 
 /**
  * Admin / faculty / HOD review of generated MCQs (answer key visible).
@@ -65,37 +70,50 @@ export default function McqDocumentReview({
   };
 
   if (loading) {
-    return <div className="card-p">Loading MCQs…</div>;
+    return (
+      <div className="fa-loading" role="status">
+        <Icon name="clock" size={18} /> Loading MCQs…
+      </div>
+    );
   }
 
   if (error === 'not_generated') {
     return (
-      <div className="notice info">
-        <div>
-          <b>No MCQs for this chapter yet</b>
-          Generate a quiz from the same uploaded material used for the video lecture.
-          Generation can take up to about a minute.
-        </div>
-        {canGenerate ? (
-          <div style={{ marginTop: 12 }}>
-            <QuirriBtn type="button" variant="primary" onClick={handleGenerate} disabled={generating}>
-              {generating ? 'Generating…' : 'Generate MCQs'}
-            </QuirriBtn>
+      <div className="fa-mcq">
+        <div className="fa-note">
+          <Icon name="info" size={18} />
+          <div>
+            <b>No MCQs for this chapter yet</b>
+            Generate a quiz from the same uploaded material used for the video lecture.
+            Generation can take up to about a minute.
+            {canGenerate ? (
+              <div className="fa-note-action">
+                <button type="button" className="sd-btn sd-btn--amber sd-btn--sm" onClick={handleGenerate} disabled={generating}>
+                  <Icon name="spark" size={16} />
+                  {generating ? 'Generating…' : 'Generate MCQs'}
+                </button>
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="notice err">
-        <div>
-          <b>Could not load MCQs</b>
-          {error}
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <QuirriBtn type="button" variant="ghost" onClick={load}>Try again</QuirriBtn>
+      <div className="fa-mcq">
+        <div className="fa-note is-err" role="alert">
+          <Icon name="alert" size={18} />
+          <div>
+            <b>Could not load MCQs</b>
+            {error}
+            <div className="fa-note-action">
+              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={load}>
+                <Icon name="refresh" size={16} /> Try again
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -106,52 +124,59 @@ export default function McqDocumentReview({
     : [];
 
   return (
-    <div className="mcq-review animate-fade-in" style={{ textAlign: 'left' }}>
-      <div className="section-head" style={{ marginBottom: 16 }}>
+    <div className="fa-mcq mcq-review animate-fade-in">
+      <div className="fa-mcq-head">
         <div>
-          <div className="t">{doc?.title || chapterTitle || 'Chapter MCQs'}</div>
-          <div className="d">
-            {questions.length} question{questions.length === 1 ? '' : 's'}
-            {doc?.status ? ` · status ${doc.status}` : null}
-          </div>
+          <h3>Question set</h3>
+          <p>
+            {questions.length} question{questions.length === 1 ? '' : 's'} with answer key
+            {doc?.title && doc.title !== chapterTitle ? ` · ${doc.title}` : null}
+            {!doc?.title && !chapterTitle ? ' · Chapter MCQs' : null}
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <QuirriBadge variant={doc?.status === 'ready' ? 'green' : 'amber'}>
-            {doc?.status || 'unknown'}
-          </QuirriBadge>
+        <div className="fa-mcq-head-side">
+          <span className={`sp-pill ${doc?.status === 'ready' ? 'sp-pill--good' : 'sp-pill--low'}`}>
+            <i className="un-dot" aria-hidden="true" />
+            {statusText(doc?.status)}
+          </span>
           {canGenerate ? (
-            <QuirriBtn type="button" variant="ghost" onClick={handleGenerate} disabled={generating}>
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={handleGenerate} disabled={generating}>
+              <Icon name="refresh" size={16} />
               {generating ? 'Regenerating…' : 'Regenerate'}
-            </QuirriBtn>
+            </button>
           ) : null}
         </div>
       </div>
 
-      <div className="notice info" style={{ marginBottom: 16 }}>
+      <div className="fa-note">
+        <Icon name="info" size={18} />
         <div>
           <b>Review with answer key</b>
-          Correct options are highlighted. Per-question approve/reject is not available from the API yet —
-          students can take the quiz once this chapter video is published and MCQs are ready.
+          Correct options are highlighted. Per-question approval is not available yet.
+          Students can take the quiz once this chapter video is published and the MCQs are ready.
         </div>
       </div>
 
       {!questions.length ? (
-        <div className="notice warn">
+        <div className="fa-note is-warn">
+          <Icon name="alert" size={18} />
           <div>
             <b>No questions in this document</b>
-            Try regenerating, or check generation errors on the backend.
+            Try regenerating. If it stays empty, the source material may not have enough text.
           </div>
         </div>
       ) : (
-        questions.map((q, i) => (
-          <McqQuestionBlock
-            key={q.id || i}
-            question={q}
-            index={i}
-            total={questions.length}
-            mode="review"
-          />
-        ))
+        <div className="fa-mcq-list">
+          {questions.map((q, i) => (
+            <McqQuestionBlock
+              key={q.id || i}
+              question={q}
+              index={i}
+              total={questions.length}
+              mode="review"
+            />
+          ))}
+        </div>
       )}
     </div>
   );

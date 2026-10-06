@@ -5,7 +5,7 @@ export const PAGE_META = {
     subtitle: 'Pick up where you left off — lectures, tutor, quizzes and interviews.',
   },
   '/student/subjects': {
-    title: 'My Subjects',
+    title: 'My subjects',
     subtitle: 'Your college material turned into video lectures, quizzes and an AI tutor.',
   },
   '/student/leaderboard': {
@@ -34,7 +34,7 @@ export const PAGE_META = {
   },
 
   '/student/progress': {
-    title: 'My Progress',
+    title: 'My progress',
     subtitle: 'Chapter completion, assessments and interview readiness.',
   },
 };

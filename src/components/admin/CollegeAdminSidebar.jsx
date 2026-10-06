@@ -31,7 +31,7 @@ const NAV = [
   { group: 'Academics' },
   {
     href: '/admin/structure',
-    label: 'Academic Structure',
+    label: 'Academic structure',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M3 6h18M3 12h18M3 18h18" />
@@ -43,7 +43,7 @@ const NAV = [
   },
   {
     href: '/admin/content',
-    label: 'Upload & Content',
+    label: 'Upload & content',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M12 16V4m0 0l-4 4m4-4l4 4" />
@@ -76,7 +76,7 @@ const NAV = [
   { group: 'Placement' },
   {
     href: '/admin/interviews',
-    label: 'Interview Assignments',
+    label: 'Interview assignments',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z" />

@@ -14,7 +14,7 @@ export default function SkillBar({ label, value = 0, color, showScore = true }) 
         />
       </div>
       {showScore && (
-        <span className="text-sm font-semibold w-8 text-right" style={{ color: barColor }}>
+        <span className="text-sm font-medium w-8 text-right" style={{ color: barColor }}>
           {value}
         </span>
       )}

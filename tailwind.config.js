@@ -30,7 +30,26 @@ module.exports = {
           700: 'var(--amber-700)',
         },
         ink: 'var(--ink)',
-        mist: 'var(--bg)',
+        mist: 'var(--mist)',
+        canvas: 'var(--canvas)',
+        // Off-brand Tailwind ramps are remapped to Quirri tokens so legacy
+        // utility classes (slate/gray/red/emerald/green) render on-palette.
+        slate: {
+          50: 'var(--neutral-50)', 100: 'var(--neutral-100)', 200: 'var(--neutral-200)',
+          300: 'var(--neutral-300)', 400: 'var(--neutral-400)', 500: 'var(--neutral-500)',
+          600: 'var(--neutral-600)', 700: 'var(--neutral-600)', 800: 'var(--neutral-900)', 900: 'var(--neutral-900)',
+        },
+        gray: {
+          50: 'var(--neutral-50)', 100: 'var(--neutral-100)', 200: 'var(--neutral-200)',
+          300: 'var(--neutral-300)', 400: 'var(--neutral-400)', 500: 'var(--neutral-500)',
+          600: 'var(--neutral-600)', 700: 'var(--neutral-600)', 800: 'var(--neutral-900)', 900: 'var(--neutral-900)',
+        },
+        red: {
+          50: 'var(--error-soft)', 100: 'var(--error-soft)', 200: 'var(--error-line)',
+          400: 'var(--color-error)', 500: 'var(--color-error)', 600: 'var(--color-error)', 700: 'var(--color-error)',
+        },
+        emerald: { 50: 'var(--success-soft)', 500: 'var(--color-success)', 600: 'var(--color-success)', 700: 'var(--color-success)' },
+        green: { 50: 'var(--success-soft)', 500: 'var(--color-success)', 600: 'var(--color-success)', 700: 'var(--color-success)' },
         success: 'var(--color-success)',
         warning: 'var(--color-warning)',
         error: 'var(--color-error)',
@@ -41,13 +60,18 @@ module.exports = {
         auth: ['var(--font-auth)', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         display: ['var(--font-display)', 'system-ui', 'sans-serif'],
       },
+      // Owner override (Quirri Prep): 6 controls · 8 cards · 16 modals/drawers
       borderRadius: {
         quirri: '8px',
-        'quirri-sm': '2px',
+        'quirri-card': '8px',
+        'quirri-sm': '6px',
+        'quirri-control': '6px',
         'quirri-lg': '16px',
+        'quirri-panel': '16px',
       },
       boxShadow: {
         quirri: '0 1px 2px rgba(16, 34, 40, 0.06)',
+        'quirri-card': '0 1px 2px rgba(16, 34, 40, 0.06), 0 4px 12px rgba(16, 34, 40, 0.08)',
         'quirri-md': '0 4px 12px rgba(16, 34, 40, 0.08)',
         'quirri-lg': '0 12px 32px rgba(16, 34, 40, 0.12)',
       },

@@ -1,0 +1,190 @@
+/* ==========================================================================
+   Quirri — faculty portal module styles (.fa-*). Builds on portal-modules.css.
+   Spec: docs/agent/design-system.md. Tokens only; 6/8/16 radii; Poppins 400/500.
+   Also styles the shared review components (EduVideoPlanEditor, VideoPreviewModal,
+   McqDocumentReview, McqQuestionBlock) — loaded globally, so College Admin
+   content review picks these up too.
+   ========================================================================== */
+
+/* ---------- Module panels: H4 head (18/26) per §4 ---------- */
+.fa-page .sp-panel-h{padding:20px 24px;align-items:flex-start}
+.fa-page .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500}
+.fa-page .sp-panel-h p{font-size:14px;line-height:22px;color:var(--muted-2);margin-top:2px;max-width:72ch}
+.fa-page .sp-panel-h > .sp-pill{flex:none;margin-top:2px}
+.fa-page .sp-panel-b{padding:16px 24px 24px}
+.fa-filter-select{min-width:208px}
+.fa-filter-select .quirri-dd{min-width:208px}
+
+/* ---------- Chapter rows inside a panel (row-card list pattern) ---------- */
+.fa-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fa-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto;align-items:center;gap:16px;padding:16px 24px;border-top:1px solid var(--line-soft);transition:background-color .2s ease-out}
+.fa-row:first-child{border-top:0}
+.fa-row:hover{background:var(--neutral-50)}
+.fa-row-main{min-width:0}
+.fa-row-main > b{display:block;font-size:16px;line-height:26px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.fa-row .sp-row-meta{gap:4px 16px;margin-top:2px;color:var(--muted-2)}
+.fa-row .sp-row-meta .sd-i{color:var(--teal-500)}
+.fa-row-status{display:flex;align-items:center;min-width:136px}
+.fa-row-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.fa-row-actions a.un-icon-btn{text-decoration:none}
+.fa-status-stack{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.fa-progress{display:inline-flex;align-items:center;gap:8px}
+.fa-progress-bar{display:block;width:96px;height:6px;border-radius:var(--radius-full);background:var(--neutral-100);overflow:hidden}
+.fa-progress-bar i{display:block;height:100%;border-radius:inherit;background:var(--teal-500);transition:width .6s ease-out}
+.fa-progress small{font-size:12px;line-height:18px;color:var(--muted-2);font-variant-numeric:tabular-nums}
+.fa-err{flex-basis:100%;font-size:12px;line-height:18px;color:var(--color-error);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:default}
+
+/* ---------- MCQ review: chapter list + review column ---------- */
+.fa-split{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:24px;align-items:start}
+.fa-chapters .pm-list{max-height:min(70vh,720px);overflow-y:auto}
+.fa-chapters .pm-list-btn{align-items:flex-start;padding:12px}
+.fa-chapters .pm-list-btn .sp-chapter-n{margin-top:2px}
+.fa-chapters .pm-list-btn[aria-current="true"] .sp-chapter-n{background:var(--teal-500);color:var(--neutral-0)}
+.fa-chapters .pm-list-btn small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fa-chapter-tag{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:12px;line-height:18px;font-weight:500}
+.fa-chapter-tag.is-good{color:var(--color-success)}
+.fa-chapter-tag.is-low{color:var(--amber-700)}
+.fa-chapter-tag.is-muted{color:var(--muted-2)}
+.fa-review-col{display:flex;flex-direction:column;gap:24px;min-width:0}
+.fa-chapter-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 24px;background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.fa-chapter-bar .sp-row-ic{width:44px;height:44px}
+.fa-chapter-bar > div{flex:1;min-width:200px}
+.fa-chapter-bar small{display:block;font-size:11px;line-height:16px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.fa-chapter-bar b{display:block;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.fa-chapter-bar span.fa-sub{display:block;font-size:14px;line-height:22px;color:var(--muted-2)}
+
+/* ---------- McqDocumentReview + McqQuestionBlock (shared) ---------- */
+.fa-mcq{display:flex;flex-direction:column;gap:16px;text-align:left}
+.fa-mcq-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 24px;background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.fa-mcq-head h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.fa-mcq-head p{margin:2px 0 0;font-size:14px;line-height:22px;color:var(--muted-2)}
+.fa-mcq-head-side{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fa-mcq-stats{display:flex;align-items:center;gap:16px}
+.fa-mcq-stats > div{display:flex;flex-direction:column;padding-right:16px;border-right:1px solid var(--neutral-300)}
+.fa-mcq-stats > div:last-child{padding-right:0;border-right:0}
+.fa-mcq-stats b{font-size:14px;line-height:22px;font-weight:500;color:var(--teal-500);font-variant-numeric:tabular-nums}
+.fa-mcq-stats small{font-size:12px;line-height:18px;color:var(--muted-2)}
+.fa-mcq-list{display:flex;flex-direction:column;gap:16px}
+.fa-note{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius-control);background:var(--teal-50);font-size:14px;line-height:22px;color:var(--ink-2)}
+.fa-note > .sd-i{color:var(--teal-500);margin-top:3px}
+.fa-note b{display:block;font-weight:500;color:var(--ink)}
+.fa-note.is-warn{background:var(--warning-soft);border:1px solid var(--warning-line)}
+.fa-note.is-warn > .sd-i{color:var(--amber-700)}
+.fa-note.is-err{background:var(--error-soft);border:1px solid var(--error-line)}
+.fa-note.is-err > .sd-i{color:var(--color-error)}
+.fa-note-action{margin-top:12px}
+.fa-loading{display:flex;align-items:center;gap:12px;padding:16px;border-radius:var(--radius-card);background:var(--neutral-0);box-shadow:var(--shadow-card);font-size:14px;line-height:22px;color:var(--muted-2)}
+.fa-loading .sd-i{color:var(--teal-500)}
+
+.fa-qcard{gap:16px}
+.fa-qcard .sp-qcard-label .sp-pill{letter-spacing:0;text-transform:none}
+.fa-qcard .sp-qcard-text{font-size:16px;line-height:26px}
+.fa-qcard .sp-opt{min-height:48px;border-width:1px;border-radius:var(--radius-control)}
+.fa-qcard .sp-opt-key{width:28px;height:28px}
+.fa-qcard .sp-opt.is-correct .sp-opt-tag{display:inline-flex;align-items:center;gap:4px}
+.fa-qcard .sp-explain{border-radius:var(--radius-control)}
+.fa-qcard .sp-explain > div{min-width:0}
+.fa-qcard .sp-mark{font-size:11px;line-height:16px}
+/* nested inside a white surface (modal / panel): line, no shadow */
+.modal .fa-qcard,.sp-panel .fa-qcard{box-shadow:none;border:1px solid var(--line)}
+
+/* ---------- VideoPreviewModal (shared) ---------- */
+.fa-video{display:flex;flex-direction:column;gap:16px}
+.fa-video-stage{position:relative;aspect-ratio:16 / 9;max-height:70vh;border-radius:var(--radius-card);overflow:hidden;background:var(--teal-900)}
+.fa-video-stage video{display:block;width:100%;height:100%;object-fit:contain;background:var(--teal-900)}
+.fa-video-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;line-height:18px;color:var(--muted-2)}
+.fa-video-foot span{display:inline-flex;align-items:center;gap:8px}
+.fa-video-foot .sd-i{color:var(--teal-500)}
+.fa-video-foot a.sd-btn{text-decoration:none}
+
+/* ---------- EduVideoPlanEditor (shared) ---------- */
+.fa-plan{display:flex;flex-direction:column;gap:24px}
+.fa-plan .edu-plan-editor{grid-template-columns:minmax(220px,272px) minmax(0,1fr);gap:24px}
+.fa-plan .edu-plan-scenes{position:sticky;top:0;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--neutral-0);max-height:min(64vh,640px);display:flex;flex-direction:column}
+.fa-plan .edu-plan-scenes-h{position:sticky;top:0;z-index:1;background:var(--neutral-50);padding:12px 16px;font-size:14px;line-height:22px;font-weight:500;color:var(--ink);border-bottom:1px solid var(--line)}
+.fa-plan .edu-plan-scenes-h .sub{font-size:12px;line-height:18px;font-weight:400;color:var(--muted-2)}
+.fa-plan-slides{display:flex;flex-direction:column;gap:4px;padding:8px}
+.fa-plan .edu-plan-scene{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:8px 12px;min-height:56px;border:1px solid transparent;border-radius:var(--radius-control);transition:background-color .2s ease-out,border-color .2s ease-out}
+.fa-plan .edu-plan-scene:hover{background:var(--neutral-50)}
+.fa-plan .edu-plan-scene.is-active{background:var(--teal-50);border-color:var(--teal-100)}
+.fa-plan .edu-plan-scene.is-active .sp-chapter-n{background:var(--teal-500);color:var(--neutral-0)}
+.fa-plan .edu-plan-scene .sp-chapter-n{margin-top:2px}
+.fa-plan-scene-copy{display:flex;flex-direction:column;min-width:0;flex:1}
+.fa-plan .edu-plan-scene-t{font-size:14px;line-height:22px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fa-plan .edu-plan-scene-type{font-size:12px;line-height:18px;color:var(--muted-2);text-transform:none;letter-spacing:0}
+.fa-plan .edu-plan-detail{border:0;border-radius:0;padding:0;background:transparent;max-height:none;overflow:visible;display:flex;flex-direction:column;gap:16px;min-width:0}
+.fa-plan .edu-plan-detail-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0}
+.fa-plan .edu-plan-detail-h small{display:block;font-size:11px;line-height:16px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.fa-plan .edu-plan-detail-h b{display:block;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.fa-plan-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fa-plan .edu-plan-preview{margin:0;border:0;border-radius:var(--radius-card);background:var(--teal-900);aspect-ratio:16 / 9;max-height:280px;display:grid;place-items:center;position:relative}
+.fa-plan .edu-plan-preview img{position:relative;z-index:1;width:100%;height:100%;max-height:none;object-fit:contain}
+.fa-plan-preview-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:12px;line-height:18px;color:var(--teal-200)}
+.fa-plan-preview-ph .sd-i{color:var(--teal-300)}
+.fa-plan-fields{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--line-soft);border-radius:var(--radius-card);background:var(--neutral-50)}
+.fa-plan-fields > .field,.fa-plan-fields .edu-plan-group > .field{margin:0}
+.fa-plan .edu-plan-groups{gap:12px;margin:0}
+.fa-plan .edu-plan-groups-h{font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-plan .edu-plan-group{gap:12px;padding:16px;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--neutral-0)}
+.fa-plan .edu-plan-group-h{display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;font-weight:500;color:var(--teal-500)}
+.fa-plan .edu-plan-group-h::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--teal-500)}
+.fa-plan code{font-size:12px;padding:0 4px;border-radius:var(--radius-control);background:var(--neutral-100);color:var(--ink)}
+
+/* ---------- Faculty dashboard ---------- */
+/* hero, KPI row and panels share one 3-column grid so card edges line up */
+.fa-page > .q-hero-split{margin-bottom:0;grid-template-columns:repeat(3,minmax(0,1fr))}
+.fa-page > .q-hero-split > .banner{grid-column:span 2}
+.fa-dash-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:start}
+.fa-dash-cols > :first-child{grid-column:span 2}
+.fa-queue{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fa-queue li + li{border-top:1px solid var(--line-soft)}
+.fa-queue a{display:flex;align-items:center;gap:16px;padding:16px 24px;color:inherit;text-decoration:none;transition:background-color .2s ease-out}
+.fa-queue a:hover{background:var(--neutral-50)}
+.fa-queue a:hover .fa-go{background:var(--teal-500);color:var(--neutral-0)}
+.fa-queue .sp-row-main b{font-size:16px;line-height:26px}
+.fa-queue .sp-row-meta{color:var(--muted-2);font-size:14px;line-height:22px}
+.fa-go{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-500);transition:background-color .2s ease-out,color .2s ease-out}
+.fa-soon-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fa-soon-list li + li{border-top:1px solid var(--line-soft)}
+.fa-soon-list a{display:flex;align-items:center;gap:12px;padding:12px 24px;color:inherit;text-decoration:none;transition:background-color .2s ease-out}
+.fa-soon-list a:hover{background:var(--neutral-50)}
+.fa-soon-list .sp-row-ic{width:36px;height:36px}
+.fa-soon-list b{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+
+/* ---------- Responsive ---------- */
+@media (min-width:1400px){
+  .fa-row{grid-template-columns:40px minmax(0,1fr) 160px 360px}
+}
+@media (max-width:1100px){
+  .fa-split,.fa-dash-cols{grid-template-columns:1fr}
+  .fa-dash-cols > :first-child{grid-column:auto}
+  .fa-chapters .pm-list{max-height:360px}
+}
+@media (max-width:960px){
+  .fa-page > .q-hero-split{grid-template-columns:1fr}
+  .fa-page > .q-hero-split > .banner{grid-column:auto}
+}
+@media (max-width:900px){
+  .fa-plan .edu-plan-editor{grid-template-columns:1fr}
+  .fa-plan .edu-plan-scenes{max-height:none;position:static}
+  .fa-plan-slides{flex-direction:row;overflow-x:auto}
+  .fa-plan .edu-plan-scene{flex:none;width:208px}
+}
+@media (max-width:760px){
+  .fa-page .sp-panel-h{padding:16px;flex-wrap:wrap}
+  .fa-page .sp-panel-b{padding:16px}
+  .fa-row{grid-template-columns:40px minmax(0,1fr);gap:12px;padding:16px}
+  .fa-row-status,.fa-row-actions{grid-column:2 / -1;min-width:0}
+  .fa-row-actions{justify-content:flex-start;flex-wrap:wrap}
+  .fa-filter-select,.fa-filter-select .quirri-dd{min-width:0;width:100%}
+  .fa-chapter-bar,.fa-mcq-head{padding:16px}
+  .fa-pick{padding:20px}
+  .fa-pick .pm-soon-art{display:none}
+  .fa-queue a{padding:16px}
+  .modal-f:has(.fa-foot-btn){flex-direction:column-reverse;align-items:stretch}
+  .modal-f .fa-foot-btn{width:100%}
+  .fa-soon-list a{padding:12px 16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .fa-progress-bar i{transition:none}
+}

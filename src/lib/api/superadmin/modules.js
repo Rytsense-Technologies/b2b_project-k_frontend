@@ -146,17 +146,6 @@ export const healthApi = {
     api.get(`/health/errors?${buildParams(params)}`),
 };
 
-/** Live: /api/v1/audit-logs — append-only rows from institution/user/auth mutations. */
-export const auditApi = {
-  list: (params = {}) =>
-    api.get(`/audit-logs?${buildParams(params)}`),
-  exportData: (params = {}) =>
-    downloadBlob(
-      () => api.get(`/audit-logs/export?${buildParams(params)}`, { responseType: 'blob' }),
-      'audit-logs.csv',
-    ),
-};
-
 /** Live: /api/v1/notifications — SOW event catalogue; deliveries empty until ESP. */
 export const notificationsApi = {
   listEvents: () => api.get('/notifications/events'),

@@ -1,4 +1,4 @@
-/** Page titles/subtitles aligned with Client Demo / SOW (institutional licence language). */
+/** Page titles/subtitles (sentence case — docs/agent/design-system.md §5). */
 export const PAGE_META = {
   '/superadmin/dashboard': {
     title: 'Dashboard',
@@ -10,10 +10,14 @@ export const PAGE_META = {
   },
   '/superadmin/colleges': {
     title: 'Colleges',
-    subtitle: 'Onboard colleges, provision admins, and set licence entitlements.',
+    subtitle: 'Onboard colleges, provision admins, and set student seat caps.',
+  },
+  '/superadmin/departments': {
+    title: 'Departments',
+    subtitle: 'Departments across every college, with their HODs and enrolment.',
   },
   '/superadmin/users': {
-    title: 'Platform Users',
+    title: 'Platform users',
     subtitle: 'Every user across every institution.',
   },
   '/superadmin/reports': {
@@ -21,16 +25,12 @@ export const PAGE_META = {
     subtitle: 'Search, preview, and export platform data.',
   },
   '/superadmin/health': {
-    title: 'Platform Health',
+    title: 'Platform health',
     subtitle: 'System status, uptime, pipeline throughput, and errors.',
-  },
-  '/superadmin/audit': {
-    title: 'Audit Logs',
-    subtitle: 'Append-only record of sensitive actions.',
   },
   '/superadmin/notifications': {
     title: 'Notifications',
-    subtitle: 'SOW notification events — activation, content, assignments, interviews, pipeline.',
+    subtitle: 'Activation, content, assignment, interview and pipeline events, and their deliveries.',
   },
   '/superadmin/settings': {
     title: 'Settings',

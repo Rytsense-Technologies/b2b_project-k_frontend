@@ -21,7 +21,7 @@ function scoreCls(n) {
   return '';
 }
 
-/** My Progress — chapter completion, assessments and interview readiness (live data only). */
+/** My progress — chapter completion, assessments and interview readiness (live data only). */
 export default function StudentProgressPage() {
   const { data: m, loading, error, reload } = useAsyncResource(loadStudentHome, []);
   const isLoading = loading && !m;
@@ -45,18 +45,18 @@ export default function StudentProgressPage() {
       ) : null}
 
       <section className="sd-kpis" aria-label="Progress summary">
-        <Kpi icon="play" label="Chapters Published" value={m?.counts?.lectures} sub={`${m?.counts?.subjects ?? '—'} subject${m?.counts?.subjects === 1 ? '' : 's'}`} />
-        <Kpi icon="check" label="Assessments Done" value={a ? `${a.done}/${a.available}` : null} sub={`${pct}% of available quizzes`} />
-        <Kpi icon="trend" label="Assessment Average" value={a?.avg != null ? `${Math.round(a.avg)}%` : null} sub={a?.best != null ? `Best ${a.best}%` : 'After your first quiz'} />
-        <Kpi icon="mic" label="Interview Average" value={m?.interviews?.avg != null ? Math.round(m.interviews.avg) : null} sub={`${m?.interviews?.total ?? 0} completed`} />
+        <Kpi icon="play" label="Chapters published" value={m?.counts?.lectures} sub={`${m?.counts?.subjects ?? '—'} subject${m?.counts?.subjects === 1 ? '' : 's'}`} />
+        <Kpi icon="check" label="Assessments done" value={a ? `${a.done}/${a.available}` : null} sub={`${pct}% of available quizzes`} />
+        <Kpi icon="trend" label="Assessment average" value={a?.avg != null ? `${Math.round(a.avg)}%` : null} sub={a?.best != null ? `Best ${a.best}%` : 'After your first quiz'} />
+        <Kpi icon="mic" label="Interview average" value={m?.interviews?.avg != null ? Math.round(m.interviews.avg) : null} sub={`${m?.interviews?.total ?? 0} completed`} />
       </section>
 
       <section className="sd-limits" aria-label="Assessment completion">
-        <span className="sd-limits-h"><Icon name="layers" size={16} /> Semester Progress</span>
+        <span className="sd-limits-h"><Icon name="layers" size={16} /> Semester progress</span>
         <span>Assessments: <b className="is-amber">{a?.done ?? 0}/{a?.available ?? 0}</b> completed</span>
         <span className="sd-strip-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>
         <Link className="sd-limits-link" href="/student/subjects">
-          Go to My Subjects <Icon name="arrow" size={14} />
+          Go to My subjects <Icon name="arrow" size={14} />
         </Link>
       </section>
 
@@ -126,7 +126,7 @@ export default function StudentProgressPage() {
       <div className="sd-card sd-perf">
         <div className="sd-card-h">
           <div>
-            <h3>Assessment Score Trend</h3>
+            <h3>Assessment score trend</h3>
             <p>Your chapter quiz scores in the order you took them</p>
           </div>
           <button type="button" className="sd-iconbtn" onClick={() => reload().catch(() => {})} aria-label="Refresh">
@@ -137,7 +137,7 @@ export default function StudentProgressPage() {
           <PerformanceChart items={m.trend} ariaLabel="Your chapter assessment scores over time" />
         ) : (
           <SectionState title={isLoading ? 'Loading your scores' : 'No assessments taken yet'}>
-            {isLoading ? null : 'Take a chapter assessment from My Subjects — your scores plot here.'}
+            {isLoading ? null : 'Take a chapter assessment from My subjects — your scores plot here.'}
           </SectionState>
         )}
       </div>

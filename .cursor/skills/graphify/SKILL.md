@@ -51,6 +51,7 @@ Main app rules:
 - Post-login: white sidebar, Poppins, mist `#F8F8F9`, `PortalHero` (Brand Guidelines v1.0)
 - Four portals: `/superadmin`, `/admin`, `/faculty`, `/student`
 - Forms: `src/lib/validation` `FIELD_RULES` + `QuirriRHFField` — `.cursor/rules/quirri-forms.mdc`
+- Scope: `assets/ProjectK_B2B_SOW_v1.0.pdf` — ask user before out-of-scope work (`.cursor/rules/quirri-sow-scope.mdc`)
 - Product UI: `docs/QUIRRI_PRODUCT_UI_RULES.md` — dropdowns (`QuirriSelect`), text alignment
 - Tooltips: `QuirriTooltip` / `useQuirriTip` — never native `title`
 - UI verification: Playwright for design/layout bugs

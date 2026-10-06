@@ -1,0 +1,56 @@
+---
+description: Project K B2B SOW v1.0 is the Phase 1 scope contract — check before building; ask user before any out-of-scope work
+alwaysApply: true
+---
+
+# Project K B2B SOW — scope gate (always)
+
+**Contract PDF:** `assets/ProjectK_B2B_SOW_v1.0.pdf`  
+**Text extract (searchable):** `assets/_pdf_extract/ProjectK_B2B_SOW_v1.0.txt`
+
+This SOW is the **Phase 1 product scope** for Project K (Quirri B2B). Brand Guidelines cover how it looks. The SOW covers **what** is in or out of Phase 1.
+
+## Before building (mandatory)
+
+1. Map the request to SOW sections (portals, features, exclusions).
+2. Prefer the extract file for quick lookup; use the PDF as the signed contract.
+3. If the request is **clearly in scope** → proceed.
+4. If the request is **out of scope**, **ambiguous**, or needs a **Change Request** → **stop and ask the user first**. Do not implement, stub, or “quietly add” it.
+
+## In scope (Phase 1 summary)
+
+- B2B institutional model: Super Admin (Knotopian) → universities/colleges → College Admin / HOD / Faculty → Students
+- Portals: Super Admin, College Admin (Admin + HOD/Faculty RBAC), Student
+- Content upload → AI course/video generation → SME review → student Classroom
+- Student: Classroom videos, voice QnA AI Tutor (EN + Tamil), MCQ assessments, leaderboard, embedded AI Interview (final-year / B2B)
+- Analytics for Super Admin and College Admin; notifications (email/WhatsApp activation, etc. as specified)
+- Desktop web primary; English primary for video; Tamil for QnA
+
+## Explicitly out of scope (ask before any work)
+
+From SOW §14 Exclusions (and related terms):
+
+- Mobile apps (iOS / Android)
+- Offline / downloaded content for offline use
+- Live video classes or real-time faculty↔student streaming
+- B2C standalone Interview Portal subscription / billing (separate B2C SOW)
+- On-premise deployment (add-on)
+- Third-party LMS integrations (Moodle, Canvas, etc.)
+- Anything the SOW marks as separate SOW / CR / future phase
+- Plan / licence / subscription UI for B2B colleges (also `.cursor/rules/quirri-no-plans.mdc`)
+
+## How to address the user
+
+When out of scope or unclear, reply briefly with:
+
+1. What was requested  
+2. Why it conflicts with or sits outside `ProjectK_B2B_SOW_v1.0` (cite section if known)  
+3. Ask whether to skip, defer, or treat as an explicit Change Request  
+
+Do not start coding until the user confirms.
+
+## Related rules
+
+- No B2B plans/billing UI: `quirri-no-plans.mdc`
+- How to build (brand/UX): `quirri-brand-guidelines.mdc`, `quirri-development.mdc`
+- Auth login UI freeze: `quirri-login-freeze.mdc`

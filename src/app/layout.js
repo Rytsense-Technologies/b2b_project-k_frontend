@@ -1,6 +1,14 @@
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import '../styles/quirri-design.css';
+// Shared module-page kit for every portal (design-system.md §4b).
+import '../styles/student-portal.css';
+import '../styles/superadmin-universities.css';
+import '../styles/superadmin-colleges.css';
+import '../styles/portal-modules.css';
+import '../styles/portal-superadmin.css';
+import '../styles/portal-admin.css';
+import '../styles/portal-faculty.css';
 import Providers from './Providers';
 
 /** Brand Guidelines v1.0 — Poppins only (300, 400, 500, 700). */

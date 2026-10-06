@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { QuirriControlledField } from '@/components/superadmin/quirri-ui';
+import { Icon } from '@/components/student/ui';
 import { eduVideoApi, JOB_STATUS } from '@/lib/api/admin/eduVideo';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 
@@ -158,6 +159,12 @@ function fieldsForVisualType(type) {
     out.push({ path: 'key_idea', label: 'Key idea', kind: 'text', scope: 'visual' });
   }
   return out;
+}
+
+/** "diagram_cards" → "Diagram cards" */
+function typeText(type) {
+  const t = String(type || 'slide').replace(/_/g, ' ');
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 function listToText(value) {
@@ -420,7 +427,8 @@ export default function EduVideoPlanEditor({
       const cards = Array.isArray(scene?.visual?.cards) ? scene.visual.cards : [];
       if (!cards.length) {
         return (
-          <div key={key} className="notice info" style={{ marginBottom: 12 }}>
+          <div key={key} className="fa-note">
+            <Icon name="info" size={18} />
             <div>
               <b>No cards on this slide</b>
               This {visualType} scene has an empty cards list in the plan.
@@ -486,7 +494,8 @@ export default function EduVideoPlanEditor({
       const rows = Array.isArray(scene?.visual?.table_rows) ? scene.visual.table_rows : [];
       if (!rows.length) {
         return (
-          <div key={key} className="notice info" style={{ marginBottom: 12 }}>
+          <div key={key} className="fa-note">
+            <Icon name="info" size={18} />
             <div>
               <b>No table rows on this slide</b>
               This table scene has an empty table_rows list in the plan.
@@ -528,7 +537,8 @@ export default function EduVideoPlanEditor({
       const branches = Array.isArray(scene?.visual?.branches) ? scene.visual.branches : [];
       if (!branches.length) {
         return (
-          <div key={key} className="notice info" style={{ marginBottom: 12 }}>
+          <div key={key} className="fa-note">
+            <Icon name="info" size={18} />
             <div>
               <b>No branches on this slide</b>
               This concept map has an empty branches list in the plan.
@@ -609,24 +619,30 @@ export default function EduVideoPlanEditor({
       wide
       footer={(
         <>
-          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
+          <button type="button" className="sd-btn sd-btn--ghost fa-foot-btn" onClick={onClose} disabled={saving}>
             Close
           </button>
           <button
             type="button"
-            className="btn btn-primary"
+            className="sd-btn sd-btn--amber fa-foot-btn"
             onClick={handlePrimary}
             disabled={saving || loading || !plan || Boolean(loadError)}
           >
+            <Icon name={isReviewer ? 'send' : 'refresh'} size={16} />
             {saving ? primaryBusy : primaryLabel}
           </button>
         </>
       )}
     >
-      {loading ? <div className="card-p">Loading lesson plan…</div> : null}
+      {loading ? (
+        <div className="fa-loading" role="status">
+          <Icon name="clock" size={18} /> Loading lesson plan…
+        </div>
+      ) : null}
 
       {loadError ? (
-        <div className="notice err">
+        <div className="fa-note is-err" role="alert">
+          <Icon name="alert" size={18} />
           <div>
             <b>Could not open the plan</b>
             {loadError}
@@ -635,20 +651,21 @@ export default function EduVideoPlanEditor({
       ) : null}
 
       {!loading && !loadError && plan ? (
-        <>
-          <div className="notice info" style={{ marginBottom: 16 }}>
+        <div className="fa-plan">
+          <div className="fa-note">
+            <Icon name="info" size={18} />
             <div>
               {isReviewer ? (
                 <>
                   <b>Edit slides, then send to College Admin</b>
-                  Change the fields you need, then use <b>Save &amp; send to admin</b>.
-                  Only fields for this slide’s visual type are shown — unused slots stay out of the form.
-                  Your edits are queued for College Admin even when the video status is already Done.
+                  Change the fields you need, then choose Save &amp; send to admin.
+                  Only fields for this slide’s visual type are shown.
+                  Your edits are queued for the College Admin even when the video is already finished.
                 </>
               ) : (
                 <>
                   <b>Edit slides, then regenerate</b>
-                  Apply HOD/Faculty feedback (or your own fixes), then <b>Save &amp; regenerate</b>.
+                  Apply HOD / Faculty feedback (or your own fixes), then choose Save &amp; regenerate.
                   Only fields for this slide’s visual type are shown.
                   {!legacyEditable ? (
                     <>
@@ -668,37 +685,47 @@ export default function EduVideoPlanEditor({
                 Slides
                 <span className="sub">{scenes.length} total</span>
               </div>
-              {scenes.map((s, idx) => {
-                const active = idx === sceneIndex;
-                const typeLabel = String(s?.visual?.type || 'slide').toLowerCase();
-                return (
-                  <button
-                    key={s.scene_id ?? idx}
-                    type="button"
-                    className={`edu-plan-scene${active ? ' is-active' : ''}`}
-                    onClick={() => setSceneIndex(idx)}
-                  >
-                    <span className="edu-plan-scene-ix">{idx + 1}/{scenes.length}</span>
-                    <span className="edu-plan-scene-t">{s.topic || s.visual?.title || `Slide ${idx + 1}`}</span>
-                    <span className="edu-plan-scene-type">{typeLabel}</span>
-                  </button>
-                );
-              })}
+              <div className="fa-plan-slides">
+                {scenes.map((s, idx) => {
+                  const active = idx === sceneIndex;
+                  const typeLabel = typeText(String(s?.visual?.type || 'slide').toLowerCase());
+                  return (
+                    <button
+                      key={s.scene_id ?? idx}
+                      type="button"
+                      className={`edu-plan-scene${active ? ' is-active' : ''}`}
+                      aria-current={active ? 'true' : undefined}
+                      onClick={() => setSceneIndex(idx)}
+                    >
+                      <span className="sp-chapter-n" aria-hidden="true">{idx + 1}</span>
+                      <span className="fa-plan-scene-copy">
+                        <span className="edu-plan-scene-t">{s.topic || s.visual?.title || `Slide ${idx + 1}`}</span>
+                        <span className="edu-plan-scene-type">{typeLabel}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="edu-plan-detail">
               {scene ? (
                 <>
                   <div className="edu-plan-detail-h">
-                    <span>{scene.topic || scene.visual?.title || `Slide ${sceneIndex + 1}`}</span>
-                    <span className="sub">
-                      {visualType}
-                      {' · '}
-                      {sceneIndex + 1} / {scenes.length}
-                    </span>
+                    <div>
+                      <small>Slide {sceneIndex + 1} of {scenes.length}</small>
+                      <b>{scene.topic || scene.visual?.title || `Slide ${sceneIndex + 1}`}</b>
+                    </div>
+                    <div className="fa-plan-pills">
+                      <span className="sp-pill sp-pill--teal">{typeText(visualType)}</span>
+                    </div>
                   </div>
 
                   <div className="edu-plan-preview">
+                    <span className="fa-plan-preview-ph" aria-hidden="true">
+                      <Icon name="video" size={24} />
+                      Slide preview not available yet
+                    </span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={eduVideoApi.getSceneImageUrl(jobId, sceneIndex)}
@@ -707,10 +734,13 @@ export default function EduVideoPlanEditor({
                     />
                   </div>
 
-                  {fields.map((field) => renderField(field))}
+                  <div className="fa-plan-fields">
+                    {fields.map((field) => renderField(field))}
+                  </div>
                 </>
               ) : (
-                <div className="notice info">
+                <div className="fa-note">
+                  <Icon name="info" size={18} />
                   <div>
                     <b>No scenes in this plan</b>
                     Generation may still be writing the script, or the plan is empty.
@@ -719,7 +749,7 @@ export default function EduVideoPlanEditor({
               )}
             </div>
           </div>
-        </>
+        </div>
       ) : null}
     </QuirriModal>
   );

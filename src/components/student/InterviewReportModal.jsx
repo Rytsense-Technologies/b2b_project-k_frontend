@@ -17,11 +17,11 @@ const DIMENSION_LABELS = [
 ];
 
 function scoreTone(score) {
-  if (score == null || !Number.isFinite(Number(score))) return { bg: '#EEF0F0', fg: '#4A5A60' };
+  if (score == null || !Number.isFinite(Number(score))) return { bg: '#EEF0F0', fg: '#536064' };
   const n = Number(score);
-  if (n >= 80) return { bg: '#E6F5EE', fg: '#0B5D43' };
-  if (n >= 65) return { bg: '#E8F1F3', fg: '#0E5C6B' };
-  return { bg: '#FDF1E2', fg: '#8A560A' };
+  if (n >= 80) return { bg: '#E9F5EF', fg: '#0F6E56' };
+  if (n >= 65) return { bg: '#F1F5F6', fg: '#0E5C6B' };
+  return { bg: '#FDF1E2', fg: '#AC5B16' };
 }
 
 function formatDate(iso) {
@@ -262,8 +262,8 @@ export default function InterviewReportModal({
                 className="si-overall-ring"
                 style={{
                   background: overallRound == null
-                    ? 'conic-gradient(#EAEFF1 0 100%)'
-                    : `conic-gradient(${overallTone.fg} 0 ${overallRound}%, #EAEFF1 ${overallRound}% 100%)`,
+                    ? 'conic-gradient(#EEF0F0 0 100%)'
+                    : `conic-gradient(${overallTone.fg} 0 ${overallRound}%, #EEF0F0 ${overallRound}% 100%)`,
                 }}
               >
                 <div className="si-overall-inner">

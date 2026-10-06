@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import QuirriBadge from '@/components/superadmin/QuirriBadge';
 import VideoPreviewModal from '@/components/shared/VideoPreviewModal';
 import EduVideoPlanEditor from '@/components/shared/EduVideoPlanEditor';
 import {
@@ -11,6 +10,20 @@ import {
   QuirriControlledField,
 } from '@/components/superadmin/quirri-ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
+import {
+  Icon,
+  ModulePage,
+  ModuleBanner,
+  KpiRow,
+  FilterBar,
+  SegTabs,
+  SearchBox,
+  Panel,
+  StatusPill,
+  IconButton,
+  SectionState,
+  countLabel,
+} from '@/components/shared/module-ui';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import {
@@ -45,6 +58,9 @@ function validateFile(file) {
   }
   return '';
 }
+
+/* QuirriBadge variant → shared .sp-pill tone */
+const TONE = { red: 'err', green: 'good', amber: 'low', blue: 'teal' };
 
 const canPreview = (job) => job?.status === JOB_STATUS.DONE && Boolean(job?.output_path);
 
@@ -115,6 +131,7 @@ export default function ContentPage() {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  const [jobSearch, setJobSearch] = useState('');
   const [removingId, setRemovingId] = useState(null);
   const [sendingId, setSendingId] = useState(null);
   const [generatingMcqId, setGeneratingMcqId] = useState(null);
@@ -369,8 +386,8 @@ export default function ContentPage() {
       const doc = await mcqApi.generate(jobId);
       toast.success(
         doc?.generated_count
-          ? `MCQs ready (${doc.generated_count} questions). HOD/Faculty can review them under MCQ Review.`
-          : 'MCQs generated. HOD/Faculty can review them under MCQ Review.',
+          ? `MCQs ready (${doc.generated_count} questions). HOD/Faculty can review them under MCQ review.`
+          : 'MCQs generated. HOD/Faculty can review them under MCQ review.',
       );
     } catch (err) {
       toast.error(mcqErrorMessage(err, 'Could not generate MCQs for this chapter.'));
@@ -462,66 +479,127 @@ export default function ContentPage() {
 
   const canSubmit = Boolean(departmentId && chapterTitle.trim() && file && !uploading);
 
-  const filteredJobs = statusFilter
+  const searchTerm = jobSearch.trim().toLowerCase();
+  const filteredJobs = (statusFilter
     ? jobs.filter((j) => statusBadge(j).filterKey === statusFilter)
-    : jobs;
+    : jobs
+  ).filter((j) => !searchTerm || [j.chapter_title, j.source_filename, j.department_name]
+    .filter(Boolean)
+    .some((v) => String(v).toLowerCase().includes(searchTerm)));
+
+  const stageCounts = jobs.reduce((acc, j) => {
+    const key = statusBadge(j).filterKey;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const jobsReady = !(jobsLoading && !jobs.length);
+
+  const STATUS_TABS = [
+    { value: '', label: 'All' },
+    { value: 'generating', label: 'Generating' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'awaiting_approval', label: 'Awaiting approval' },
+    { value: 'published', label: 'Published' },
+    { value: 'failed', label: 'Failed' },
+  ];
+
+  const mcqButton = (job) => {
+    const busy = generatingMcqId === job.job_id;
+    const tip = busy ? 'Generating MCQs…' : 'Generate MCQs for this chapter';
+    return (
+      <span onMouseEnter={(e) => show(e, tip, 'top')} onMouseLeave={hide}>
+        <IconButton
+          icon="spark"
+          label={busy ? 'Generating MCQs…' : `Generate MCQs for ${job.chapter_title || 'this chapter'}`}
+          disabled={busy}
+          onClick={() => !busy && generateMcq(job.job_id)}
+        />
+      </span>
+    );
+  };
+
+  const editButton = (job) => (
+    <span onMouseEnter={(e) => show(e, 'Review and edit slides', 'top')} onMouseLeave={hide}>
+      <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
+    </span>
+  );
+
+  const previewButton = (job) => (
+    <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setPreviewJob(job)}>
+      <Icon name="play" size={14} /> Preview
+    </button>
+  );
 
   return (
-    <div className="animate-fade-in">
-      <div className="notice info" style={{ marginBottom: 18 }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 16v-4M12 8h.01" />
-        </svg>
-        <div>
-          <b>How generation works</b>
-          The pipeline drafts a lesson and renders the video automatically — no manual step needed
-          until it&apos;s done. Once <b>Status</b> reads &quot;Completed&quot;, use <b>Preview</b> to watch it,
-          <b> Edit</b> to review slides, and if it looks good, <b>Send to HOD &amp; Faculty</b> in the
-          Action column to hand it off for approval.
-        </div>
-      </div>
+    <ModulePage className="ad-page">
+      <ModuleBanner
+        icon="upload"
+        eyebrow="Upload and content"
+        title="Chapter videos"
+        lede="Upload a chapter document and the video is generated automatically. Preview it, review the slides, then send it to the department HOD and faculty for approval."
+        chips={(
+          <>
+            <span className="is-on">Upload</span>
+            <Icon name="chev" size={14} />
+            <span>Generating</span>
+            <Icon name="chev" size={14} />
+            <span>Completed</span>
+            <Icon name="chev" size={14} />
+            <span>HOD approval</span>
+            <Icon name="chev" size={14} />
+            <span>Published</span>
+          </>
+        )}
+      />
 
-      <div className="cols a" style={{ alignItems: 'start', marginBottom: 18 }}>
-        <div className="card card-p">
-          <h3 style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 4 }}>New chapter upload</h3>
-          <p style={{ color: 'var(--muted)', fontSize: 12.5, marginBottom: 18 }}>
-            Choose a department, name the chapter, and upload a document.
-          </p>
+      <KpiRow
+        label="Content summary"
+        items={[
+          { icon: 'video', label: 'Chapters', value: jobsReady ? countLabel(jobs.length) : null, sub: 'Uploaded by your college' },
+          { icon: 'clock', label: 'Generating', value: jobsReady ? countLabel(stageCounts.generating || 0) : null, sub: 'Updates on its own' },
+          { icon: 'send', label: 'Awaiting approval', value: jobsReady ? countLabel(stageCounts.awaiting_approval || 0) : null, sub: 'With HOD and faculty' },
+          { icon: 'tick', label: 'Published', value: jobsReady ? countLabel(stageCounts.published || 0) : null, sub: 'Live for students' },
+        ]}
+      />
 
+      <div className="ad-upload-grid">
+        <Panel
+          title="New chapter upload"
+          sub="Choose a department, name the chapter and add the source document."
+          className="ad-upload"
+        >
           {deptError ? (
-            <div className="notice err" style={{ marginBottom: 12 }}>
-              <div>
-                <b>Could not load departments</b>
-                {apiErrorMessage(deptError, 'Please try again.')}
-              </div>
-            </div>
+            <SectionState tone="err" title="Could not load departments">
+              {apiErrorMessage(deptError, 'Please try again.')}
+            </SectionState>
           ) : null}
 
-          <QuirriSelect
-            id="content-department"
-            label="Department"
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
-            placeholder={deptLoading ? 'Loading departments…' : 'Select department'}
-            disabled={deptLoading || !departmentOptions.length}
-            options={departmentOptions}
-          />
+          <div className="grid2">
+            <QuirriSelect
+              id="content-department"
+              label="Department"
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              placeholder={deptLoading ? 'Loading departments…' : 'Select department'}
+              disabled={deptLoading || !departmentOptions.length}
+              options={departmentOptions}
+            />
 
-          <QuirriControlledField
-            label="Chapter title"
-            fieldType="academicLabel"
-            name="chapter_title"
-            id="content-chapter-title"
-            value={chapterTitle}
-            onChange={(v) => {
-              setChapterTitle(v);
-              if (chapterError) setChapterError(validateChapter(v));
-            }}
-            onBlur={() => setChapterError(validateChapter(chapterTitle))}
-            error={chapterError}
-            placeholder="e.g. Trees & Binary Search Trees"
-          />
+            <QuirriControlledField
+              label="Chapter title"
+              fieldType="academicLabel"
+              name="chapter_title"
+              id="content-chapter-title"
+              value={chapterTitle}
+              onChange={(v) => {
+                setChapterTitle(v);
+                if (chapterError) setChapterError(validateChapter(v));
+              }}
+              onBlur={() => setChapterError(validateChapter(chapterTitle))}
+              error={chapterError}
+              placeholder="e.g. Trees & Binary Search Trees"
+            />
+          </div>
 
           <QuirriField
             label="Source material"
@@ -530,7 +608,7 @@ export default function ContentPage() {
             hint={`Accepted: ${SUPPORTED_EXTENSIONS.join(', ')} · up to 50 MB · English`}
           >
             <div
-              className="drop"
+              className={`ad-drop${dragging ? ' is-drag' : ''}${file ? ' has-file' : ''}`}
               role="button"
               tabIndex={0}
               aria-label="Choose source file"
@@ -545,21 +623,18 @@ export default function ContentPage() {
                   fileInputRef.current?.click();
                 }
               }}
-              style={{
-                outline: dragging ? '2px solid var(--teal-500, #0E5C6B)' : undefined,
-                cursor: 'pointer',
-              }}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                <path d="M12 16V4m0 0l-4 4m4-4l4 4" />
-                <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" />
-              </svg>
-              <div className="t">
-                {file ? file.name : 'Drop a document, or click to browse'}
-              </div>
-              <div className="s">
-                PDF, DOCX, DOC or TXT · up to 50 MB · English
-              </div>
+              <span className="ad-drop-ic" aria-hidden="true">
+                <Icon name={file ? 'doc' : 'upload'} size={22} />
+              </span>
+              <span className="ad-drop-copy">
+                <b>{file ? file.name : 'Drop a document, or click to browse'}</b>
+                <small>
+                  {file
+                    ? `${(file.size / (1024 * 1024)).toFixed(1)} MB · click to choose a different file`
+                    : 'PDF, DOCX, DOC or TXT · up to 50 MB · English'}
+                </small>
+              </span>
               <input
                 ref={fileInputRef}
                 id="content-source-file"
@@ -571,321 +646,287 @@ export default function ContentPage() {
             </div>
           </QuirriField>
 
-          <div className="flow" style={{ marginBottom: 16 }}>
-            <span className="step">On submit:</span>
-            <span>
-              The document uploads and the video generates automatically in the background — you&apos;ll
-              see it move from Generating to Rendering to Completed here.
-            </span>
+          <div className="ad-upload-foot">
+            <p className="ad-muted">
+              <Icon name="info" size={14} />
+              After you submit, the video generates in the background. You&apos;ll see it move from
+              Generating to Rendering to Completed in the table below.
+            </p>
+            <button
+              type="button"
+              className="sd-btn sd-btn--amber"
+              disabled={!canSubmit}
+              onClick={handleUpload}
+              aria-label="Upload and generate"
+              onMouseEnter={(e) => {
+                if (!canSubmit) {
+                  show(e, 'Select a department, chapter title, and supported file first', 'top');
+                }
+              }}
+              onMouseLeave={hide}
+              onFocus={(e) => {
+                if (!canSubmit) {
+                  show(e, 'Select a department, chapter title, and supported file first', 'top');
+                }
+              }}
+              onBlur={hide}
+            >
+              <Icon name="upload" size={16} />
+              {uploading ? 'Uploading…' : 'Upload and generate'}
+            </button>
           </div>
+        </Panel>
 
-          <button
-            type="button"
-            className="btn btn-primary btn-block"
-            disabled={!canSubmit}
-            onClick={handleUpload}
-            aria-label="Upload and generate"
-            onMouseEnter={(e) => {
-              if (!canSubmit) {
-                show(e, 'Select a department, chapter title, and supported file first', 'top');
-              }
-            }}
-            onMouseLeave={hide}
-            onFocus={(e) => {
-              if (!canSubmit) {
-                show(e, 'Select a department, chapter title, and supported file first', 'top');
-              }
-            }}
-            onBlur={hide}
-          >
-            {uploading ? 'Uploading…' : 'Upload & generate'}
-          </button>
-        </div>
-
-        <div className="card">
-          <div className="card-h">
-            <h3>Content status</h3>
-            <QuirriSelect
-              ariaLabel="Filter by status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              placeholder="All statuses"
-              options={[
-                { value: 'generating', label: 'Generating' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'awaiting_approval', label: 'Awaiting HOD & Faculty approval' },
-                { value: 'published', label: 'Published' },
-                { value: 'failed', label: 'Failed' },
-              ]}
-            />
-          </div>
-          <div className="card-sub">
-            This college&apos;s jobs from the server — the same list on every browser and device.
-          </div>
-
-          {jobsError ? (
-            <div className="notice err" style={{ margin: 16 }}>
-              <div>
-                <b>Could not load content status</b>
-                {apiErrorMessage(jobsError, 'Please try again.')}
-              </div>
-            </div>
-          ) : null}
-
-          {!jobsLoading && !jobs.length ? (
-            <div className="notice info" style={{ margin: 16 }}>
-              <div>
-                <b>No jobs yet</b>
-                Upload a chapter to see generation status here.
-              </div>
-            </div>
-          ) : null}
-
-          <table>
-            <thead>
-              <tr>
-                <th>Chapter</th>
-                <th>Department</th>
-                <th>Status</th>
-                <th>Preview</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobsLoading && !jobs.length ? (
-                <tr><td colSpan={5}>Loading…</td></tr>
-              ) : null}
-              {!jobsLoading && jobs.length && !filteredJobs.length ? (
-                <tr><td colSpan={5}>No jobs match this filter.</td></tr>
-              ) : null}
-              {filteredJobs.map((job) => {
-                const badge = statusBadge(job);
-                const stage = badge.filterKey;
-                const previewable = canPreview(job);
-                return (
-                  <tr key={job.job_id}>
-                    <td>
-                      <span className="strong">{job.chapter_title || '—'}</span>
-                      <div className="sub">{job.source_filename}</div>
-                    </td>
-                    <td>{job.department_name || '—'}</td>
-                    <td>
-                      <QuirriBadge variant={badge.variant}>{badge.label}</QuirriBadge>
-                      {typeof badge.progress === 'number' ? (
-                        <div className="sub" style={{ marginTop: 4 }}>
-                          {badge.progress}%
-                        </div>
-                      ) : null}
-                      {badge.error ? (
-                        <div
-                          className="sub edu-video-error"
-                          style={{ marginTop: 4, color: 'var(--danger, #b42318)' }}
-                          title={undefined}
-                          onMouseEnter={(e) => {
-                            const { detail } = summarizeEduVideoError(badge.error);
-                            if (detail) show(e, detail, 'top');
-                          }}
-                          onMouseLeave={hide}
-                        >
-                          {summarizeEduVideoError(badge.error).summary}
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="actions">
-                      {previewable ? (
-                        <a
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setPreviewJob(job)}
-                          onKeyDown={(e) => e.key === 'Enter' && setPreviewJob(job)}
-                        >
-                          Preview
-                        </a>
-                      ) : (
-                        <span className="sub">—</span>
-                      )}
-                    </td>
-                    <td className="actions">
-                      {stage === 'completed' ? (
-                        <>
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => setEditJob(job)}
-                            onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                          >
-                            Edit
-                          </a>
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
-                            onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
-                            style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
-                          >
-                            {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
-                          </a>
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => sendingId !== job.job_id && sendToHod(job.job_id)}
-                            onKeyDown={(e) => e.key === 'Enter' && sendToHod(job.job_id)}
-                            style={{ opacity: sendingId === job.job_id ? 0.5 : 1 }}
-                          >
-                            {sendingId === job.job_id ? 'Sending…' : 'Send to HOD & Faculty'}
-                          </a>
-                        </>
-                      ) : stage === 'awaiting_approval' ? (
-                        <>
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => setEditJob(job)}
-                            onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                          >
-                            Edit
-                          </a>
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
-                            onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
-                            style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
-                          >
-                            {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
-                          </a>
-                          <span className="sub">Awaiting approval</span>
-                        </>
-                      ) : stage === 'failed' || stage === 'published' ? (
-                        <>
-                          {previewable ? (
-                            <>
-                              <a
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => setEditJob(job)}
-                                onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                              >
-                                Edit
-                              </a>
-                              <a
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
-                                onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
-                                style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
-                              >
-                                {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
-                              </a>
-                            </>
-                          ) : null}
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => removingId !== job.job_id && removeJob(job.job_id)}
-                            onKeyDown={(e) => e.key === 'Enter' && removeJob(job.job_id)}
-                            style={{ opacity: removingId === job.job_id ? 0.5 : 1 }}
-                          >
-                            {removingId === job.job_id ? '…' : 'Remove'}
-                          </a>
-                        </>
-                      ) : previewable ? (
-                        <>
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => setEditJob(job)}
-                            onKeyDown={(e) => e.key === 'Enter' && setEditJob(job)}
-                          >
-                            Edit
-                          </a>
-                          <a
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => generatingMcqId !== job.job_id && generateMcq(job.job_id)}
-                            onKeyDown={(e) => e.key === 'Enter' && generateMcq(job.job_id)}
-                            style={{ opacity: generatingMcqId === job.job_id ? 0.5 : 1 }}
-                          >
-                            {generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs'}
-                          </a>
-                        </>
-                      ) : (
-                        <span className="sub">Working…</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <section className="sp-panel ad-howto" aria-label="How generation works">
+          <h3>How generation works</h3>
+          <ol>
+            <li>
+              <span className="pm-step-n">1</span>
+              <div><b>Upload</b><small>The pipeline drafts a lesson and renders the video. No manual step is needed.</small></div>
+            </li>
+            <li>
+              <span className="pm-step-n">2</span>
+              <div><b>Preview and edit</b><small>When the status reads Completed, preview the video and review its slides.</small></div>
+            </li>
+            <li>
+              <span className="pm-step-n">3</span>
+              <div><b>Send to HOD and faculty</b><small>Hand it off for approval. Once approved, it is published for students.</small></div>
+            </li>
+          </ol>
+        </section>
       </div>
 
-      <div className="card" data-testid="hod-feedback-queue">
-        <div className="card-h"><h3>HOD feedback — needs your action</h3></div>
-        <div className="card-sub">
-          When an HOD/Faculty edits slides and sends them back, review and regenerate from those edits here.
+      <FilterBar label="Filter content">
+        <SearchBox
+          placeholder="Search chapter, file or department…"
+          value={jobSearch}
+          onChange={(e) => setJobSearch(e.target.value)}
+        />
+        <SegTabs label="Filter by status" options={STATUS_TABS} value={statusFilter} onChange={setStatusFilter} />
+      </FilterBar>
+
+      <Panel
+        title="Content status"
+        sub="Your college's jobs from the server — the same list on every browser and device."
+        bodyClassName={null}
+      >
+        {jobsError ? (
+          <div className="sp-panel-b">
+            <SectionState
+              tone="err"
+              title="Could not load content status"
+              action={(
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reloadJobs()}>
+                  <Icon name="refresh" size={16} /> Try again
+                </button>
+              )}
+            >
+              {apiErrorMessage(jobsError, 'Please try again.')}
+            </SectionState>
+          </div>
+        ) : null}
+
+        {jobsLoading && !jobs.length ? (
+          <div className="sp-panel-b"><SectionState title="Loading content status…" /></div>
+        ) : null}
+
+        {!jobsLoading && !jobsError && !jobs.length ? (
+          <div className="sp-panel-b">
+            <SectionState title="No chapters yet">
+              Upload a chapter above to see its generation status here.
+            </SectionState>
+          </div>
+        ) : null}
+
+        {!jobsLoading && jobs.length && !filteredJobs.length ? (
+          <div className="sp-panel-b">
+            <SectionState title="No chapters match these filters">
+              Try a different status or search.
+            </SectionState>
+          </div>
+        ) : null}
+
+        {filteredJobs.length ? (
+          <div className="sp-table-wrap">
+            <table className="sp-table un-table ad-jobs ad-stack">
+              <thead>
+                <tr>
+                  <th>Chapter</th>
+                  <th>Status</th>
+                  <th className="ad-th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredJobs.map((job) => {
+                  const badge = statusBadge(job);
+                  const stage = badge.filterKey;
+                  const previewable = canPreview(job);
+                  return (
+                    <tr key={job.job_id}>
+                      <td>
+                        <div className="pm-person">
+                          <span className="ad-file-ic" aria-hidden="true"><Icon name="doc" size={16} /></span>
+                          <div>
+                            <b>{job.chapter_title || '—'}</b>
+                            <small>{[job.department_name, job.source_filename].filter(Boolean).join(' · ') || '—'}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <StatusPill active on={badge.label} tone={TONE[badge.variant]} />
+                        {typeof badge.progress === 'number' ? (
+                          <div className="ad-progress" aria-label={`${badge.progress}% done`}>
+                            <span className="ad-progress-bar"><i style={{ width: `${badge.progress}%` }} /></span>
+                            <small>{badge.progress}%</small>
+                          </div>
+                        ) : null}
+                        {badge.error ? (
+                          <div
+                            className="ad-job-err edu-video-error"
+                            onMouseEnter={(e) => {
+                              const { detail } = summarizeEduVideoError(badge.error);
+                              if (detail) show(e, detail, 'top');
+                            }}
+                            onMouseLeave={hide}
+                          >
+                            {summarizeEduVideoError(badge.error).summary}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td>
+                        <div className="ad-actions">
+                          {previewable ? previewButton(job) : null}
+                          {stage === 'completed' ? (
+                            <>
+                              {mcqButton(job)}
+                              {editButton(job)}
+                              <button
+                                type="button"
+                                className="sd-btn sd-btn--teal sd-btn--sm"
+                                disabled={sendingId === job.job_id}
+                                onClick={() => sendingId !== job.job_id && sendToHod(job.job_id)}
+                              >
+                                <Icon name="send" size={14} />
+                                {sendingId === job.job_id ? 'Sending…' : 'Send to HOD'}
+                              </button>
+                            </>
+                          ) : stage === 'awaiting_approval' ? (
+                            <>
+                              {mcqButton(job)}
+                              {editButton(job)}
+                            </>
+                          ) : stage === 'failed' || stage === 'published' ? (
+                            <>
+                              {previewable ? (
+                                <>
+                                  {mcqButton(job)}
+                                  {editButton(job)}
+                                </>
+                              ) : null}
+                              <IconButton
+                                icon="trash"
+                                danger
+                                label={removingId === job.job_id ? 'Removing…' : `Remove ${job.chapter_title || 'this job'}`}
+                                disabled={removingId === job.job_id}
+                                onClick={() => removingId !== job.job_id && removeJob(job.job_id)}
+                              />
+                            </>
+                          ) : previewable ? (
+                            <>
+                              {mcqButton(job)}
+                              {editButton(job)}
+                            </>
+                          ) : (
+                            <span className="ad-muted">Working…</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </Panel>
+
+      <section className="sp-panel" data-testid="hod-feedback-queue">
+        <div className="sp-panel-h">
+          <div>
+            <h3>HOD feedback — needs your action</h3>
+            <p>When an HOD or faculty member edits slides and sends them back, review and regenerate from those edits here.</p>
+          </div>
+          {hodFeedbackItems.length ? <span className="sp-pill sp-pill--low">{hodFeedbackItems.length} waiting</span> : null}
         </div>
         {pendingError ? (
-          <div className="notice err" style={{ margin: 16 }}>
-            <div><b>Could not load feedback</b>{pendingError}</div>
+          <div className="sp-panel-b">
+            <SectionState tone="err" title="Could not load feedback">{pendingError}</SectionState>
           </div>
         ) : null}
         {pendingLoading && !hodFeedbackItems.length ? (
-          <div className="card-p">Loading HOD feedback…</div>
+          <div className="sp-panel-b"><SectionState title="Loading HOD feedback…" /></div>
         ) : null}
         {!pendingLoading && !pendingError && !hodFeedbackItems.length ? (
-          <div className="notice info" style={{ margin: 16 }}>
-            <div>
-              <b>No pending HOD edits</b>
-              When faculty uses Save &amp; send to admin, chapters appear here so you can edit and regenerate.
+          <div className="sp-panel-b">
+            <div className="ad-empty">
+              <span className="ad-empty-ic" aria-hidden="true"><Icon name="chat" size={20} /></span>
+              <div>
+                <b>No pending HOD edits</b>
+                <small>When faculty use Save and send to admin, chapters appear here so you can edit and regenerate.</small>
+              </div>
             </div>
           </div>
         ) : null}
         {hodFeedbackItems.length ? (
-          <div className="table-wrap">
-            <table>
+          <div className="sp-table-wrap">
+            <table className="sp-table un-table ad-stack">
               <thead>
                 <tr>
                   <th>Chapter</th>
                   <th>Department</th>
                   <th>Received</th>
-                  <th>Action</th>
+                  <th className="ad-th-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {hodFeedbackItems.map((item) => (
                   <tr key={item.job_id}>
                     <td>
-                      <span className="strong">{item.chapter_title || '—'}</span>
-                      <div className="sub">{item.source_filename || item.job_id}</div>
+                      <div className="pm-person">
+                        <span className="ad-file-ic" aria-hidden="true"><Icon name="doc" size={16} /></span>
+                        <div>
+                          <b>{item.chapter_title || '—'}</b>
+                          <small>{item.source_filename || item.job_id}</small>
+                        </div>
+                      </div>
                     </td>
-                    <td>{item.department_name || '—'}</td>
-                    <td className="sub">
+                    <td data-label="Department">{item.department_name || '—'}</td>
+                    <td data-label="Received">
                       {item.changes_requested_at
-                        ? new Date(item.changes_requested_at).toLocaleString()
+                        ? new Date(item.changes_requested_at).toLocaleString('en-IN', {
+                          day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
+                        })
                         : '—'}
                     </td>
-                    <td className="actions">
-                      <a
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => openPendingEdit(item)}
-                        onKeyDown={(e) => e.key === 'Enter' && openPendingEdit(item)}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => dismissingPendingId !== item.job_id
-                          && dismissPending(item.job_id, Boolean(item.from_bridge))}
-                        onKeyDown={(e) => e.key === 'Enter'
-                          && dismissPending(item.job_id, Boolean(item.from_bridge))}
-                        style={{ opacity: dismissingPendingId === item.job_id ? 0.5 : 1 }}
-                      >
-                        {dismissingPendingId === item.job_id ? '…' : 'Dismiss'}
-                      </a>
+                    <td>
+                      <div className="ad-actions">
+                        <button
+                          type="button"
+                          className="sd-btn sd-btn--ghost sd-btn--sm"
+                          disabled={dismissingPendingId === item.job_id}
+                          onClick={() => dismissingPendingId !== item.job_id
+                            && dismissPending(item.job_id, Boolean(item.from_bridge))}
+                        >
+                          {dismissingPendingId === item.job_id ? 'Dismissing…' : 'Dismiss'}
+                        </button>
+                        <button
+                          type="button"
+                          className="sd-btn sd-btn--teal sd-btn--sm"
+                          onClick={() => openPendingEdit(item)}
+                        >
+                          <Icon name="edit" size={14} /> Review edits
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -893,7 +934,7 @@ export default function ContentPage() {
             </table>
           </div>
         ) : null}
-      </div>
+      </section>
 
       <VideoPreviewModal
         open={Boolean(previewJob)}
@@ -917,6 +958,6 @@ export default function ContentPage() {
       />
 
       <TipLayer />
-    </div>
+    </ModulePage>
   );
 }

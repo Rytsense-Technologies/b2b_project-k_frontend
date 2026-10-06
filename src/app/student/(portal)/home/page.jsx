@@ -167,17 +167,17 @@ export default function StudentHomePage() {
 
       {/* ---------------- KPIs ---------------- */}
       <section className="sd-kpis" aria-label="Learning summary">
-        <Kpi icon="book" label="My Subjects" value={m?.counts?.subjects} sub={m?.deptName || 'Your department'} />
-        <Kpi icon="play" label="Lectures Published" value={m?.counts?.lectures} sub="Video lectures to watch" />
+        <Kpi icon="book" label="My subjects" value={m?.counts?.subjects} sub={m?.deptName || 'Your department'} />
+        <Kpi icon="play" label="Lectures published" value={m?.counts?.lectures} sub="Video lectures to watch" />
         <Kpi
           icon="check"
-          label="Assessments Done"
+          label="Assessments done"
           value={a ? `${a.done}${a.available ? `/${a.available}` : ''}` : null}
           sub={a?.best != null ? `Best score ${a.best}%` : 'One attempt per chapter'}
         />
         <Kpi
           icon="mic"
-          label="Interviews Completed"
+          label="Interviews completed"
           value={m?.interviews?.total}
           sub={m?.interviews?.avg != null ? `Average score ${Math.round(m.interviews.avg)}` : 'Mock and full interviews'}
         />
@@ -185,7 +185,7 @@ export default function StudentHomePage() {
 
       {/* ---------------- Progress strip ---------------- */}
       <section className="sd-limits" aria-label="Assessment progress">
-        <span className="sd-limits-h"><Svg name="layers" size={16} /> Semester Progress</span>
+        <span className="sd-limits-h"><Svg name="layers" size={16} /> Semester progress</span>
         <span>Assessments: <b className="is-amber">{a?.done ?? 0}/{a?.available ?? 0}</b> completed</span>
         <span className="sd-strip-bar" aria-hidden="true"><i style={{ width: `${progressPct}%` }} /></span>
         <Link className="sd-limits-link" href="/student/progress">
@@ -197,11 +197,11 @@ export default function StudentHomePage() {
       <section className="sd-mid">
         <div className="sd-scores">
           <div className="sd-score-block">
-            <h3>Assessment Average</h3>
+            <h3>Assessment average</h3>
             <Ring value={a?.avg} tone="mist" label="Assessment average" />
           </div>
           <div className="sd-score-block">
-            <h3>Interview Average</h3>
+            <h3>Interview average</h3>
             <Ring value={m?.interviews?.avg} tone="amber" label="Interview average" />
           </div>
           <p className="sd-scores-note">
@@ -211,7 +211,7 @@ export default function StudentHomePage() {
 
         <div className="sd-card sd-perf">
           <div className="sd-card-h">
-            <h3>Assessment Score Trend</h3>
+            <h3>Assessment score trend</h3>
             <button type="button" className="sd-iconbtn" onClick={() => reload().catch(() => {})} aria-label="Refresh">
               <Svg name="refresh" size={16} />
             </button>
@@ -248,7 +248,7 @@ export default function StudentHomePage() {
         <div className="sd-card">
           <div className="sd-card-h">
             <div>
-              <h3>Recent Lectures</h3>
+              <h3>Recent lectures</h3>
               <p>Latest 3 published chapters</p>
             </div>
             <Link className="sd-chip" href="/student/subjects">
@@ -289,7 +289,7 @@ export default function StudentHomePage() {
         <div className="sd-card">
           <div className="sd-card-h">
             <div>
-              <h3>Subject Progress</h3>
+              <h3>Subject progress</h3>
               <p>Chapter assessments completed per subject</p>
             </div>
             <span className="sd-chip sd-chip--static"><Svg name="trend" size={14} /> This semester</span>

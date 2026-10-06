@@ -2,26 +2,58 @@
 
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import QuirriBadge from '@/components/superadmin/QuirriBadge';
+import {
+  ModulePage,
+  ModuleBanner,
+  KpiRow,
+  Panel,
+  Icon,
+  SectionState,
+  countLabel,
+} from '@/components/shared/module-ui';
 import { notificationsApi } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 
 /** Static SOW §7 catalogue — documentation only, not fake delivery data. */
 const SOW_EVENT_CATALOGUE = [
-  { event: 'Account activation', audience: 'New users', channels: ['Email', 'SMS'], phase: 'In scope' },
-  { event: 'Password reset', audience: 'All users', channels: ['Email'], phase: 'In scope' },
-  { event: 'Content ready / approval', audience: 'Faculty / Admin', channels: ['Email'], phase: 'In scope' },
-  { event: 'Interview assignment', audience: 'Final-year students', channels: ['Email'], phase: 'In scope' },
-  { event: 'Interview result', audience: 'Students', channels: ['Email'], phase: 'In scope' },
-  { event: 'Pipeline completion', audience: 'Admins', channels: ['Email'], phase: 'In scope' },
+  { event: 'Account activation', audience: 'New users', channels: ['Email', 'SMS'], phase: 'Available' },
+  { event: 'Password reset', audience: 'All users', channels: ['Email'], phase: 'Available' },
+  { event: 'Content ready / approval', audience: 'Faculty / Admin', channels: ['Email'], phase: 'Available' },
+  { event: 'Interview assignment', audience: 'Final-year students', channels: ['Email'], phase: 'Available' },
+  { event: 'Interview result', audience: 'Students', channels: ['Email'], phase: 'Available' },
+  { event: 'Pipeline completion', audience: 'Admins', channels: ['Email'], phase: 'Available' },
 ];
+
+const TONE = { green: 'sp-pill--good', amber: 'sp-pill--low', red: 'sp-pill--err' };
 
 function statusVariant(status) {
   const value = String(status || '').toLowerCase();
-  if (value.includes('deliver') || value.includes('scope') || value === 'ok' || value.includes('in scope')) return 'green';
+  if (value.includes('deliver') || value.includes('scope') || value === 'ok' || value.includes('in scope') || value.includes('available')) return 'green';
   if (value.includes('pending') || value.includes('queued')) return 'amber';
   return 'red';
+}
+
+function StatusPill({ status }) {
+  return (
+    <span className={`sp-pill ${TONE[statusVariant(status)]}`}>
+      <i className="un-dot" aria-hidden="true" />
+      {status}
+    </span>
+  );
+}
+
+/** Empty panel body: Teal 300 outline icon, title, one line. */
+function PanelEmpty({ icon, title, children }) {
+  return (
+    <div className="sa-empty">
+      <span className="sa-empty-ic" aria-hidden="true"><Icon name={icon} size={24} /></span>
+      <div>
+        <b>{title}</b>
+        {children ? <p>{children}</p> : null}
+      </div>
+    </div>
+  );
 }
 
 export default function NotificationsPage() {
@@ -43,6 +75,12 @@ export default function NotificationsPage() {
   const deliveries = useMemo(() => asList(deliveriesData, []), [deliveriesData]);
   const deliveriesUnavailable = !deliveriesLoading && deliveriesData == null && !deliveriesError;
 
+  const counts = useMemo(() => deliveries.reduce((acc, d) => {
+    acc[statusVariant(d.status)] += 1;
+    return acc;
+  }, { green: 0, amber: 0, red: 0 }), [deliveries]);
+  const hasDeliveries = deliveriesData != null;
+
   const handleRetry = async () => {
     setRetrying(true);
     try {
@@ -57,129 +95,135 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="section-head">
-        <div>
-          <div className="t">Notifications</div>
-          <div className="d">
-            Phase 1 B2B notification events from the SOW — activation, content, assignments, interview results, and pipeline completion. Not a sender-address management product.
-          </div>
-        </div>
-      </div>
+    <ModulePage className="sa-page">
+      <ModuleBanner
+        icon="bell"
+        eyebrow="Operations"
+        title="Notifications"
+        lede="Events Quirri sends to people — activation, content, assignments, interview results and pipeline completion."
+        chips={(
+          <>
+            <span className="is-on"><Icon name="mail" size={14} /> Email primary</span>
+            <span>SMS / WhatsApp for activation</span>
+          </>
+        )}
+        actions={(
+          <button type="button" className="sd-btn sd-btn--amber" onClick={handleRetry} disabled={retrying}>
+            <Icon name="refresh" size={16} /> {retrying ? 'Retrying…' : 'Retry failed deliveries'}
+          </button>
+        )}
+      />
+
+      <KpiRow
+        label="Notifications summary"
+        items={[
+          { icon: 'bell', label: 'Events', value: countLabel(events.length), sub: usingSowCatalogue ? 'From the reference catalogue' : 'From the API' },
+          { icon: 'send', label: 'Recent deliveries', value: hasDeliveries ? countLabel(deliveries.length) : null, sub: hasDeliveries ? 'Loaded below' : 'Not tracked yet' },
+          { icon: 'tick', label: 'Delivered', value: hasDeliveries ? countLabel(counts.green) : null, sub: hasDeliveries ? 'In recent deliveries' : 'Not tracked yet' },
+          { icon: 'alert', label: 'Failed', value: hasDeliveries ? countLabel(counts.red) : null, sub: hasDeliveries ? 'Use retry to resend' : 'Not tracked yet' },
+        ]}
+      />
 
       {usingSowCatalogue || deliveriesUnavailable ? (
-        <div className="notice info" style={{ marginBottom: 12 }}>
-          <div>
-            <b>Delivery history not wired yet</b>
-            Event catalogue is served from the API. Delivery rows stay empty until an ESP writes tracking records — no sample deliveries.
-          </div>
-        </div>
+        <SectionState title="Delivery history not wired yet">
+          Event catalogue is served from the API. Delivery rows stay empty until an ESP writes tracking records — no sample deliveries.
+        </SectionState>
       ) : null}
 
       {(eventsError || deliveriesError) ? (
-        <div className="notice err" style={{ marginBottom: 12 }}>
-          <div>
-            <b>Could not load notifications</b>
-            {apiErrorMessage(eventsError || deliveriesError, 'Please try again.')}
-          </div>
-        </div>
+        <SectionState tone="err" title="Could not load notifications">
+          {apiErrorMessage(eventsError || deliveriesError, 'Please try again.')}
+        </SectionState>
       ) : null}
 
-      <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-h"><h3>Event catalogue (SOW §7)</h3></div>
-        <div className="card-sub">
-          {usingSowCatalogue
-            ? 'Reference catalogue from the B2B SOW (not live API data).'
-            : 'Channels: email primary; SMS / WhatsApp for activation where provisioned.'}
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Event</th>
-              <th>Audience</th>
-              <th>Channels</th>
-              <th>Phase 1</th>
-            </tr>
-          </thead>
-          <tbody>
-            {eventsLoading && !events.length ? (
-              <tr><td colSpan={4}>Loading events…</td></tr>
-            ) : null}
-            {events.map((row) => {
-              const channels = Array.isArray(row.channels)
-                ? row.channels
-                : String(row.channels || '').split(',').map((c) => c.trim()).filter(Boolean);
-              return (
-                <tr key={row.id || row.event || row.name}>
-                  <td><span className="strong">{row.event || row.name}</span></td>
-                  <td>{row.audience}</td>
-                  <td>
-                    {channels.length
-                      ? channels.map((ch) => (
-                        <QuirriBadge key={ch} variant="grey" plain>{ch}</QuirriBadge>
-                      ))
-                      : '—'}
-                    {' '}
-                  </td>
-                  <td>
-                    <QuirriBadge variant={statusVariant(row.phase || row.phase1 || 'In scope')}>
-                      {row.phase || row.phase1 || 'In scope'}
-                    </QuirriBadge>
-                  </td>
+      <Panel
+        title="Event catalogue"
+        sub={usingSowCatalogue
+          ? 'Reference list of the events Quirri sends (not live data yet).'
+          : 'Channels: email primary; SMS / WhatsApp for activation where provisioned.'}
+        action={usingSowCatalogue ? <span className="sp-pill">Reference</span> : <span className="sp-pill sp-pill--teal">Live</span>}
+        bodyClassName={null}
+      >
+        {eventsLoading && !events.length ? (
+          <PanelEmpty icon="bell" title="Loading events…" />
+        ) : (
+          <div className="sp-table-wrap">
+            <table className="sp-table un-table sa-table-tight">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Audience</th>
+                  <th>Channels</th>
+                  <th>Availability</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {events.map((row) => {
+                  const channels = Array.isArray(row.channels)
+                    ? row.channels
+                    : String(row.channels || '').split(',').map((c) => c.trim()).filter(Boolean);
+                  return (
+                    <tr key={row.id || row.event || row.name}>
+                      <td>
+                        <div className="pm-person">
+                          <span className="sp-row-ic"><Icon name="bell" size={18} /></span>
+                          <b>{row.event || row.name}</b>
+                        </div>
+                      </td>
+                      <td>{row.audience}</td>
+                      <td>
+                        {channels.length ? (
+                          <div className="sa-chips">
+                            {channels.map((ch) => <span key={ch} className="sp-pill">{ch}</span>)}
+                          </div>
+                        ) : '—'}
+                      </td>
+                      <td><StatusPill status={row.phase || row.phase1 || 'Available'} /></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
 
-      <div className="card">
-        <div className="card-h">
-          <h3>Recent deliveries</h3>
-          <a
-            className="link"
-            onClick={handleRetry}
-            role="button"
-            tabIndex={0}
-            style={{ opacity: deliveriesUnavailable ? 0.5 : 1 }}
-          >
-            {retrying ? 'Retrying…' : 'Retry failed →'}
-          </a>
-        </div>
-        <div className="card-sub">Operational visibility for SOW notification events (not configurable from-address CRUD).</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Event</th>
-              <th>Recipient</th>
-              <th>Channel</th>
-              <th>Status</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {deliveriesLoading && !deliveries.length ? (
-              <tr><td colSpan={5}>Loading deliveries…</td></tr>
-            ) : null}
-            {!deliveriesLoading && !deliveries.length ? (
-              <tr><td colSpan={5}>No deliveries yet.</td></tr>
-            ) : null}
-            {deliveries.map((row) => (
-              <tr key={row.id || `${row.event}-${row.recipient}-${row.time}`}>
-                <td>{row.event}</td>
-                <td className="sub">{row.recipient}</td>
-                <td><QuirriBadge variant="grey" plain>{row.channel}</QuirriBadge></td>
-                <td>
-                  <QuirriBadge variant={statusVariant(row.status)}>
-                    {row.status}
-                  </QuirriBadge>
-                </td>
-                <td className="sub">{row.time || row.created_at}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <Panel
+        title="Recent deliveries"
+        sub="Delivery status for each event sent to people on the platform."
+        bodyClassName={null}
+      >
+        {deliveries.length ? (
+          <div className="sp-table-wrap">
+            <table className="sp-table un-table sa-table-tight">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Recipient</th>
+                  <th>Channel</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deliveries.map((row) => (
+                  <tr key={row.id || `${row.event}-${row.recipient}-${row.time}`}>
+                    <td><b>{row.event}</b></td>
+                    <td className="sa-muted">{row.recipient}</td>
+                    <td><span className="sp-pill">{row.channel}</span></td>
+                    <td className="sa-nowrap"><StatusPill status={row.status} /></td>
+                    <td className="sa-muted sa-nowrap">{row.time || row.created_at}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <PanelEmpty icon="send" title={deliveriesLoading ? 'Loading deliveries…' : 'No deliveries yet'}>
+            {deliveriesLoading ? null : 'Each email or SMS sent for an event above is listed here with its status.'}
+          </PanelEmpty>
+        )}
+      </Panel>
+    </ModulePage>
   );
 }

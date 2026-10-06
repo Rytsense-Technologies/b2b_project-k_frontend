@@ -135,7 +135,7 @@ function Step1({ onParsed }) {
 
       {/* Required columns hint */}
       <div className="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200">
-        <p className="text-xs font-semibold text-slate-600 mb-1">Required columns:</p>
+        <p className="text-xs font-medium text-slate-600 mb-1">Required columns:</p>
         <div className="flex flex-wrap gap-1.5">
           {REQUIRED_COLS.map((c) => (
             <code key={c} className="text-[11px] bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
@@ -159,7 +159,7 @@ function Step2({ rows, onConfirm, onBack }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-slate-600">
-          <span className="font-semibold text-slate-800">{rows.length}</span> user{rows.length !== 1 ? 's' : ''} ready to import
+          <span className="font-medium text-slate-800">{rows.length}</span> user{rows.length !== 1 ? 's' : ''} ready to import
           {rows.length > 10 && <span className="text-slate-400"> — showing first 10</span>}
         </p>
       </div>
@@ -169,7 +169,7 @@ function Step2({ rows, onConfirm, onBack }) {
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
               {REQUIRED_COLS.map((c) => (
-                <th key={c} className="px-3 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wide text-[10px]">
+                <th key={c} className="px-3 py-2.5 text-left font-medium text-slate-500 uppercase tracking-wide text-[10px]">
                   {c.replace(/_/g, ' ')}
                 </th>
               ))}
@@ -198,7 +198,7 @@ function Step2({ rows, onConfirm, onBack }) {
         </button>
         <button
           onClick={onConfirm}
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-white text-sm font-semibold"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-white text-sm font-medium"
           style={{ backgroundColor: '#AC5B16' }}
         >
           Import {rows.length} users <ChevronRight size={15} />
@@ -217,16 +217,16 @@ function Step3({ result, onClose }) {
     <div className="text-center">
       <div
         className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-        style={{ backgroundColor: created > 0 ? '#f0fdf4' : '#fef2f2' }}
+        style={{ backgroundColor: created > 0 ? '#E9F5EF' : '#FBEEEC' }}
       >
         <CheckCircle2 size={28} className={created > 0 ? 'text-emerald-500' : 'text-red-400'} />
       </div>
 
       <p className="text-lg font-bold text-slate-800 mb-1">Import Complete</p>
       <p className="text-sm text-slate-500 mb-4">
-        <span className="font-semibold text-emerald-600">{created} created</span>
+        <span className="font-medium text-emerald-600">{created} created</span>
         {failed > 0 && (
-          <>, <span className="font-semibold text-red-500">{failed} failed</span></>
+          <>, <span className="font-medium text-red-500">{failed} failed</span></>
         )}
       </p>
 
@@ -243,7 +243,7 @@ function Step3({ result, onClose }) {
 
       <button
         onClick={onClose}
-        className="w-full py-2.5 rounded-lg text-white text-sm font-semibold"
+        className="w-full py-2.5 rounded-lg text-white text-sm font-medium"
         style={{ backgroundColor: '#AC5B16' }}
       >
         Done

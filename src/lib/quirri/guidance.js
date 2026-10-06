@@ -36,7 +36,6 @@ export const SUPERADMIN_NAV_MODULES = [
   'Platform Users',
   'Reports',
   'Platform Health',
-  'Audit Logs',
   'Notifications',
   'Settings',
 ];

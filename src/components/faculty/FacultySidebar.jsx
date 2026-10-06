@@ -18,7 +18,7 @@ const NAV = [
   { group: 'Review' },
   {
     href: '/faculty/videos',
-    label: 'Video Review',
+    label: 'Video review',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -28,7 +28,7 @@ const NAV = [
   },
   {
     href: '/faculty/mcq',
-    label: 'MCQ Review',
+    label: 'MCQ review',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M9 11l3 3 8-8" />
@@ -59,7 +59,7 @@ const NAV = [
   },
   {
     href: '/faculty/interviews',
-    label: 'Interview Assignments',
+    label: 'Interview assignments',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z" />
@@ -70,7 +70,7 @@ const NAV = [
   { group: 'Insights' },
   {
     href: '/faculty/analytics',
-    label: 'Department Analytics',
+    label: 'Department analytics',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />

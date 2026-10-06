@@ -5,11 +5,11 @@ export const PAGE_META = {
     subtitle: 'Review queues and department activity in your scope.',
   },
   '/faculty/videos': {
-    title: 'Video Review',
+    title: 'Video review',
     subtitle: 'Approve generated lectures before students can watch them.',
   },
   '/faculty/mcq': {
-    title: 'MCQ Review',
+    title: 'MCQ review',
     subtitle: 'Review generated questions for each chapter quiz.',
   },
   '/faculty/subjects': {
@@ -21,11 +21,11 @@ export const PAGE_META = {
     subtitle: 'Students within your scope, with learning and assessment activity.',
   },
   '/faculty/interviews': {
-    title: 'Interview Assignments',
+    title: 'Interview assignments',
     subtitle: 'Assign AI mock interviews to cohorts in your department.',
   },
   '/faculty/analytics': {
-    title: 'Department Analytics',
+    title: 'Department analytics',
     subtitle: 'Completion, assessment performance, and Q&A demand for your department.',
   },
 };

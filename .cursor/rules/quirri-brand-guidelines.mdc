@@ -7,7 +7,7 @@ alwaysApply: true
 
 Source of truth for UI, UX, frontend, marketing, dashboards, email, documents, and visual assets. Do not invent colours, fonts, logo variants, gradients, or spacing when a rule below covers it. Accessibility wins if it conflicts with appearance.
 
-**Product chrome exception (owner):** portal sidebars are **white** (`Neutral 0`), Ink text, Teal structure. Do not paint the app sidebar Deep Teal.
+**Product chrome exceptions (owner):** portal sidebars are **white** (`Neutral 0`), Ink text, Teal structure — do not paint the app sidebar Deep Teal. App canvas is Neutral 100 `#EEF0F0`. Component patterns follow Quirri Prep — see `docs/agent/design-system.md` and `quirri-design-system.mdc`.
 
 Login cards stay the frozen centered pattern (`.cursor/rules/quirri-login-freeze.mdc`) but use these same tokens and Poppins.
 
@@ -55,11 +55,11 @@ Dates: `22 July 2026`. Time: `9:00 am`. Currency: `₹1,20,000`. Ranges use an e
 
 Spacing only: 4, 8, 12, 16, 24, 32, 48, 64, 96. Grid 12 / 8 / 4. Left-weighted. One idea per view.
 
-Radius: 2px inputs/chips · 8px cards · 16px panels/modals · full pills for buttons, badges, avatars.
+Radius (**owner override, Oct 2026 — matches Quirri Prep**): 6px buttons/inputs/selects/chips · 8px cards · 16px modals/drawers · full pills only for status badges, avatars, progress bars. (PDF original: 2px inputs, full-pill buttons — superseded in product UI; frozen login keeps its pill button.)
 
 Borders: 1px Neutral 200 on light, 1px Teal 700 on dark. Shadows use Ink alpha only: `0 1px 2px rgba(16,34,40,0.06)` · `0 4px 12px rgba(16,34,40,0.08)` · `0 12px 32px rgba(16,34,40,0.12)`.
 
-Buttons 40–48px tall, full radius, horizontal padding ≥24px. Motion: 200ms ease-out in, 150ms out, no bounce. Honour `prefers-reduced-motion`.
+Buttons 40–48px tall, 6px radius (owner override), horizontal padding ≥24px. Motion: 200ms ease-out in, 150ms out, no bounce. Honour `prefers-reduced-motion`.
 
 Icons: outline only, 1.75px stroke, Teal 500, one optional amber accent. Do not mix filled and outline, or unrelated icon libraries, in one view.
 

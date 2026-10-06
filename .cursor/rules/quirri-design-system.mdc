@@ -1,0 +1,33 @@
+---
+description: Quirri product design system — Brand v1.0 + Quirri Prep patterns + owner overrides; BEFORE/AFTER design gates for every UI change (all portals)
+alwaysApply: true
+---
+
+# Quirri design system (always apply)
+
+**Spec:** `docs/agent/design-system.md` (load §0 + the §4 rows you need). **Code:** `src/styles/quirri-design.css` tokens and classes.
+Applies to every post-login page in all four portals and to any new page. Login screens are frozen (tokens only).
+
+## Settled owner decisions (do not re-ask)
+
+- Primary CTA **Amber 700 `#AC5B16`** + white, **one per view**; `#F5821F` accent only, never white text.
+- Radii: **6px** controls (buttons, inputs, selects, chips, nav items) · **8px** cards/banners/filter bars · **16px** modals/drawers · full only for pills, avatars, progress.
+- Canvas **`--canvas` #EEF0F0**; cards white, borderless, `--shadow-card`; nested cards 1px `--line`.
+- White sidebar · active item Teal 50 fill + Teal 500 Medium label (no edge bar) · bordered user card with Teal 500 avatar.
+- Banners, side panels, filter bars, summary headers = solid **Teal 500**. No gradients, glows, hover lift, looping motion.
+
+## Type
+
+Poppins. Product weights 400/500; 700 only for ≥28px (banner H2). Sizes only from the scale: 28/36 · 22/30 (page title, KPI value) · 18/26 (card title) · 16/26 · 14/22 (default UI) · 12/18 (caption, table header, pills) · 11/16 overline · 15/20 buttons. Never 600/800 or off-scale sizes. Sentence case (table headers too).
+
+## Before building UI
+
+1. Read `design-system.md` §0 and the component rows in §4; reuse the listed class/component (PortalHero, `.stat`, `.card`, `.toolbar`, `.tabs`/`.seg`, `.rowcard`, `.summary`, `.pill`, QuirriSelect, QuirriRHFField, QuirriModal, SectionState).
+2. Use CSS variables only — no raw hex, no new colours, no Tailwind default palette colours.
+3. Pick the single Amber 700 action. Plan on the 1440 max grid, 24px gaps, 32px gutters.
+
+## After building UI
+
+1. Diff check: no raw hex, no `font-weight` 600/800, no off-scale font sizes, no radius outside 6/8/16/full, no gradients, no `translateY` hover, no `title=` tooltips.
+2. Playwright screenshots at 1440 and 390 (+ collapsed sidebar for shell work); confirm aligned edges, equal gaps, no overflow, one amber CTA, AA contrast, visible focus.
+3. If a shared pattern changed, update `design-system.md` in the same change.

@@ -9,6 +9,8 @@ alwaysApply: true
 
 Read and follow that document for **how** to build. Use the documents below for **what** to build.
 
+**Scope gate:** Before any feature work, check `assets/ProjectK_B2B_SOW_v1.0.pdf` (extract: `assets/_pdf_extract/ProjectK_B2B_SOW_v1.0.txt`). If the request is outside Phase 1 SOW, **ask the user first** — do not implement. See `.cursor/rules/quirri-sow-scope.mdc`.
+
 ---
 
 ## 1. ROLE
@@ -21,12 +23,14 @@ Inspect the existing repository first. Preserve stack, architecture, routing, AP
 
 ## 2. FIRST STEP — INSPECT BEFORE CODING
 
-Before modifying or creating code:
+Before modifying or creating code, follow **`docs/agent/task.md`** (BEFORE checklist) and **`docs/agent/memory.md`**:
 
-1. Query graphify (`graphify query "<prompt>" --budget 1500`) — do not re-scan the repo blindly.
-2. Understand folder structure, framework, package manager, components, routing, APIs, auth, styling, env, and tests.
-3. Search for existing components/utilities before creating new ones.
-4. Do not duplicate functionality or create a second design system.
+1. **SOW check** — `docs/agent/prod.md` + `quirri-sow-scope.mdc`. Out of scope → stop and ask the user.
+2. Query graphify (`graphify query "<prompt>" --budget 1500`) — do not re-scan the repo blindly.
+3. Pack only needed slices: `architecture.md` / `rules.md` / `design.md`.
+4. Search for existing components/utilities before creating new ones (symbol-aware via graph).
+5. Do not duplicate functionality or create a second design system.
+6. After edits: `docs/agent/task.md` AFTER checklist + `graphify update . --no-cluster`.
 
 ---
 
@@ -48,7 +52,7 @@ Before modifying or creating code:
 - College Admin `/admin/login` · Faculty `/faculty/login` · Student `/student/login` — **same centered Quirri card** (do not adopt `Login.dc.html` split layout)
 - Middleware by role: `superadmin` → `/superadmin/*`, `college_admin` → `/admin/*`, `faculty` → `/faculty/*`, `student` → `/student/*`
 - No static/mock portal data in `src/` — APIs only; show loading/error/empty
-- Post-login chrome: **white sidebar**, Poppins, mist `#F8F8F9`, `PortalHero` — Brand Guidelines v1.0 (`.cursor/rules/quirri-brand-guidelines.mdc`)
+- Post-login chrome: **white sidebar**, Poppins, canvas Neutral 100 `#EEF0F0`, `PortalHero` — Brand Guidelines v1.0 + Quirri Prep patterns (`docs/agent/design-system.md`, `.cursor/rules/quirri-design-system.mdc`)
 - Nav modules follow the design pack tables in `docs/QUIRRI_UI_REFERENCE.md`
 - Do not reintroduce Skill Courses, Email Management CRUD, AI Usage ₹ dashboard, or student billing UI
 - **No plan / licence / subscription product** in Phase 1 B2B — colleges use seat cap only; see `.cursor/rules/quirri-no-plans.mdc`
@@ -59,12 +63,12 @@ Before modifying or creating code:
 
 Follow `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` sections 3–76, reconciled with `new_updated_design_four/quirri-ui.css`:
 
-- **Colours:** Brand v1.0 — Teal `#0E5C6B`, Deep Teal `#06252B`, Signal Amber `#F5821F` (accent only), Amber 700 `#AC5B16` for white-label buttons, Mist `#F8F8F9`, Ink `#102228`. No second accent, no brand-colour gradients.
-- **Typography:** **Poppins** everywhere (300 / 400 / 500 / 700). Login cards stay the frozen centered layout.
+- **Colours:** Brand v1.0 — Teal `#0E5C6B`, Deep Teal `#06252B`, Signal Amber `#F5821F` (accent only), Amber 700 `#AC5B16` for white-label buttons, Mist `#F8F8F9` (wells), canvas Neutral 100 `#EEF0F0`, Ink `#102228`. No second accent, no brand-colour gradients.
+- **Typography:** **Poppins** everywhere (300 / 400 / 500 / 700). Product uses 400/500; Bold only ≥28px. Scale sizes only (28·22·18·16·14·12·11·15 button). Never 600/800. Login cards stay the frozen centered layout.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 24, 32, 48, 64, 96)
-- **Radius (portals):** 12 / 18 / full pill CTAs
+- **Radius (portals, owner override Oct 2026):** 6px controls (buttons, inputs, selects, chips, nav) · 8px cards · 16px modals/drawers · full only for pills/avatars/progress
 - **One amber CTA per view** — Amber 700 `#AC5B16` for buttons with white text (not Signal Amber)
-- Soft radial atmosphere on `.q-app-shell` is allowed (design pack); no generic purple AI SaaS look
+- Solid Teal 500 surfaces (banner, side panel, filter bar, summary header) — **no** radial/linear gradients or glows; no generic purple AI SaaS look
 - **Accessibility:** WCAG 2.2 AA — contrast, focus rings, keyboard nav, 44×44px touch targets, reduced motion
 - **UX tone:** Calm, plain, encouraging — "a calm, well-prepared friend who wants you to do well"
 
