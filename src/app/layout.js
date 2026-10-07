@@ -9,6 +9,8 @@ import '../styles/portal-modules.css';
 import '../styles/portal-superadmin.css';
 import '../styles/portal-admin.css';
 import '../styles/portal-faculty.css';
+// Dual-tone accent layer (teal structure + Amber 700 accents) — must stay last.
+import '../styles/quirri-accents.css';
 import Providers from './Providers';
 
 /** Brand Guidelines v1.0 — Poppins only (300, 400, 500, 700). */

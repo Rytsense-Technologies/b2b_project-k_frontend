@@ -25,9 +25,10 @@ export function formatDuration(seconds) {
 
 /** Get score color class */
 export function getScoreColor(score) {
-  if (score >= 80) return '#0F6E56';
-  if (score >= 60) return '#C97A0E';
-  return '#A32D2D';
+  // Reference palette (design-system.md §0b): green = strong, teal = on track, amber = needs focus
+  if (score >= 80) return '#46921A';
+  if (score >= 60) return '#0E5C6B';
+  return '#F5821F';
 }
 
 /** Get plan rank */

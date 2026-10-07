@@ -63,7 +63,7 @@
 .sa-err-text{color:var(--color-error)}
 .sa-kpi-unit{font-size:14px;line-height:22px;font-weight:400;color:var(--ink-2);margin-left:2px}
 .sa-nowrap{white-space:nowrap}
-.sp-row-ic.sa-svc-ic--amber{background:var(--warning-soft);color:var(--amber-700)}
+.sp-row-ic.sa-svc-ic--amber{background:var(--warning-soft);color:var(--accent-text)}
 .sp-row-ic.sa-svc-ic--red{background:var(--error-soft);color:var(--color-error)}
 .sa-page .sp-rows .sp-row{padding:16px 24px}
 

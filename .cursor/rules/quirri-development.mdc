@@ -63,11 +63,11 @@ Before modifying or creating code, follow **`docs/agent/task.md`** (BEFORE check
 
 Follow `assets/QUIRRI_AI_CURSOR_DEVELOPMENT_INSTRUCTIONS.md` sections 3–76, reconciled with `new_updated_design_four/quirri-ui.css`:
 
-- **Colours:** Brand v1.0 — Teal `#0E5C6B`, Deep Teal `#06252B`, Signal Amber `#F5821F` (accent only), Amber 700 `#AC5B16` for white-label buttons, Mist `#F8F8F9` (wells), canvas Neutral 100 `#EEF0F0`, Ink `#102228`. No second accent, no brand-colour gradients.
+- **Colours:** Brand v1.0 — Teal `#0E5C6B`, Deep Teal `#06252B`, Quirri orange `#F5821F` (`--accent` / `--highlight`: the one main button, selected states, highlights — never `#AC5B16`), Green `#5CB414` (progress), categorical skill hues `--cat-1…6` (design-system.md §0b), Signal Amber `#F5821F` accent only (`--highlight`: chart points, dots, focus bars — never behind white text), Mist `#F8F8F9` (wells), canvas Neutral 100 `#EEF0F0`, Ink `#102228`. No second accent, no brand-colour gradients.
 - **Typography:** **Poppins** everywhere (300 / 400 / 500 / 700). Product uses 400/500; Bold only ≥28px. Scale sizes only (28·22·18·16·14·12·11·15 button). Never 600/800. Login cards stay the frozen centered layout.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 24, 32, 48, 64, 96)
 - **Radius (portals, owner override Oct 2026):** 6px controls (buttons, inputs, selects, chips, nav) · 8px cards · 16px modals/drawers · full only for pills/avatars/progress
-- **One amber CTA per view** — Amber 700 `#AC5B16` for buttons with white text (not Signal Amber)
+- **One orange CTA per view** — `--accent` `#F5821F` with white Medium label (reference palette)
 - Solid Teal 500 surfaces (banner, side panel, filter bar, summary header) — **no** radial/linear gradients or glows; no generic purple AI SaaS look
 - **Accessibility:** WCAG 2.2 AA — contrast, focus rings, keyboard nav, 44×44px touch targets, reduced motion
 - **UX tone:** Calm, plain, encouraging — "a calm, well-prepared friend who wants you to do well"
@@ -141,7 +141,7 @@ Full contract: `docs/QUIRRI_PRODUCT_UI_RULES.md` · rule file: `.cursor/rules/qu
 - **Dropdowns:** `QuirriSelect` (or labeled `quirri-select`); first option `All…` / `Select…`; 44px min-height; `aria-label` if no visible label.
 - **Text:** left-align titles/labels/body; right-align `.num`; center only login brand card; label → control → hint|error.
 - **Fonts:** Poppins for portals and auth (Brand v1.0).
-- **Must-haves:** no mocks, one amber CTA, catalog fields, empty/error when API missing, Playwright for UI checks.
+- **Must-haves:** no mocks, one orange CTA, catalog fields, empty/error when API missing, Playwright for UI checks.
 - Applies to **existing and all future** builds — do not invent per-page layout or select styles.
 
 ---

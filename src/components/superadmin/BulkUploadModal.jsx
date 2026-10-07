@@ -44,7 +44,7 @@ function StepDots({ step }) {
           <div
             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
               s < step  ? 'bg-brand-500 text-white' :
-              s === step ? 'bg-amber-700 text-white ring-4 ring-amber-100' :
+              s === step ? 'bg-accent text-white ring-4 ring-amber-100' :
                            'bg-slate-100 text-slate-400'
             }`}
           >
@@ -199,7 +199,7 @@ function Step2({ rows, onConfirm, onBack }) {
         <button
           onClick={onConfirm}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-white text-sm font-medium"
-          style={{ backgroundColor: '#AC5B16' }}
+          style={{ backgroundColor: 'var(--accent)' }}
         >
           Import {rows.length} users <ChevronRight size={15} />
         </button>
@@ -244,7 +244,7 @@ function Step3({ result, onClose }) {
       <button
         onClick={onClose}
         className="w-full py-2.5 rounded-lg text-white text-sm font-medium"
-        style={{ backgroundColor: '#AC5B16' }}
+        style={{ backgroundColor: 'var(--accent)' }}
       >
         Done
       </button>

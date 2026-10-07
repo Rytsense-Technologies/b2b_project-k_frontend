@@ -43,7 +43,7 @@
 .fa-chapters .pm-list-btn small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fa-chapter-tag{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:12px;line-height:18px;font-weight:500}
 .fa-chapter-tag.is-good{color:var(--color-success)}
-.fa-chapter-tag.is-low{color:var(--amber-700)}
+.fa-chapter-tag.is-low{color:var(--accent-text)}
 .fa-chapter-tag.is-muted{color:var(--muted-2)}
 .fa-review-col{display:flex;flex-direction:column;gap:24px;min-width:0}
 .fa-chapter-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 24px;background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
@@ -69,7 +69,7 @@
 .fa-note > .sd-i{color:var(--teal-500);margin-top:3px}
 .fa-note b{display:block;font-weight:500;color:var(--ink)}
 .fa-note.is-warn{background:var(--warning-soft);border:1px solid var(--warning-line)}
-.fa-note.is-warn > .sd-i{color:var(--amber-700)}
+.fa-note.is-warn > .sd-i{color:var(--accent-text)}
 .fa-note.is-err{background:var(--error-soft);border:1px solid var(--error-line)}
 .fa-note.is-err > .sd-i{color:var(--color-error)}
 .fa-note-action{margin-top:12px}

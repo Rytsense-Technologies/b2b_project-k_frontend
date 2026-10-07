@@ -91,42 +91,6 @@ export const departmentsApi = {
   reactivate: (id) => api.post(`/departments/${id}/reactivate`),
 };
 
-/** Out of Phase 1 Super Admin nav — do not reintroduce in UI. */
-export const skillsApi = {
-  list: (params = {}) =>
-    api.get(`/superadmin/skill-courses?${buildParams(params)}`),
-  metrics: () => api.get('/superadmin/skill-courses/metrics'),
-  generate: (payload) => api.post('/superadmin/skill-courses/generate', payload),
-  upload: (formData) =>
-    api.post('/superadmin/skill-courses/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  update: (id, payload) => api.patch(`/superadmin/skill-courses/${id}`, payload),
-};
-
-/**
- * Upload & Generate removed from Super Admin UI.
- * Prefer faculty/edu_video flows when content generation returns.
- */
-
-export const aiUsageApi = {
-  list: (params = {}) =>
-    api.get(`/superadmin/ai-usage?${buildParams(params)}`),
-  exportData: (params = {}) =>
-    downloadBlob(
-      () => api.get(`/superadmin/ai-usage/export?${buildParams(params)}`, { responseType: 'blob' }),
-      'ai-usage.csv',
-    ),
-};
-
-export const emailsApi = {
-  list: () => api.get('/superadmin/emails'),
-  create: (payload) => api.post('/superadmin/emails', payload),
-  update: (id, payload) => api.patch(`/superadmin/emails/${id}`, payload),
-  remove: (id) => api.delete(`/superadmin/emails/${id}`),
-  verify: (id) => api.post(`/superadmin/emails/${id}/verify`),
-};
-
 /** Live: /api/v1/reports — institution preview + CSV; learning report types stay empty. */
 export const reportsApi = {
   preview: (params = {}) =>

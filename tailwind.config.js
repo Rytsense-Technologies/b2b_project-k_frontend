@@ -26,8 +26,21 @@ module.exports = {
           100: 'var(--amber-100)',
           200: 'var(--amber-200)',
           500: 'var(--amber-500)',
-          600: 'var(--amber-600)',
-          700: 'var(--amber-700)',
+          600: 'var(--accent-hover)',
+          700: 'var(--accent)',
+        },
+        // Reference palette (design-system.md §0b)
+        accent: {
+          DEFAULT: 'var(--accent)',
+          hover: 'var(--accent-hover)',
+          text: 'var(--accent-text)',
+          soft: 'var(--accent-soft)',
+        },
+        highlight: 'var(--highlight)',
+        progress: { DEFAULT: 'var(--progress)', text: 'var(--progress-text)', soft: 'var(--progress-soft)' },
+        cat: {
+          1: 'var(--cat-1)', 2: 'var(--cat-2)', 3: 'var(--cat-3)',
+          4: 'var(--cat-4)', 5: 'var(--cat-5)', 6: 'var(--cat-6)',
         },
         ink: 'var(--ink)',
         mist: 'var(--mist)',

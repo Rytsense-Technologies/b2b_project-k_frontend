@@ -8,6 +8,7 @@ import { selectSidebarOpen } from '@/store/slices/uiSlice';
 import { getRoleCookie, getTenantCookie, clearRoleCookie, clearTenantCookie } from '@/lib/tokens';
 import { PAGE_META } from '@/lib/admin/pageMeta';
 import CollegeAdminSidebar from '@/components/admin/CollegeAdminSidebar';
+import { PageHeaderProvider, PortalTopbar, resolvePageMeta } from '@/components/shared/PageHeader';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { getPermissions, ROLES } from '@/lib/permissions';
 
@@ -85,23 +86,19 @@ export default function CollegeAdminLayout({ children }) {
     return () => { cancelled = true; };
   }, [dispatch]);
 
-  const matchedRoute = Object.keys(PAGE_META).find((k) => pathname?.startsWith(k));
-  const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'College Admin', subtitle: '' };
+  const meta = resolvePageMeta(PAGE_META, pathname, { title: 'College Admin', subtitle: '' });
 
   return (
     <div className="app q-app-shell">
       <CollegeAdminSidebar />
 
-      <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
-        <div className="topbar">
-          <div>
-            <h1>{meta.title}</h1>
-            {meta.subtitle ? <p>{meta.subtitle}</p> : null}
-          </div>
-        </div>
+      <PageHeaderProvider>
+        <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
+          <PortalTopbar meta={meta} home={{ label: 'Home', href: '/admin/dashboard' }} />
 
-        <div className="content">{children}</div>
-      </div>
+          <div className="content">{children}</div>
+        </div>
+      </PageHeaderProvider>
     </div>
   );
 }

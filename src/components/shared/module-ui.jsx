@@ -6,7 +6,8 @@
  * CSS: student-portal.css (.sp-* / .sd-*) + superadmin-universities.css (.un-*) + portal-modules.css (.pm-*),
  * all loaded globally from src/app/layout.js.
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { Icon, Kpi, SectionState } from '@/components/student/ui';
 import { SearchBox } from '@/components/superadmin/quirri-ui';
 
@@ -295,5 +296,217 @@ export function ComingSoon({ icon = 'layers', title, body, unlock, steps = [], a
         </section>
       ) : null}
     </>
+  );
+}
+
+/* ==========================================================================
+   Record & navigation patterns (docs/ux/ux-architecture.md §4 — Slice 1)
+   ========================================================================== */
+
+/**
+ * Compact position-in-hierarchy strip. levels: [{ label, state: 'done'|'current'|'later' }]
+ * Answers "where does this sit?" without repeating the page title.
+ */
+export function HierarchyStrip({ label = 'Hierarchy', levels }) {
+  return (
+    <nav className="pm-hier" aria-label={label}>
+      <ol>
+        {levels.map((l, i) => (
+          <li key={l.label} className={`is-${l.state || 'later'}`} aria-current={l.state === 'current' ? 'true' : undefined}>
+            <span className="pm-hier-dot" aria-hidden="true" />
+            <span className="pm-hier-label">{l.label}</span>
+            {l.state === 'later' ? <span className="pm-hier-note">Not available yet</span> : null}
+            {i < levels.length - 1 ? <Icon name="chev" size={14} className="pm-hier-sep" /> : null}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+/** Record identity card: monogram, overline, name, meta chips and key facts. */
+export function RecordHero({ overline, title, mono, muted = false, meta = null, facts = [], children = null }) {
+  return (
+    <section className="pm-record" aria-label={typeof title === 'string' ? `${title} summary` : 'Summary'}>
+      <div className="pm-record-id">
+        {mono ? <span className={`un-mono un-mono--lg pm-record-mono${muted ? ' pm-mono--muted' : ''}`}>{initials(mono)}</span> : null}
+        <div className="pm-record-t">
+          {overline ? <span className="pm-overline">{overline}</span> : null}
+          <h2>{title}</h2>
+          {meta ? <div className="pm-record-meta">{meta}</div> : null}
+        </div>
+      </div>
+      {facts.length ? (
+        <dl className="pm-record-facts">
+          {facts.map((f) => (
+            <div key={f.label}>
+              <dt>{f.label}</dt>
+              <dd className={f.tone ? `is-${f.tone}` : undefined}>{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {children}
+    </section>
+  );
+}
+
+/** Accessible underline tabs (role=tablist, arrow keys). tabs: [{ value, label, count? }] */
+export function TabNav({ tabs, value, onChange, label = 'Sections', idBase = 'tab' }) {
+  const onKey = (e) => {
+    const i = tabs.findIndex((t) => t.value === value);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      onChange(next.value);
+      document.getElementById(`${idBase}-${next.value}`)?.focus();
+    }
+  };
+  return (
+    <div className="tabs pm-tabs" role="tablist" aria-label={label} onKeyDown={onKey}>
+      {tabs.map((t) => (
+        <button
+          key={t.value}
+          id={`${idBase}-${t.value}`}
+          type="button"
+          role="tab"
+          className={`tab${value === t.value ? ' active' : ''}`}
+          aria-selected={value === t.value}
+          aria-controls={`${idBase}-panel-${t.value}`}
+          tabIndex={value === t.value ? 0 : -1}
+          onClick={() => onChange(t.value)}
+        >
+          {t.label}
+          {t.count != null ? <span className="ct">{t.count}</span> : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function TabPanel({ value, current, idBase = 'tab', children }) {
+  if (value !== current) return null;
+  return (
+    <div role="tabpanel" id={`${idBase}-panel-${value}`} aria-labelledby={`${idBase}-${value}`} className="pm-tabpanel">
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Side form drawer for short create/edit forms (<= 6 fields). Esc / backdrop close,
+ * focuses the first field on open and returns focus to the opener on close.
+ */
+export function FormDrawer({ open, onClose, title, description, footer, children, busy = false }) {
+  const panelRef = useRef(null);
+  const openerRef = useRef(null);
+  const closeRef = useRef(onClose);
+  const busyRef = useRef(busy);
+  closeRef.current = onClose;
+  busyRef.current = busy;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    openerRef.current = typeof document !== 'undefined' ? document.activeElement : null;
+    const t = setTimeout(() => {
+      const el = panelRef.current?.querySelector('input, select, textarea, button.quirri-dd__trigger');
+      el?.focus();
+    }, 30);
+    const onKey = (e) => { if (e.key === 'Escape' && !busyRef.current) closeRef.current?.(); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+      openerRef.current?.focus?.();
+    };
+  }, [open]);
+
+  if (!open) return null;
+  return (
+    <div className="un-drawer-wrap pm-form-drawer-wrap" role="presentation" onClick={() => { if (!busy) onClose?.(); }}>
+      <aside
+        ref={panelRef}
+        className="un-drawer pm-form-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pm-form-drawer-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="pm-form-drawer-h">
+          <div>
+            <h2 id="pm-form-drawer-title">{title}</h2>
+            {description ? <p>{description}</p> : null}
+          </div>
+          <button type="button" className="modal-x" onClick={onClose} aria-label="Close" disabled={busy}>
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        <div className="pm-form-drawer-b">{children}</div>
+        {footer ? <div className="pm-form-drawer-f">{footer}</div> : null}
+      </aside>
+    </div>
+  );
+}
+
+/** Low-frequency, high-risk actions kept at the bottom of a record (progressive disclosure). */
+export function DangerZone({ title = 'Status', description, children }) {
+  return (
+    <section className="pm-danger" aria-label={title}>
+      <div>
+        <h3>{title}</h3>
+        {description ? <p>{description}</p> : null}
+      </div>
+      <div className="pm-danger-actions">{children}</div>
+    </section>
+  );
+}
+
+/** Success / next-step callout. links: [{ label, href, icon }] */
+export function Callout({ tone = 'success', title, children, links = [], onDismiss }) {
+  return (
+    <section className={`pm-callout is-${tone}`} role="status">
+      <span className="pm-callout-ic" aria-hidden="true"><Icon name={tone === 'success' ? 'tick' : 'info'} size={18} /></span>
+      <div className="pm-callout-body">
+        <b>{title}</b>
+        {children ? <p>{children}</p> : null}
+        {links.length ? (
+          <div className="pm-callout-links">
+            {links.map((l) => (
+              <Link key={l.label} href={l.href} className="pm-callout-link">
+                {l.icon ? <Icon name={l.icon} size={16} /> : null}{l.label}
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      {onDismiss ? (
+        <button type="button" className="pm-callout-x" onClick={onDismiss} aria-label="Dismiss">
+          <Icon name="x" size={16} />
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+/** Compact people list for record pages. people: [{ id, name, email, meta }] */
+export function PeopleList({ people, empty }) {
+  if (!people.length) return empty || null;
+  return (
+    <ul className="pm-people">
+      {people.map((p) => (
+        <li key={p.id || p.email}>
+          <span className="pm-person">
+            <span className="pm-av" aria-hidden="true">{initials(p.name || p.email)}</span>
+            <span>
+              <b>{p.name || p.email}</b>
+              {p.email && p.name ? <small>{p.email}</small> : null}
+            </span>
+          </span>
+          {p.meta ? <span className="pm-people-meta">{p.meta}</span> : null}
+        </li>
+      ))}
+    </ul>
   );
 }

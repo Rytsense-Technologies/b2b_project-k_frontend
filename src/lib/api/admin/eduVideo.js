@@ -197,12 +197,14 @@ export const eduVideoApi = {
    * department_id must be a real Department belonging to the caller's own
    * college, or the server 404s ("Department not found").
    */
-  upload({ file, language = 'english', departmentId, chapterTitle }) {
+  upload({ file, language = 'english', departmentId, chapterTitle, tenantId }) {
     const form = new FormData();
     form.append('file', file);
     form.append('language', language);
     if (departmentId) form.append('department_id', departmentId);
     if (chapterTitle) form.append('chapter_title', chapterTitle);
+    // Super Admin only — pins the job to a college (ignored for CA/Faculty).
+    if (tenantId) form.append('tenant_id', tenantId);
     const origin = getEduVideoOrigin();
     const url = origin ? `${origin}/edu_video/upload` : '/edu_video/upload';
     // Absolute URL when possible so a bad baseURL cannot hit Next middleware.
@@ -255,11 +257,13 @@ export const eduVideoApi = {
    * made from that one browser and could never show the same job to a
    * different browser/device/role.
    */
-  listJobs({ status, departmentId, q, page = 1, pageSize = 25 } = {}) {
+  listJobs({ status, departmentId, q, tenantId, page = 1, pageSize = 25 } = {}) {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (departmentId) params.set('department_id', departmentId);
     if (q) params.set('q', q);
+    // Super Admin only — filter platform job list to one college.
+    if (tenantId) params.set('tenant_id', tenantId);
     params.set('page', String(page));
     params.set('page_size', String(pageSize));
     const origin = getEduVideoOrigin();

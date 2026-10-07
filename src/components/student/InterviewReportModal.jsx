@@ -21,7 +21,7 @@ function scoreTone(score) {
   const n = Number(score);
   if (n >= 80) return { bg: '#E9F5EF', fg: '#0F6E56' };
   if (n >= 65) return { bg: '#F1F5F6', fg: '#0E5C6B' };
-  return { bg: '#FDF1E2', fg: '#AC5B16' };
+  return { bg: 'var(--accent-soft)', fg: 'var(--accent-text)' };
 }
 
 function formatDate(iso) {
@@ -289,7 +289,7 @@ export default function InterviewReportModal({
                       <i
                         style={{
                           width: `${n == null ? 0 : Math.min(100, Math.max(0, n))}%`,
-                          background: weak ? 'var(--amber-700)' : 'var(--teal)',
+                          background: weak ? 'var(--accent)' : 'var(--teal)',
                         }}
                       />
                     </div>

@@ -16,6 +16,7 @@ import {
 import { Icon, SectionState } from '@/components/student/ui';
 import { interviewProfileApi, resumesFromList } from '@/lib/api/interviewProfile';
 import { interviewApi, parseLivekitStartResponse } from '@/lib/api/interview';
+import { interviewAssignmentsApi } from '@/lib/api/interviewAssignments';
 import { reportsApi } from '@/lib/api/reports';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
 import {
@@ -76,12 +77,17 @@ export default function StudentInterviewsPage() {
     error: reportsError,
   } = useAsyncResource(() => reportsApi.getLivekit({ page: 1, page_size: 20 }), []);
 
+  const {
+    data: assignmentsData,
+  } = useAsyncResource(() => interviewAssignmentsApi.list(), []);
+
   const resumes = useMemo(() => resumesFromList(resumesData), [resumesData]);
   const currentResume = useMemo(
     () => resumes.find((r) => r.is_current) || resumes[0] || null,
     [resumes],
   );
   const reportItems = useMemo(() => asList(reportsData, []), [reportsData]);
+  const assignments = useMemo(() => asList(assignmentsData, []), [assignmentsData]);
   const kpi = reportsData?.kpi || null;
 
   const {
@@ -234,6 +240,35 @@ export default function StudentInterviewsPage() {
           <span className="sp-pill sp-pill--glass">Best {Math.round(Number(kpi.highest_score))}</span>
         ) : null}
       </InterviewNav>
+
+      {assignments.length ? (
+        <section className="sp-panel" style={{ marginBottom: 16 }}>
+          <div className="sp-panel-h">
+            <div>
+              <h3>Assigned to you</h3>
+              <p>Complete these interviews for your college cohort.</p>
+            </div>
+          </div>
+          <div className="sp-panel-b">
+            <ul className="sp-resume-list">
+              {assignments.map((a) => (
+                <li key={a.id} className="sp-resume">
+                  <span className="sp-resume-ic"><Icon name="mic" size={18} /></span>
+                  <div className="sp-row-main">
+                    <b>{a.title}</b>
+                    <div className="sp-row-meta">
+                      {a.mode === 'full' ? 'Full interview' : 'Mock interview'}
+                      {a.due_at ? ` · Due ${formatDate(a.due_at)}` : ''}
+                      {a.department_name ? ` · ${a.department_name}` : ''}
+                    </div>
+                  </div>
+                  <span className="sp-pill sp-pill--teal">Assigned</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
 
       <div className="iv-layout">
         <div className="sp">

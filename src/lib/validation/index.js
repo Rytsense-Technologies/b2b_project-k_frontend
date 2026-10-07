@@ -79,4 +79,6 @@ export {
   INTERVIEW_EXPERIENCE_VALUES,
 } from './schemas/interview';
 
+export { interviewAssignmentSchema } from './schemas/interviewAssignment';
+
 export { mcqSubmitSchema } from './schemas/mcq';

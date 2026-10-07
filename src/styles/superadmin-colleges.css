@@ -17,11 +17,11 @@
 .co-seat-pct{font-size:12px;font-weight:500;color:var(--teal-700);font-variant-numeric:tabular-nums}
 .co-seat-bar{height:8px;border-radius:9999px;background:var(--neutral-100);overflow:hidden}
 .co-seat-bar i{display:block;height:100%;border-radius:inherit;background:var(--teal-500);transition:width .6s ease-out}
-.co-seat.is-high .co-seat-bar i{background:var(--amber-500)}
-.co-seat.is-high .co-seat-pct{color:var(--amber-700)}
+.co-seat.is-high .co-seat-bar i{background:var(--highlight)}
+.co-seat.is-high .co-seat-pct{color:var(--accent-text)}
 .co-seat.is-compact .co-seat-bar{height:6px}
 .co-seat-cell{min-width:170px}
-.co-warn{display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--amber-700)}
+.co-warn{display:flex;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--accent-text)}
 
 .co-drawer{width:min(600px,100%)}
 .co-drawer-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}

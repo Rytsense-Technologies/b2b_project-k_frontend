@@ -8,6 +8,12 @@ export const PAGE_META = {
     title: 'Academic structure',
     subtitle: 'Build and manage your Department → Program → Semester → Subject tree.',
   },
+  '/admin/structure/departments': {
+    title: 'Departments',
+    subtitle: 'The first level under your college. Each department has an HOD who reviews chapters before students see them.',
+    // Breadcrumb trail above the title (Home is added by the layout). No href = not a page yet.
+    crumbs: [{ label: 'Academic structure' }],
+  },
   '/admin/content': {
     title: 'Upload & content',
     subtitle: 'Upload chapter material to generate a video lecture and follow status here.',

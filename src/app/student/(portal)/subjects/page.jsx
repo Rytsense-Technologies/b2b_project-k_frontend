@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import VideoPreviewModal from '@/components/shared/VideoPreviewModal';
 import VoiceQnaPanel from '@/components/student/VoiceQnaPanel';
 import { Icon, Kpi, SectionState } from '@/components/student/ui';
 import { eduVideoApi } from '@/lib/api/admin/eduVideo';
@@ -94,7 +93,8 @@ export default function StudentSubjectsPage() {
   const [activeSubjectKey, setActiveSubjectKey] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
   const [subTab, setSubTab] = useState('classroom');
-  const [previewJob, setPreviewJob] = useState(null);
+  /** Inline player in the right-side classroom stage (not a modal). */
+  const [watching, setWatching] = useState(false);
 
   const { data: meData } = useAsyncResource(
     () => fetchData(() => settingsApi.get()),
@@ -165,7 +165,13 @@ export default function StudentSubjectsPage() {
     setActiveSubjectKey(subject.key);
     setActiveJobId(subject.chapters[0]?.job_id || null);
     setSubTab('classroom');
+    setWatching(false);
   };
+
+  /* Changing chapter or leaving classroom stops the inline player. */
+  useEffect(() => {
+    setWatching(false);
+  }, [activeJobId, subTab]);
 
   const TABS = [
     { id: 'classroom', label: 'Classroom', icon: 'doc' },
@@ -268,13 +274,6 @@ export default function StudentSubjectsPage() {
         <SectionState title="Assessments open from each subject">
           Open a subject, then use the Assessment tab or Ask your AI Tutor on a chapter.
         </SectionState>
-
-        <VideoPreviewModal
-          open={Boolean(previewJob)}
-          onClose={() => setPreviewJob(null)}
-          title={previewJob?.chapter_title || 'Video preview'}
-          src={previewJob ? eduVideoApi.getDownloadUrl(previewJob.job_id) : null}
-        />
       </div>
     );
   }
@@ -292,6 +291,7 @@ export default function StudentSubjectsPage() {
           setActiveSubjectKey(null);
           setActiveJobId(null);
           setSubTab('classroom');
+          setWatching(false);
         }}
       >
         <Icon name="back" size={16} />
@@ -368,28 +368,56 @@ export default function StudentSubjectsPage() {
           </div>
 
           <div className="sp-stage">
-            <div className="sp-screen">
-              <ScreenArt />
-              <span className="sp-screen-tag sp-pill sp-pill--glass">
-                Chapter {activeIndex >= 0 ? activeIndex + 1 : '—'} of {activeChapters.length}
-              </span>
-              <button
-                type="button"
-                className="sd-btn sd-btn--glass sd-btn--sm sp-screen-tutor"
-                onClick={() => setSubTab('tutor')}
-              >
-                <Icon name="chat" size={14} /> Ask your AI Tutor
-              </button>
-              <button
-                type="button"
-                className="sp-play"
-                disabled={!activeJob}
-                onClick={() => setPreviewJob(activeJob)}
-                aria-label={activeJob ? `Watch ${activeJob.chapter_title || 'lecture'}` : 'Select a chapter'}
-              >
-                <Icon name="playFill" size={30} />
-              </button>
-              {duration ? <span className="sp-screen-dur">{duration}</span> : null}
+            <div className={`sp-screen${watching && activeJob ? ' is-playing' : ''}`}>
+              {watching && activeJob ? (
+                <>
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <video
+                    key={activeJob.job_id}
+                    className="sp-screen-video"
+                    controls
+                    autoPlay
+                    playsInline
+                    src={eduVideoApi.getDownloadUrl(activeJob.job_id)}
+                  >
+                    Your browser does not support embedded video playback.
+                  </video>
+                  <span className="sp-screen-tag sp-pill sp-pill--glass">
+                    Chapter {activeIndex >= 0 ? activeIndex + 1 : '—'} of {activeChapters.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="sd-btn sd-btn--glass sd-btn--sm sp-screen-tutor"
+                    onClick={() => setSubTab('tutor')}
+                  >
+                    <Icon name="chat" size={14} /> Ask your AI Tutor
+                  </button>
+                </>
+              ) : (
+                <>
+                  <ScreenArt />
+                  <span className="sp-screen-tag sp-pill sp-pill--glass">
+                    Chapter {activeIndex >= 0 ? activeIndex + 1 : '—'} of {activeChapters.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="sd-btn sd-btn--glass sd-btn--sm sp-screen-tutor"
+                    onClick={() => setSubTab('tutor')}
+                  >
+                    <Icon name="chat" size={14} /> Ask your AI Tutor
+                  </button>
+                  <button
+                    type="button"
+                    className="sp-play"
+                    disabled={!activeJob}
+                    onClick={() => setWatching(true)}
+                    aria-label={activeJob ? `Watch ${activeJob.chapter_title || 'lecture'}` : 'Select a chapter'}
+                  >
+                    <Icon name="playFill" size={30} />
+                  </button>
+                  {duration ? <span className="sp-screen-dur">{duration}</span> : null}
+                </>
+              )}
             </div>
 
             <div className="sp-stage-body">
@@ -407,9 +435,10 @@ export default function StudentSubjectsPage() {
                 type="button"
                 className="sd-btn sd-btn--amber"
                 disabled={!activeJob}
-                onClick={() => setPreviewJob(activeJob)}
+                onClick={() => setWatching(true)}
               >
-                <Icon name="playFill" size={16} /> Watch lecture
+                <Icon name="playFill" size={16} />
+                {watching ? 'Playing here' : 'Watch lecture'}
               </button>
               {activeJob ? (
                 <button
@@ -496,13 +525,6 @@ export default function StudentSubjectsPage() {
           />
         </div>
       )}
-
-      <VideoPreviewModal
-        open={Boolean(previewJob)}
-        onClose={() => setPreviewJob(null)}
-        title={previewJob?.chapter_title || 'Video preview'}
-        src={previewJob ? eduVideoApi.getDownloadUrl(previewJob.job_id) : null}
-      />
     </div>
   );
 }

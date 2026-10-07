@@ -30,7 +30,8 @@ function Svg({ name, size = 18 }) {
   );
 }
 
-const SUBJECT_TONES = ['teal', 'green', 'amber', 'deep', 'sky'];
+/* Categorical palette (design-system.md §0b): blue, green, orange, purple, cyan, teal */
+const SUBJECT_TONES = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'];
 
 /* ---------------------------------------------------------- pieces */
 function Ring({ value, tone, label }) {

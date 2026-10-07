@@ -1,0 +1,141 @@
+/* ==========================================================================
+   Quirri — reference palette layer (owner decision, Oct 2026)
+   Source: Quirri Prep interview dashboard screenshot. Spec: docs/agent/design-system.md §0b.
+   Teal  #0E5C6B  = structure: hero banner, insight side panel, score panel, links, labels, sub-text.
+   Orange #F5821F (the only orange — #AC5B16 is never used in product UI):
+     --accent    = the ONE main button and anything else with white text (selected tab/segment,
+                   selected pill, banner overline, icon tile) + orange words on white.
+     --highlight = small highlights: chart points, dots, progress/focus fills, title rules.
+   Icons and the active sidebar item stay teal.
+   Green #5CB414  = positive progress: score ring, improving score, completion bars.
+   Categorical set (cat-1…6) = one hue per skill / subject / chart series, never for status.
+   Surfaces: canvas Neutral 100, white cards, teal-tint item cards inside panels.
+   Loaded LAST from src/app/layout.js. Login card stays frozen (quirri-design.css guard).
+   ========================================================================== */
+
+/* ---------- Sidebar ---------- */
+.nav a.active svg{stroke:var(--teal-500)}
+.nav a.active .nav-ico{color:var(--teal-500)}
+.tenant-box .mark{background:var(--accent-soft);color:var(--accent-text)}
+
+/* ---------- Banners: orange icon tile, orange active step, orange overline pill ---------- */
+.sp-banner-ic{background:var(--accent);border-color:transparent;color:var(--neutral-0)}
+.banner .eyebrow,
+.banner-eyebrow{
+  padding:2px 12px;border-radius:var(--radius-full);
+  background:var(--accent);color:var(--neutral-0);
+}
+.pm-chips > span.is-on,
+.un-hier span.is-on{background:var(--accent);color:var(--neutral-0)}
+.un-drawer-hero .un-mono--lg{background:var(--accent);border-color:transparent;color:var(--neutral-0)}
+
+/* ---------- Insight side panels: solid teal next to the teal hero (reference "Top Improvement Areas") ---------- */
+.q-hero-side,
+.sd-focus{background:var(--surface-brand);color:var(--on-brand);box-shadow:none;border-top:0}
+.q-hero-side__h{border-bottom-color:var(--on-brand-line)}
+.q-hero-side__h h3,
+.sd-focus-h h3{color:var(--on-brand)}
+.q-hero-side__dot{background:var(--on-brand)}
+.q-hero-side__dot.is-error,
+.q-hero-side__dot.is-warning{background:var(--highlight)}
+.q-hero-side__dot.is-info{background:var(--teal-200)}
+.q-hero-side__t{color:var(--on-brand)}
+.q-hero-side__b,
+.q-hero-side__body{color:var(--on-brand-muted)}
+.q-hero-side__badge{background:var(--accent);color:var(--neutral-0)}
+.sd-focus-ic{background:var(--on-brand-raised);color:var(--on-brand);border:1px solid var(--on-brand-line)}
+.sd-focus li{color:var(--on-brand-muted)}
+.sd-focus li::before{background:var(--on-brand)}
+.sd-focus-empty{color:var(--on-brand-muted)}
+.sd-focus .sd-next a{background:var(--on-brand-raised);border-color:var(--on-brand-line);color:var(--on-brand)}
+.sd-focus .sd-next a:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28)}
+.sd-focus .sd-next small{color:var(--on-brand-muted)}
+.sd-focus .sd-next .sd-i{color:var(--on-brand)}
+.sd-focus .sp-link--light,
+.sd-focus .sp-link{color:var(--on-brand)}
+
+/* ---------- KPI cards: icon tiles alternate teal / orange; sub-text teal ---------- */
+.sd-kpi-h .sd-i,
+.stat .k svg{
+  width:32px;height:32px;min-width:32px;padding:7px;box-sizing:border-box;
+  border-radius:var(--radius-control);background:var(--teal-50);color:var(--teal-500);stroke:var(--teal-500);
+}
+.sd-kpis > :nth-child(even) .sd-kpi-h .sd-i,
+.stats > .stat:nth-child(even) .k svg{background:var(--accent-soft);color:var(--accent);stroke:var(--accent)}
+/* Orange words are reserved for "needs focus" values — KPI sub-text stays teal */
+.sd-kpi-s,
+.stats > .stat .s:not(.up):not(.down){color:var(--teal-500)}
+.stat .s.up{color:var(--progress-text)}
+
+/* ---------- Selected states = orange fill, white text ---------- */
+.sp-tab[aria-selected="true"]{background:var(--accent);color:var(--neutral-0)}
+.sp-tab[aria-selected="true"]:hover{background:var(--accent-hover);color:var(--neutral-0)}
+.sp-tab[aria-selected="true"] .sd-i{color:var(--neutral-0)}
+.tab.active{border-bottom-color:var(--accent)}
+.tab.active .ct{background:var(--accent-soft);color:var(--accent-text)}
+.pm-list-btn[aria-current="true"],
+.sp-chapter[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent-line)}
+.sp-chapter[aria-current="true"] .sp-chapter-n{background:var(--accent)}
+.sp-chapter[aria-current="true"] .sp-chapter-go{color:var(--accent-text)}
+
+/* ---------- Cards, drawers and lists ---------- */
+.un-grid > .un-card:not(.is-inactive):nth-child(even) .un-mono,
+.pm-grid > .un-card:not(.is-inactive):nth-child(even) .un-mono{background:var(--accent)}
+.un-card-stats > div:nth-child(2),
+.co-card-stats > div:nth-child(2){background:var(--accent-soft)}
+.un-card-stats > div:nth-child(2) b,
+.co-card-stats > div:nth-child(2) b{color:var(--accent-text)}
+.un-card.is-inactive .un-card-stats > div:nth-child(2),
+.un-card.is-inactive .co-card-stats > div:nth-child(2){background:var(--neutral-100)}
+.un-card.is-inactive .un-card-stats > div:nth-child(2) b,
+.un-card.is-inactive .co-card-stats > div:nth-child(2) b{color:var(--teal-700)}
+.un-drawer-stats > div:nth-child(2) b{color:var(--accent-text)}
+.un-drawer-sec-h h3{display:flex;align-items:center;gap:8px}
+.un-drawer-sec-h h3::before{content:"";width:4px;height:16px;border-radius:var(--radius-full);background:var(--highlight)}
+
+/* Person avatars alternate down a table */
+tr:nth-child(even) .pm-person .pm-av{background:var(--accent-soft);color:var(--accent-text)}
+.rowcard__ix{color:var(--accent-text)}
+
+/* Panel headings: short orange rule before the title */
+.sp-panel-h h3,
+.card-h h3{display:flex;align-items:center;gap:8px}
+.sp-panel-h h3::before,
+.card-h h3::before{content:"";flex:none;width:4px;height:18px;border-radius:var(--radius-full);background:var(--highlight)}
+
+/* ---------- Progress = green, focus = orange ---------- */
+.bar.green > i,
+.bar.progress > i{background:var(--progress)}
+.bar.amber > i,
+.bar.focus > i{background:var(--highlight)}
+.sp-result-ring .fil.is-good{stroke:var(--progress)}
+.sp-result-ring .fil.is-low{stroke:var(--highlight)}
+.sp-quiz-bar i{background:var(--highlight)}
+.sp-score--good,
+.sp-mark--good{color:var(--progress-text)}
+
+/* Interview report dimensions: categorical hue per dimension, orange when weak */
+.iv-dims > .iv-dim:nth-child(6n+1){--tone:var(--cat-1);--tone-soft:var(--cat-1-soft)}
+.iv-dims > .iv-dim:nth-child(6n+2){--tone:var(--cat-2);--tone-soft:var(--cat-2-soft)}
+.iv-dims > .iv-dim:nth-child(6n+3){--tone:var(--cat-3);--tone-soft:var(--cat-3-soft)}
+.iv-dims > .iv-dim:nth-child(6n+4){--tone:var(--cat-4);--tone-soft:var(--cat-4-soft)}
+.iv-dims > .iv-dim:nth-child(6n+5){--tone:var(--cat-5);--tone-soft:var(--cat-5-soft)}
+.iv-dims > .iv-dim:nth-child(6n+6){--tone:var(--cat-6);--tone-soft:var(--cat-6-soft)}
+.iv-dims > .iv-dim:not(.is-weak) .iv-dim-ic{background:var(--tone-soft);color:var(--tone)}
+.iv-dims > .iv-dim:not(.is-weak) .iv-dim-bar i{background:var(--tone)}
+.iv-dim.is-weak .iv-dim-bar i{background:var(--highlight)}
+
+/* ---------- Coming-soon / steps ---------- */
+.pm-soon-ring{background:var(--accent-soft)}
+.pm-steps > .pm-step:nth-child(even) .pm-step-n{background:var(--accent-soft);color:var(--accent-text)}
+.sp-pill--teal .sd-i{color:var(--teal-500)}
+
+/* ---------- Topic cards / summary (Prep patterns) ---------- */
+.summary__tile:nth-child(2) .v{color:var(--accent-text)}
+.topic__go{background:var(--highlight);color:var(--ink)}
+
+/* Row hover = teal tint (same surface as item cards) */
+.pm-row-link:hover td,
+.pm-list-btn:hover,
+.sp-row:hover,
+.chitem:hover{background:var(--surface-tint)}

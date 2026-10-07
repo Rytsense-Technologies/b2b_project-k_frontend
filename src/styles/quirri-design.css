@@ -1,8 +1,8 @@
 /* ==========================================================================
    Quirri AI — Design System (Project K B2B portals)
    Spec: docs/agent/design-system.md (Brand Guidelines v1.0 + Quirri Prep product
-   patterns, owner overrides Oct 2026: Amber 700 CTA · 6px controls · 8px cards ·
-   16px modals/drawers · Neutral 100 canvas).
+   patterns, owner overrides Oct 2026: one orange #F5821F for every amber role (§0) ·
+   6px controls · 8px cards · 16px modals/drawers · Neutral 100 canvas).
    Login screens keep the centered Quirri card (frozen) — tokens only.
    Scope: ProjectK_B2B_SOW_v1.0 only. No payment, no B2C billing UI.
    ========================================================================== */
@@ -27,9 +27,37 @@
   --amber-50:#FEF6EF;
   --amber-100:#FDE8D7;
   --amber-200:#FBD0AA;
-  --amber-500:#F5821F;   /* Signal Amber — accent only; never white text */
+  --amber-500:#F5821F;   /* Signal Amber = --highlight: small highlights only; never white text */
   --amber-600:#CE6D1A;
-  --amber-700:#AC5B16;   /* Primary CTA with white text */
+  --amber-700:#AC5B16;   /* frozen login card ONLY — never in product UI (owner, Oct 2026) */
+
+  /* ---- Reference palette (Quirri Prep interview dashboard, owner Oct 2026) ----
+     Spec: docs/agent/design-system.md §0b. Teal = structure, Amber 700 = action/focus,
+     Green = positive progress, categorical set = skills/subjects/chart series. */
+  --accent:#F5821F;          /* Quirri orange — the one main button, selected tab / pill, amber words */
+  --accent-hover:#E5731A;
+  --accent-press:#D2650F;
+  --accent-text:#F5821F;     /* orange words on white (focus values, counts used) */
+  --accent-soft:#FEF0E3;
+  --accent-line:rgba(245,130,31,.32);
+  --highlight:#F5821F;       /* Signal Amber — small highlights only (chart points, dots, progress fills, title rules). Never behind white text. */
+  --highlight-soft:rgba(245,130,31,.14);
+  --progress:#5CB414;        /* positive progress: rings, bars, improving score */
+  --progress-text:#46921A;
+  --progress-soft:#EEF7E6;
+  --surface-brand:#0E5C6B;   /* hero banner, insight side panel, score panel */
+  --surface-tint:#F1F6F7;    /* item cards inside a white panel */
+  --on-brand:#FFFFFF;
+  --on-brand-muted:rgba(255,255,255,.78);
+  --on-brand-line:rgba(255,255,255,.18);
+  --on-brand-raised:rgba(255,255,255,.08);
+  /* Categorical — one hue per skill/subject/series, in this order */
+  --cat-1:#2C74E0; --cat-1-soft:#E9F1FC; --cat-1-text:#2C74E0;  /* blue */
+  --cat-2:#54B058; --cat-2-soft:#ECF6EC; --cat-2-text:#3E8E42;  /* green */
+  --cat-3:#F5821F; --cat-3-soft:#FEF6EF; --cat-3-text:#F5821F;  /* orange */
+  --cat-4:#6C3CD8; --cat-4-soft:#EFEAFB; --cat-4-text:#6C3CD8;  /* purple */
+  --cat-5:#23B6B9; --cat-5-soft:#E6F6F6; --cat-5-text:#12898C;  /* cyan */
+  --cat-6:#0E5C6B; --cat-6-soft:#DDE8EA; --cat-6-text:#0E5C6B;  /* teal */
 
   /* Neutrals — Brand Guidelines v1.0 Mist */
   --neutral-0:#FFFFFF;
@@ -82,7 +110,7 @@
   --muted-3:var(--neutral-400);
 
   --green:var(--color-success); --green-soft:var(--success-soft);
-  --amber:var(--amber-700);     --amber-soft:var(--amber-50);
+  --amber:var(--accent);     --amber-soft:var(--amber-50);
   --amber-signal:var(--amber-500);
   --red:var(--color-error);     --red-soft:var(--error-soft);
   --violet:var(--teal-500);      --violet-soft:var(--teal-50);
@@ -441,7 +469,7 @@ textarea{resize:vertical;min-height:92px}
 .pw-meter{display:flex;gap:4px;margin-top:9px}
 .pw-meter i{height:3px;flex:1;border-radius:2px;background:var(--line);transition:background .2s}
 .pw-meter.s1 i:nth-child(1){background:var(--red)}
-.pw-meter.s2 i:nth-child(-n+2){background:var(--amber)}
+.pw-meter.s2 i:nth-child(-n+2){background:var(--accent)}
 .pw-meter.s3 i:nth-child(-n+3){background:var(--sky)}
 .pw-meter.s4 i{background:var(--green)}
 .pw-rules{margin-top:10px;display:grid;gap:5px}
@@ -462,7 +490,7 @@ textarea{resize:vertical;min-height:92px}
   font-size:14px;line-height:22px;margin-bottom:24px;border:1px solid transparent;
 }
 .notice svg{width:17px;height:17px;flex:none;margin-top:1px}
-.notice.warn{background:var(--amber-50);border-color:var(--warning-line);color:var(--amber-700)}
+.notice.warn{background:var(--amber-50);border-color:var(--warning-line);color:var(--accent-text)}
 .notice.err{background:var(--red-soft);border-color:var(--error-line);color:var(--red)}
 .notice.ok{background:var(--green-soft);border-color:var(--success-line);color:var(--green)}
 .notice.info{background:var(--teal-50);border-color:var(--teal-100);color:var(--teal-700)}
@@ -493,8 +521,8 @@ textarea{resize:vertical;min-height:92px}
 }
 .btn:active{transform:none}
 .btn svg{width:16px;height:16px;flex:none}
-.btn-primary{background:var(--amber-700);color:#fff}
-.btn-primary:hover{background:var(--amber-600)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
 .btn-dark{background:var(--teal-500);color:#fff}
 .btn-dark:hover{background:var(--teal-600)}
 .btn-ghost{background:#fff;color:var(--ink);border-color:var(--neutral-200)}
@@ -505,7 +533,7 @@ textarea{resize:vertical;min-height:92px}
 .btn-outline:hover{background:var(--teal-50)}
 .btn-green{background:var(--green);color:#fff}
 .btn-green:hover{background:var(--teal-600)}
-.btn-warn{background:#fff;color:var(--amber-700);border-color:var(--warning-line)}
+.btn-warn{background:#fff;color:var(--accent-text);border-color:var(--warning-line)}
 .btn-warn:hover{background:var(--amber-50)}
 .btn-danger{background:#fff;color:var(--red);border-color:var(--error-line)}
 .btn-danger:hover{background:var(--red-soft)}
@@ -701,7 +729,7 @@ textarea{resize:vertical;min-height:92px}
 }
 .nav a.active svg{stroke:var(--teal-500)}
 .nav a .badge{
-  margin-left:auto;background:var(--amber-50);color:var(--amber-700);
+  margin-left:auto;background:var(--amber-50);color:var(--accent-text);
   font-size:12px;line-height:18px;font-weight:500;padding:0 8px;border-radius:var(--radius-full);
 }
 .sidebar.is-collapsed .nav a .badge{display:none}
@@ -857,7 +885,7 @@ textarea{resize:vertical;min-height:92px}
 .iconbtn svg{width:18px;height:18px}
 .iconbtn .dot{
   position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;
-  background:var(--amber-500);border:2px solid #fff;
+  background:var(--highlight);border:2px solid #fff;
 }
 .content{padding:0 32px 48px;width:100%;max-width:1440px;margin:0 auto}
 
@@ -867,7 +895,7 @@ textarea{resize:vertical;min-height:92px}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ---------- Banner / portal hero (Prep welcome banner) ----------
-   Solid Teal 500 card, white H2, Teal 50 body, CTA row = white (light) + one amber.
+   Solid Teal 500 card, white H2, Teal 50 body, CTA row = white (light) + one orange (--accent).
    No gradients, no glows, no decorative blobs. */
 .banner{
   position:relative;overflow:hidden;border-radius:var(--radius-card);
@@ -900,7 +928,7 @@ textarea{resize:vertical;min-height:92px}
 .q-hero-side__h{display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.2)}
 .q-hero-side__h h3{font-size:18px;line-height:26px;font-weight:500;margin:0;color:#fff}
-.q-hero-side__badge{font-size:12px;line-height:18px;font-weight:500;padding:2px 12px;border-radius:var(--radius-full);background:var(--amber-50);color:var(--amber-700)}
+.q-hero-side__badge{font-size:12px;line-height:18px;font-weight:500;padding:2px 12px;border-radius:var(--radius-full);background:var(--amber-50);color:var(--accent-text)}
 .q-hero-side ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
 .q-hero-side li{display:flex;gap:12px;align-items:flex-start}
 .q-hero-side__dot{width:6px;height:6px;border-radius:50%;flex:none;margin-top:8px;background:#fff}
@@ -1104,7 +1132,7 @@ td .edu-video-error{
 .pill::before{display:none}
 .pill.dot::before{content:"";display:block;width:6px;height:6px;border-radius:50%;background:currentColor}
 .pill.green{color:var(--green);background:var(--green-soft)}
-.pill.amber{color:var(--amber-700);background:var(--amber-50)}
+.pill.amber{color:var(--accent-text);background:var(--amber-50)}
 .pill.red{color:var(--red);background:var(--red-soft)}
 .pill.blue,.pill.violet,.pill.teal{color:var(--teal-500);background:var(--teal-50)}
 .pill.grey{color:var(--neutral-600);background:var(--neutral-100)}
@@ -1163,7 +1191,7 @@ table td.num,table th.num{
 .bar{height:8px;background:var(--neutral-100);border-radius:var(--radius-full);overflow:hidden;min-width:80px}
 .bar > i{display:block;height:100%;border-radius:var(--radius-full);background:var(--teal-500)}
 .bar.green > i{background:var(--green)}
-.bar.amber > i{background:var(--amber)}
+.bar.amber > i{background:var(--highlight)}
 .cmp{display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
 .cmp:last-child{border-bottom:none}
 .cmp .nm{width:160px;font-weight:500;font-size:14px;line-height:22px;flex:none}
@@ -1195,7 +1223,7 @@ table td.num,table th.num{
   color:var(--ink-2);cursor:pointer;transition:background-color .2s ease-out,color .2s ease-out;
 }
 .seg-btn:hover{color:var(--teal-500)}
-.seg-btn.is-active,.seg-btn[aria-selected="true"]{background:var(--amber-700);color:#fff}
+.seg-btn.is-active,.seg-btn[aria-selected="true"]{background:var(--accent);color:#fff}
 
 /* Row card list (Prep "My reports") */
 .rowcard{
@@ -1223,7 +1251,7 @@ a.rowcard:hover,button.rowcard:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
 }
 .topic__t{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
 .topic__d{font-size:12px;line-height:18px;color:var(--muted-2);margin-top:4px}
-.topic__go{width:32px;height:32px;border-radius:50%;background:var(--amber-500);color:var(--ink);display:grid;place-items:center;flex:none}
+.topic__go{width:32px;height:32px;border-radius:50%;background:var(--highlight);color:var(--ink);display:grid;place-items:center;flex:none}
 
 /* Summary panel (Prep "Interview summary"): Teal header + white stat tiles + detail rows */
 .summary{background:#fff;border-radius:var(--radius-card);box-shadow:var(--shadow-card);overflow:hidden}
@@ -1598,7 +1626,7 @@ a.rowcard:hover,button.rowcard:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
   flex:none;text-align:center;
 }
 .lb-row.me .rk{color:var(--blue)}
-.lb-row .rk.top{color:var(--amber)}
+.lb-row .rk.top{color:var(--accent-text)}
 .lb-row .av{
   width:36px;height:36px;border-radius:50%;background:var(--teal);color:#fff;
   display:grid;place-items:center;font-weight:500;font-size:12px;flex:none;
@@ -1637,7 +1665,7 @@ a.rowcard:hover,button.rowcard:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
 .demo-note{
   display:flex;gap:11px;align-items:flex-start;padding:12px 15px;margin-bottom:18px;
   background:var(--amber-50);border:1px dashed var(--warning-line);border-radius:var(--radius-card);
-  font-size:12px;color:var(--amber-700);line-height:18px;
+  font-size:12px;color:var(--accent-text);line-height:18px;
 }
 .demo-note svg{width:16px;height:16px;flex:none;margin-top:2px;stroke:var(--color-warning)}
 .demo-note b{font-weight:500}
@@ -1767,7 +1795,7 @@ a.rowcard:hover,button.rowcard:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
 .si-dims{margin-bottom:16px}
 .si-dim{margin-bottom:10px}
 .si-dim-row{display:flex;justify-content:space-between;font-size:12px;font-weight:500;margin-bottom:5px}
-.si-dim-weak{color:var(--amber-700)}
+.si-dim-weak{color:var(--accent-text)}
 .si-dim-track{height:8px;background:var(--neutral-100);border-radius:999px;overflow:hidden}
 .si-dim-track i{display:block;height:100%;border-radius:999px}
 .si-plan ol{margin:0;padding-left:18px;font-size:12px;line-height:1.5;color:var(--ink-2);text-align:left}
@@ -1796,7 +1824,7 @@ a.rowcard:hover,button.rowcard:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
 }
 .si-transcript-line{display:grid;gap:2px;text-align:left;font-size:14px;line-height:1.45}
 .si-transcript-who{font-size:12px;font-weight:500;color:var(--teal)}
-.si-transcript-line.is-you .si-transcript-who{color:var(--amber-700)}
+.si-transcript-line.is-you .si-transcript-who{color:var(--accent-text)}
 
 @media (max-width:980px){
   .si-report,.si-live-grid{grid-template-columns:1fr}
@@ -1828,6 +1856,11 @@ a.rowcard:hover,button.rowcard:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
 /* ---------- Login freeze guard (quirri-login-freeze.mdc) ----------
    Product-wide control/type changes above must not alter the frozen login card.
    Remove this block only when the owner unfreezes the login design. */
+.auth .btn-primary{background:var(--amber-700)}
+.auth .btn-primary:hover{background:var(--amber-600)}
+.auth .btn-warn{color:var(--amber-700)}
+.auth .notice.warn{color:var(--amber-700)}
+.auth .pw-meter.s2 i:nth-child(-n+2){background:var(--amber-700)}
 .auth .btn{border-radius:9999px;padding:12px 24px}
 .auth .field label{font-size:12.5px;line-height:1.625;margin-bottom:7px}
 .auth .field .hint{font-size:11.5px;line-height:1.45;margin-top:6px}

@@ -20,6 +20,10 @@ export const PAGE_META = {
     title: 'Platform users',
     subtitle: 'Every user across every institution.',
   },
+  '/superadmin/content': {
+    title: 'Upload & content',
+    subtitle: 'Upload academic material and trigger AI course generation for any college.',
+  },
   '/superadmin/reports': {
     title: 'Reports',
     subtitle: 'Search, preview, and export platform data.',
