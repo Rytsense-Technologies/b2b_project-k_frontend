@@ -60,6 +60,18 @@ const NAV = [
     ),
   },
   {
+    href: '/superadmin/academics',
+    label: 'Academic structure',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 4v4M12 8H6v4M12 8h6v4" />
+        <rect x="3" y="12" width="6" height="4" rx="1" />
+        <rect x="15" y="12" width="6" height="4" rx="1" />
+        <path d="M6 16v3M18 16v3" />
+      </svg>
+    ),
+  },
+  {
     href: '/superadmin/users',
     label: 'Platform users',
     icon: (
@@ -154,7 +166,7 @@ export default function SuperAdminSidebar() {
 
   const u = sessionUIReady ? user : null;
   const displayName = u?.name?.trim() || u?.first_name || 'Super Admin';
-  const displayEmail = u?.email || 'admin@quirri.ai';
+  const displayEmail = u?.email || '';
   const initials = getInitials(u?.name, u?.email);
 
   const handleLogout = async () => {

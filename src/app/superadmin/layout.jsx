@@ -8,11 +8,16 @@ import { selectSidebarOpen } from '@/store/slices/uiSlice';
 import { getRoleCookie, getTenantCookie, clearRoleCookie, clearTenantCookie } from '@/lib/tokens';
 import { PAGE_META } from '@/lib/superadmin/pageMeta';
 import SuperAdminSidebar from '@/components/superadmin/SuperAdminSidebar';
+import { useHydrateProfile } from '@/hooks/useHydrateProfile';
+import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 
 export default function SuperAdminLayout({ children }) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const sidebarOpen = useAppSelector(selectSidebarOpen);
+  useHydrateProfile();
+  // Phones: the sidebar is off-canvas; this opens it as a drawer.
+  const { navOpen, openNav, closeNav } = useMobileNav();
 
   useEffect(() => {
     const role = getRoleCookie();
@@ -36,11 +41,13 @@ export default function SuperAdminLayout({ children }) {
   const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'Super Admin', subtitle: '' };
 
   return (
-    <div className="app q-app-shell">
+    <div className={`app q-app-shell sa-shell ${mobileNavShellClass(navOpen)}`}>
       <SuperAdminSidebar />
+      <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
 
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
         <div className="topbar">
+          <MobileNavButton navOpen={navOpen} onOpen={openNav} />
           <div>
             <h1>{meta.title}</h1>
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}

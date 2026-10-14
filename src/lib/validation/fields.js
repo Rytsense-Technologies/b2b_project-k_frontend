@@ -238,6 +238,7 @@ export function institutionNameField(label = 'Name') {
   return requiredString(`${label} is required`).pipe(
     z
       .string()
+      .min(1, `${label} is required`)
       .min(rule.min, `${label} must be at least ${rule.min} characters`)
       .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
       .regex(rule.pattern, `Enter a valid ${label.toLowerCase()}`),
@@ -255,6 +256,7 @@ export function placeNameField(label = 'Place', { required = false } = {}) {
           z.literal(''),
           z
             .string()
+            .min(1, `${label} is required`)
             .min(rule.min, `${label} must be at least ${rule.min} characters`)
             .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
             .regex(rule.pattern, `Enter a valid ${label.toLowerCase()}`),
@@ -264,6 +266,7 @@ export function placeNameField(label = 'Place', { required = false } = {}) {
   return requiredString(`${label} is required`).pipe(
     z
       .string()
+      .min(1, `${label} is required`)
       .min(rule.min, `${label} must be at least ${rule.min} characters`)
       .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
       .regex(rule.pattern, `Enter a valid ${label.toLowerCase()}`),
@@ -294,6 +297,7 @@ export function codeField(label = 'Code', { required = true } = {}) {
   const rule = FIELD_RULES.code;
   const valid = z
     .string()
+    .min(1, `${label} is required`)
     .min(rule.min, `${label} must be at least ${rule.min} characters`)
     .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
     .regex(rule.pattern, `${label} may only contain letters, numbers, underscore, and hyphen`);
@@ -319,14 +323,15 @@ export function emailField(label = 'Email') {
     .pipe(
       z
         .string()
-        .min(1, `Enter a valid ${label.toLowerCase()} address`)
+        .min(1, `${label} is required`)
         .max(rule.max, `${label} is too long`)
-        .email(`Enter a valid ${label.toLowerCase()} address`),
+        .email(`Enter a valid ${/address$/i.test(label) ? label.toLowerCase() : `${label.toLowerCase()} address`}`),
     );
 }
 
 export function phoneField(label = 'Phone', { required = true } = {}) {
   const rule = FIELD_RULES.phone;
+  const noun = /number$/i.test(label) ? label.toLowerCase() : `${label.toLowerCase()} number`;
   const core = z
     .string()
     .transform(normalizePhone)
@@ -336,13 +341,17 @@ export function phoneField(label = 'Phone', { required = true } = {}) {
         .refine((v) => {
           const digits = v.replace(/\D/g, '');
           return digits.length >= rule.min && digits.length <= 15;
-        }, `Enter a valid ${label.toLowerCase()} number`),
+        }, `Enter a valid ${noun}`),
     );
 
   if (!required) {
     return z
       .string()
-      .transform((v) => normalizePhone(v))
+      // The input pre-fills "+91"; a bare country code means the optional field was left empty.
+      .transform((v) => {
+        const p = normalizePhone(v);
+        return p === '+' || p === '+91' ? '' : p;
+      })
       .pipe(z.union([z.literal(''), core]));
   }
   return z
@@ -355,7 +364,7 @@ export function phoneField(label = 'Phone', { required = true } = {}) {
         .refine((v) => {
           const digits = v.replace(/\D/g, '');
           return digits.length >= rule.min && digits.length <= 15;
-        }, `Enter a valid ${label.toLowerCase()} number`),
+        }, `Enter a valid ${noun}`),
     );
 }
 
@@ -363,6 +372,7 @@ export function passwordField(label = 'Password') {
   const rule = FIELD_RULES.password;
   return z
     .string({ required_error: `${label} is required` })
+    .min(1, `${label} is required`)
     .min(rule.min, `${label} must be at least ${rule.min} characters`)
     .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
     .regex(/[A-Z]/, `${label} must contain at least one uppercase letter`)
@@ -438,6 +448,7 @@ export function academicLabelField(label = 'Title', { required = true } = {}) {
   const rule = FIELD_RULES.academicLabel;
   const valid = z
     .string()
+    .min(1, `${label} is required`)
     .min(rule.min, `${label} must be at least ${rule.min} characters`)
     .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
     .regex(rule.pattern, `Enter a valid ${label.toLowerCase()}`);
@@ -448,7 +459,9 @@ export function academicLabelField(label = 'Title', { required = true } = {}) {
       .transform(collapseSpaces)
       .pipe(z.union([z.literal(''), valid]));
   }
-  return requiredString(`${label} is required`).pipe(valid);
+  return requiredString(`${label} is required`)
+    .pipe(z.string().min(1, `${label} is required`))
+    .pipe(valid);
 }
 
 export function positiveIntField(label = 'Number', { required = false, max = 999999 } = {}) {

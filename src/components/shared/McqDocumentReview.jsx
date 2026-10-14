@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import McqQuestionBlock from '@/components/shared/McqQuestionBlock';
 import { Icon } from '@/components/student/ui';
-import { mcqApi, mcqErrorMessage } from '@/lib/api/mcq';
+import {
+  mcqApi, mcqErrorMessage, mcqGenerateErrorMessage, waitForMcqGeneration,
+} from '@/lib/api/mcq';
 
 /** "ready" → "Ready", "in_progress" → "In progress" */
 function statusText(status) {
@@ -14,17 +16,34 @@ function statusText(status) {
 
 /**
  * Admin / faculty / HOD review of generated MCQs (answer key visible).
- * No per-question approve API yet — review + generate/regenerate only.
+ * SOW §6.1.4: a set reaches students only after it is approved here;
+ * regenerating clears the approval.
  */
 export default function McqDocumentReview({
   jobId,
   chapterTitle = '',
   canGenerate = true,
+  canApprove = true,
 }) {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [doc, setDoc] = useState(null);
+  const [approving, setApproving] = useState(false);
+
+  const handleApprove = async () => {
+    if (!jobId || approving) return;
+    setApproving(true);
+    try {
+      const data = await mcqApi.approve(jobId);
+      setDoc(data);
+      toast.success('Approved. Students can take this assessment once they finish the lecture.');
+    } catch (err) {
+      toast.error(mcqErrorMessage(err, 'Could not approve this question set.'));
+    } finally {
+      setApproving(false);
+    }
+  };
 
   const load = useCallback(async () => {
     if (!jobId) return;
@@ -51,7 +70,7 @@ export default function McqDocumentReview({
   }, [load]);
 
   const handleGenerate = async () => {
-    if (!jobId) return;
+    if (!jobId || generating) return;
     setGenerating(true);
     try {
       const data = await mcqApi.generate(jobId);
@@ -59,11 +78,27 @@ export default function McqDocumentReview({
       setError('');
       toast.success(
         data?.generated_count
-          ? `${data.generated_count} questions ready for review.`
-          : 'MCQs generated.',
+          ? `${data.generated_count} questions ready for review. Approve them to open the assessment.`
+          : 'MCQs generated. Approve them to open the assessment.',
       );
     } catch (err) {
-      toast.error(mcqErrorMessage(err, 'Could not generate MCQs.'));
+      if (err?.response?.status === 409) {
+        // Another request is already generating - wait for it instead of failing.
+        const waitId = toast.loading(mcqGenerateErrorMessage(err));
+        const ready = await waitForMcqGeneration(jobId);
+        toast.dismiss(waitId);
+        if (ready?.status === 'ready') {
+          setDoc(ready);
+          setError('');
+          toast.success('MCQs are ready for review.');
+        } else if (ready?.status === 'failed') {
+          toast.error(ready.error || 'MCQ generation failed.');
+        } else {
+          toast('Still generating — refresh this page in a few minutes.');
+        }
+      } else {
+        toast.error(mcqGenerateErrorMessage(err));
+      }
     } finally {
       setGenerating(false);
     }
@@ -122,6 +157,7 @@ export default function McqDocumentReview({
   const questions = Array.isArray(doc?.questions)
     ? [...doc.questions].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
     : [];
+  const approved = Boolean(doc?.approved_at);
 
   return (
     <div className="fa-mcq mcq-review animate-fade-in">
@@ -135,10 +171,23 @@ export default function McqDocumentReview({
           </p>
         </div>
         <div className="fa-mcq-head-side">
-          <span className={`sp-pill ${doc?.status === 'ready' ? 'sp-pill--good' : 'sp-pill--low'}`}>
-            <i className="un-dot" aria-hidden="true" />
-            {statusText(doc?.status)}
-          </span>
+          {doc?.status === 'ready' ? (
+            <span className={`sp-pill ${approved ? 'sp-pill--good' : 'sp-pill--low'}`}>
+              <i className="un-dot" aria-hidden="true" />
+              {approved ? 'Approved' : 'Awaiting approval'}
+            </span>
+          ) : (
+            <span className="sp-pill sp-pill--low">
+              <i className="un-dot" aria-hidden="true" />
+              {statusText(doc?.status)}
+            </span>
+          )}
+          {canApprove && doc?.status === 'ready' && !approved && questions.length ? (
+            <button type="button" className="sd-btn sd-btn--amber sd-btn--sm" onClick={handleApprove} disabled={approving || generating}>
+              <Icon name="tick" size={16} />
+              {approving ? 'Approving…' : 'Approve for students'}
+            </button>
+          ) : null}
           {canGenerate ? (
             <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={handleGenerate} disabled={generating}>
               <Icon name="refresh" size={16} />
@@ -151,9 +200,10 @@ export default function McqDocumentReview({
       <div className="fa-note">
         <Icon name="info" size={18} />
         <div>
-          <b>Review with answer key</b>
-          Correct options are highlighted. Per-question approval is not available yet.
-          Students can take the quiz once this chapter video is published and the MCQs are ready.
+          <b>{approved ? 'Approved for students' : 'Review, then approve'}</b>
+          {approved
+            ? 'Students take this assessment after watching the full lecture of a published chapter. Regenerating the questions needs a fresh approval.'
+            : 'Correct options are highlighted. Check every question, regenerate if needed, then approve — students cannot see the assessment until you do.'}
         </div>
       </div>
 

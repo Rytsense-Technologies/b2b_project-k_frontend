@@ -2,6 +2,7 @@
 
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { Icon } from '@/components/student/ui';
+import RefreshingVideo from '@/components/shared/RefreshingVideo';
 
 /**
  * Plays a finished edu_video job inline instead of only offering a bare
@@ -20,10 +21,9 @@ export default function VideoPreviewModal({ open, onClose, title, src }) {
       {src ? (
         <div className="fa-video">
           <div className="fa-video-stage">
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <video controls autoPlay src={src}>
+            <RefreshingVideo controls autoPlay src={src}>
               Your browser does not support embedded video playback.
-            </video>
+            </RefreshingVideo>
           </div>
           <div className="fa-video-foot">
             <span><Icon name="info" size={16} /> If the video does not play here, open it in a new tab.</span>

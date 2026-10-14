@@ -16,8 +16,6 @@ import {
   universityUpdateSchema,
 } from '@/lib/validation';
 import { INDIA_COUNTRY } from '@/lib/india';
-import '@/styles/student-portal.css';
-import '@/styles/superadmin-universities.css';
 
 const EMPTY_FORM = {
   name: '',
@@ -248,7 +246,8 @@ function UniversityDrawer({ row, onClose, onEdit, onToggle }) {
     fetchData(() => universitiesApi.get(row.id))
       .then((d) => { if (!cancelled) setDetail(d); })
       .catch(() => {});
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    // A modal (edit form) or open dropdown on top owns Escape; the drawer closes only when it is topmost.
+    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented && !document.querySelector('.overlay .modal')) onClose(); };
     document.addEventListener('keydown', onKey);
     return () => {
       cancelled = true;
@@ -283,7 +282,7 @@ function UniversityDrawer({ row, onClose, onEdit, onToggle }) {
           <h2>{u.name}</h2>
           <div className="sp-banner-meta">
             <span className="sp-pill sp-pill--glass">{u.code}</span>
-            <span className={`sp-pill ${u.is_active ? 'sp-pill--good' : 'sp-pill--err'}`}>
+            <span className={`sp-pill ${u.is_active ? 'sp-pill--good' : 'sp-pill--off'}`}>
               {u.is_active ? 'Active' : 'Inactive'}
             </span>
           </div>
@@ -340,7 +339,7 @@ function UniversityDrawer({ row, onClose, onEdit, onToggle }) {
                       {countLabel(c.student_count ?? c.students)}
                       <small>students</small>
                     </span>
-                    <span className={`sp-pill ${c.is_active !== false ? 'sp-pill--good' : 'sp-pill--err'}`}>
+                    <span className={`sp-pill ${c.is_active !== false ? 'sp-pill--good' : 'sp-pill--off'}`}>
                       {c.is_active !== false ? 'Active' : 'Inactive'}
                     </span>
                   </li>
@@ -606,7 +605,7 @@ export default function UniversitiesPage() {
               <button type="button" className="un-card-main" onClick={() => setDrawerRow(row)}>
                 <div className="un-card-top">
                   <span className="un-mono">{initials(row.name)}</span>
-                  <span className={`sp-pill ${row.is_active ? 'sp-pill--good' : 'sp-pill--err'}`}>
+                  <span className={`sp-pill ${row.is_active ? 'sp-pill--good' : 'sp-pill--off'}`}>
                     <i className="un-dot" aria-hidden="true" />
                     {row.is_active ? 'Active' : 'Inactive'}
                   </span>
@@ -659,7 +658,7 @@ export default function UniversitiesPage() {
                     <td className="num"><b>{countLabel(row.college_count)}</b></td>
                     <td className="num"><b>{countLabel(row.student_count)}</b></td>
                     <td>
-                      <span className={`sp-pill ${row.is_active ? 'sp-pill--good' : 'sp-pill--err'}`}>
+                      <span className={`sp-pill ${row.is_active ? 'sp-pill--good' : 'sp-pill--off'}`}>
                         <i className="un-dot" aria-hidden="true" />
                         {row.is_active ? 'Active' : 'Inactive'}
                       </span>

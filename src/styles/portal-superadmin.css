@@ -64,6 +64,7 @@
 .sa-kpi-unit{font-size:14px;line-height:22px;font-weight:400;color:var(--ink-2);margin-left:2px}
 .sa-nowrap{white-space:nowrap}
 .sp-row-ic.sa-svc-ic--amber{background:var(--warning-soft);color:var(--accent-text)}
+.sp-row-ic.sa-svc-ic--muted{background:var(--teal-50);color:var(--teal-400)}
 .sp-row-ic.sa-svc-ic--red{background:var(--error-soft);color:var(--color-error)}
 .sa-page .sp-rows .sp-row{padding:16px 24px}
 
@@ -103,3 +104,88 @@
 }
 .sa-page .pm-chips > span{height:auto;min-height:28px;padding-top:4px;padding-bottom:4px}
 .sa-page .sd-state .sd-btn .sd-i{color:currentColor}
+
+/* Phones: portal sidebar becomes a drawer opened from the topbar menu button (MobileNav.jsx) */
+.q-nav-btn,.q-nav-scrim{display:none}
+@media (max-width:860px){
+  .q-drawer-shell .topbar{display:flex;align-items:center;justify-content:flex-start;gap:12px}
+  .q-drawer-shell .topbar > div{min-width:0;text-align:left}
+  .q-nav-btn{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;border-radius:var(--radius-control);border:1px solid var(--line);background:var(--panel);color:var(--teal-500);cursor:pointer;padding:0}
+  .q-nav-btn:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
+  .q-drawer-shell .sidebar-toggle{display:none}
+  .q-drawer-shell .sidebar{transition:transform .2s ease;z-index:70}
+  .q-drawer-shell.is-nav-open .sidebar{transform:none;box-shadow:var(--shadow-card)}
+  .q-drawer-shell.is-nav-open .q-nav-scrim{display:block;position:fixed;inset:0;z-index:65;border:0;padding:0;background:rgba(16,34,40,.48);cursor:pointer}
+}
+
+/* Live stamp on the hero: quiet chip with a green dot - the hero CTA keeps the only orange */
+.sa-shell .q-hero-side__badge{display:inline-flex;align-items:center;gap:8px;background:var(--on-brand-raised);border:1px solid var(--on-brand-line);color:var(--on-brand)}
+.sa-shell .q-hero-side__badge::before{content:"";width:8px;height:8px;border-radius:var(--radius-full);background:var(--progress)}
+
+/* Inactive / deactivated is a state, not an error: neutral pill (red stays for real failures) */
+.sp-pill.sp-pill--off{background:var(--neutral-100);color:var(--muted)}
+.sp-pill.sp-pill--off::before{background:var(--muted-2)}
+/* Orange words only for "missing" - an assigned HOD reads in ink */
+.un-card-stats > div:nth-child(2) b.sa-stat-text.is-set{color:var(--ink)}
+.un-card-stats > div:nth-child(2):has(b.sa-stat-text.is-set){background:var(--surface-tint)}
+.sa-job-note{margin-top:4px;max-width:36ch}
+.sa-row-code{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+/* Health: expandable error stack */
+.sa-err-toggle{background:none;border:0;padding:0;cursor:pointer;font:inherit;font-size:12px}
+.sa-err-detail td{background:var(--surface-tint);padding-top:0}
+.sa-err-detail pre{margin:0;max-height:280px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:var(--ink-2)}
+/* Dashboard: six KPIs as a 3 x 2 grid; top questions wrap with their chapter */
+.sa-kpis--6{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.sa-kpis--6{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.sa-kpis--6{grid-template-columns:1fr}}
+.sa-bars .cmp.sa-topq{flex-wrap:wrap;row-gap:6px}
+.sa-bars .cmp.sa-topq .nm{width:100%;white-space:normal;overflow:visible;line-height:20px}
+.sa-bars .cmp.sa-topq .nm small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+/* Academic structure (/superadmin/academics) */
+.sa-acad-grid{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:20px;align-items:start}
+.sa-acad-list{list-style:none;margin:0;padding:8px;display:flex;flex-direction:column;gap:4px;max-height:640px;overflow:auto}
+.sa-acad-prog{width:100%;text-align:left;display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:var(--radius-control);border:1px solid transparent;background:none;cursor:pointer;font:inherit;color:var(--ink)}
+.sa-acad-prog:hover{background:var(--surface-tint)}
+.sa-acad-prog.is-on{background:var(--teal-50);border-color:var(--teal-200)}
+.sa-acad-prog.is-off b{color:var(--muted)}
+.sa-acad-prog b{font-size:14px;line-height:22px;font-weight:500;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sa-acad-prog small{font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-acad-prog .sp-pill{align-self:flex-start;margin-top:4px}
+.sa-acad-detail{padding:16px 20px 20px;display:flex;flex-direction:column;gap:16px}
+.sa-acad-sems{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.sa-acad-sem{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:8px 14px;border-radius:var(--radius-control);border:1px solid var(--line);background:var(--panel);cursor:pointer;font:inherit;font-size:14px;line-height:20px;font-weight:500;color:var(--ink)}
+.sa-acad-sem small{font-size:11px;line-height:16px;font-weight:400;color:var(--muted-2)}
+.sa-acad-sem.is-on{background:var(--teal-500);border-color:var(--teal-500);color:var(--on-brand)}
+.sa-acad-sem.is-on small{color:var(--on-brand-muted)}
+.sa-acad-sem.is-off{opacity:.6}
+.sa-acad-sem--add{flex-direction:row;align-items:center;gap:6px;border-style:dashed;color:var(--teal-500)}
+.sa-acad-semhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sa-acad-semhead b{display:block;font-size:16px;line-height:24px;font-weight:500}
+.sa-acad-semhead small{font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-acad-subjects{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sa-acad-subject{border:1px solid var(--line);border-radius:var(--radius-control);background:var(--panel)}
+.sa-acad-subject.is-off{background:var(--neutral-50)}
+.sa-acad-subject-h{display:flex;align-items:center;gap:12px;padding:8px 12px}
+.sa-acad-subject-toggle{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 0;cursor:pointer;font:inherit;text-align:left;color:var(--ink)}
+.sa-acad-subject-name{display:flex;flex-direction:column;min-width:0}
+.sa-acad-subject-name b{font-size:14px;line-height:22px;font-weight:500}
+.sa-acad-subject-name small{font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-acad-caret{display:inline-grid;place-items:center;color:var(--teal-500);transition:transform .15s}
+.sa-acad-caret.is-open{transform:rotate(90deg)}
+.sa-acad-chapters{border-top:1px solid var(--line-soft);padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.sa-acad-chapters ol{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column}
+.sa-acad-chapters li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.sa-acad-chapters li:last-child{border-bottom:0}
+.sa-acad-chapters li.is-off .sa-acad-ch-title b{color:var(--muted)}
+.sa-acad-pos{flex:none;width:28px;height:28px;border-radius:var(--radius-full);display:grid;place-items:center;background:var(--teal-50);color:var(--teal-500);font-size:12px;font-weight:500}
+.sa-acad-ch-title{flex:1;min-width:0;display:flex;flex-direction:column}
+.sa-acad-ch-title b{font-size:14px;line-height:22px;font-weight:500;overflow-wrap:anywhere}
+.sa-acad-ch-title small{font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-rot-up .un-icon-btn svg{transform:rotate(-90deg)}
+.sa-rot-down .un-icon-btn svg{transform:rotate(90deg)}
+.sa-acad-preview{display:flex;gap:8px;align-items:flex-start;margin:12px 0 0;font-size:12px;line-height:18px;color:var(--teal-500)}
+.sa-acad-preview.is-warn{color:var(--accent-text)}
+@media (max-width:1100px){.sa-acad-grid{grid-template-columns:minmax(0,1fr)}.sa-acad-list{max-height:320px}}
+@media (max-width:520px){.sa-acad-detail{padding:12px}.sa-acad-subject-h{flex-wrap:wrap}.sa-acad-chapters li{flex-wrap:wrap}.sa-acad-chapters li .ad-actions{width:100%;justify-content:flex-end}}
+/* Keep absolutely positioned bits (sr-only labels) inside the scrolling table, not the page */
+.sp-table-wrap{position:relative}

@@ -14,6 +14,8 @@ import {
 import { dashboardApi } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, isApiUnavailable, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
+import ScoreCell from '@/components/superadmin/ScoreCell';
 
 const METRIC_ICONS = ['building', 'users', 'tick', 'chart', 'clock'];
 
@@ -65,7 +67,7 @@ function pillVariant(status) {
   if (v.includes('healthy') || v.includes('active') || v.includes('ok')) return 'green';
   if (v.includes('low') || v.includes('push') || v.includes('pending') || v.includes('amber')) return 'amber';
   if (v.includes('fail') || v.includes('retry') || v.includes('error')) return 'red';
-  if (v.includes('generat')) return 'blue';
+  if (v.includes('generat') || v.includes('progress')) return 'blue';
   return 'grey';
 }
 
@@ -92,10 +94,12 @@ function PanelEmpty({ icon, title, children }) {
 }
 
 export default function SuperAdminDashboard() {
-  const { data, loading, error } = useAsyncResource(
+  const { data, loading, error, reload } = useAsyncResource(
     () => fetchOptional(() => dashboardApi.getOverview({ range: 'last_30_days' })),
     [],
   );
+  // Live like the student pages: every minute + when the tab regains focus.
+  const ago = useTimeAgo(useLiveRefresh(reload));
 
   const unavailable = !loading && data == null && !error;
   const hardError = error && !isApiUnavailable(error);
@@ -119,12 +123,12 @@ export default function SuperAdminDashboard() {
         eyebrow="Super Admin · Platform"
         title="Platform overview"
         description="Every university, college and user on Quirri, in one place. Content and health signals roll up here across all tenants."
-        secondaryHref="/superadmin/universities"
-        secondaryLabel="Onboard a university"
-        primaryHref="/superadmin/health"
-        primaryLabel="View platform health"
+        secondaryHref="/superadmin/health"
+        secondaryLabel="View platform health"
+        primaryHref="/superadmin/universities"
+        primaryLabel="Onboard a university"
         sideTitle="Attention needed"
-        sideBadge={hardError ? 'Error' : unavailable ? 'Soon' : 'Live'}
+        sideBadge={hardError ? 'Error' : unavailable ? 'Soon' : `Live · ${ago}`}
         sideItems={hardError ? [{
           id: 'err',
           title: 'Could not load dashboard signals',
@@ -138,13 +142,13 @@ export default function SuperAdminDashboard() {
         }] : [{
           id: 'empty',
           title: 'Counts are live',
-          body: 'Institution and user totals come from the platform database. Watch time, Q&A topics, and pipeline jobs appear when learning analytics ship.',
+          body: 'Totals, watch time, Q&A and scores come straight from the platform database and refresh every minute.',
           tone: 'info',
         }]}
       />
 
       {kpis.length > 4 ? (
-        <section className="sd-kpis sa-kpis--5" aria-label="Platform summary">
+        <section className={`sd-kpis sa-kpis--${kpis.length >= 6 ? 6 : 5}`} aria-label="Platform summary">
           {kpis.map((k) => <Kpi key={k.label} icon={k.icon} label={k.label} value={k.value} sub={k.sub} />)}
         </section>
       ) : (
@@ -178,8 +182,9 @@ export default function SuperAdminDashboard() {
                     <th>Institution</th>
                     <th className="num">Students</th>
                     <th className="num">Watch time</th>
+                    <th className="num">Completion</th>
                     <th className="num">Q&amp;A</th>
-                    <th>Avg score</th>
+                    <th className="num">Avg score</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -198,13 +203,10 @@ export default function SuperAdminDashboard() {
                           </div>
                         </td>
                         <td className="num">{row.students ?? row.student_count ?? '—'}</td>
-                        <td className="num">{row.watch_time || row.duration || row.hours || '—'}</td>
-                        <td className="num">{row.qa || row.questions || '—'}</td>
-                        <td>
-                          <Pill status={row.score_status || 'green'} dot={false}>
-                            {row.avg_score || row.score || row.quality || '—'}
-                          </Pill>
-                        </td>
+                        <td className="num">{row.watch_time ?? row.duration ?? '—'}</td>
+                        <td className="num">{row.completion == null ? <span className="sa-muted">—</span> : `${row.completion}%`}</td>
+                        <td className="num">{row.qa ?? row.questions ?? '—'}</td>
+                        <td className="num"><ScoreCell value={row.avg_score ?? row.score ?? row.quality} /></td>
                         <td><Pill status={row.status}>{row.status || '—'}</Pill></td>
                       </tr>
                     );
@@ -219,15 +221,18 @@ export default function SuperAdminDashboard() {
           )}
         </Panel>
 
-        <Panel title="Top Q&A topics" sub="Clustered from student questions across all institutions.">
+        <Panel title="Top Q&A queries" sub="Most-asked questions to the AI tutor across all institutions, last 30 days.">
           {topics.length ? (
             <div className="sa-bars">
               {topics.map((t, i) => {
                 const count = Number(t.count || t.value || 0);
                 const width = Math.round((count / maxTopic) * 100);
                 return (
-                  <div className="cmp" key={t.topic || t.name || i}>
-                    <div className="nm">{t.topic || t.name || t.nm}</div>
+                  <div className="cmp sa-topq" key={t.topic || t.name || i}>
+                    <div className="nm">
+                      {t.topic || t.name || t.nm}
+                      {t.chapter ? <small>{t.chapter}</small> : null}
+                    </div>
                     <div className="track">
                       <i style={{ width: `${width}%` }} />
                     </div>
@@ -237,8 +242,8 @@ export default function SuperAdminDashboard() {
               })}
             </div>
           ) : (
-            <PanelEmpty icon="chat" title={loading ? 'Loading topics…' : 'No topic data yet'}>
-              {loading ? null : 'Common question themes show up once students ask the AI tutor.'}
+            <PanelEmpty icon="chat" title={loading ? 'Loading questions…' : 'No questions asked yet'}>
+              {loading ? null : 'The questions students ask the AI tutor most often show up here.'}
             </PanelEmpty>
           )}
         </Panel>

@@ -3,19 +3,23 @@
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setRoleDataOnly, setCredentials, setUser } from '@/store/slices/authSlice';
+import { setRoleDataOnly } from '@/store/slices/authSlice';
 import { selectSidebarOpen } from '@/store/slices/uiSlice';
 import { getRoleCookie, getTenantCookie, clearRoleCookie, clearTenantCookie } from '@/lib/tokens';
 import { PAGE_META } from '@/lib/admin/pageMeta';
 import CollegeAdminSidebar from '@/components/admin/CollegeAdminSidebar';
 import { PageHeaderProvider, PortalTopbar, resolvePageMeta } from '@/components/shared/PageHeader';
-import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
-import { getPermissions, ROLES } from '@/lib/permissions';
+import { useHydrateProfile } from '@/hooks/useHydrateProfile';
+import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 
 export default function CollegeAdminLayout({ children }) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const sidebarOpen = useAppSelector(selectSidebarOpen);
+  // Sidebar college / university / name come from /auth/me - refreshed on
+  // every portal load so a new tab never shows placeholders.
+  useHydrateProfile({ always: true });
+  const { navOpen, openNav, closeNav } = useMobileNav();
 
   useEffect(() => {
     const role = getRoleCookie();
@@ -35,66 +39,20 @@ export default function CollegeAdminLayout({ children }) {
     }
   }, [dispatch]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const me = await fetchData(() => settingsApi.get());
-        if (cancelled || !me) return;
-        const first = me.first_name ?? '';
-        const last = me.last_name ?? '';
-        const name = [first, last].filter(Boolean).join(' ') || me.name || me.email;
-        dispatch(setUser({
-          id: me.id,
-          email: me.email,
-          first_name: first || null,
-          last_name: last || null,
-          name,
-          college_name: me.college_name ?? me.tenant_name ?? null,
-          university_name: me.university_name ?? null,
-          tenant_name: me.tenant_name ?? me.college_name ?? null,
-          department: me.department ?? null,
-          phone: me.phone_number ?? me.phone ?? null,
-        }));
-        const role = me.role || getRoleCookie() || ROLES.COLLEGE_ADMIN;
-        const tenantId = me.tenant_id ?? getTenantCookie();
-        dispatch(setRoleDataOnly({ role, tenantId }));
-        if (!getRoleCookie()) {
-          dispatch(setCredentials({
-            user: {
-              id: me.id,
-              email: me.email,
-              first_name: first,
-              last_name: last,
-              name,
-              college_name: me.college_name ?? me.tenant_name,
-              university_name: me.university_name,
-              tenant_name: me.tenant_name ?? me.college_name,
-            },
-            role,
-            tenant_id: tenantId,
-            permissions: me.permissions?.length ? me.permissions : getPermissions(ROLES.COLLEGE_ADMIN),
-            plan: me.plan || 'standard',
-            onboarding_complete: true,
-            plan_selected: true,
-          }));
-        }
-      } catch {
-        /* keep cookie/sessionStorage user */
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [dispatch]);
-
   const meta = resolvePageMeta(PAGE_META, pathname, { title: 'College Admin', subtitle: '' });
 
   return (
-    <div className="app q-app-shell">
+    <div className={`app q-app-shell ${mobileNavShellClass(navOpen)}`}>
       <CollegeAdminSidebar />
+      <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
 
       <PageHeaderProvider>
         <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
-          <PortalTopbar meta={meta} home={{ label: 'Home', href: '/admin/dashboard' }} />
+          <PortalTopbar
+            meta={meta}
+            home={{ label: 'Home', href: '/admin/dashboard' }}
+            leading={<MobileNavButton navOpen={navOpen} onOpen={openNav} />}
+          />
 
           <div className="content">{children}</div>
         </div>

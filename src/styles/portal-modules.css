@@ -184,6 +184,7 @@
 }
 @media (max-width:760px){
   .pm-topbar{flex-direction:column;align-items:stretch;gap:16px}
+  .pm-topbar > .q-nav-btn{align-self:flex-start}
   .pm-topbar-actions{justify-content:flex-start}
   .pm-danger{flex-direction:column;align-items:stretch}
   .pm-hier-note{display:none}

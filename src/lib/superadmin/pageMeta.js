@@ -16,6 +16,10 @@ export const PAGE_META = {
     title: 'Departments',
     subtitle: 'Departments across every college, with their HODs and enrolment.',
   },
+  '/superadmin/academics': {
+    title: 'Academic structure',
+    subtitle: 'Programmes, semesters, subjects and chapters under each department.',
+  },
   '/superadmin/users': {
     title: 'Platform users',
     subtitle: 'Every user across every institution.',

@@ -18,6 +18,9 @@ import {
   countLabel,
 } from '@/components/shared/module-ui';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
+import ScopeNotice from '@/components/faculty/ScopeNotice';
+import ReviewHistoryModal from '@/components/shared/ReviewHistoryModal';
+import { useFacultyScope } from '@/hooks/useFacultyScope';
 import { eduVideoApi, JOB_STATUS, computeJobProgress, summarizeEduVideoError } from '@/lib/api/admin/eduVideo';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
@@ -104,10 +107,17 @@ function RowMeta({ job, when, whenLabel }) {
   );
 }
 
+/** Pill for a chapter the viewer may open but not act on (staff_scope). */
+function ViewOnly() {
+  return <span className="sp-pill sp-pill--off"><Icon name="lock" size={12} /> View only</span>;
+}
+
 export default function FacultyVideosPage() {
+  const { scope } = useFacultyScope();
   const [publishingId, setPublishingId] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
   const [editJob, setEditJob] = useState(null);
+  const [historyJob, setHistoryJob] = useState(null);
   const [search, setSearch] = useState('');
   const [dept, setDept] = useState('');
   const [view, setView] = useState('all');
@@ -123,6 +133,18 @@ export default function FacultyVideosPage() {
     [],
   );
   const jobs = useMemo(() => asList(jobsData, []), [jobsData]);
+
+  // Deep link from the dashboard: /faculty/videos?job=<id> opens its preview.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || !jobs.length || typeof window === 'undefined') return;
+    const id = new URLSearchParams(window.location.search).get('job');
+    if (!id) return;
+    deepLinked.current = true;
+    const hit = jobs.find((j) => j.job_id === id);
+    if (hit) setPreviewJob(hit);
+    else toast.error('That chapter is no longer in your review list.');
+  }, [jobs]);
 
   // Awaiting review: sent by a College Admin, not yet published to students.
   const reviewQueue = useMemo(
@@ -266,6 +288,8 @@ export default function FacultyVideosPage() {
         ) : null}
       />
 
+      <ScopeNotice scope={scope} what="chapter videos" />
+
       <KpiRow
         label="Video review summary"
         items={[
@@ -343,22 +367,29 @@ export default function FacultyVideosPage() {
                   key={job.job_id}
                   title={job.chapter_title || '—'}
                   meta={<RowMeta job={job} when={job.sent_to_hod_at} whenLabel="Sent" />}
-                  status={<span className="sp-pill sp-pill--low"><i className="un-dot" aria-hidden="true" />Awaiting review</span>}
+                  status={job.changes_requested_at ? (
+                    <span className="sp-pill sp-pill--teal" title={undefined}><i className="un-dot" aria-hidden="true" />Changes requested</span>
+                  ) : <span className="sp-pill sp-pill--low"><i className="un-dot" aria-hidden="true" />Awaiting review</span>}
                   actions={(
                     <>
                       <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setPreviewJob(job)}>
                         <Icon name="eye" size={16} /> Preview
                       </button>
-                      <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
-                      <button
-                        type="button"
-                        className="sd-btn sd-btn--teal sd-btn--sm"
-                        onClick={() => publishingId !== job.job_id && publish(job.job_id)}
-                        disabled={publishingId === job.job_id}
-                      >
-                        <Icon name="send" size={16} />
-                        {publishingId === job.job_id ? 'Publishing…' : 'Publish to students'}
-                      </button>
+                      <IconButton icon="clock" label={`Review history of ${job.chapter_title || 'this chapter'}`} onClick={() => setHistoryJob(job)} />
+                      {job.can_review === false ? <ViewOnly /> : (
+                        <>
+                          <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
+                          <button
+                            type="button"
+                            className="sd-btn sd-btn--teal sd-btn--sm"
+                            onClick={() => publishingId !== job.job_id && publish(job.job_id)}
+                            disabled={publishingId === job.job_id}
+                          >
+                            <Icon name="send" size={16} />
+                            {publishingId === job.job_id ? 'Publishing…' : 'Publish to students'}
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 />
@@ -456,7 +487,7 @@ export default function FacultyVideosPage() {
                       <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setPreviewJob(job)}>
                         <Icon name="eye" size={16} /> Preview
                       </button>
-                      <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
+                      <IconButton icon="clock" label={`Review history of ${job.chapter_title || 'this chapter'}`} onClick={() => setHistoryJob(job)} />
                       <a
                         className="un-icon-btn"
                         href={eduVideoApi.getDownloadUrl(job.job_id)}
@@ -488,6 +519,13 @@ export default function FacultyVideosPage() {
         onClose={() => setEditJob(null)}
         onSaved={() => reloadJobs()}
       />
+      {historyJob ? (
+        <ReviewHistoryModal
+          job={historyJob}
+          canComment={historyJob.can_review !== false}
+          onClose={() => setHistoryJob(null)}
+        />
+      ) : null}
       <TipLayer />
     </ModulePage>
   );

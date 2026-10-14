@@ -22,7 +22,7 @@ import DepartmentFormDrawer from '@/components/admin/departments/DepartmentFormD
 import { useDepartmentStatus } from '@/components/admin/departments/useDepartmentStatus';
 import {
   DEPARTMENTS_PATH,
-  LEVELS_LATER,
+  LEVELS_BELOW,
   isActiveDept,
   fullName,
   dateLabel,
@@ -30,6 +30,7 @@ import {
   loadDepartmentPeople,
 } from '@/components/admin/departments/departmentModel';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
+import { academicsApi } from '@/lib/api/superadmin/academics';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
@@ -51,6 +52,10 @@ function DepartmentRecord() {
 
   const { data: dept, loading, error, reload } = useAsyncResource(
     () => fetchData(() => departmentsApi.get(id)),
+    [id],
+  );
+  const { data: below } = useAsyncResource(
+    () => fetchData(() => academicsApi.summary({ department_id: id })),
     [id],
   );
 
@@ -222,16 +227,26 @@ function DepartmentRecord() {
               </dl>
             </Panel>
 
-            <Panel title="Below this department" sub="Programmes, semesters and subjects arrive in a later release. Departments are live today.">
+            <Panel
+              title="Below this department"
+              sub="Programmes, semesters, subjects and chapters in this department."
+              action={(
+                <Link className="sp-link" href={`/admin/structure/programmes?department=${dept.id}`}>
+                  Manage <Icon name="arrow" size={14} />
+                </Link>
+              )}
+            >
               <ol className="ad-levels">
-                {LEVELS_LATER.map((lvl, i) => (
+                {LEVELS_BELOW.map((lvl, i) => (
                   <li key={lvl.title}>
                     <span className="pm-step-n">{i + 1}</span>
                     <div>
                       <b>{lvl.title}</b>
                       <small>{lvl.body}</small>
                     </div>
-                    <span className="sp-pill">Not available yet</span>
+                    <span className={`sp-pill${below && below[lvl.key] ? ' sp-pill--teal' : ''}`}>
+                      {below ? countLabel(below[lvl.key] || 0) : '…'}
+                    </span>
                   </li>
                 ))}
               </ol>

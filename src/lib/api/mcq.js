@@ -42,7 +42,67 @@ export const mcqApi = {
       .post(`/mcq/jobs/${encodeURIComponent(jobId)}/submit`, body)
       .then((res) => res?.data);
   },
+
+  /** POST /mcq/jobs/{job_id}/approve — HOD / Faculty (or admin) releases the set to students. */
+  approve(jobId) {
+    return api
+      .post(`/mcq/jobs/${encodeURIComponent(jobId)}/approve`)
+      .then((res) => res?.data);
+  },
+
+  /**
+   * GET /mcq/jobs/{job_id}/report.pdf — assessment PDF report (SOW §6.4.3).
+   * Students get their own; staff pass the student's userId.
+   */
+  async downloadReport(jobId, userId) {
+    const qs = userId ? `?user_id=${encodeURIComponent(userId)}` : '';
+    const res = await api.get(`/mcq/jobs/${encodeURIComponent(jobId)}/report.pdf${qs}`, { responseType: 'blob' });
+    const disposition = res.headers?.['content-disposition'] || '';
+    const name = disposition.match(/filename="?([^"]+)"?/i)?.[1] || 'quirri-assessment-report.pdf';
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
 };
+
+/**
+ * Staff-side "Generate MCQs" errors (FRONTEND_CHANGES.md §7):
+ * 404 not available · 409 already generating · 400 unreadable document (show detail).
+ */
+export function mcqGenerateErrorMessage(err) {
+  const status = err?.response?.status;
+  const detail = String(err?.response?.data?.detail || '').trim();
+  if (status === 404) return 'Not available — this chapter could not be found.';
+  if (status === 409) return 'MCQs are already being generated for this chapter. Please wait…';
+  if (status === 400 && detail && !/\/mcq\/jobs|POST\s*\//i.test(detail)) return detail;
+  if (status === 429) return 'Please wait a moment and try again.';
+  return mcqErrorMessage(err, 'Could not generate MCQs for this chapter.');
+}
+
+/**
+ * After a 409 ("already generating"), wait for the running generation to
+ * finish. Resolves with the document once it is ready/failed, or null on timeout.
+ */
+export async function waitForMcqGeneration(jobId, { intervalMs = 5000, timeoutMs = 180000 } = {}) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((r) => setTimeout(r, intervalMs));
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const doc = await mcqApi.get(jobId);
+      if (doc && doc.status && doc.status !== 'generating' && doc.status !== 'pending') return doc;
+    } catch (err) {
+      if (err?.response?.status !== 404) return null; // 404 = document row not created yet
+    }
+  }
+  return null;
+}
 
 export function mcqErrorMessage(err, fallback = 'Something went wrong with this quiz.') {
   const status = err?.response?.status;

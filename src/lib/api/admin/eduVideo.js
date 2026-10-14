@@ -35,7 +35,27 @@ export const JOB_STATUS = Object.freeze({
 });
 
 /** Mirrors app/edu_video/routes.py SUPPORTED_EXTENSIONS */
-export const SUPPORTED_EXTENSIONS = Object.freeze(['.pdf', '.docx', '.doc', '.txt']);
+export const SUPPORTED_EXTENSIONS = Object.freeze(['.pdf', '.docx', '.doc', '.pptx', '.txt']);
+
+/**
+ * Multi-document upload limits — mirror app/edu_video/routes.py
+ * (MAX_UPLOAD_FILES / MAX_UPLOAD_BYTES / MAX_COMBINED_BYTES). Validated
+ * client-side so users never wait for an upload that will be refused.
+ */
+export const UPLOAD_LIMITS = Object.freeze({
+  maxFiles: 10,
+  maxFileBytes: 50 * 1024 * 1024,
+  maxTotalBytes: 50 * 1024 * 1024,
+});
+
+/** `document_roles` values accepted by POST /edu_video/upload. */
+export const DOCUMENT_ROLE = Object.freeze({
+  CONTENT: 'content',
+  QUESTION_BANK: 'question_bank',
+});
+
+/** Large uploads + the server-side merge can take longer than the default timeout. */
+const UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 
 /**
  * The backend only tracks progress per rendered scene (job_tracker.py's
@@ -93,7 +113,9 @@ export function summarizeEduVideoError(error) {
   return { summary: `${raw.slice(0, 137).trim()}…`, detail: raw };
 }
 
-const LOCAL_API_ORIGIN = 'http://localhost:8000';
+/** Dev FastAPI default — prefer same-origin Next rewrite when API_PROXY_TARGET is set. */
+const LOCAL_API_ORIGIN = process.env.NEXT_PUBLIC_EDU_VIDEO_ORIGIN
+  || 'http://localhost:8001';
 
 function isBrowserFrontendOrigin(origin) {
   if (!origin || typeof window === 'undefined') return false;
@@ -172,6 +194,39 @@ eduVideoClient.interceptors.request.use((config) => {
   return config;
 });
 
+/** Same cookie refresh as src/lib/axios.js — edu_video is outside /api/v1. */
+let eduRefreshing = false;
+let eduQueue = [];
+eduVideoClient.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    const orig = err.config;
+    if (err.response?.status !== 401 || !orig || orig._retry) {
+      return Promise.reject(err);
+    }
+    orig._retry = true;
+    if (eduRefreshing) {
+      return new Promise((resolve) => eduQueue.push(() => resolve(eduVideoClient(orig))));
+    }
+    eduRefreshing = true;
+    try {
+      const { default: api } = await import('@/lib/axios');
+      await api.post('/auth/refresh-token');
+    } catch {
+      eduRefreshing = false;
+      eduQueue = [];
+      // Session really expired - go to login rather than show empty lists.
+      const { handleSessionExpired } = await import('@/lib/sessionExpiry');
+      handleSessionExpired();
+      return Promise.reject(err);
+    }
+    eduRefreshing = false;
+    eduQueue.forEach((cb) => cb());
+    eduQueue = [];
+    return eduVideoClient(orig);
+  },
+);
+
 function unwrapJobPayload(res) {
   const data = res?.data;
   if (data && typeof data === 'object' && data.job_id) return data;
@@ -197,19 +252,40 @@ export const eduVideoApi = {
    * department_id must be a real Department belonging to the caller's own
    * college, or the server 404s ("Department not found").
    */
-  upload({ file, language = 'english', departmentId, chapterTitle, tenantId }) {
+  /**
+   * Multi-document upload (FRONTEND_CHANGES.md §2 / BACKEND_CHANGES.md §3):
+   * pass `documents: [{ file, role }]` in the order they should be merged —
+   * each is sent as a repeated `files` field and `document_roles` lists one
+   * role per file in the same order. The legacy single `file` still works.
+   * The backend merges 2+ lesson files into one document and creates ONE job.
+   */
+  upload({
+    file, documents, language = 'english', departmentId, chapterTitle, chapterId, tenantId, onUploadProgress,
+  }) {
     const form = new FormData();
-    form.append('file', file);
+    if (Array.isArray(documents) && documents.length) {
+      documents.forEach((d) => form.append('files', d.file, d.file.name));
+      const roles = documents.map((d) => d.role || DOCUMENT_ROLE.CONTENT);
+      if (roles.some((r) => r !== DOCUMENT_ROLE.CONTENT)) {
+        form.append('document_roles', JSON.stringify(roles));
+      }
+    } else if (file) {
+      form.append('file', file);
+    }
     form.append('language', language);
     if (departmentId) form.append('department_id', departmentId);
     if (chapterTitle) form.append('chapter_title', chapterTitle);
+    // Academic structure chapter (optional) - backend checks it matches the department.
+    if (chapterId) form.append('chapter_id', chapterId);
     // Super Admin only — pins the job to a college (ignored for CA/Faculty).
     if (tenantId) form.append('tenant_id', tenantId);
     const origin = getEduVideoOrigin();
     const url = origin ? `${origin}/edu_video/upload` : '/edu_video/upload';
     // Absolute URL when possible so a bad baseURL cannot hit Next middleware.
     // Let the browser set multipart boundary — do not force Content-Type.
-    return eduVideoClient.post(url, form).then(unwrapJobPayload);
+    return eduVideoClient
+      .post(url, form, { timeout: UPLOAD_TIMEOUT_MS, onUploadProgress })
+      .then(unwrapJobPayload);
   },
 
   /** GET /edu_video/status/{job_id} */
@@ -279,6 +355,14 @@ export const eduVideoApi = {
    * HOD/Faculty for approval. 400s if the video hasn't finished rendering
    * yet, or if it was already sent once.
    */
+  /** PATCH /edu_video/jobs/{job_id}/chapter — link (or unlink with null) content to an academic chapter. */
+  setChapter(jobId, chapterId) {
+    const origin = getEduVideoOrigin();
+    const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/chapter`;
+    const url = origin ? `${origin}${path}` : path;
+    return eduVideoClient.patch(url, { chapter_id: chapterId || null }).then((res) => res?.data);
+  },
+
   sendToHod(jobId) {
     const origin = getEduVideoOrigin();
     const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/send-to-hod`;
@@ -317,6 +401,27 @@ export const eduVideoApi = {
     const path = `/edu_video/student/videos?${params.toString()}`;
     const url = origin ? `${origin}${path}` : path;
     return eduVideoClient.get(url).then((res) => res?.data);
+  },
+
+  /** GET /edu_video/student/watch-progress/{job_id} */
+  getWatchProgress(jobId) {
+    const origin = getEduVideoOrigin();
+    const path = `/edu_video/student/watch-progress/${encodeURIComponent(jobId)}`;
+    const url = origin ? `${origin}${path}` : path;
+    return eduVideoClient.get(url).then((res) => res?.data);
+  },
+
+  /**
+   * PUT /edu_video/student/watch-progress/{job_id}
+   * Heartbeat — server keeps the max percent only (never decreases).
+   */
+  putWatchProgress(jobId, { percent = 0, max_position_seconds = 0 } = {}) {
+    const origin = getEduVideoOrigin();
+    const path = `/edu_video/student/watch-progress/${encodeURIComponent(jobId)}`;
+    const url = origin ? `${origin}${path}` : path;
+    return eduVideoClient
+      .put(url, { percent, max_position_seconds })
+      .then((res) => res?.data);
   },
 
   /**
@@ -422,6 +527,20 @@ export const eduVideoApi = {
         }
         return data;
       });
+  },
+
+  /** GET /edu_video/jobs/{job_id}/history — review trail, newest first. */
+  history(jobId) {
+    const origin = getEduVideoOrigin();
+    const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/history`;
+    return eduVideoClient.get(origin ? `${origin}${path}` : path).then((res) => res?.data);
+  },
+
+  /** POST /edu_video/jobs/{job_id}/comments — a note on the review thread. */
+  addComment(jobId, note) {
+    const origin = getEduVideoOrigin();
+    const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/comments`;
+    return eduVideoClient.post(origin ? `${origin}${path}` : path, { note }).then((res) => res?.data);
   },
 
   /** POST /edu_video/jobs/{job_id}/dismiss-changes — CA clears HOD queue without regenerate. */

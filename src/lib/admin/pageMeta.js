@@ -14,6 +14,19 @@ export const PAGE_META = {
     // Breadcrumb trail above the title (Home is added by the layout). No href = not a page yet.
     crumbs: [{ label: 'Academic structure' }],
   },
+  '/admin/structure/programmes': {
+    title: 'Programmes & subjects',
+    subtitle: 'Programmes, semesters, subjects and chapters under each department.',
+    crumbs: [{ label: 'Academic structure' }],
+  },
+  '/admin/mcq': {
+    title: 'MCQ review',
+    subtitle: 'Check generated questions and approve them before students take the assessment.',
+  },
+  '/admin/notifications': {
+    title: 'Notifications',
+    subtitle: 'Activation invites and alerts sent to people in your college.',
+  },
   '/admin/content': {
     title: 'Upload & content',
     subtitle: 'Upload chapter material to generate a video lecture and follow status here.',

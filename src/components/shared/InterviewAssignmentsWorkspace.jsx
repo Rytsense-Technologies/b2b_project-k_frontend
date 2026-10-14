@@ -43,6 +43,9 @@ export default function InterviewAssignmentsWorkspace({
   scope = 'college',
   title = 'Interview assignments',
   description = 'Assign AI mock interviews to final-year cohorts and track completion.',
+  extra = null,
+  readOnly = false,
+  notice = null,
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [acting, setActing] = useState(false);
@@ -159,12 +162,14 @@ export default function InterviewAssignmentsWorkspace({
         eyebrow="Interviews"
         title={title}
         lede={description}
-        actions={(
+        actions={readOnly ? null : (
           <button type="button" className="sd-btn sd-btn--amber" onClick={openCreate}>
             <Icon name="plus" size={16} /> New assignment
           </button>
         )}
       />
+
+      {notice}
 
       <KpiRow
         label="Interview summary"
@@ -210,13 +215,15 @@ export default function InterviewAssignmentsWorkspace({
         ) : items.length === 0 ? (
           <SectionState
             title="No assignments yet"
-            action={(
+            action={readOnly ? null : (
               <button type="button" className="sd-btn sd-btn--amber" onClick={openCreate}>
                 <Icon name="plus" size={16} /> New assignment
               </button>
             )}
           >
-            Create an assignment for a final-year cohort to get started.
+            {readOnly
+              ? 'Your HOD assigns mock interviews to cohorts; they will show here.'
+              : 'Create an assignment for a final-year cohort to get started.'}
           </SectionState>
         ) : (
           <div className="sp-table-wrap">
@@ -244,13 +251,15 @@ export default function InterviewAssignmentsWorkspace({
                         : '0 eligible'}
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="sd-btn sd-btn--ghost"
-                        onClick={() => onClose(row.id)}
-                      >
-                        Close
-                      </button>
+                      {readOnly ? null : (
+                        <button
+                          type="button"
+                          className="sd-btn sd-btn--ghost"
+                          onClick={() => onClose(row.id)}
+                        >
+                          Close
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -259,6 +268,8 @@ export default function InterviewAssignmentsWorkspace({
           </div>
         )}
       </Panel>
+
+      {extra}
 
       <QuirriModal
         open={modalOpen}

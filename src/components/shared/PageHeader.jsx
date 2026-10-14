@@ -72,7 +72,7 @@ export function Breadcrumbs({ items }) {
  * Top bar for a portal layout.
  * @param {{ meta: {title, subtitle, crumbs?}, home?: {label, href} }} props
  */
-export function PortalTopbar({ meta, home }) {
+export function PortalTopbar({ meta, home, leading = null }) {
   const { header } = useContext(PageHeaderContext);
   const title = header?.title ?? meta?.title;
   const subtitle = header?.subtitle ?? meta?.subtitle;
@@ -84,6 +84,7 @@ export function PortalTopbar({ meta, home }) {
 
   return (
     <header className={`topbar pm-topbar${crumbs ? ' has-crumbs' : ''}`}>
+      {leading}
       <div className="pm-topbar-main">
         {crumbs ? <Breadcrumbs items={crumbs} /> : null}
         <h1>{title}</h1>

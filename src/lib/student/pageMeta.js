@@ -1,28 +1,28 @@
 /** Student page titles — aligned with new_updated_design_four/Student.dc.html */
 export const PAGE_META = {
   '/student/home': {
-    title: 'Home',
+    title: 'Dashboard',
     subtitle: 'Pick up where you left off — lectures, tutor, quizzes and interviews.',
   },
   '/student/subjects': {
     title: 'My subjects',
-    subtitle: 'Your college material turned into video lectures, quizzes and an AI tutor.',
+    subtitle: 'Video lectures, assessments and your AI tutor.',
   },
   '/student/leaderboard': {
     title: 'Leaderboard',
     subtitle: 'How you rank against classmates in your cohort.',
   },
   '/student/interviews': {
-    title: 'Interviews',
-    subtitle: 'Practice with an AI interviewer using your semester allocation.',
+    title: 'Start Interview',
+    subtitle: 'Set your role, mode, and difficulty—then start your AI mock interview.',
   },
-  '/student/interviews/reports': {
-    title: 'Interviews',
-    subtitle: 'Every scored interview, your trend and per-question feedback.',
+  '/student/reports': {
+    title: 'My reports',
+    subtitle: 'Review your interview reports and see how you have grown.',
   },
-  '/student/interviews/report': {
+  '/student/reports/view': {
     title: 'Interview report',
-    subtitle: 'Your overall score, feedback on each answer and what to practise next.',
+    subtitle: 'Your score, feedback on each answer and what to practise next.',
   },
   '/student/interviews/live': {
     title: 'Live interview',
@@ -35,6 +35,10 @@ export const PAGE_META = {
 
   '/student/progress': {
     title: 'My progress',
-    subtitle: 'Chapter completion, assessments and interview readiness.',
+    subtitle: 'Understand your learning, not just your completion.',
+  },
+  '/student/settings': {
+    title: 'Settings',
+    subtitle: 'Your profile and account security.',
   },
 };

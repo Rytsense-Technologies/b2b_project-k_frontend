@@ -16,15 +16,18 @@ export const STATUS_FILTERS = [
 export const HIERARCHY = [
   { label: 'College', state: 'done' },
   { label: 'Department', state: 'current' },
-  { label: 'Programme', state: 'later' },
-  { label: 'Semester', state: 'later' },
-  { label: 'Subject', state: 'later' },
+  { label: 'Programme', state: 'done' },
+  { label: 'Semester', state: 'done' },
+  { label: 'Subject', state: 'done' },
+  { label: 'Chapter', state: 'done' },
 ];
 
-export const LEVELS_LATER = [
-  { title: 'Programmes', body: 'Degree programmes inside the department, such as B.E. Computer Science.' },
-  { title: 'Years and semesters', body: 'The year and semester calendar each programme follows.' },
-  { title: 'Subjects and chapters', body: 'Subjects per semester, with the chapter videos you upload.' },
+/** Levels below a department, with the academics summary key that counts them. */
+export const LEVELS_BELOW = [
+  { title: 'Programmes', key: 'programs', body: 'Degree programmes inside the department, such as B.E. Computer Science.' },
+  { title: 'Semesters', key: 'semesters', body: 'Generated from each programme\'s duration; rename or add as needed.' },
+  { title: 'Subjects', key: 'subjects', body: 'Taught in one semester; faculty are assigned to them from Staff.' },
+  { title: 'Chapters', key: 'chapters', body: 'Ordered units of a subject; uploaded chapter videos are linked to them.' },
 ];
 
 export const isActiveDept = (d) => d?.is_active !== false;

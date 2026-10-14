@@ -5,6 +5,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
+import StaffSubjectsModal from '@/components/admin/StaffSubjectsModal';
+import { academicsApi } from '@/lib/api/superadmin/academics';
 import { QuirriRHFField, QuirriSelect, QuirriCombobox } from '@/components/superadmin/quirri-ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import {
@@ -33,6 +35,7 @@ import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
+import { isDeactivated, isPending, statusVariant, userStatusLabel } from '@/lib/admin/userStatus';
 import { tenantFacultyCreateSchema } from '@/lib/validation';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
@@ -49,33 +52,6 @@ const STATUS_FILTERS = [
   { value: 'pending', label: 'Pending activation' },
   { value: 'inactive', label: 'Deactivated' },
 ];
-
-function statusVariant(user) {
-  if (user?.is_active === false) return 'red';
-  if (user?.is_verified === false) return 'amber';
-  const value = String(user?.status || '').toLowerCase();
-  if (value === 'active') return 'green';
-  if (value.includes('pending')) return 'amber';
-  if (user?.is_active !== false && user?.is_verified !== false) return 'green';
-  return 'red';
-}
-
-function userStatusLabel(user) {
-  if (user?.is_active === false) return 'Deactivated';
-  if (user?.is_verified === false) return 'Pending activation';
-  const s = String(user?.status || 'Active').replace(/_/g, ' ');
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function isPending(user) {
-  return user?.is_verified === false || String(user?.status || '').toLowerCase().includes('pending');
-}
-
-function isDeactivated(user) {
-  if (user?.is_active === false) return true;
-  const v = String(user?.status || '').toLowerCase();
-  return v.includes('deactiv') || v === 'inactive';
-}
 
 function roleLabel(user) {
   const role = String(user?.role || '').toLowerCase();
@@ -241,7 +217,7 @@ function CreateFacultyModal({ open, tenantId, departmentOptions, onClose, onSave
             />
           </div>
         </FormSection>
-        <FormSection n={3} title="Teaching scope" sub="Optional. Subject-level assignment comes later.">
+        <FormSection n={3} title="Teaching scope" sub="Optional. Assign the exact subjects they teach from the Staff list after creating the account.">
           <div className="grid2">
             <QuirriRHFField
               control={control}
@@ -282,6 +258,12 @@ export default function StaffPage() {
   const [acting, setActing] = useState(false);
   const [drawerUser, setDrawerUser] = useState(null);
   const [confirmUser, setConfirmUser] = useState(null);
+  const [subjectsUser, setSubjectsUser] = useState(null);
+  const { data: subjectMapData, reload: reloadSubjectMap } = useAsyncResource(
+    () => fetchData(() => academicsApi.staffSubjectMap()),
+    [tenantId],
+  );
+  const subjectMap = subjectMapData?.items || {};
 
   const { data: deptData } = useAsyncResource(
     () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
@@ -390,6 +372,11 @@ export default function StaffPage() {
       <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setDrawerUser(user)}>
         View
       </button>
+      {!isDeactivated(user) ? (
+        <span onMouseEnter={(e) => show(e, 'Assign subjects', 'top')} onMouseLeave={hide}>
+          <IconButton icon="book" label={`Assign subjects to ${fullName(user)}`} onClick={() => setSubjectsUser(user)} />
+        </span>
+      ) : null}
       {isPending(user) ? (
         <span
           onMouseEnter={(e) => show(e, 'Resend activation email', 'top')}
@@ -518,6 +505,7 @@ export default function StaffPage() {
                   <th>Staff</th>
                   <th>Role</th>
                   <th>Department</th>
+                  <th>Subjects</th>
                   <th>Status</th>
                   <th>Last active</th>
                   <th aria-label="Actions" />
@@ -539,6 +527,14 @@ export default function StaffPage() {
                       </td>
                       <td data-label="Role"><RolePill user={user} /></td>
                       <td data-label="Department">{user.department_name || user.department || '—'}</td>
+                      <td data-label="Subjects">
+                        {subjectMap[user.id]?.length ? (
+                          <span className="ad-cell-2">
+                            <span>{subjectMap[user.id].slice(0, 2).join(', ')}</span>
+                            {subjectMap[user.id].length > 2 ? <small>+{subjectMap[user.id].length - 2} more</small> : null}
+                          </span>
+                        ) : <span className="ad-muted">None yet</span>}
+                      </td>
                       <td data-label="Status">
                         <StatusPill active on={userStatusLabel(user)} tone={TONE[statusVariant(user)]} />
                       </td>
@@ -611,6 +607,22 @@ export default function StaffPage() {
                 ]}
               />
             </DrawerSection>
+            <DrawerSection
+              title="Subjects taught"
+              action={!isDeactivated(drawerUser) ? (
+                <button type="button" className="sd-btn sd-btn--outline sd-btn--sm" onClick={() => setSubjectsUser(drawerUser)}>
+                  <Icon name="book" size={16} /> Assign subjects
+                </button>
+              ) : null}
+            >
+              {subjectMap[drawerUser.id]?.length ? (
+                <ul className="ad-chip-list">
+                  {subjectMap[drawerUser.id].map((name) => <li key={name} className="sp-pill">{name}</li>)}
+                </ul>
+              ) : (
+                <p className="ad-muted">No subjects assigned yet.</p>
+              )}
+            </DrawerSection>
           </>
         ) : null}
       </DetailDrawer>
@@ -649,6 +661,15 @@ export default function StaffPage() {
           </ConfirmNote>
         ) : null}
       </QuirriModal>
+
+      {subjectsUser ? (
+        <StaffSubjectsModal
+          key={subjectsUser.id}
+          staff={{ ...subjectsUser, name: fullName(subjectsUser) }}
+          onClose={() => setSubjectsUser(null)}
+          onSaved={async () => { setSubjectsUser(null); await reloadSubjectMap(); }}
+        />
+      ) : null}
 
       {createOpen ? (
         <CreateFacultyModal

@@ -188,3 +188,49 @@
 @media (prefers-reduced-motion:reduce){
   .fa-progress-bar i{transition:none}
 }
+
+/* ---- HOD / Faculty completion (Oct 2026): subjects, student drawer, view-only ---- */
+.fa-subjects{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.fa-subjects > li{padding:0;overflow:hidden}
+.fa-subject-h{display:flex;align-items:center;gap:12px;width:100%;padding:16px 20px;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.fa-subject-h:hover{background:var(--neutral-50)}
+.fa-subject-h:focus-visible{outline:2px solid var(--teal-500);outline-offset:-2px}
+.fa-subject-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.fa-subject-main b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-subject-main b small{font-weight:400;color:var(--muted-2)}
+.fa-subject-main > small{font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
+.fa-subject-counts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.fa-chapter-list{list-style:none;margin:0;padding:0 20px 12px;display:flex;flex-direction:column;border-top:1px solid var(--line-soft)}
+.fa-chapter-list li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.fa-chapter-list li:last-child{border-bottom:0}
+.fa-chapter-list b{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:400;color:var(--ink);overflow-wrap:anywhere}
+.fa-chapter-empty{margin:0;padding:12px 20px 16px;border-top:1px solid var(--line-soft)}
+.fa-mini-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fa-mini-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.fa-mini-list li:last-child{border-bottom:0}
+.fa-mini-list b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.fa-mini-list small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+.fa-viewonly{display:flex;align-items:center;gap:6px;margin:0 0 12px}
+@media (max-width:760px){
+  .fa-subject-h{flex-wrap:wrap}
+  .fa-subject-counts{justify-content:flex-start;width:100%;padding-left:28px}
+}
+
+/* ---- Review loop (Oct 2026): history timeline, review note, change request ---- */
+.rv-history{display:flex;flex-direction:column;gap:16px}
+.rv-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:420px;overflow:auto}
+.rv-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.rv-item:last-child{border-bottom:0}
+.rv-ic{flex:none;width:32px;height:32px;border-radius:999px;display:grid;place-items:center;background:var(--teal-50);color:var(--teal-500)}
+.rv-item.is-published .rv-ic{background:var(--success-soft);color:var(--color-success)}
+.rv-item.is-changes_requested .rv-ic,.rv-item.is-comment .rv-ic{background:var(--warning-soft);color:var(--accent-text)}
+.rv-item b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+.rv-item small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+.rv-item p{margin:6px 0 0;padding:8px 12px;border-radius:var(--radius-control);background:var(--neutral-50);font-size:14px;line-height:22px;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.fa-review-note{display:flex;flex-direction:column;gap:6px;margin:0 0 16px}
+.fa-review-note span{font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-review-note small{font-weight:400;color:var(--muted-2)}
+.fa-review-note textarea{width:100%;min-height:64px;padding:10px 12px;border:1px solid var(--neutral-300);border-radius:var(--radius-control);font:inherit;font-size:14px;line-height:22px;resize:vertical;background:var(--neutral-0)}
+.fa-review-note textarea:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
+.fa-note--request{margin-bottom:16px;background:var(--warning-soft)}
+.fa-mini-actions{display:inline-flex;align-items:center;gap:8px;flex:none}

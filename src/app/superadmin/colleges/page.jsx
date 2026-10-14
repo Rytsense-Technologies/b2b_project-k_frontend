@@ -17,9 +17,6 @@ import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { collegeCreateSchema, collegeUpdateSchema } from '@/lib/validation';
 import { INDIA_COUNTRY, withIndiaPhoneDefault } from '@/lib/india';
-import '@/styles/student-portal.css';
-import '@/styles/superadmin-universities.css';
-import '@/styles/superadmin-colleges.css';
 
 const EMPTY_FORM = {
   name: '',
@@ -73,7 +70,7 @@ function adminStatus(status) {
   const st = String(status || '').toLowerCase();
   if (st === 'active') return { cls: 'sp-pill--good', label: 'Active' };
   if (st.includes('pending')) return { cls: 'sp-pill--low', label: 'Pending activation' };
-  if (st.includes('deactiv') || st === 'inactive') return { cls: 'sp-pill--err', label: 'Deactivated' };
+  if (st.includes('deactiv') || st === 'inactive') return { cls: 'sp-pill--off', label: 'Deactivated' };
   return { cls: '', label: status || '—' };
 }
 
@@ -382,7 +379,8 @@ function CollegeDrawer({
 }) {
   useEffect(() => {
     if (!college) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    // A modal (edit form) or open dropdown on top owns Escape; the drawer closes only when it is topmost.
+    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented && !document.querySelector('.overlay .modal')) onClose(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [college, onClose]);
@@ -409,7 +407,7 @@ function CollegeDrawer({
           <h2>{college.name}</h2>
           <div className="sp-banner-meta">
             {college.code ? <span className="sp-pill sp-pill--glass">{college.code}</span> : null}
-            <span className={`sp-pill ${s.active ? 'sp-pill--good' : 'sp-pill--err'}`}>
+            <span className={`sp-pill ${s.active ? 'sp-pill--good' : 'sp-pill--off'}`}>
               {s.active ? 'Active' : 'Inactive'}
             </span>
             {s.location ? <span className="sp-pill sp-pill--glass"><Icon name="pin" size={13} /> {s.location}</span> : null}
@@ -492,7 +490,7 @@ function CollegeDrawer({
                       {num(row.student_count ?? 0)}
                       <small>students</small>
                     </span>
-                    <span className={`sp-pill ${row.is_active !== false ? 'sp-pill--good' : 'sp-pill--err'}`}>
+                    <span className={`sp-pill ${row.is_active !== false ? 'sp-pill--good' : 'sp-pill--off'}`}>
                       {row.is_active !== false ? 'Active' : 'Inactive'}
                     </span>
                   </li>
@@ -812,7 +810,7 @@ export default function CollegesPage() {
                 <button type="button" className="un-card-main" onClick={() => openView(college)}>
                   <div className="un-card-top">
                     <span className="un-mono">{initials(college.name)}</span>
-                    <span className={`sp-pill ${s.active ? 'sp-pill--good' : 'sp-pill--err'}`}>
+                    <span className={`sp-pill ${s.active ? 'sp-pill--good' : 'sp-pill--off'}`}>
                       <i className="un-dot" aria-hidden="true" />
                       {s.active ? 'Active' : 'Inactive'}
                     </span>
@@ -875,7 +873,7 @@ export default function CollegesPage() {
                       <td className="num"><b>{num(s.depts)}</b></td>
                       <td className="co-seat-cell"><SeatBar students={s.students} cap={s.cap} pct={s.pct} compact /></td>
                       <td>
-                        <span className={`sp-pill ${s.active ? 'sp-pill--good' : 'sp-pill--err'}`}>
+                        <span className={`sp-pill ${s.active ? 'sp-pill--good' : 'sp-pill--off'}`}>
                           <i className="un-dot" aria-hidden="true" />
                           {s.active ? 'Active' : 'Inactive'}
                         </span>

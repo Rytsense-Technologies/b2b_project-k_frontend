@@ -1,10 +1,13 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
+import StudentPlacementFields from '@/components/shared/StudentPlacementFields';
+import StudentPlacementModal from '@/components/shared/StudentPlacementModal';
+import StudentBulkImport from '@/components/admin/StudentBulkImport';
 import { QuirriRHFField, QuirriCombobox } from '@/components/superadmin/quirri-ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import {
@@ -24,6 +27,7 @@ import {
   FormSection,
   ConfirmNote,
   SectionState,
+  Pager,
   initials,
   countLabel,
 } from '@/components/shared/module-ui';
@@ -33,7 +37,8 @@ import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
-import { tenantStudentCreateSchema } from '@/lib/validation';
+import { isDeactivated, isPending, statusVariant, userStatusLabel } from '@/lib/admin/userStatus';
+import { studentDepartmentChangeSchema, tenantStudentCreateSchema } from '@/lib/validation';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
 const TONE = { red: 'err', amber: 'low', green: 'good' };
@@ -44,33 +49,6 @@ const STATUS_FILTERS = [
   { value: 'pending', label: 'Pending activation' },
   { value: 'inactive', label: 'Deactivated' },
 ];
-
-function statusVariant(user) {
-  if (user?.is_active === false) return 'red';
-  if (user?.is_verified === false) return 'amber';
-  const value = String(user?.status || '').toLowerCase();
-  if (value === 'active') return 'green';
-  if (value.includes('pending')) return 'amber';
-  if (user?.is_active !== false && user?.is_verified !== false) return 'green';
-  return 'red';
-}
-
-function userStatusLabel(user) {
-  if (user?.is_active === false) return 'Deactivated';
-  if (user?.is_verified === false) return 'Pending activation';
-  const s = String(user?.status || 'Active').replace(/_/g, ' ');
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function isPending(user) {
-  return user?.is_verified === false || String(user?.status || '').toLowerCase().includes('pending');
-}
-
-function isDeactivated(user) {
-  if (user?.is_active === false) return true;
-  const v = String(user?.status || '').toLowerCase();
-  return v.includes('deactiv') || v === 'inactive';
-}
 
 function fullName(user) {
   return user?.name || [user?.first_name, user?.last_name].filter(Boolean).join(' ') || '—';
@@ -92,6 +70,7 @@ function CreateStudentModal({ open, tenantId, departmentOptions, onClose, onSave
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(tenantStudentCreateSchema),
@@ -103,10 +82,17 @@ function CreateStudentModal({ open, tenantId, departmentOptions, onClose, onSave
       department_id: '',
       course_duration_years: '',
       year_of_study: '',
+      program_id: '',
+      semester_id: '',
     },
     mode: 'onBlur',
   });
   const [acting, setActing] = useState(false);
+  const [departmentId, programId, semesterId] = useWatch({ control, name: ['department_id', 'program_id', 'semester_id'] });
+  const changePlacement = useCallback(({ program_id: p, semester_id: s }) => {
+    setValue('program_id', p || '', { shouldValidate: Boolean(p && s) });
+    setValue('semester_id', s || '', { shouldValidate: Boolean(p && s) });
+  }, [setValue]);
 
   const onCreate = handleSubmit(async (values) => {
     if (!tenantId) {
@@ -119,8 +105,11 @@ function CreateStudentModal({ open, tenantId, departmentOptions, onClose, onSave
         ...values,
         department_id: values.department_id || undefined,
         phone_number: values.phone_number || undefined,
-        course_duration_years: values.course_duration_years ?? undefined,
-        year_of_study: values.year_of_study ?? undefined,
+        // With a semester picked, the server works out the year and duration.
+        course_duration_years: values.semester_id ? undefined : (values.course_duration_years ?? undefined),
+        year_of_study: values.semester_id ? undefined : (values.year_of_study ?? undefined),
+        program_id: values.program_id || undefined,
+        semester_id: values.semester_id || undefined,
         role: ROLES.STUDENT,
         tenant_id: tenantId,
       });
@@ -197,29 +186,130 @@ function CreateStudentModal({ open, tenantId, departmentOptions, onClose, onSave
               />
             )}
           />
-          <div className="grid2">
-            <QuirriRHFField
-              control={control}
-              name="course_duration_years"
-              fieldType="positiveInt"
-              label="Programme duration (years)"
-              placeholder="e.g. 4"
-              hint="Optional — e.g. 3 for Arts, 4 for B.Tech."
-            />
-            <QuirriRHFField
-              control={control}
-              name="year_of_study"
-              fieldType="positiveInt"
-              label="Current year of study"
-              placeholder="e.g. 2"
-              hint="Cannot be more than the programme duration."
-            />
-          </div>
+          <StudentPlacementFields
+            idPrefix="create-student"
+            departmentId={departmentId}
+            programId={programId}
+            semesterId={semesterId}
+            onChange={changePlacement}
+          />
+          {errors.semester_id ? <div className="hint field-error" role="alert">{errors.semester_id.message}</div> : null}
+          {!semesterId ? (
+            <div className="grid2">
+              <QuirriRHFField
+                control={control}
+                name="course_duration_years"
+                fieldType="positiveInt"
+                label="Programme duration (years)"
+                placeholder="e.g. 4"
+                hint="Only if no programme is picked — e.g. 3 for Arts, 4 for B.Tech."
+              />
+              <QuirriRHFField
+                control={control}
+                name="year_of_study"
+                fieldType="positiveInt"
+                label="Current year of study"
+                placeholder="e.g. 2"
+                hint="Cannot be more than the programme duration."
+              />
+            </div>
+          ) : null}
         </FormSection>
         {Object.keys(errors).length > 0 ? (
           <div className="hint field-error" role="alert">
             Check the highlighted fields and try again.
           </div>
+        ) : null}
+      </form>
+    </QuirriModal>
+  );
+}
+
+function ChangeDepartmentModal({ open, user, departmentOptions, onClose, onSaved }) {
+  const currentId = user?.department_id ? String(user.department_id) : '';
+  const currentName = user?.department_name || user?.department || '';
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(studentDepartmentChangeSchema),
+    defaultValues: { department_id: currentId },
+    mode: 'onBlur',
+  });
+  const [acting, setActing] = useState(false);
+  const selected = watch('department_id');
+  const unchanged = Boolean(currentId) && selected === currentId;
+  const otherDepartments = departmentOptions.some((option) => option.value !== currentId);
+
+  const onSave = handleSubmit(async (values) => {
+    if (!user?.id || values.department_id === currentId) return;
+    setActing(true);
+    try {
+      const res = await usersApi.updateUser(user.id, { department_id: values.department_id });
+      toast.success(currentId ? 'Department changed. Previous department records were removed.' : 'Department assigned.');
+      onSaved(unwrap(res));
+      onClose();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Could not change department'));
+    } finally {
+      setActing(false);
+    }
+  });
+
+  return (
+    <QuirriModal
+      open={open}
+      onClose={onClose}
+      title={currentId ? 'Change department?' : 'Assign department'}
+      crumb={user ? `${fullName(user)} · ${user.email || ''}` : null}
+      footer={(
+        <>
+          <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={acting}>Cancel</button>
+          <div className="right">
+            <button
+              type="button"
+              className="sd-btn sd-btn--amber"
+              onClick={onSave}
+              disabled={acting || unchanged || (!otherDepartments && Boolean(currentId))}
+            >
+              {acting ? 'Saving…' : currentId ? 'Change department' : 'Assign department'}
+            </button>
+          </div>
+        </>
+      )}
+    >
+      <form onSubmit={onSave} noValidate className="un-form">
+        {currentId ? (
+          <ConfirmNote danger title="They start again in the new department.">
+            {`Lecture progress, chapter assessments, and tutor chats from ${currentName || 'the previous department'} are removed. Interview history stays.`}
+          </ConfirmNote>
+        ) : null}
+        <Controller
+          control={control}
+          name="department_id"
+          render={({ field, fieldState }) => (
+            <QuirriCombobox
+              id="change-student-department"
+              label="Department"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              name={field.name}
+              error={fieldState.error?.message}
+              placeholder="Type to search"
+              options={departmentOptions}
+              emptyMessage="No active departments yet"
+              hint={otherDepartments
+                ? 'Choose the department this student should study in.'
+                : 'Create another department in Structure before you can move this student.'}
+              full
+            />
+          )}
+        />
+        {Object.keys(errors).length > 0 ? (
+          <div className="hint field-error" role="alert">Check the highlighted fields and try again.</div>
         ) : null}
       </form>
     </QuirriModal>
@@ -236,6 +326,11 @@ export default function StudentsPage() {
   const [acting, setActing] = useState(false);
   const [drawerUser, setDrawerUser] = useState(null);
   const [confirmUser, setConfirmUser] = useState(null);
+  const [deptUser, setDeptUser] = useState(null);
+  const [placementUser, setPlacementUser] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   const { data: deptData } = useAsyncResource(
     () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
@@ -249,17 +344,30 @@ export default function StudentsPage() {
     [deptData],
   );
 
+  // A new search / status starts again at page 1.
+  const setSearchAndReset = (value) => { setSearch(value); setPage(1); };
+  const setStatusAndReset = (value) => { setStatus(value); setPage(1); };
+
   const { data, loading, error, reload } = useAsyncResource(async () => {
     const res = await usersApi.getUsers({
-      page: 1,
-      limit: 50,
+      page,
+      pageSize: PAGE_SIZE,
       search,
       role: ROLES.STUDENT,
       status,
       tenantId: tenantId || undefined,
     });
     return unwrap(res);
-  }, [search, status, tenantId]);
+  }, [search, status, tenantId, page]);
+
+  // Status counts for the whole college (not just this page).
+  const { data: countData, reload: reloadCounts } = useAsyncResource(async () => {
+    const one = (s) => usersApi.getUsers({ page: 1, pageSize: 1, role: ROLES.STUDENT, status: s, tenantId: tenantId || undefined })
+      .then(unwrap).then((r) => (typeof r?.total === 'number' ? r.total : 0));
+    const [active, pending, inactive] = await Promise.all([one('active'), one('pending'), one('inactive')]);
+    return { active, pending, inactive };
+  }, [tenantId]);
+  const reloadAll = useCallback(async () => { await Promise.all([reload(), reloadCounts()]); }, [reload, reloadCounts]);
 
   const students = useMemo(() => {
     if (Array.isArray(data)) return data;
@@ -267,11 +375,7 @@ export default function StudentsPage() {
   }, [data]);
 
   const total = typeof data?.total === 'number' ? data.total : students.length;
-  const counts = useMemo(() => ({
-    active: students.filter((u) => !isDeactivated(u) && !isPending(u)).length,
-    pending: students.filter((u) => !isDeactivated(u) && isPending(u)).length,
-    inactive: students.filter((u) => isDeactivated(u)).length,
-  }), [students]);
+  const counts = countData || { active: null, pending: null, inactive: null };
   const ready = !(loading && !students.length);
 
   const handleToggleStatus = async (user) => {
@@ -284,7 +388,7 @@ export default function StudentsPage() {
         await usersApi.deactivate(user.id);
         toast.success('Student deactivated');
       }
-      await reload();
+      await reloadAll();
     } catch (err) {
       toast.error(err?.message || 'Failed to update status');
     } finally {
@@ -363,19 +467,10 @@ export default function StudentsPage() {
         icon="users"
         eyebrow="People"
         title="Students"
-        lede="Add students one at a time. Each student gets an activation link and sets their own password — you never set it for them."
+        lede="Add students one at a time or import up to 100 from a CSV. Each student gets an activation link and sets their own password — you never set it for them."
         actions={(
           <>
-            <button
-              type="button"
-              className="sd-btn sd-btn--glass"
-              disabled
-              aria-label="Bulk import — not available yet"
-              onMouseEnter={(e) => show(e, 'Bulk import is not available yet', 'top')}
-              onMouseLeave={hide}
-              onFocus={(e) => show(e, 'Bulk import is not available yet', 'top')}
-              onBlur={hide}
-            >
+            <button type="button" className="sd-btn sd-btn--glass" onClick={() => setImportOpen(true)}>
               <Icon name="upload" size={16} /> Bulk import
             </button>
             <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
@@ -389,9 +484,9 @@ export default function StudentsPage() {
         label="Students summary"
         items={[
           { icon: 'users', label: filtered ? 'Matching students' : 'Students', value: ready ? countLabel(total) : null, sub: filtered ? 'For these filters' : 'In your college' },
-          { icon: 'tick', label: 'Active', value: ready ? countLabel(counts.active) : null, sub: 'Can sign in' },
-          { icon: 'mail', label: 'Pending activation', value: ready ? countLabel(counts.pending) : null, sub: 'Invite sent, not yet used' },
-          { icon: 'lock', label: 'Deactivated', value: ready ? countLabel(counts.inactive) : null, sub: 'Soft-deleted, restorable' },
+          { icon: 'tick', label: 'Active', value: counts.active != null ? countLabel(counts.active) : null, sub: 'Can sign in' },
+          { icon: 'mail', label: 'Pending activation', value: counts.pending != null ? countLabel(counts.pending) : null, sub: 'Invite sent, not yet used' },
+          { icon: 'lock', label: 'Deactivated', value: counts.inactive != null ? countLabel(counts.inactive) : null, sub: 'Soft-deleted, restorable' },
         ]}
       />
 
@@ -399,9 +494,9 @@ export default function StudentsPage() {
         <SearchBox
           placeholder="Search name or email…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => setSearchAndReset(e.target.value)}
         />
-        <SegTabs label="Filter by status" options={STATUS_FILTERS} value={status} onChange={setStatus} />
+        <SegTabs label="Filter by status" options={STATUS_FILTERS} value={status} onChange={setStatusAndReset} />
       </FilterBar>
 
       {error ? (
@@ -436,7 +531,7 @@ export default function StudentsPage() {
       {students.length ? (
         <Panel
           title="Student directory"
-          sub={`Showing ${countLabel(students.length)} of ${countLabel(total)}`}
+          sub={`${countLabel(total)} student${total === 1 ? '' : 's'}`}
           bodyClassName={null}
         >
           <div className="sp-table-wrap">
@@ -445,6 +540,7 @@ export default function StudentsPage() {
                 <tr>
                   <th>Student</th>
                   <th>Department</th>
+                  <th>Programme</th>
                   <th>Status</th>
                   <th>Last active</th>
                   <th aria-label="Actions" />
@@ -465,6 +561,14 @@ export default function StudentsPage() {
                         </button>
                       </td>
                       <td data-label="Department">{user.department_name || user.department || '—'}</td>
+                      <td data-label="Programme">
+                        {user.program_name ? (
+                          <span className="ad-cell-2">
+                            <span>{user.program_name}</span>
+                            <small>{user.semester_name || 'Semester not set'}</small>
+                          </span>
+                        ) : <span className="ad-muted">Not set</span>}
+                      </td>
                       <td data-label="Status">
                         <StatusPill active on={userStatusLabel(user)} tone={TONE[statusVariant(user)]} />
                       </td>
@@ -476,6 +580,7 @@ export default function StudentsPage() {
               </tbody>
             </table>
           </div>
+          <Pager page={page} pageSize={PAGE_SIZE} total={total} shown={students.length} onPage={setPage} noun="students" />
         </Panel>
       ) : null}
 
@@ -493,6 +598,7 @@ export default function StudentsPage() {
         ) : null}
         stats={drawerUser ? [
           { label: 'Year of study', value: drawerUser.year_of_study ? countLabel(drawerUser.year_of_study) : '—' },
+          { label: 'Semester', value: drawerUser.semester_name || '—' },
           { label: 'Programme length', value: drawerUser.course_duration_years ? `${drawerUser.course_duration_years} years` : '—' },
         ] : null}
         footer={drawerUser ? (
@@ -532,8 +638,32 @@ export default function StudentsPage() {
               <InfoList
                 items={[
                   { label: 'Department', value: drawerUser.department_name || drawerUser.department, full: true },
+                  { label: 'Programme', value: drawerUser.program_name || 'Not set' },
+                  { label: 'Current semester', value: drawerUser.semester_name || 'Not set' },
                 ]}
               />
+              {departmentOptions.length ? (
+                <div className="ad-drawer-actions">
+                  <button
+                    type="button"
+                    className="sd-btn sd-btn--outline sd-btn--sm"
+                    onClick={() => setDeptUser(drawerUser)}
+                  >
+                    {drawerUser.department_id ? 'Change department' : 'Assign department'}
+                  </button>
+                  {drawerUser.department_id ? (
+                    <button
+                      type="button"
+                      className="sd-btn sd-btn--outline sd-btn--sm"
+                      onClick={() => setPlacementUser(drawerUser)}
+                    >
+                      <Icon name="tree" size={16} /> {drawerUser.program_id ? 'Change programme' : 'Set programme'}
+                    </button>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="hint">Create a department in Structure before you can place this student.</p>
+              )}
             </DrawerSection>
             <DrawerSection title="Account">
               <InfoList
@@ -583,6 +713,44 @@ export default function StudentsPage() {
         ) : null}
       </QuirriModal>
 
+      {deptUser ? (
+        <ChangeDepartmentModal
+          key={deptUser.id}
+          open
+          user={deptUser}
+          departmentOptions={departmentOptions}
+          onClose={() => setDeptUser(null)}
+          onSaved={(updated) => {
+            if (updated && typeof updated === 'object') {
+              setDrawerUser((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
+            }
+            reload();
+          }}
+        />
+      ) : null}
+
+      {placementUser ? (
+        <StudentPlacementModal
+          key={placementUser.id}
+          user={placementUser}
+          onClose={() => setPlacementUser(null)}
+          onSaved={async (updated) => {
+            setPlacementUser(null);
+            if (updated && typeof updated === 'object') {
+              setDrawerUser((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
+            }
+            await reload();
+          }}
+        />
+      ) : null}
+
+      <StudentBulkImport
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={reloadAll}
+        sampleDepartment={departmentOptions[0]?.label?.replace(/ \(.*\)$/, '')}
+      />
+
       {createOpen ? (
         <CreateStudentModal
           key="create-student"
@@ -590,7 +758,7 @@ export default function StudentsPage() {
           tenantId={tenantId}
           departmentOptions={departmentOptions}
           onClose={() => setCreateOpen(false)}
-          onSaved={reload}
+          onSaved={reloadAll}
         />
       ) : null}
       <TipLayer />

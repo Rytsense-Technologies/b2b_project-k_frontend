@@ -1,6 +1,7 @@
 'use client';
 
 import RolePortalSidebar from '@/components/shared/RolePortalSidebar';
+import { useFacultyScope } from '@/hooks/useFacultyScope';
 
 const NAV = [
   {
@@ -79,13 +80,61 @@ const NAV = [
   },
 ];
 
+const ICON = {
+  staff: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 19c0-3.2 2.7-5 6-5s6 1.8 6 5" />
+      <path d="M17 7l2 2 3-3.2" />
+    </svg>
+  ),
+  reports: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+      <path d="M15 3v5h5M9 13h6M9 17h4" />
+    </svg>
+  ),
+  bell: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  ),
+  settings: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V1a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 17 2.6a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1.7z" />
+    </svg>
+  ),
+};
+
+/** HOD gets Staff + Reports; everyone gets Notifications + Settings. */
+function buildNav(isHod) {
+  const out = [];
+  NAV.forEach((item) => {
+    out.push(item);
+    if (isHod && item.href === '/faculty/students') {
+      out.push({ href: '/faculty/staff', label: 'Department staff', icon: ICON.staff });
+    }
+    if (isHod && item.href === '/faculty/analytics') {
+      out.push({ href: '/faculty/reports', label: 'Reports', icon: ICON.reports });
+    }
+  });
+  out.push({ group: 'Account' });
+  out.push({ href: '/faculty/notifications', label: 'Notifications', icon: ICON.bell });
+  out.push({ href: '/faculty/settings', label: 'Settings', icon: ICON.settings });
+  return out;
+}
+
 export default function FacultySidebar() {
+  const { scope } = useFacultyScope();
+  const roleLabel = scope ? (scope.is_hod ? 'Head of department' : 'Faculty') : 'HOD / Faculty';
   return (
     <RolePortalSidebar
-      nav={NAV}
+      nav={buildNav(Boolean(scope?.is_hod))}
       ariaLabel="HOD / Faculty"
       tenantTitle="Your department"
-      tenantSubtitle="HOD / Faculty"
+      tenantSubtitle={roleLabel}
       fallbackInitials="HF"
       loginPath="/auth/login"
     />

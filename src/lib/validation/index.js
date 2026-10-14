@@ -51,6 +51,7 @@ export {
   tenantMemberCreateSchema,
   tenantStudentCreateSchema,
   tenantFacultyCreateSchema,
+  studentDepartmentChangeSchema,
   MAX_COURSE_DURATION_YEARS,
   MAX_ASSIGNED_YEAR,
   MAX_ASSIGNED_SEMESTER,
@@ -66,6 +67,15 @@ export {
   departmentUpdateSchema,
   tenantDepartmentCreateSchema,
 } from './schemas/departments';
+
+export {
+  MAX_PROGRAMME_SEMESTERS,
+  programmeCreateSchema,
+  programmeUpdateSchema,
+  semesterSchema,
+  subjectSchema,
+  chapterSchema,
+} from './schemas/academics';
 
 export {
   settingsProfileSchema,

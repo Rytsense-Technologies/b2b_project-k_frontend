@@ -8,11 +8,17 @@ import { selectSidebarOpen } from '@/store/slices/uiSlice';
 import { getRoleCookie, getTenantCookie, clearRoleCookie, clearTenantCookie } from '@/lib/tokens';
 import { PAGE_META } from '@/lib/faculty/pageMeta';
 import FacultySidebar from '@/components/faculty/FacultySidebar';
+import FacultyAccessGate from '@/components/faculty/FacultyAccessGate';
+import { useHydrateProfile } from '@/hooks/useHydrateProfile';
+import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 
 export default function FacultyLayout({ children }) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
   const sidebarOpen = useAppSelector(selectSidebarOpen);
+  // Name / college in the sidebar come from /auth/me (a new tab has none).
+  useHydrateProfile({ always: true });
+  const { navOpen, openNav, closeNav } = useMobileNav();
 
   useEffect(() => {
     const role = getRoleCookie();
@@ -32,20 +38,24 @@ export default function FacultyLayout({ children }) {
     }
   }, [dispatch]);
 
-  const matchedRoute = Object.keys(PAGE_META).find((k) => pathname?.startsWith(k));
+  const matchedRoute = Object.keys(PAGE_META)
+    .filter((k) => pathname?.startsWith(k))
+    .sort((a, b) => b.length - a.length)[0];
   const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'HOD / Faculty', subtitle: '' };
 
   return (
-    <div className="app q-app-shell">
+    <div className={`app q-app-shell ${mobileNavShellClass(navOpen)}`}>
       <FacultySidebar />
+      <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
         <div className="topbar">
+          <MobileNavButton navOpen={navOpen} onOpen={openNav} />
           <div>
             <h1>{meta.title}</h1>
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}
           </div>
         </div>
-        <div className="content">{children}</div>
+        <div className="content"><FacultyAccessGate>{children}</FacultyAccessGate></div>
       </div>
     </div>
   );

@@ -112,12 +112,13 @@ export default function QuirriSelect({
     };
     const onReposition = () => placeMenu();
     document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
+    // Capture phase: close the menu before a surrounding modal sees Escape.
+    document.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', onReposition);
     window.addEventListener('scroll', onReposition, true);
     return () => {
       document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
       window.removeEventListener('resize', onReposition);
       window.removeEventListener('scroll', onReposition, true);
     };

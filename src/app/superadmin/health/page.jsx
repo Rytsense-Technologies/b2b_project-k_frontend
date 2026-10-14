@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ModulePage,
   ModuleBanner,
@@ -13,6 +13,7 @@ import {
 import { healthApi } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
 
 const METRIC_ICONS = ['activity', 'clock', 'layers', 'alert'];
 
@@ -24,13 +25,25 @@ const METRIC_PLACEHOLDERS = [
   { k: 'Failed jobs · 24h', icon: 'alert' },
 ];
 
-const TONE = { green: 'sp-pill--good', amber: 'sp-pill--low', red: 'sp-pill--err' };
+const TONE = { green: 'sp-pill--good', amber: 'sp-pill--low', red: 'sp-pill--err', muted: '' };
 
 function statusVariant(status) {
   const value = String(status || '').toLowerCase();
   if (value.includes('operational') || value.includes('ok') || value.includes('healthy')) return 'green';
   if (value.includes('degraded') || value.includes('warn')) return 'amber';
+  // Not set up yet (log-only adapter, not instrumented) is not an outage -
+  // red is reserved for real failures (design-system §0b rule 3).
+  if (/log.?only|not.?instrument|not.?configured|disabled|n\/a|pending/.test(value)) return 'muted';
   return 'red';
+}
+
+/** "12 Oct, 2:05 pm" in IST - the time an error last happened. */
+function formatWhen(iso) {
+  const d = new Date(iso || '');
+  if (Number.isNaN(d.getTime())) return iso || '—';
+  return d.toLocaleString('en-IN', {
+    day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+  });
 }
 
 /** Empty panel body: Teal 300 outline icon, title, one line. */
@@ -46,16 +59,49 @@ function PanelEmpty({ icon, title, children }) {
   );
 }
 
+function ErrorRow({ row, open, onToggle }) {
+  return (
+    <>
+      <tr>
+        <td className="sa-muted sa-nowrap">{formatWhen(row.time || row.created_at)}</td>
+        <td className="sa-nowrap">{row.service}</td>
+        <td>
+          <b>{row.error || row.message}</b>
+          {row.path || row.institution ? (
+            <small className="sa-row-code">{[row.path, row.status_code ? `HTTP ${row.status_code}` : null, row.institution].filter(Boolean).join(' · ')}</small>
+          ) : null}
+        </td>
+        <td className="num"><b>{row.count ?? 1}</b></td>
+        <td className="num">
+          {row.detail ? (
+            <button type="button" className="sp-link sa-err-toggle" aria-expanded={open} onClick={onToggle}>
+              {open ? 'Hide' : 'Details'}
+            </button>
+          ) : null}
+        </td>
+      </tr>
+      {open && row.detail ? (
+        <tr className="sa-err-detail">
+          <td colSpan={5}><pre>{row.detail}</pre></td>
+        </tr>
+      ) : null}
+    </>
+  );
+}
+
 export default function HealthPage() {
-  const { data: statusData, loading: statusLoading, error: statusError } = useAsyncResource(
+  const [openError, setOpenError] = useState(null);
+  const { data: statusData, loading: statusLoading, error: statusError, reload: reloadStatus } = useAsyncResource(
     () => fetchOptional(() => healthApi.getStatus()),
     [],
   );
 
-  const { data: errorsData, loading: errorsLoading, error: errorsError } = useAsyncResource(
+  const { data: errorsData, loading: errorsLoading, error: errorsError, reload: reloadErrors } = useAsyncResource(
     () => fetchOptional(() => healthApi.getErrors({})),
     [],
   );
+  // Live: re-check status and errors every minute + on tab focus.
+  const ago = useTimeAgo(useLiveRefresh(() => Promise.all([reloadStatus(), reloadErrors()])));
 
   const unavailable = !statusLoading && statusData == null && !statusError;
 
@@ -100,7 +146,7 @@ export default function HealthPage() {
   const serviceCounts = services.reduce((acc, s) => {
     acc[statusVariant(s.status)] += 1;
     return acc;
-  }, { green: 0, amber: 0, red: 0 });
+  }, { green: 0, amber: 0, red: 0, muted: 0 });
 
   const kpis = metrics.length
     ? metrics.map((m, i) => ({ icon: METRIC_ICONS[i % METRIC_ICONS.length], label: m.k, value: m.v, sub: m.s || null }))
@@ -117,6 +163,8 @@ export default function HealthPage() {
         <span>{serviceCounts.green} operational</span>
         {serviceCounts.amber ? <span>{serviceCounts.amber} degraded</span> : null}
         {serviceCounts.red ? <span>{serviceCounts.red} down</span> : null}
+        {serviceCounts.muted ? <span>{serviceCounts.muted} not set up</span> : null}
+        <span><Icon name="refresh" size={14} /> Live · updated {ago}</span>
       </>
     );
   } else if (unavailable) {
@@ -145,11 +193,7 @@ export default function HealthPage() {
         <SectionState title="Platform health not available">
           Health APIs are not reachable. This screen stays empty until system status endpoints respond.
         </SectionState>
-      ) : (
-        <SectionState title="Live database and API checks">
-          Uptime percentages, API p95, and AI pipeline latency stay empty until observability instrumentation ships — no invented numbers.
-        </SectionState>
-      )}
+      ) : null}
 
       {(statusError || errorsError) ? (
         <SectionState tone="err" title="Could not load health data">
@@ -166,11 +210,14 @@ export default function HealthPage() {
                 return (
                   <li key={svc.name || svc.service} className="sp-row">
                     <span className={`sp-row-ic${tone === 'green' ? ' sp-row-ic--good' : ''} sa-svc-ic--${tone}`}>
-                      <Icon name={tone === 'green' ? 'tick' : 'alert'} size={18} />
+                      <Icon name={tone === 'green' ? 'tick' : tone === 'muted' ? 'clock' : 'alert'} size={18} />
                     </span>
                     <div className="sp-row-main">
                       <b>{svc.name || svc.service}</b>
-                      <div className="sp-row-meta"><span>p95 {svc.p95 || svc.latency || '—'}</span></div>
+                      <div className="sp-row-meta">
+                        <span>p95 {svc.p95 || svc.latency || '—'}</span>
+                        {svc.note ? <span>{svc.note}</span> : null}
+                      </div>
                     </div>
                     <span className={`sp-pill ${TONE[tone]}`}>
                       <i className="un-dot" aria-hidden="true" />
@@ -187,7 +234,7 @@ export default function HealthPage() {
           )}
         </Panel>
 
-        <Panel title="AI pipeline latency" sub="Per-stage p95, last 24 hours.">
+        <Panel title="AI pipeline latency" sub="Per-stage p95 of chapter video generation, last 7 days.">
           {latency.length ? (
             <div className="sa-bars">
               {latency.map((stage, i) => {
@@ -205,8 +252,8 @@ export default function HealthPage() {
               })}
             </div>
           ) : (
-            <PanelEmpty icon="clock" title="No latency stages returned">
-              Stage timings appear when pipeline instrumentation is live.
+            <PanelEmpty icon="clock" title={statusLoading ? 'Loading stages…' : 'No chapters generated this week'}>
+              {statusLoading ? null : 'Stage timings appear after the next chapter video is generated.'}
             </PanelEmpty>
           )}
         </Panel>
@@ -214,7 +261,7 @@ export default function HealthPage() {
 
       <Panel
         title="Recent errors"
-        sub="Redacted — no student PII."
+        sub="Last 7 days, grouped by error. Emails and phone numbers are redacted."
         action={errors.length ? <span className="sp-pill sp-pill--err">{errors.length} recent</span> : null}
         bodyClassName={null}
       >
@@ -223,32 +270,30 @@ export default function HealthPage() {
             <table className="sp-table un-table sa-table-tight">
               <thead>
                 <tr>
-                  <th>Time</th>
+                  <th>Last seen</th>
                   <th>Service</th>
                   <th>Error</th>
-                  <th>Institution</th>
                   <th className="num">Count</th>
+                  <th aria-label="Details" />
                 </tr>
               </thead>
               <tbody>
-                {errors.map((row) => (
-                  <tr key={row.id || `${row.time}-${row.error}`}>
-                    <td className="sa-muted sa-nowrap">{row.time || row.created_at}</td>
-                    <td className="sa-nowrap">{row.service}</td>
-                    <td><b>{row.error || row.message}</b></td>
-                    <td className="sa-muted">{row.institution || row.college || '—'}</td>
-                    <td className="num"><b>{row.count ?? 1}</b></td>
-                  </tr>
-                ))}
+                {errors.map((row) => {
+                  const key = row.id || `${row.time}-${row.error}`;
+                  const open = openError === key;
+                  return (
+                    <ErrorRow key={key} row={row} open={open} onToggle={() => setOpenError(open ? null : key)} />
+                  );
+                })}
               </tbody>
             </table>
           </div>
         ) : (
           <PanelEmpty
             icon={errorsData == null && !errorsLoading ? 'clock' : 'tick'}
-            title={errorsLoading ? 'Loading errors…' : errorsData == null ? 'Error log not available yet' : 'No recent errors'}
+            title={errorsLoading ? 'Loading errors…' : errorsData == null ? 'Error log not available yet' : 'No errors in the last 7 days'}
           >
-            {errorsLoading ? null : 'Errors from any service show up here, grouped and redacted.'}
+            {errorsLoading ? null : 'Server errors from the API and background pipelines are captured here automatically.'}
           </PanelEmpty>
         )}
       </Panel>

@@ -25,42 +25,37 @@ import {
   countLabel,
 } from '@/components/shared/module-ui';
 import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
+import { academicsApi } from '@/lib/api/superadmin/academics';
+import ChapterLinkModal from '@/components/shared/ChapterLinkModal';
+import ReviewHistoryModal from '@/components/shared/ReviewHistoryModal';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import {
   eduVideoApi,
   JOB_STATUS,
   SUPPORTED_EXTENSIONS,
+  UPLOAD_LIMITS,
   computeJobProgress,
   summarizeEduVideoError,
 } from '@/lib/api/admin/eduVideo';
-import { mcqApi, mcqErrorMessage } from '@/lib/api/mcq';
+import MultiDocumentPicker, { validateDocuments } from '@/components/shared/MultiDocumentPicker';
+import { mcqApi, mcqGenerateErrorMessage, waitForMcqGeneration } from '@/lib/api/mcq';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { FIELD_RULES } from '@/lib/validation';
 
 const POLL_ACTIVE_MS = 4000;
 const POLL_IDLE_MS = 20000;
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
-function fileExtension(name = '') {
-  const i = name.lastIndexOf('.');
-  return i >= 0 ? name.slice(i).toLowerCase() : '';
-}
-
-function validateFile(file) {
-  if (!file) return 'Choose a source file to upload.';
-  const ext = fileExtension(file.name);
-  if (!SUPPORTED_EXTENSIONS.includes(ext)) {
-    return `Unsupported file type '${ext || '(none)'}'. Supported: ${SUPPORTED_EXTENSIONS.join(', ')}`;
-  }
-  if (file.size > MAX_FILE_BYTES) {
-    return 'File must be 50 MB or smaller.';
-  }
-  return '';
+/** User-facing message for a failed upload (FRONTEND_CHANGES.md §2.7). */
+function uploadErrorMessage(err) {
+  const status = err?.response?.status;
+  if (status === 403) return 'You don’t have permission to upload content.';
+  if (status === 413) return 'The upload is too large. Keep all documents together under 50 MB.';
+  return apiErrorMessage(err, 'Upload failed. Please try again.');
 }
 
 /* QuirriBadge variant → shared .sp-pill tone */
-const TONE = { red: 'err', green: 'good', amber: 'low', blue: 'teal' };
+const TONE = { red: 'err', green: 'good', amber: 'low', blue: 'teal', off: 'off' };
 
 const canPreview = (job) => job?.status === JOB_STATUS.DONE && Boolean(job?.output_path);
 
@@ -82,9 +77,26 @@ function isJobGenerating(job) {
  *   - DONE, published_at set      -> "Published" (live for students)
  *   - FAILED                      -> "Failed"
  */
+/** Mid-pipeline but untouched for this long: the worker is gone, not "updating on its own". */
+const STALL_MS = 30 * 60 * 1000;
+
+function isStalled(job) {
+  if (!job || job.status === JOB_STATUS.FAILED || canPreview(job)) return false;
+  const last = Date.parse(job.updated_at || job.created_at || '');
+  return Number.isFinite(last) && Date.now() - last > STALL_MS;
+}
+
+function uploadedLabel(job) {
+  const d = new Date(job?.created_at || '');
+  return Number.isNaN(d.getTime())
+    ? 'No source details'
+    : `Uploaded ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+}
+
 function computeStage(job) {
   if (!job) return 'generating';
   if (job.status === JOB_STATUS.FAILED) return 'failed';
+  if (isStalled(job)) return 'stalled';
   if (!canPreview(job)) return 'generating';
   if (job.published_at) return 'published';
   if (job.sent_to_hod_at) return 'awaiting_approval';
@@ -110,6 +122,13 @@ function statusBadge(job) {
       };
     case 'published':
       return { label: 'Published', variant: 'green', progress: null, error: null, filterKey: 'published' };
+    case 'stalled':
+      return {
+        label: 'Stalled', variant: 'off', progress: null, filterKey: 'stalled',
+        note: job.status === JOB_STATUS.AWAITING_REVIEW
+          ? 'Waiting for a start that never came. Resume it or remove it.'
+          : 'No progress for over 30 minutes. Remove it and upload again.',
+      };
     default:
       return {
         label: job?.status === JOB_STATUS.RENDERING ? 'Rendering' : 'Generating',
@@ -127,24 +146,31 @@ function statusBadge(job) {
 export default function EduVideoContentStudio({ platformScope = false } = {}) {
   const { tenantId: sessionTenantId } = useAuth();
   const { show, hide, TipLayer } = useQuirriTip();
-  const fileInputRef = useRef(null);
 
   const [collegeId, setCollegeId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [chapterTitle, setChapterTitle] = useState('');
   const [chapterError, setChapterError] = useState('');
-  const [file, setFile] = useState(null);
+  // Optional link into the academic structure: Programme > Semester > Subject > Chapter.
+  const [programId, setProgramId] = useState('');
+  const [semesterId, setSemesterId] = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [chapterId, setChapterId] = useState('');
+  const [documents, setDocuments] = useState([]);
   const [fileError, setFileError] = useState('');
-  const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [jobSearch, setJobSearch] = useState('');
+  const [programFilter, setProgramFilter] = useState('');
   const [removingId, setRemovingId] = useState(null);
   const [sendingId, setSendingId] = useState(null);
   const [generatingMcqId, setGeneratingMcqId] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
   const [editJob, setEditJob] = useState(null);
+  const [linkJob, setLinkJob] = useState(null);
   const [pendingItems, setPendingItems] = useState([]);
+  const [historyJob, setHistoryJob] = useState(null);
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingError, setPendingError] = useState('');
   const [dismissingPendingId, setDismissingPendingId] = useState(null);
@@ -178,6 +204,39 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
   );
 
   const departments = useMemo(() => asList(deptData, []), [deptData]);
+
+  const resetChapterLink = (level) => {
+    if (level <= 0) setProgramId('');
+    if (level <= 1) setSemesterId('');
+    if (level <= 2) setSubjectId('');
+    if (level <= 3) setChapterId('');
+  };
+  const { data: programData } = useAsyncResource(
+    () => (departmentId
+      ? fetchData(() => academicsApi.listPrograms({ department_id: departmentId }))
+      : Promise.resolve(null)),
+    [departmentId],
+  );
+  const programs = useMemo(() => asList(programData, []), [programData]);
+  const { data: programDetail } = useAsyncResource(
+    () => (programId ? fetchData(() => academicsApi.getProgram(programId)) : Promise.resolve(null)),
+    [programId],
+  );
+  const semesters = useMemo(
+    () => (programDetail?.semesters || []).filter((s) => s.is_active !== false),
+    [programDetail],
+  );
+  const { data: subjectData } = useAsyncResource(
+    () => (semesterId ? fetchData(() => academicsApi.listSubjects(semesterId)) : Promise.resolve(null)),
+    [semesterId],
+  );
+  const subjects = useMemo(() => asList(subjectData, []), [subjectData]);
+  const { data: chapterData } = useAsyncResource(
+    () => (subjectId ? fetchData(() => academicsApi.listChapters(subjectId)) : Promise.resolve(null)),
+    [subjectId],
+  );
+  const chapters = useMemo(() => asList(chapterData, []), [chapterData]);
+  const linkedChapter = chapters.find((c) => c.id === chapterId) || null;
   const departmentOptions = useMemo(
     () => departments.map((d) => ({
       value: String(d.id),
@@ -200,15 +259,10 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
   );
   const jobs = useMemo(() => asList(jobsData, []), [jobsData]);
 
+  // Open change requests from HOD / Faculty (edu_video_jobs.changes_requested_at,
+  // cleared by regenerate / publish / dismiss).
   const pendingFromJobs = useMemo(
-    () => jobs.filter((job) => {
-      if (!job?.sent_to_hod_at || job?.published_at) return false;
-      if (job?.changes_requested_at) return true;
-      const sentMs = new Date(job.sent_to_hod_at).getTime();
-      const updatedMs = job.updated_at ? new Date(job.updated_at).getTime() : 0;
-      // Plan saved after CA sent to HOD (request-changes updates plan_json + updated_at).
-      return Number.isFinite(sentMs) && updatedMs > sentMs + 2000;
-    }),
+    () => jobs.filter((job) => Boolean(job?.changes_requested_at) && !job?.published_at),
     [jobs],
   );
 
@@ -244,13 +298,13 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
         .finally(() => {
           jobsPollInFlight.current = false;
           if (!cancelled) {
-            const next = jobsRef.current.some(isJobGenerating) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
+            const next = jobsRef.current.some((j) => isJobGenerating(j) && !isStalled(j)) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
             schedule(next);
           }
         });
     };
 
-    const initial = jobsRef.current.some(isJobGenerating) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
+    const initial = jobsRef.current.some((j) => isJobGenerating(j) && !isStalled(j)) ? POLL_ACTIVE_MS : POLL_IDLE_MS;
     schedule(initial);
     const onVis = () => {
       if (!document.hidden && !jobsPollInFlight.current) schedule(250);
@@ -268,13 +322,9 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
     if (!silent) setPendingLoading(true);
     if (!silent) setPendingError('');
     try {
-      let bridgeItems = [];
-      try {
-        const data = await eduVideoApi.listPendingChanges();
-        bridgeItems = Array.isArray(data?.items) ? data.items : [];
-      } catch {
-        bridgeItems = [];
-      }
+      // Change requests now live on the job itself (GET /jobs); the old
+      // in-app bridge store is no longer used.
+      const bridgeItems = [];
       setPendingItems((prev) => {
         try {
           if (JSON.stringify(prev) === JSON.stringify(bridgeItems)) return prev;
@@ -344,6 +394,8 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
         status: job.status,
         sent_to_hod_at: job.sent_to_hod_at,
         changes_requested_at: job.changes_requested_at,
+        changes_requested_by: job.changes_requested_by,
+        change_note: job.change_note,
         from_backend: true,
       });
     });
@@ -371,15 +423,17 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
       status: item.status || jobRow?.status || JOB_STATUS.DONE,
       sent_to_hod_at: item.sent_to_hod_at || jobRow?.sent_to_hod_at,
       changes_requested_at: item.changes_requested_at || jobRow?.changes_requested_at,
+      changes_requested_by: item.changes_requested_by || jobRow?.changes_requested_by,
+      change_note: item.change_note || jobRow?.change_note,
       pending_bridge_plan: item.plan,
     });
   };
 
-  const dismissPending = async (jobId, fromBridge = false) => {
+  const dismissPending = async (jobId) => {
     setDismissingPendingId(jobId);
     try {
-      await eduVideoApi.clearPendingChange(jobId).catch(() => {});
-      toast.success('Cleared from the HOD feedback queue.');
+      await eduVideoApi.dismissChanges(jobId);
+      toast.success('Change request dismissed. The chapter stays in review.');
       await reloadJobs();
       await reloadPending();
     } catch (err) {
@@ -392,6 +446,21 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
   // POST /jobs/{id}/send-to-hod - a College Admin has watched the finished
   // video (Preview column) and hands it to their department's HOD/Faculty.
   // Only valid once status is DONE (the server 400s otherwise).
+  // A legacy job parked at AWAITING_REVIEW: POST /jobs/{id}/submit starts rendering it.
+  const [resumingId, setResumingId] = useState(null);
+  const resumeJob = async (jobId) => {
+    setResumingId(jobId);
+    try {
+      await eduVideoApi.submit(jobId);
+      toast.success('Rendering resumed. Progress shows here.');
+      await reloadJobs();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Could not resume this chapter. Remove it and upload again.'));
+    } finally {
+      setResumingId(null);
+    }
+  };
+
   const sendToHod = async (jobId) => {
     setSendingId(jobId);
     try {
@@ -406,33 +475,41 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
   };
 
   const generateMcq = async (jobId) => {
+    if (generatingMcqId) return; // one request in flight at a time - no duplicate clicks
     setGeneratingMcqId(jobId);
-    try {
-      const doc = await mcqApi.generate(jobId);
+    const readyToast = (doc) => {
+      const count = doc?.generated_count || doc?.questions?.length || 0;
       toast.success(
-        doc?.generated_count
-          ? `MCQs ready (${doc.generated_count} questions). HOD/Faculty can review them under MCQ review.`
+        count
+          ? `MCQs ready (${count} questions). HOD/Faculty can review them under MCQ review.`
           : 'MCQs generated. HOD/Faculty can review them under MCQ review.',
       );
+    };
+    try {
+      readyToast(await mcqApi.generate(jobId));
     } catch (err) {
-      toast.error(mcqErrorMessage(err, 'Could not generate MCQs for this chapter.'));
+      if (err?.response?.status === 409) {
+        // Already generating (another click / another admin) - keep the button
+        // disabled and wait for that run to finish instead of failing.
+        const waitId = toast.loading(mcqGenerateErrorMessage(err));
+        const doc = await waitForMcqGeneration(jobId);
+        toast.dismiss(waitId);
+        if (doc?.status === 'ready') readyToast(doc);
+        else if (doc?.status === 'failed') toast.error(doc.error || 'MCQ generation failed for this chapter.');
+        else toast('Still generating — check MCQ review in a few minutes.');
+      } else {
+        toast.error(mcqGenerateErrorMessage(err));
+      }
     } finally {
       setGeneratingMcqId(null);
     }
   };
 
-  const pickFile = (nextFile) => {
-    const err = validateFile(nextFile);
-    setFileError(err);
-    setFile(err ? null : nextFile);
+  const changeDocuments = (next) => {
+    setDocuments(next);
+    setFileError(''); // a server error referred to the previous selection
   };
-
-  const onDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    const dropped = e.dataTransfer?.files?.[0];
-    if (dropped) pickFile(dropped);
-  };
+  const docCheck = validateDocuments(documents);
 
   const validateChapter = (value) => {
     const trimmed = String(value || '').trim();
@@ -462,34 +539,45 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
       toast.error(titleErr);
       return;
     }
-    const fErr = validateFile(file);
-    setFileError(fErr);
-    if (fErr) {
-      toast.error(fErr);
+    if (!docCheck.valid) {
+      toast.error(docCheck.summary);
       return;
     }
 
     setUploading(true);
+    setUploadPct(0);
+    setFileError('');
     try {
       const res = await eduVideoApi.upload({
-        file,
+        documents: documents.map((d) => ({ file: d.file, role: d.role })),
         language: 'english',
         departmentId: dept.id,
         chapterTitle: chapterTitle.trim(),
+        chapterId: linkedChapter ? linkedChapter.id : undefined,
         tenantId: platformScope ? collegeId : undefined,
+        onUploadProgress: (e) => {
+          if (e?.total) setUploadPct(Math.min(100, Math.round((e.loaded / e.total) * 100)));
+        },
       });
       if (!res?.job_id) {
         throw new Error('The video API did not return a job id. Try again in a moment.');
       }
-      setFile(null);
-      setFileError('');
+      setDocuments([]);
       setChapterTitle('');
       setChapterError('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      toast.success('Upload started. Generation is running in the background.');
+      resetChapterLink(0);
+      const contentCount = documents.filter((d) => d.role !== 'question_bank').length;
+      toast.success(
+        contentCount > 1
+          ? `Upload started — ${contentCount} documents combined into one chapter. Generation is running in the background.`
+          : 'Upload started. Generation is running in the background.',
+      );
+      (Array.isArray(res.warnings) ? res.warnings : []).forEach((w) => toast(w, { duration: 8000 }));
       await reloadJobs();
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Upload failed. Please try again.'));
+      const msg = uploadErrorMessage(err);
+      setFileError(msg);
+      toast.error(msg);
     } finally {
       setUploading(false);
     }
@@ -511,17 +599,22 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
     (!platformScope || collegeId)
     && departmentId
     && chapterTitle.trim()
-    && file
+    && docCheck.valid
     && !uploading,
   );
 
   const searchTerm = jobSearch.trim().toLowerCase();
+  // chapter_path is "Programme · Semester · Subject" for linked content.
+  const programmeOf = (j) => (j.chapter_path ? String(j.chapter_path).split(' · ')[0] : '');
+  const programmeNames = [...new Set(jobs.map(programmeOf).filter(Boolean))].sort();
   const filteredJobs = (statusFilter
     ? jobs.filter((j) => statusBadge(j).filterKey === statusFilter)
     : jobs
-  ).filter((j) => !searchTerm || [j.chapter_title, j.source_filename, j.department_name]
-    .filter(Boolean)
-    .some((v) => String(v).toLowerCase().includes(searchTerm)));
+  ).filter((j) => !programFilter
+    || (programFilter === '__none' ? !j.chapter_id : programmeOf(j) === programFilter))
+    .filter((j) => !searchTerm || [j.chapter_title, j.source_filename, j.department_name, j.chapter_path]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(searchTerm)));
 
   const stageCounts = jobs.reduce((acc, j) => {
     const key = statusBadge(j).filterKey;
@@ -547,17 +640,22 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
         <IconButton
           icon="spark"
           label={busy ? 'Generating MCQs…' : `Generate MCQs for ${job.chapter_title || 'this chapter'}`}
-          disabled={busy}
-          onClick={() => !busy && generateMcq(job.job_id)}
+          disabled={Boolean(generatingMcqId)}
+          onClick={() => !generatingMcqId && generateMcq(job.job_id)}
         />
       </span>
     );
   };
 
   const editButton = (job) => (
-    <span onMouseEnter={(e) => show(e, 'Review and edit slides', 'top')} onMouseLeave={hide}>
-      <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
-    </span>
+    <>
+      <span onMouseEnter={(e) => show(e, 'Review and edit slides', 'top')} onMouseLeave={hide}>
+        <IconButton icon="edit" label={`Edit slides for ${job.chapter_title || 'this chapter'}`} onClick={() => setEditJob(job)} />
+      </span>
+      <span onMouseEnter={(e) => show(e, job.chapter_id ? 'Change chapter link' : 'Link to a chapter', 'top')} onMouseLeave={hide}>
+        <IconButton icon="tree" label={`Link ${job.chapter_title || 'this chapter'} to the academic structure`} onClick={() => setLinkJob(job)} />
+      </span>
+    </>
   );
 
   const previewButton = (job) => (
@@ -635,6 +733,7 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
                 onChange={(e) => {
                   setCollegeId(e.target.value);
                   setDepartmentId('');
+                  resetChapterLink(0);
                 }}
                 placeholder={collegeLoading ? 'Loading colleges…' : 'Select college'}
                 disabled={collegeLoading || !collegeOptions.length}
@@ -646,7 +745,10 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
               id="content-department"
               label="Department"
               value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
+              onChange={(e) => {
+                setDepartmentId(e.target.value);
+                resetChapterLink(0);
+              }}
               placeholder={
                 platformScope && !collegeId
                   ? 'Select a college first'
@@ -668,54 +770,104 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
               }}
               onBlur={() => setChapterError(validateChapter(chapterTitle))}
               error={chapterError}
+              disabled={Boolean(linkedChapter)}
+              hint={linkedChapter ? 'Taken from the linked chapter. Clear the chapter link to type a title.' : undefined}
               placeholder="e.g. Trees & Binary Search Trees"
             />
           </div>
 
+          {departmentId ? (
+            <div className="ad-chapter-link">
+              <div className="ad-chapter-link-h">
+                <b>Link to the academic structure</b>
+                <small>
+                  {programs.length
+                    ? 'Optional. Tag this upload to a programme chapter so progress rolls up by subject.'
+                    : 'No programmes in this department yet. Add them under Academic structure to tag uploads to chapters.'}
+                </small>
+              </div>
+              {programs.length ? (
+                <div className="grid2">
+                  <QuirriSelect
+                    id="content-programme"
+                    label="Programme"
+                    value={programId}
+                    onChange={(e) => { setProgramId(e.target.value); resetChapterLink(1); }}
+                    placeholder="Not linked"
+                    options={[{ value: '', label: 'Not linked' }, ...programs.map((p) => ({ value: p.id, label: p.code ? `${p.name} (${p.code})` : p.name }))]}
+                  />
+                  <QuirriSelect
+                    id="content-semester"
+                    label="Semester"
+                    value={semesterId}
+                    onChange={(e) => { setSemesterId(e.target.value); resetChapterLink(2); }}
+                    placeholder={programId ? 'Select semester' : 'Select a programme first'}
+                    disabled={!programId || !semesters.length}
+                    options={semesters.map((s) => ({ value: s.id, label: s.name }))}
+                  />
+                  <QuirriSelect
+                    id="content-subject"
+                    label="Subject"
+                    value={subjectId}
+                    onChange={(e) => { setSubjectId(e.target.value); resetChapterLink(3); }}
+                    placeholder={!semesterId ? 'Select a semester first' : subjects.length ? 'Select subject' : 'No subjects in this semester'}
+                    disabled={!semesterId || !subjects.length}
+                    options={subjects.map((s) => ({ value: s.id, label: s.code ? `${s.name} (${s.code})` : s.name }))}
+                  />
+                  <QuirriSelect
+                    id="content-chapter"
+                    label="Chapter"
+                    value={chapterId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setChapterId(id);
+                      const ch = chapters.find((c) => c.id === id);
+                      if (ch) {
+                        setChapterTitle(ch.title);
+                        setChapterError('');
+                      }
+                    }}
+                    placeholder={!subjectId ? 'Select a subject first' : chapters.length ? 'Select chapter' : 'No chapters in this subject'}
+                    disabled={!subjectId || !chapters.length}
+                    options={chapters.map((c) => ({ value: c.id, label: `${c.position}. ${c.title}` }))}
+                  />
+                </div>
+              ) : null}
+              {linkedChapter ? (
+                <button type="button" className="sp-link ad-chapter-clear" onClick={() => { resetChapterLink(0); setChapterTitle(''); }}>
+                  Clear chapter link
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
           <QuirriField
             label="Source material"
-            htmlFor="content-source-file"
+            htmlFor="content-source-files"
             error={fileError}
-            hint={`Accepted: ${SUPPORTED_EXTENSIONS.join(', ')} · up to 50 MB · English`}
+            hint={`Add one or more documents for this chapter (${SUPPORTED_EXTENSIONS.join(', ')}) · up to ${UPLOAD_LIMITS.maxFiles} files, ${UPLOAD_LIMITS.maxTotalBytes / (1024 * 1024)} MB in total · English`}
           >
-            <div
-              className={`ad-drop${dragging ? ' is-drag' : ''}${file ? ' has-file' : ''}`}
-              role="button"
-              tabIndex={0}
-              aria-label="Choose source file"
-              onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
-              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={onDrop}
-              onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  fileInputRef.current?.click();
-                }
-              }}
-            >
-              <span className="ad-drop-ic" aria-hidden="true">
-                <Icon name={file ? 'doc' : 'upload'} size={22} />
-              </span>
-              <span className="ad-drop-copy">
-                <b>{file ? file.name : 'Drop a document, or click to browse'}</b>
-                <small>
-                  {file
-                    ? `${(file.size / (1024 * 1024)).toFixed(1)} MB · click to choose a different file`
-                    : 'PDF, DOCX, DOC or TXT · up to 50 MB · English'}
-                </small>
-              </span>
-              <input
-                ref={fileInputRef}
-                id="content-source-file"
-                type="file"
-                accept={SUPPORTED_EXTENSIONS.join(',')}
-                hidden
-                onChange={(e) => pickFile(e.target.files?.[0] || null)}
-              />
-            </div>
+            <MultiDocumentPicker
+              id="content-source-files"
+              items={documents}
+              onChange={changeDocuments}
+              disabled={uploading}
+              serverError={fileError}
+            />
           </QuirriField>
+
+          {uploading ? (
+            <div className="mdp-progress" aria-live="polite">
+              <div className="mdp-progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPct} aria-label="Upload progress">
+                <i style={{ width: `${uploadPct}%` }} />
+              </div>
+              <span>
+                {uploadPct < 100
+                  ? `Uploading ${documents.length} document${documents.length === 1 ? '' : 's'}… ${uploadPct}%`
+                  : documents.length > 1 ? 'Combining documents and creating the job…' : 'Creating the job…'}
+              </span>
+            </div>
+          ) : null}
 
           <div className="ad-upload-foot">
             <p className="ad-muted">
@@ -731,13 +883,13 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
               aria-label="Upload and generate"
               onMouseEnter={(e) => {
                 if (!canSubmit) {
-                  show(e, 'Select a department, chapter title, and supported file first', 'top');
+                  show(e, 'Select a department, chapter title, and valid documents first', 'top');
                 }
               }}
               onMouseLeave={hide}
               onFocus={(e) => {
                 if (!canSubmit) {
-                  show(e, 'Select a department, chapter title, and supported file first', 'top');
+                  show(e, 'Select a department, chapter title, and valid documents first', 'top');
                 }
               }}
               onBlur={hide}
@@ -773,6 +925,19 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
           value={jobSearch}
           onChange={(e) => setJobSearch(e.target.value)}
         />
+        {programmeNames.length || jobs.some((j) => !j.chapter_id) ? (
+          <QuirriSelect
+            ariaLabel="Filter by programme"
+            value={programFilter}
+            onChange={(e) => setProgramFilter(e.target.value)}
+            placeholder="All programmes"
+            options={[
+              { value: '', label: 'All programmes' },
+              ...programmeNames.map((n) => ({ value: n, label: n })),
+              { value: '__none', label: 'Not linked to a chapter' },
+            ]}
+          />
+        ) : null}
         <SegTabs label="Filter by status" options={STATUS_TABS} value={statusFilter} onChange={setStatusFilter} />
       </FilterBar>
 
@@ -842,8 +1007,8 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
                         <div className="pm-person">
                           <span className="ad-file-ic" aria-hidden="true"><Icon name="doc" size={16} /></span>
                           <div>
-                            <b>{job.chapter_title || '—'}</b>
-                            <small>{[job.department_name, job.source_filename].filter(Boolean).join(' · ') || '—'}</small>
+                            <b className={job.chapter_title ? undefined : 'sa-muted'}>{job.chapter_title || 'Untitled chapter'}</b>
+                            <small>{[job.chapter_path || job.department_name, job.source_filename].filter(Boolean).join(' · ') || uploadedLabel(job)}</small>
                           </div>
                         </div>
                       </td>
@@ -867,6 +1032,7 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
                             {summarizeEduVideoError(badge.error).summary}
                           </div>
                         ) : null}
+                        {badge.note ? <div className="ad-muted sa-job-note">{badge.note}</div> : null}
                       </td>
                       <td>
                         <div className="ad-actions">
@@ -889,6 +1055,27 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
                             <>
                               {mcqButton(job)}
                               {editButton(job)}
+                            </>
+                          ) : stage === 'stalled' ? (
+                            <>
+                              {job.status === JOB_STATUS.AWAITING_REVIEW ? (
+                                <button
+                                  type="button"
+                                  className="sd-btn sd-btn--teal sd-btn--sm"
+                                  disabled={resumingId === job.job_id}
+                                  onClick={() => resumingId !== job.job_id && resumeJob(job.job_id)}
+                                >
+                                  <Icon name="refresh" size={14} />
+                                  {resumingId === job.job_id ? 'Resuming…' : 'Resume'}
+                                </button>
+                              ) : null}
+                              <IconButton
+                                icon="trash"
+                                danger
+                                label={removingId === job.job_id ? 'Removing…' : `Remove ${job.chapter_title || 'this job'}`}
+                                disabled={removingId === job.job_id}
+                                onClick={() => removingId !== job.job_id && removeJob(job.job_id)}
+                              />
                             </>
                           ) : stage === 'failed' || stage === 'published' ? (
                             <>
@@ -971,7 +1158,8 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
                         <span className="ad-file-ic" aria-hidden="true"><Icon name="doc" size={16} /></span>
                         <div>
                           <b>{item.chapter_title || '—'}</b>
-                          <small>{item.source_filename || item.job_id}</small>
+                          <small>{item.changes_requested_by ? `From ${item.changes_requested_by}` : (item.source_filename || item.job_id)}</small>
+                          {item.change_note ? <small className="ad-feedback-note">“{item.change_note}”</small> : null}
                         </div>
                       </div>
                     </td>
@@ -990,9 +1178,16 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
                           className="sd-btn sd-btn--ghost sd-btn--sm"
                           disabled={dismissingPendingId === item.job_id}
                           onClick={() => dismissingPendingId !== item.job_id
-                            && dismissPending(item.job_id, Boolean(item.from_bridge))}
+                            && dismissPending(item.job_id)}
                         >
                           {dismissingPendingId === item.job_id ? 'Dismissing…' : 'Dismiss'}
+                        </button>
+                        <button
+                          type="button"
+                          className="sd-btn sd-btn--ghost sd-btn--sm"
+                          onClick={() => setHistoryJob(item)}
+                        >
+                          <Icon name="clock" size={14} /> History
                         </button>
                         <button
                           type="button"
@@ -1024,13 +1219,21 @@ export default function EduVideoContentStudio({ platformScope = false } = {}) {
         mode="admin"
         onClose={() => setEditJob(null)}
         onSaved={() => {
+          // Regenerating clears the change request on the server.
           reloadJobs();
           reloadPending();
-          if (editJob?.job_id) {
-            eduVideoApi.clearPendingChange(editJob.job_id).catch(() => {});
-          }
         }}
       />
+
+      {linkJob ? (
+        <ChapterLinkModal
+          job={linkJob}
+          onClose={() => setLinkJob(null)}
+          onSaved={async () => { setLinkJob(null); await reloadJobs(); }}
+        />
+      ) : null}
+
+      {historyJob ? <ReviewHistoryModal job={historyJob} onClose={() => setHistoryJob(null)} /> : null}
 
       <TipLayer />
     </ModulePage>

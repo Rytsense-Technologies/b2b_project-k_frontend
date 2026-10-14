@@ -117,7 +117,8 @@ export function Panel({ title, sub, action = null, children, className = '', bod
 }
 
 export function StatusPill({ active, on = 'Active', off = 'Inactive', tone }) {
-  const t = tone || (active ? 'good' : 'err');
+  // Inactive is a state, not an error: neutral pill (design-system §0b rule 3).
+  const t = tone || (active ? 'good' : 'off');
   return (
     <span className={`sp-pill sp-pill--${t}`}>
       <i className="un-dot" aria-hidden="true" />
@@ -163,7 +164,7 @@ export function InfoList({ items }) {
 export function DetailDrawer({ open, onClose, eyebrow, title, mono, pills = null, stats = null, footer = null, wide = false, children }) {
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose?.(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
@@ -412,7 +413,7 @@ export function FormDrawer({ open, onClose, title, description, footer, children
       const el = panelRef.current?.querySelector('input, select, textarea, button.quirri-dd__trigger');
       el?.focus();
     }, 30);
-    const onKey = (e) => { if (e.key === 'Escape' && !busyRef.current) closeRef.current?.(); };
+    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented && !busyRef.current) closeRef.current?.(); };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {

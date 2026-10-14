@@ -24,6 +24,22 @@ export const PAGE_META = {
     title: 'Interview assignments',
     subtitle: 'Assign AI mock interviews to cohorts in your department.',
   },
+  '/faculty/staff': {
+    title: 'Department staff',
+    subtitle: 'Faculty in your department and the subjects each one teaches.',
+  },
+  '/faculty/reports': {
+    title: 'Reports',
+    subtitle: 'Student and cohort reports for your department.',
+  },
+  '/faculty/notifications': {
+    title: 'Notifications',
+    subtitle: 'Review alerts and other messages Quirri sent you.',
+  },
+  '/faculty/settings': {
+    title: 'Settings',
+    subtitle: 'Your profile and account security.',
+  },
   '/faculty/analytics': {
     title: 'Department analytics',
     subtitle: 'Completion, assessment performance, and Q&A demand for your department.',

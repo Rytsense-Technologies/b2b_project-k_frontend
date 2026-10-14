@@ -3,6 +3,11 @@ import { resolveLivekitBrowserUrl } from '@/lib/livekitUrl';
 import { unwrap } from '@/lib/api/superadmin/http';
 
 export const interviewApi = {
+  /** GET /livekit-interview/eligibility — final-year students, or an assignment for the cohort (SOW §5.3). */
+  eligibility() {
+    return api.get('/livekit-interview/eligibility').then((res) => res?.data);
+  },
+
   /** POST /livekit-interview/start — creates session + LiveKit token */
   startLivekitInterview(data) {
     return api.post('/livekit-interview/start', data).then((res) => {
@@ -54,6 +59,7 @@ export function parseLivekitStartResponse(data) {
   if (!data || typeof data !== 'object') return null;
   const sessionId = extractSessionId(data);
   const { token, url, room, position, persona, mode } = data;
+  const recordSession = data.record_session === true ? true : data.record_session === false ? false : null;
   if (!sessionId || !token || !url) return null;
   const browserUrl = resolveLivekitBrowserUrl(url);
   return {
@@ -65,5 +71,9 @@ export function parseLivekitStartResponse(data) {
     position,
     persona: persona ?? null,
     mode: mode === 'full' ? 'full' : 'mock',
+    /** true = Full session expects a video avatar; false = voice-only Full; null = mock. */
+    recordSession,
+    avatarId: data.avatar_id ?? persona?.avatar_id ?? null,
+    gpuStatus: data.gpu_status ?? null,
   };
 }

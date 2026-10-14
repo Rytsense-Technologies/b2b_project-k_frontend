@@ -3,7 +3,8 @@ import { academicLabelField } from '../fields';
 
 export const INTERVIEW_MODE_VALUES = ['mock', 'full'];
 export const INTERVIEW_DIFFICULTY_VALUES = ['beginner', 'intermediate', 'advanced', 'adaptive'];
-export const INTERVIEW_EXPERIENCE_VALUES = ['0-1', '1-2', '2-4', '4-7', '7+'];
+/** B2B students interview as freshers (0–1 years). */
+export const INTERVIEW_EXPERIENCE_VALUES = ['0-1'];
 
 export const interviewSetupSchema = z.object({
   mode: z.enum(INTERVIEW_MODE_VALUES, {

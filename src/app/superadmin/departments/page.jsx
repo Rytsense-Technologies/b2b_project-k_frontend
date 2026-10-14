@@ -332,7 +332,7 @@ function DepartmentDrawer({ row, onClose, onEdit, onToggle }) {
       pills={(
         <>
           {row.code ? <span className="sp-pill sp-pill--glass">{row.code}</span> : null}
-          <span className={`sp-pill ${active ? 'sp-pill--good' : 'sp-pill--err'}`}>
+          <span className={`sp-pill ${active ? 'sp-pill--good' : 'sp-pill--off'}`}>
             {active ? 'Active' : 'Inactive'}
           </span>
         </>
@@ -625,7 +625,7 @@ export default function DepartmentsPage() {
                   <div className="un-card-stats">
                     <div><b>{countLabel(dept.student_count ?? 0)}</b><small>Students</small></div>
                     <div>
-                      <b className="sa-stat-text">{dept.hod_name || 'Not set'}</b>
+                      <b className={`sa-stat-text${dept.hod_name ? ' is-set' : ''}`}>{dept.hod_name || 'Not set'}</b>
                       <small>HOD</small>
                     </div>
                   </div>

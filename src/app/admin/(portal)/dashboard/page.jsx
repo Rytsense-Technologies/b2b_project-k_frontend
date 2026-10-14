@@ -13,26 +13,15 @@ import {
   countLabel,
 } from '@/components/shared/module-ui';
 import { usersApi } from '@/lib/api/superadmin/users';
-import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
+import { analyticsApi } from '@/lib/api/analytics';
+import { minutesLabel } from '@/components/admin/insights';
 import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
+import { statusVariant, userStatusLabel } from '@/lib/admin/userStatus';
 
 const TONE = { red: 'err', amber: 'low', green: 'good' };
-
-function statusVariant(user) {
-  if (user?.is_active === false) return 'red';
-  if (user?.is_verified === false) return 'amber';
-  return 'green';
-}
-
-function userStatusLabel(user) {
-  if (user?.is_active === false) return 'Deactivated';
-  if (user?.is_verified === false) return 'Pending activation';
-  const s = String(user?.status || 'Active').replace(/_/g, ' ');
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
 
 function pickTotal(payload, list) {
   if (typeof payload?.total === 'number') return payload.total;
@@ -73,10 +62,16 @@ export default function AdminDashboardPage() {
     return unwrap(res);
   }, [tenantId]);
 
-  const { data: deptData, loading: deptLoading } = useAsyncResource(
-    () => fetchData(() => departmentsApi.list({ page: 1, pageSize: 1, is_active: true })),
+  // Live college overview (last 30 days): departments, watch time, review queue.
+  const { data: overview, loading: overviewLoading, error: overviewError } = useAsyncResource(
+    () => analyticsApi.college({ range: 'last_30_days' }),
     [tenantId],
   );
+  const totals = overview?.totals;
+  const queue = overview?.review_queue;
+  const activeDepts = (overview?.departments || [])
+    .filter((d) => d.students || d.watch_minutes || d.qa || d.interviews)
+    .sort((a, b) => (b.watch_minutes - a.watch_minutes) || (b.qa - a.qa));
 
   const students = useMemo(() => {
     if (Array.isArray(studentData)) return studentData;
@@ -88,7 +83,6 @@ export default function AdminDashboardPage() {
     facultyData,
     Array.isArray(facultyData) ? facultyData : asList(facultyData?.users || facultyData, []),
   );
-  const departmentTotal = pickTotal(deptData, asList(deptData, []));
 
   const loadingPeople = studentsLoading || facultyLoading;
 
@@ -130,47 +124,67 @@ export default function AdminDashboardPage() {
           },
           {
             icon: 'user',
-            label: 'Faculty',
-            value: loadingPeople ? null : countLabel(facultyTotal),
-            sub: 'Staff accounts in this college',
+            label: 'Faculty & HOD',
+            value: loadingPeople ? null : countLabel(totals ? totals.faculty : facultyTotal),
+            sub: 'Active staff accounts',
           },
           {
             icon: 'tree',
             label: 'Departments',
-            value: deptLoading ? null : countLabel(departmentTotal),
+            value: overviewLoading && !overview ? null : (totals ? countLabel(totals.departments) : '—'),
             sub: 'Active in your college',
           },
           {
             icon: 'clock',
             label: 'Watch time',
-            value: null,
-            sub: 'Not tracked yet',
+            value: overviewLoading && !overview ? null : (totals ? minutesLabel(totals.watch_minutes) : '—'),
+            sub: totals?.completion != null ? `Last 30 days · ${totals.completion}% chapters completed` : 'Last 30 days',
           },
         ]}
       />
 
-      <SectionState title="Learning metrics are not available yet">
-        HOD review queues, department activity and watch time appear here once those services are live.
-        No sample numbers are shown.
-      </SectionState>
+      {overviewError ? (
+        <SectionState tone="err" title="Could not load learning activity">
+          {overviewError?.message || 'Refresh the page to try again.'}
+        </SectionState>
+      ) : null}
 
       <div className="pm-grid-2">
         <Panel
-          title="Awaiting HOD review"
-          sub="Chapters waiting for faculty approval"
+          title="Content review queue"
+          sub={queue
+            ? `${countLabel(queue.awaiting_you)} waiting for you · ${countLabel(queue.awaiting_hod)} with the HOD · ${countLabel(queue.ready_to_send)} ready to send`
+            : 'Chapters on their way to students'}
           action={(
             <Link className="sp-link" href="/admin/content">
               Open content <Icon name="arrow" size={14} />
             </Link>
           )}
         >
-          <div className="ad-empty">
-            <span className="ad-empty-ic" aria-hidden="true"><Icon name="clock" size={20} /></span>
-            <div>
-              <b>Nothing to show yet</b>
-              <small>The review queue connects when the content pipeline is available to college admins.</small>
+          {queue?.items?.length ? (
+            <ul className="ad-queue">
+              {queue.items.map((j) => (
+                <li key={j.job_id}>
+                  <span className="sp-row-ic" aria-hidden="true"><Icon name="doc" size={16} /></span>
+                  <div>
+                    <b>{j.chapter_title}</b>
+                    <small>{[j.department, j.since ? new Date(j.since).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : null].filter(Boolean).join(' · ')}</small>
+                  </div>
+                  <span className={`sp-pill ${j.stage === 'awaiting_you' ? 'sp-pill--low' : j.stage === 'ready_to_send' ? 'sp-pill--teal' : ''}`}>
+                    {j.stage === 'awaiting_you' ? 'Review plan' : j.stage === 'ready_to_send' ? 'Send to HOD' : 'With HOD'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="ad-empty">
+              <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
+              <div>
+                <b>{overviewLoading && !overview ? 'Loading…' : 'Nothing waiting'}</b>
+                <small>Uploaded chapters show here until they are published to students.</small>
+              </div>
             </div>
-          </div>
+          )}
         </Panel>
         <Panel
           title="Department activity"
@@ -181,13 +195,30 @@ export default function AdminDashboardPage() {
             </Link>
           )}
         >
-          <div className="ad-empty">
-            <span className="ad-empty-ic" aria-hidden="true"><Icon name="chart" size={20} /></span>
-            <div>
-              <b>Nothing to show yet</b>
-              <small>Department activity appears when analytics is live.</small>
+          {activeDepts.length ? (
+            <ul className="ad-queue">
+              {activeDepts.slice(0, 5).map((d) => (
+                <li key={d.department_id}>
+                  <span className="sp-row-ic" aria-hidden="true"><Icon name="tree" size={16} /></span>
+                  <div>
+                    <b>{d.department}</b>
+                    <small>
+                      {`${countLabel(d.students)} student${d.students === 1 ? '' : 's'} · ${minutesLabel(d.watch_minutes)} watched · ${countLabel(d.qa)} Q&A · ${countLabel(d.interviews)} interview${d.interviews === 1 ? '' : 's'}`}
+                    </small>
+                  </div>
+                  {d.avg_score != null ? <span className="sp-pill sp-pill--teal">{Math.round(d.avg_score)}% avg</span> : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="ad-empty">
+              <span className="ad-empty-ic" aria-hidden="true"><Icon name="chart" size={20} /></span>
+              <div>
+                <b>{overviewLoading && !overview ? 'Loading…' : 'No activity in the last 30 days'}</b>
+                <small>Watch time, tutor questions and interviews show here as students learn.</small>
+              </div>
             </div>
-          </div>
+          )}
         </Panel>
       </div>
 

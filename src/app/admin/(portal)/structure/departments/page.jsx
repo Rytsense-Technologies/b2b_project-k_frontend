@@ -19,6 +19,7 @@ import {
   countLabel,
 } from '@/components/shared/module-ui';
 import { usePageHeader } from '@/components/shared/PageHeader';
+import StructureTabs from '@/components/admin/StructureTabs';
 import DepartmentFormDrawer from '@/components/admin/departments/DepartmentFormDrawer';
 import {
   HIERARCHY,
@@ -96,6 +97,7 @@ function DepartmentsList() {
 
   return (
     <ModulePage className="ad-page pm-slice">
+      <StructureTabs />
       <HierarchyStrip label="Where departments sit in your college" levels={HIERARCHY} />
 
       <KpiRow

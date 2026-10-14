@@ -12,6 +12,7 @@ import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
 import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/lib/api/auth';
 import { clearTokens } from '@/lib/tokens';
+import { clearFacultyScopeCache } from '@/hooks/useFacultyScope';
 import { useAuth } from '@/hooks/useAuth';
 import toast from 'react-hot-toast';
 
@@ -69,6 +70,7 @@ export default function RolePortalSidebar({
       /* ignore */
     }
     clearTokens();
+    clearFacultyScopeCache();
     dispatch(clearCredentials());
     dispatch(resetSession());
     queryClient.clear();

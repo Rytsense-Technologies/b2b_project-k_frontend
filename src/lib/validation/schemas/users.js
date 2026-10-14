@@ -76,6 +76,11 @@ function yearWithinDurationRefine(data, ctx) {
 
 const academicOptionalFields = {
   department: academicLabelField('Department', { required: false }),
+  // Picked from the institution's live departments (POST /users takes department_id).
+  department_id: z.string().optional().default(''),
+  // Students: academic structure placement (optional).
+  program_id: z.string().optional().default(''),
+  semester_id: z.string().optional().default(''),
   course_duration_years: positiveIntField('Program duration (years)', {
     required: false,
     max: MAX_COURSE_DURATION_YEARS,
@@ -119,6 +124,11 @@ const optionalDepartmentId = z
   .default('')
   .transform((v) => (String(v || '').trim() ? String(v).trim() : ''));
 
+/** College Admin moves or first-assigns a student to a department. */
+export const studentDepartmentChangeSchema = z.object({
+  department_id: z.string().trim().min(1, 'Select a department'),
+});
+
 /** College Admin creates a student in their own tenant (no college picker). */
 export const tenantStudentCreateSchema = z
   .object({
@@ -135,8 +145,16 @@ export const tenantStudentCreateSchema = z
       required: false,
       max: MAX_COURSE_DURATION_YEARS,
     }),
+    // Academic structure placement (optional); a programme needs its semester.
+    program_id: z.string().optional().default(''),
+    semester_id: z.string().optional().default(''),
   })
-  .superRefine(yearWithinDurationRefine);
+  .superRefine(yearWithinDurationRefine)
+  .superRefine((v, ctx) => {
+    if (v.program_id && !v.semester_id) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['semester_id'], message: 'Select the current semester' });
+    }
+  });
 
 /** College Admin creates faculty or HOD (optional teaching scope). */
 export const tenantFacultyCreateSchema = z.object({

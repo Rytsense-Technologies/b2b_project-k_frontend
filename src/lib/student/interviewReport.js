@@ -58,11 +58,46 @@ export function formatDurationSec(sec) {
   return `${Math.floor(total / 60)} min ${String(total % 60).padStart(2, '0')} s`;
 }
 
+/** Owner score bands: ≥75 strong · 50–74 on track · <50 needs improvement (orange, never red). */
 export function scoreBandKey(n) {
   if (n == null) return 'none';
-  if (n >= 80) return 'good';
-  if (n >= 65) return 'mid';
+  if (n >= 75) return 'good';
+  if (n >= 50) return 'mid';
   return 'low';
+}
+
+export const BAND_LABEL = {
+  good: 'Strong',
+  mid: 'On track',
+  low: 'Needs improvement',
+  none: 'Not scored',
+};
+
+/** Reports module routes — the list and one report. */
+export const REPORTS_PATH = '/student/reports';
+export const reportHref = (sessionId) => `/student/reports/view?session=${encodeURIComponent(sessionId)}`;
+
+/** The six scored skills, in categorical colour order (--cat-1 … --cat-6). */
+export const REPORT_SKILLS = [
+  { key: 'technical_knowledge', label: 'Technical knowledge', icon: 'book' },
+  { key: 'communication', label: 'Communication', icon: 'chat' },
+  { key: 'confidence', label: 'Confidence', icon: 'spark' },
+  { key: 'answer_structure', label: 'Answer structure', icon: 'layers' },
+  { key: 'problem_solving', label: 'Problem solving', icon: 'target' },
+  { key: 'behavioral_readiness', label: 'Behavioural readiness', icon: 'shield' },
+];
+
+/** Round a 0–100 score; null when missing. */
+export function score100(v) {
+  if (v == null || v === '' || !Number.isFinite(Number(v))) return null;
+  return Math.max(0, Math.min(100, Math.round(Number(v))));
+}
+
+/** "technical_knowledge" / "Technical Knowledge" → "Technical knowledge". */
+export function humanLabel(s) {
+  if (!s) return '';
+  const t = String(s).replace(/_/g, ' ').trim().toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 export function useInterviewReport(sessionId) {

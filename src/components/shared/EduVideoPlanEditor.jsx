@@ -233,6 +233,9 @@ export default function EduVideoPlanEditor({
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [sceneIndex, setSceneIndex] = useState(0);
+  // Reviewer: what the College Admin should change (stored with the request).
+  const [note, setNote] = useState('');
+  useEffect(() => { setNote(''); }, [job?.job_id, open]);
 
   const jobId = job?.job_id;
   const scenes = useMemo(
@@ -372,6 +375,7 @@ export default function EduVideoPlanEditor({
       if (isReviewer) {
         await eduVideoApi.requestChanges(jobId, {
           plan,
+          note: note.trim() || undefined,
           meta: {
             chapter_title: job?.chapter_title || plan?.title || '',
             source_filename: job?.source_filename || '',
@@ -648,6 +652,31 @@ export default function EduVideoPlanEditor({
             {loadError}
           </div>
         </div>
+      ) : null}
+
+      {!isReviewer && job?.changes_requested_at ? (
+        <div className="fa-note fa-note--request" role="note">
+          <Icon name="chat" size={18} />
+          <div>
+            <b>{`Changes requested${job.changes_requested_by ? ` by ${job.changes_requested_by}` : ''}`}</b>
+            {job.change_note || 'No note — compare the slides with the video and regenerate.'}
+          </div>
+        </div>
+      ) : null}
+
+      {isReviewer && !loading && !loadError && plan ? (
+        <label className="fa-review-note" htmlFor="review-note">
+          <span>Note for your College Admin <small>(optional)</small></span>
+          <textarea
+            id="review-note"
+            className="sd-input"
+            rows={2}
+            maxLength={2000}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="e.g. Slide 3 uses the wrong formula; shorten the summary."
+          />
+        </label>
       ) : null}
 
       {!loading && !loadError && plan ? (

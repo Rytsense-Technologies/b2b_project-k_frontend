@@ -84,11 +84,11 @@ export default function QuirriCombobox({
 
   const openMenu = useCallback(() => {
     if (disabled) return;
-    setQuery(selected?.label || '');
+    setQuery('');
     placeMenu();
     setActiveIndex(0);
     setOpen(true);
-  }, [disabled, placeMenu, selected?.label]);
+  }, [disabled, placeMenu]);
 
   const pick = useCallback((next) => {
     emitChange(onChange, name, next);
@@ -113,12 +113,13 @@ export default function QuirriCombobox({
     };
     const onReposition = () => placeMenu();
     document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
+    // Capture phase: close the menu before a surrounding modal sees Escape.
+    document.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', onReposition);
     window.addEventListener('scroll', onReposition, true);
     return () => {
       document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
       window.removeEventListener('resize', onReposition);
       window.removeEventListener('scroll', onReposition, true);
     };

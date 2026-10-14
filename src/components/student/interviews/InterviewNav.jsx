@@ -5,7 +5,7 @@ import { Icon } from '@/components/student/ui';
 
 /**
  * Interviews module header — deep teal banner + Practice / My reports switcher.
- * Shared by /student/interviews and /student/interviews/reports.
+ * Shared by /student/interviews and /student/reports.
  */
 export default function InterviewNav({ active = 'practice', reportCount = null, children = null }) {
   return (
@@ -42,7 +42,7 @@ export default function InterviewNav({ active = 'practice', reportCount = null, 
           <Icon name="mic" size={16} /> Practice
         </Link>
         <Link
-          href="/student/interviews/reports"
+          href="/student/reports"
           className="sp-tab"
           aria-selected={active === 'reports'}
           aria-current={active === 'reports' ? 'page' : undefined}
