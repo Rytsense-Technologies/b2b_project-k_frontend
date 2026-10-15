@@ -118,7 +118,7 @@
 .fa-plan .edu-plan-detail-h b{display:block;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
 .fa-plan-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fa-plan .edu-plan-preview{margin:0;border:0;border-radius:var(--radius-card);background:var(--teal-900);aspect-ratio:16 / 9;max-height:280px;display:grid;place-items:center;position:relative}
-.fa-plan .edu-plan-preview img{position:relative;z-index:1;width:100%;height:100%;max-height:none;object-fit:contain}
+.fa-plan .edu-plan-preview img{position:relative;width:100%;height:100%;max-height:none;object-fit:contain}
 .fa-plan-preview-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:12px;line-height:18px;color:var(--teal-200)}
 .fa-plan-preview-ph .sd-i{color:var(--teal-300)}
 .fa-plan-fields{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--line-soft);border-radius:var(--radius-card);background:var(--neutral-50)}
@@ -234,3 +234,151 @@
 .fa-review-note textarea:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
 .fa-note--request{margin-bottom:16px;background:var(--warning-soft)}
 .fa-mini-actions{display:inline-flex;align-items:center;gap:8px;flex:none}
+
+/* ---- Recipe v2 (14 Oct 2026): HOD / Faculty pages — dashboard, video tabs, students, subjects ---- */
+.fa-page .sd-kpi-v.is-focus{color:var(--accent-text)}
+.fa-page .sp-panel-h .sp-link{white-space:nowrap;flex:none}
+.fa-panel-links{display:inline-flex;gap:16px;flex:none}
+
+/* hero side: counts waiting on the reviewer (white on teal, no orange text) */
+.fa-hero-counts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.fa-hero-counts li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:var(--radius-control);background:var(--on-brand-raised);color:var(--on-brand-muted);font-size:14px;line-height:22px}
+.fa-hero-counts b{font-size:18px;line-height:26px;font-weight:500;color:var(--neutral-0);font-variant-numeric:tabular-nums}
+
+/* queue kind tiles: video = cat-1, questions = cat-4 (categorical, not status) */
+.fa-kind{flex:none}
+.fa-kind--video{background:var(--cat-1-soft);color:var(--cat-1)}
+.fa-kind--mcq{background:var(--cat-4-soft);color:var(--cat-4)}
+.fa-kind--other{background:var(--teal-50);color:var(--teal-500)}
+.fa-queue a > .sp-pill{flex:none}
+
+/* students who need attention */
+.fa-risk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fa-risk li + li{border-top:1px solid var(--line-soft)}
+.fa-risk a,.fa-risk button{display:flex;align-items:center;gap:16px;width:100%;padding:14px 24px;border:0;background:none;font:inherit;text-align:left;color:inherit;text-decoration:none;cursor:pointer;transition:background-color .2s ease-out}
+.fa-risk a:hover,.fa-risk button:hover{background:var(--surface-tint)}
+.fa-risk a:hover .fa-go{background:var(--teal-500);color:var(--neutral-0)}
+.fa-risk a:focus-visible,.fa-risk button:focus-visible{outline:2px solid var(--teal-500);outline-offset:-2px}
+.fa-risk .sp-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.fa-risk .sp-row-main b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-reasons{display:flex;flex-wrap:wrap;gap:6px}
+.fa-reason{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:var(--radius-control);background:var(--accent-soft);color:var(--accent-text);font-size:12px;line-height:18px;font-weight:500}
+.fa-risk-nums{display:flex;align-items:center;gap:16px;flex:none}
+.fa-risk-nums .dv-meter{min-width:140px}
+
+/* subject chip: categorical dot + name (same colour on every page) */
+.fa-subj{display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:18px;font-weight:500;color:var(--ink-2)}
+.fa-subj i{width:8px;height:8px;border-radius:50%;flex:none}
+.fa-row .sp-row-meta .fa-subj{font-size:14px;line-height:22px}
+.fa-subj-list{gap:4px 12px}
+.fa-subj-list > li{list-style:none}
+
+/* change request note on a row */
+.fa-change{margin-top:8px;padding:8px 12px;border-radius:var(--radius-control);background:var(--neutral-50);border-left:3px solid var(--teal-300)}
+.fa-change small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+.fa-change p{margin:4px 0 0;font-size:14px;line-height:22px;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* score number + band pill */
+.fa-score{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.fa-score b{font-size:14px;line-height:22px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.fa-click-table tbody tr{cursor:pointer}
+.fa-click-table .dv-meter{min-width:120px}
+
+/* subjects: card grid inside the panel */
+.fa-subj-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.fa-subj-grid.is-single{grid-template-columns:minmax(0,1fr)}
+.fa-subj-card{display:flex;flex-direction:column;gap:16px;padding:20px;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--neutral-0);min-width:0}
+.fa-subj-h{display:flex;align-items:flex-start;gap:12px}
+.fa-subj-disc{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--neutral-0)}
+.fa-subj-t{display:flex;flex-direction:column;min-width:0}
+.fa-subj-t b{font-size:16px;line-height:24px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.fa-subj-t b small{font-weight:400;color:var(--muted-2)}
+.fa-subj-t > small{font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
+.fa-subj-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0}
+.fa-subj-stats > div{min-width:0}
+.fa-subj-stats dt{font-size:12px;line-height:18px;color:var(--muted-2)}
+.fa-subj-stats dd{margin:2px 0 0;font-size:16px;line-height:24px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.fa-subj-stats .dv-meter{width:100%}
+.fa-subj-stats .fa-score{flex-wrap:wrap;white-space:normal}
+.fa-subj-toggle{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;min-height:36px;padding:0;border:0;background:none;font:inherit;font-size:14px;line-height:22px;font-weight:500;color:var(--teal-500);cursor:pointer}
+.fa-subj-toggle:disabled{cursor:default;color:var(--ink)}
+.fa-subj-toggle:disabled .sa-acad-caret{display:none}
+.fa-subj-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px;border-radius:var(--radius-control)}
+.fa-subj-card .fa-chapter-list{padding:0}
+.fa-chapter-list--flat{padding:0 24px 12px;border-top:0}
+.fa-subj-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--band-none)}
+
+/* one-line notice (orange text = needs focus) */
+.fa-inline-note{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--radius-card);background:var(--neutral-0);box-shadow:var(--shadow-card);font-size:14px;line-height:22px;color:var(--ink-2)}
+.fa-inline-note > .sd-i{flex:none;margin-top:3px;color:var(--teal-500)}
+.fa-inline-note b{font-weight:500;color:var(--ink)}
+.fa-inline-note.is-focus > .sd-i,.fa-inline-note.is-focus b{color:var(--accent-text)}
+
+/* notifications grouped by day */
+.fa-day + .fa-day{border-top:1px solid var(--line-soft)}
+.fa-day-h{margin:0;padding:12px 24px 4px;font-size:12px;line-height:18px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.fa-notes{list-style:none;margin:0;padding:0}
+.fa-notes li{display:flex;align-items:center;gap:16px;padding:12px 24px}
+.fa-notes li + li{border-top:1px solid var(--line-soft)}
+.fa-note-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.fa-note-main b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-note-main small{font-size:14px;line-height:22px;color:var(--ink-2);overflow-wrap:anywhere}
+.fa-note-main small.fa-note-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;line-height:18px;color:var(--muted-2)}
+.fa-notes .sp-link{flex:none;display:inline-flex;align-items:center;gap:4px}
+
+@media (max-width:760px){
+  .fa-subj-grid{grid-template-columns:minmax(0,1fr)}
+  .fa-subj-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fa-subj-card{padding:16px}
+  .fa-risk a,.fa-risk button{padding:12px 16px;flex-wrap:wrap}
+  .fa-risk-nums{width:100%;padding-left:52px}
+  .fa-risk a .fa-risk-nums{padding-left:0}
+  .fa-notes li{padding:12px 16px;flex-wrap:wrap}
+  .fa-notes .sp-link{padding-left:56px}
+  .fa-day-h{padding:12px 16px 4px}
+  .fa-chapter-list--flat{padding:0 16px 12px}
+  .fa-panel-links{gap:12px}
+}
+
+/* In-panel filters (Panel toolbar) on HOD / Faculty pages — same look as the admin / analytics modules. */
+.fa-page .pm-panel-tools .fa-filter-select{flex:0 1 220px;min-width:180px}
+.fa-page .pm-panel-tools .fa-filter-select .quirri-dd{min-width:0;width:100%}
+.fa-page .pm-panel-tools .fa-filter-select--sm{flex:0 1 160px;min-width:140px}
+.fa-page .pm-panel-tools .un-seg{flex:0 0 auto}
+@media (max-width:640px){
+  .fa-page .pm-panel-tools .fa-filter-select{flex:1 1 100%;min-width:0}
+}
+/* Tab strip scrolls sideways on phones; hide the bar itself. */
+.fa-page .pm-tabs{scrollbar-width:none}
+.fa-page .pm-tabs::-webkit-scrollbar{display:none}
+
+/* Fix round (14 Oct): at-risk rows, subject panel pill, tabs that fit a phone. */
+.fa-risk .fa-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-500);font-size:12px;line-height:18px;font-weight:500}
+.fa-risk-nums{margin:0;display:grid;grid-template-columns:140px 150px 150px;gap:16px;flex:none}
+.fa-risk-nums > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fa-risk-nums dt{font-size:12px;line-height:18px;color:var(--muted-2)}
+.fa-risk-nums dd{margin:0;min-height:24px;display:flex;align-items:center}
+.fa-risk-nums .dv-meter{min-width:0;width:100%}
+.fa-pill-link{text-decoration:none;flex:none}
+@media (max-width:760px){
+  .fa-risk-nums{width:100%;padding-left:52px;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+}
+@media (max-width:480px){
+  .fa-tabs-fit .pm-tabs{display:grid;overflow:visible}
+  .fa-tabs-fit--3 .pm-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .fa-tabs-fit--2x2 .pm-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fa-tabs-fit .pm-tabs .tab{padding:12px 4px;text-align:center;font-size:14px}
+  .fa-tabs-fit .pm-tabs .tab .ct{margin-left:4px;padding:0 6px}
+  .fa-risk-nums{padding-left:0}
+}
+@media (max-width:480px){
+  .fa-risk-nums .dv-band{display:none}
+  .fa-risk-nums dt{min-height:36px}
+}
+
+/* Final-check round: touch targets not covered by the shared 44px rule. */
+@media (max-width:768px){
+  .fa-subj-toggle{min-height:44px}
+  .fa-page .ad-person-btn{min-height:44px}
+  .fa-page .fa-link-tap{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+}

@@ -7,13 +7,22 @@ import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { QuirriCombobox, QuirriField, QuirriRHFField, QuirriSelect } from '@/components/superadmin/quirri-ui';
 import {
+  HeadChip,
   Icon,
   KpiRow,
-  ModuleBanner,
+  ModuleHead,
   ModulePage,
+  Pager,
   Panel,
   SectionState,
+  SegTabs,
+  TabNav,
+  TabPanel,
+  countLabel,
 } from '@/components/shared/module-ui';
+import { useTabInView } from '@/components/admin/insights';
+import { ScoreMeter } from '@/components/shared/data-viz';
+import { useUrlState } from '@/hooks/useUrlState';
 import { interviewAssignmentsApi } from '@/lib/api/interviewAssignments';
 import { departmentsApi } from '@/lib/api/superadmin/modules';
 import { apiErrorMessage, asList, unwrap } from '@/lib/api/superadmin/http';
@@ -27,6 +36,23 @@ function formatDue(iso) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function isOverdue(row) {
+  if (!row.due_at || row.status !== 'active') return false;
+  const d = new Date(row.due_at);
+  if (Number.isNaN(d.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d < today;
+}
+
+const PAGE_SIZE = 25;
+const TABS = ['assignments', 'cohort'];
+const MODES = [
+  { value: '', label: 'All modes' },
+  { value: 'mock', label: 'Mock interview' },
+  { value: 'full', label: 'Full interview' },
+];
+
 function cohortLabel(row) {
   if (row.final_year_only) {
     return row.department_name ? `Final year · ${row.department_name}` : 'Final year · All departments';
@@ -37,25 +63,38 @@ function cohortLabel(row) {
 
 /**
  * Shared interview assignment workspace for College Admin and Faculty/HOD.
- * @param {{ scope: 'college' | 'department', title?: string, description?: string }} props
+ * Tabs (?tab=): Assignments | Cohort readiness (`cohort` node).
+ * Create / close for College Admin and HOD; `readOnly` (Faculty) follows only.
+ * @param {{ scope: 'college' | 'department', description?: string, readOnly?: boolean }} props
  */
 export default function InterviewAssignmentsWorkspace({
   scope = 'college',
-  title = 'Interview assignments',
-  description = 'Assign AI mock interviews to final-year cohorts and track completion.',
+  description = null,
+  cohort = null,
   extra = null,
   readOnly = false,
+  chips = null,
   notice = null,
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [acting, setActing] = useState(false);
+  const [closingId, setClosingId] = useState('');
+  const [page, setPage] = useState(1);
+  const [url, setUrl] = useUrlState({ tab: 'assignments', status: 'active', dept: '', mode: '' });
+  const tab = TABS.includes(url.tab) ? url.tab : 'assignments';
+  const listStatus = url.status === 'closed' ? 'closed' : 'active';
+  const cohortNode = cohort || extra;
+  useTabInView('ia', tab);
 
   const {
     data: listData,
     loading,
     error,
     reload,
-  } = useAsyncResource(() => interviewAssignmentsApi.list({ status: 'active' }), []);
+  } = useAsyncResource(
+    () => interviewAssignmentsApi.list({ status: listStatus, page, page_size: PAGE_SIZE }),
+    [listStatus, page],
+  );
 
   const {
     data: summary,
@@ -74,6 +113,11 @@ export default function InterviewAssignmentsWorkspace({
   );
 
   const items = useMemo(() => asList(listData, []), [listData]);
+  const listTotal = listData?.total ?? items.length;
+  // Department / mode narrow the loaded page (the list API has no such filters).
+  // A college-wide assignment (no department) includes every department.
+  const shownItems = items.filter((row) => (!url.dept || !row.department_id || String(row.department_id) === url.dept)
+    && (!url.mode || row.mode === url.mode));
   const departmentOptions = useMemo(() => {
     const rows = asList(deptsData, []);
     return [
@@ -146,22 +190,28 @@ export default function InterviewAssignmentsWorkspace({
   });
 
   const onClose = async (id) => {
+    setClosingId(id);
     try {
       await interviewAssignmentsApi.close(id);
       toast.success('Assignment closed.');
       await Promise.all([reload(), reloadSummary()]);
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Could not close assignment.'));
+    } finally {
+      setClosingId('');
     }
   };
 
+  const assigned = (summary?.completed ?? 0) + (summary?.needs_support ?? 0);
+  const completionPct = summary ? (assigned ? Math.round((100 * summary.completed) / assigned) : null) : undefined;
+  const showActions = listStatus === 'active' && !readOnly;
+  const filtered = Boolean(url.dept || url.mode);
+
   return (
-    <ModulePage>
-      <ModuleBanner
-        icon="mic"
-        eyebrow="Interviews"
-        title={title}
+    <ModulePage className="ad-page ia-page">
+      <ModuleHead
         lede={description}
+        chips={chips || (readOnly ? <HeadChip icon="lock" tone="grey">View only · your HOD assigns interviews</HeadChip> : null)}
         actions={readOnly ? null : (
           <button type="button" className="sd-btn sd-btn--amber" onClick={openCreate}>
             <Icon name="plus" size={16} /> New assignment
@@ -171,105 +221,185 @@ export default function InterviewAssignmentsWorkspace({
 
       {notice}
 
-      <KpiRow
-        label="Interview summary"
-        items={[
-          {
-            icon: 'users',
-            label: 'Final-year students',
-            value: summary?.final_year_students ?? null,
-            sub: summary ? 'Eligible in your scope' : 'Loading…',
-          },
-          {
-            icon: 'calendar',
-            label: 'Active assignments',
-            value: summary?.assigned ?? null,
-            sub: 'Open cohorts',
-          },
-          {
-            icon: 'tick',
-            label: 'Completed',
-            value: summary?.completed ?? null,
-            sub: 'Students who finished',
-          },
-          {
-            icon: 'alert',
-            label: 'Still to complete',
-            value: summary?.needs_support ?? null,
-            sub: 'Across active assignments',
-          },
+      <TabNav
+        label="Interview sections"
+        idBase="ia"
+        value={tab}
+        // Each tab's filters belong to that tab only: drop both sets when switching.
+        onChange={(v) => setUrl({ tab: v, status: 'active', dept: '', mode: '', cstatus: undefined, cyear: undefined, cdept: undefined }, { push: true })}
+        tabs={[
+          // No count here: Active / Closed (in the panel) each have their own list.
+          { value: 'assignments', label: 'Assignments' },
+          ...(cohortNode ? [{ value: 'cohort', label: 'Cohort readiness' }] : []),
         ]}
       />
 
-      <Panel title="Active assignments" sub="Cohorts you have assigned an interview to." bodyClassName={null}>
-        {loading ? (
-          <SectionState title="Loading assignments">Fetching cohort assignments.</SectionState>
-        ) : error ? (
-          <SectionState
-            tone="err"
-            title="Could not load assignments"
-            action={<button type="button" className="sd-btn sd-btn--ghost" onClick={() => reload()}>Retry</button>}
-          >
-            {apiErrorMessage(error, 'Try again in a moment.')}
-          </SectionState>
-        ) : items.length === 0 ? (
-          <SectionState
-            title="No assignments yet"
-            action={readOnly ? null : (
-              <button type="button" className="sd-btn sd-btn--amber" onClick={openCreate}>
-                <Icon name="plus" size={16} /> New assignment
-              </button>
-            )}
-          >
-            {readOnly
-              ? 'Your HOD assigns mock interviews to cohorts; they will show here.'
-              : 'Create an assignment for a final-year cohort to get started.'}
-          </SectionState>
-        ) : (
-          <div className="sp-table-wrap">
-            <table className="sp-table">
-              <thead>
-                <tr>
-                  <th>Assignment</th>
-                  <th>Cohort</th>
-                  <th>Mode</th>
-                  <th>Due</th>
-                  <th className="num">Completion</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.title}</td>
-                    <td>{cohortLabel(row)}</td>
-                    <td style={{ textTransform: 'capitalize' }}>{row.mode}</td>
-                    <td>{formatDue(row.due_at)}</td>
-                    <td className="num">
-                      {row.eligible_count
-                        ? `${row.completed_count}/${row.eligible_count} (${row.completion_pct}%)`
-                        : '0 eligible'}
-                    </td>
-                    <td>
-                      {readOnly ? null : (
-                        <button
-                          type="button"
-                          className="sd-btn sd-btn--ghost"
-                          onClick={() => onClose(row.id)}
-                        >
-                          Close
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Panel>
+      <TabPanel value="assignments" current={tab} idBase="ia">
+        <KpiRow
+          label="Interview summary"
+          items={[
+            {
+              icon: 'users',
+              label: 'Final-year students',
+              value: summary ? countLabel(summary.final_year_students) : null,
+              sub: 'Eligible by default',
+            },
+            {
+              icon: 'calendar',
+              label: 'Active assignments',
+              value: summary ? countLabel(summary.assigned) : null,
+              sub: 'Open cohorts',
+            },
+            {
+              icon: 'tick',
+              label: 'Completion',
+              value: completionPct === undefined ? null : completionPct == null ? '—' : `${completionPct}%`,
+              sub: summary ? `${countLabel(summary.completed)} of ${countLabel(assigned)} assigned students done` : 'Across active assignments',
+            },
+            {
+              icon: 'alert',
+              label: 'Still to complete',
+              value: summary ? countLabel(summary.needs_support) : null,
+              sub: 'Across active assignments',
+            },
+          ]}
+        />
 
-      {extra}
+        <Panel
+          title={listStatus === 'closed' ? 'Closed assignments' : 'Active assignments'}
+          sub={readOnly
+            ? 'Interview assignments in your department.'
+            : listStatus === 'closed'
+              ? 'Assignments you have closed, with their final results.'
+              : 'Cohorts you have assigned an interview to.'}
+          bodyClassName={null}
+          toolbar={(
+            <>
+              <SegTabs
+                label="Assignment status"
+                value={listStatus}
+                onChange={(v) => { setPage(1); setUrl({ status: v }); }}
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'closed', label: 'Closed' },
+                ]}
+              />
+              {scope === 'college' && departmentOptions.length > 1 ? (
+                <QuirriSelect
+                  ariaLabel="Filter by department"
+                  value={url.dept}
+                  onChange={(e) => setUrl({ dept: e.target.value })}
+                  options={departmentOptions}
+                />
+              ) : null}
+              <QuirriSelect
+                ariaLabel="Filter by mode"
+                value={url.mode}
+                onChange={(e) => setUrl({ mode: e.target.value })}
+                options={MODES}
+              />
+              {filtered ? (
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setUrl({ dept: '', mode: '' })}>
+                  Clear
+                </button>
+              ) : null}
+            </>
+          )}
+        >
+          {loading && !listData ? (
+            <div className="sp-panel-b"><SectionState title="Loading assignments…" /></div>
+          ) : error ? (
+            <div className="sp-panel-b">
+              <SectionState
+                tone="err"
+                title="Could not load assignments"
+                action={<button type="button" className="sd-btn sd-btn--ghost" onClick={() => reload()}>Retry</button>}
+              >
+                {apiErrorMessage(error, 'Try again in a moment.')}
+              </SectionState>
+            </div>
+          ) : items.length && !shownItems.length ? (
+            <div className="sp-panel-b">
+              <SectionState title="No assignments match">Change or clear the department and mode filters.</SectionState>
+            </div>
+          ) : !items.length && listStatus === 'closed' ? (
+            <div className="sp-panel-b">
+              <SectionState title="No closed assignments">
+                Assignments appear here once they are closed, with their final completion.
+              </SectionState>
+            </div>
+          ) : !items.length ? (
+            <div className="sp-panel-b">
+              <SectionState title="No active assignments">
+                {readOnly
+                  ? 'Your HOD assigns mock interviews to cohorts; they will show here.'
+                  : 'Use New assignment to give a final-year cohort a mock interview.'}
+              </SectionState>
+            </div>
+          ) : (
+            <>
+              <div className="sp-table-wrap">
+                <table className="sp-table un-table ad-stack">
+                  <thead>
+                    <tr>
+                      <th>Assignment</th>
+                      <th>Cohort</th>
+                      <th>Mode</th>
+                      <th>Due</th>
+                      <th>Completion</th>
+                      {showActions ? <th><span className="sr-only">Actions</span></th> : null}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shownItems.map((row) => (
+                      <tr key={row.id}>
+                        <td>
+                          <b>{row.title}</b>
+                          {row.notes ? <small className="ad-cell-sub">{row.notes}</small> : null}
+                        </td>
+                        <td data-label="Cohort">{cohortLabel(row)}</td>
+                        <td data-label="Mode">{row.mode === 'full' ? 'Full interview' : 'Mock interview'}</td>
+                        <td data-label="Due">
+                          {isOverdue(row)
+                            ? <span className="sp-pill sp-pill--low">Overdue · {formatDue(row.due_at)}</span>
+                            : formatDue(row.due_at)}
+                        </td>
+                        <td data-label="Completion">
+                          {row.eligible_count ? (
+                            <div className="ia-progress">
+                              <ScoreMeter value={row.completion_pct ?? 0} label="Completion" />
+                              <small>{countLabel(row.completed_count)} of {countLabel(row.eligible_count)} done</small>
+                            </div>
+                          ) : <span className="sa-muted">No eligible students</span>}
+                        </td>
+                        {showActions ? (
+                          <td className="ia-actions">
+                            <button
+                              type="button"
+                              className="sd-btn sd-btn--ghost sd-btn--sm"
+                              onClick={() => onClose(row.id)}
+                              disabled={closingId === row.id}
+                            >
+                              {closingId === row.id ? 'Closing…' : 'Close'}
+                            </button>
+                          </td>
+                        ) : null}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pager page={page} pageSize={PAGE_SIZE} total={listTotal} shown={items.length} onPage={setPage} noun="assignments" />
+            </>
+          )}
+        </Panel>
+      </TabPanel>
+
+      {cohortNode ? (
+        <TabPanel value="cohort" current={tab} idBase="ia">
+          {cohortNode}
+        </TabPanel>
+      ) : null}
 
       <QuirriModal
         open={modalOpen}
@@ -333,20 +463,25 @@ export default function InterviewAssignmentsWorkspace({
               )}
             />
           ) : null}
-          <label className="q-check" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
-            <Controller
-              control={control}
-              name="final_year_only"
-              render={({ field }) => (
+          <Controller
+            control={control}
+            name="final_year_only"
+            render={({ field }) => (
+              <label className="pm-check">
                 <input
                   type="checkbox"
                   checked={Boolean(field.value)}
                   onChange={(e) => field.onChange(e.target.checked)}
+                  onBlur={field.onBlur}
                 />
-              )}
-            />
-            <span>Final-year students only</span>
-          </label>
+                <span className="pm-check-box" aria-hidden="true"><Icon name="tick" size={14} /></span>
+                <span className="pm-check-text">
+                  <b>Final-year students only</b>
+                  <small>Untick to choose a year of study instead.</small>
+                </span>
+              </label>
+            )}
+          />
           {!finalYearOnly ? (
             <QuirriRHFField
               control={control}

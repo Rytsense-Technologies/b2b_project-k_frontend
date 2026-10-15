@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { Icon, SectionState } from '@/components/student/ui';
 import { mcqApi, mcqErrorMessage, optionEntries, isMultiSelect } from '@/lib/api/mcq';
 import { mcqSubmitSchema } from '@/lib/validation';
-import { formatDateTime, scoreTone } from '@/lib/student/learning';
+import { formatDateTime } from '@/lib/student/learning';
+import { BandPill, Distribution, bandFor } from '@/components/shared/data-viz';
 
 /**
  * Student chapter assessment for one edu_video job (owner mock-ups, Oct 2026):
@@ -67,7 +68,8 @@ export default function McqStudentQuiz({
       : []),
     [view],
   );
-  const title = view?.title || chapterTitle || 'Chapter quiz';
+  // The chapter title (from the URL / chapter list) — the MCQ set's own title is often the source filename.
+  const title = chapterTitle || view?.title || 'Chapter quiz';
   const classroomHref = context.classroomHref || '/student/subjects';
   const tutorHref = context.tutorHref || '/student/subjects';
 
@@ -151,7 +153,16 @@ export default function McqStudentQuiz({
   const crumbs = (last) => (
     <nav className="sl-crumbs" aria-label="Breadcrumb">
       <ol>
-        <li><Link href={context.subjectsHref || '/student/subjects'}>{context.subjectName || 'My subjects'}</Link></li>
+        <li><Link href="/student/subjects">My subjects</Link></li>
+        {context.subjectName ? (
+          <li>
+            <Link href={context.subjectsHref || '/student/subjects'}>
+              {context.subjectColor ? <i className="sl-crumb-dot" style={{ background: context.subjectColor }} aria-hidden="true" /> : null}
+              {context.subjectName}
+            </Link>
+          </li>
+        ) : null}
+        <li><Link href={classroomHref}>{title}</Link></li>
         {last.map((c, i) => (
           <li key={c.label} aria-current={i === last.length - 1 ? 'page' : undefined}>
             {c.onClick ? <button type="button" className="sl-crumb-btn" onClick={c.onClick}>{c.label}</button> : c.label}
@@ -162,12 +173,12 @@ export default function McqStudentQuiz({
   );
 
   if (loading) {
-    return <div className="sl sl-hide-topbar"><SectionState title="Loading assessment…" /></div>;
+    return <div className="sl"><SectionState title="Loading assessment…" /></div>;
   }
 
   if (loadError) {
     return (
-      <div className="sl sl-hide-topbar">
+      <div className="sl">
         {crumbs([{ label: 'Assessment' }])}
         <SectionState
           tone="err"
@@ -199,17 +210,17 @@ export default function McqStudentQuiz({
 
   if (view?.status === 'not_available') {
     return (
-      <div className="sl sl-hide-topbar animate-fade-in">
+      <div className="sl animate-fade-in">
         {crumbs([{ label: 'Assessment' }])}
         <header className="sl-page-h">
-          <h1>Chapter assessment</h1>
-          <p>{title}</p>
+          <h2>{title}</h2>
+          <p>Chapter assessment</p>
         </header>
         <section className="sl-card sl-gate">
           <span className="sl-gate-ic" aria-hidden="true"><Icon name="clock" size={28} /></span>
           <h2>Assessment not open yet</h2>
           <p>Your faculty is still reviewing the questions for this chapter. You will get an email when it opens — keep watching the lecture meanwhile.</p>
-          <Link className="sl-btn sl-btn--accent" href={classroomHref}><Icon name="playFill" size={18} /> Back to classroom</Link>
+          <Link className="sd-btn sd-btn--amber" href={classroomHref}><Icon name="playFill" size={18} /> Back to classroom</Link>
         </section>
       </div>
     );
@@ -218,18 +229,18 @@ export default function McqStudentQuiz({
   if (view?.status === 'watch_required') {
     const wp = Number.isFinite(Number(view?.watch_percent)) ? Math.round(Number(view.watch_percent)) : 0;
     return (
-      <div className="sl sl-hide-topbar animate-fade-in">
+      <div className="sl animate-fade-in">
         {crumbs([{ label: 'Assessment' }])}
         <header className="sl-page-h">
-          <h1>Chapter assessment</h1>
-          <p>{title}</p>
+          <h2>{title}</h2>
+          <p>Chapter assessment</p>
         </header>
         <section className="sl-card sl-gate">
           <span className="sl-gate-ic" aria-hidden="true"><Icon name="lock" size={28} /></span>
           <h2>Finish the lecture first</h2>
           <p>This assessment unlocks after you watch 100% of the chapter video. You are at {wp}% so far.</p>
           <span className="sl-gate-bar" aria-hidden="true"><i style={{ width: `${wp}%` }} /></span>
-          <Link className="sl-btn sl-btn--accent" href={classroomHref}><Icon name="playFill" size={18} /> Back to classroom</Link>
+          <Link className="sd-btn sd-btn--amber" href={classroomHref}><Icon name="playFill" size={18} /> Back to classroom</Link>
         </section>
       </div>
     );
@@ -240,12 +251,12 @@ export default function McqStudentQuiz({
     const selected = new Set(answers[current?.id] || []);
     const isLast = index === questions.length - 1;
     return (
-      <div className="sl sl-hide-topbar animate-fade-in">
+      <div className="sl animate-fade-in">
         {crumbs([{ label: 'Assessment' }])}
         <div className="sl-quiz-top">
           <header className="sl-page-h">
-            <h1>Chapter assessment</h1>
-            <p>{title} · {questions.length} question{questions.length === 1 ? '' : 's'} · scored by Quirri</p>
+            <h2>{title}</h2>
+            <p>Chapter assessment · {questions.length} question{questions.length === 1 ? '' : 's'} · scored by Quirri</p>
           </header>
           <div className="sl-strip" aria-label="Assessment status">
             <div><b>{answeredCount} of {questions.length}</b><span>Answered</span></div>
@@ -294,15 +305,15 @@ export default function McqStudentQuiz({
             <p className="sl-keys">Tip: press A–D to choose, ← → to move between questions.</p>
 
             <div className="sl-question-f">
-              <button type="button" className="sl-btn sl-btn--outline" disabled={index === 0 || submitting} onClick={() => setIndex((i) => Math.max(0, i - 1))}>
+              <button type="button" className="sd-btn sd-btn--outline" disabled={index === 0 || submitting} onClick={() => setIndex((i) => Math.max(0, i - 1))}>
                 <Icon name="back" size={18} /> Previous
               </button>
               {isLast ? (
-                <button type="button" className="sl-btn sl-btn--accent" disabled={submitting} onClick={requestSubmit}>
+                <button type="button" className="sd-btn sd-btn--amber" disabled={submitting} onClick={requestSubmit}>
                   Review &amp; submit <Icon name="send" size={16} />
                 </button>
               ) : (
-                <button type="button" className="sl-btn sl-btn--teal" disabled={submitting} onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}>
+                <button type="button" className="sd-btn sd-btn--teal" disabled={submitting} onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}>
                   Next question <Icon name="arrow" size={18} />
                 </button>
               )}
@@ -332,7 +343,7 @@ export default function McqStudentQuiz({
                 );
               })}
             </ol>
-            <button type="button" className="sl-btn sl-btn--accent sl-btn--block" disabled={submitting} onClick={requestSubmit}>
+            <button type="button" className="sd-btn sd-btn--amber sd-btn--block" disabled={submitting} onClick={requestSubmit}>
               Submit assessment
             </button>
             <p className="sl-note"><Icon name="info" size={16} /> Answer every question first. You can’t change answers after you submit.</p>
@@ -365,7 +376,7 @@ export default function McqStudentQuiz({
   }
 
   return (
-    <div className="sl sl-hide-topbar">
+    <div className="sl">
       {crumbs([{ label: 'Assessment' }])}
       <SectionState
         title="This assessment isn’t ready yet"
@@ -378,7 +389,7 @@ export default function McqStudentQuiz({
 }
 
 /* ====================================================================== results */
-function ReportButton({ jobId, className = 'sl-btn sl-btn--outline' }) {
+function ReportButton({ jobId, className = 'sd-btn sd-btn--outline' }) {
   const [busy, setBusy] = useState(false);
   const download = async () => {
     setBusy(true);
@@ -399,7 +410,6 @@ function ReportButton({ jobId, className = 'sl-btn sl-btn--outline' }) {
 
 function QuizResults({ title, result, questions, context, nav, onNav, crumbs, classroomHref, tutorHref, jobId }) {
   const pctValue = Number(result.percentage) || 0;
-  const passed = pctValue >= 50;
   const rows = useMemo(() => {
     const byId = new Map(questions.map((q) => [String(q.id), q]));
     // Prefer the snapshot saved with the attempt (survives a regenerated set).
@@ -414,7 +424,12 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
   const wrong = rows.filter((r) => !r.is_correct);
   const right = rows.filter((r) => r.is_correct);
   const submitted = formatDateTime(result.submitted_at);
-  const tone = scoreTone(pctValue);
+  const tone = bandFor(pctValue);
+  const unanswered = rows.filter((r) => !(r.selected_options || []).length).length;
+  const incorrect = Math.max(0, wrong.length - unanswered);
+  // One score format across the portal: whole percent (S11).
+  const scoreText = `${Math.round(pctValue)}%`;
+  const showFile = context.sourceFilename && context.sourceFilename !== title;
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -424,19 +439,32 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
   const viewId = tabs.some((t) => t.id === nav.view) ? nav.view : 'overview';
   const go = (patch) => { onNav(patch, true); if (typeof window !== 'undefined') window.scrollTo({ top: 0 }); };
 
+  // After switching section, put keyboard focus on that section's nav item
+  // (not <body>), so screen-reader and keyboard users keep their place.
+  const prevView = useRef(viewId);
+  useEffect(() => {
+    if (prevView.current === viewId) return;
+    prevView.current = viewId;
+    const el = document.getElementById(`sl-rt-${viewId}`) || document.querySelector('main h1, main h2');
+    if (el) {
+      if (!el.hasAttribute('tabindex') && !/^(BUTTON|A)$/.test(el.tagName)) el.setAttribute('tabindex', '-1');
+      el.focus({ preventScroll: true });
+    }
+  }, [viewId]);
+
   if (viewId === 'review') {
     const filter = ['incorrect', 'correct'].includes(nav.filter) ? nav.filter : 'all';
     const shown = filter === 'incorrect' ? wrong : filter === 'correct' ? right : rows;
     return (
-      <div className="sl sl-hide-topbar animate-fade-in">
+      <div className="sl animate-fade-in">
         {crumbs([{ label: 'Assessment', onClick: () => go({ view: 'overview', filter: 'all' }) }, { label: 'Review' }])}
         <div className="sl-quiz-top">
           <header className="sl-page-h">
-            <h1>Review your answers</h1>
+            <h2>Review your answers</h2>
             <p>See what you got right and where to look again.</p>
           </header>
           <div className="sl-strip" aria-label="Score summary">
-            <div><b className={`sl-score--${tone}`}>{pctValue.toFixed(0)}%</b><span>Score</span></div>
+            <div><b className={`sl-score--${tone}`}>{scoreText}</b><span>Score</span></div>
             <div><b>{result.correct_count} of {result.total_questions} correct</b><span>Questions correct</span></div>
             <div><b>One attempt only</b><span>Assessment rule</span></div>
           </div>
@@ -462,8 +490,8 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
               </SectionState>
             )}
             <div className="sl-review-cta">
-              <Link className="sl-btn sl-btn--accent" href={classroomHref}><Icon name="playFill" size={18} /> Rewatch lecture</Link>
-              <Link className="sl-btn sl-btn--outline" href={tutorHref}><Icon name="chat" size={18} /> Ask AI tutor</Link>
+              <Link className="sd-btn sd-btn--amber" href={classroomHref}><Icon name="playFill" size={18} /> Rewatch lecture</Link>
+              <Link className="sd-btn sd-btn--outline" href={tutorHref}><Icon name="chat" size={18} /> Ask AI tutor</Link>
               {jobId ? <ReportButton jobId={jobId} /> : null}
             </div>
           </div>
@@ -493,31 +521,36 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
   }
 
   return (
-    <div className="sl sl-hide-topbar animate-fade-in">
-      <Link className="sl-back" href={classroomHref}><Icon name="back" size={18} /> Back to classroom</Link>
+    <div className="sl animate-fade-in">
       {crumbs([{ label: 'Assessment results' }])}
       <header className="sl-page-h">
-        <h1>Chapter assessment</h1>
-        <p>{title} — one attempt, scored by Quirri.</p>
-        {context.sourceFilename ? <span className="sl-file"><Icon name="doc" size={18} /> {context.sourceFilename}</span> : null}
+        <h2>{title}</h2>
+        {showFile ? <span className="sl-file"><Icon name="doc" size={18} /> Source: {context.sourceFilename}</span> : null}
         {jobId ? <div className="sl-report-dl"><ReportButton jobId={jobId} /></div> : null}
       </header>
 
       <section className="sl-score" aria-label="Assessment result">
-        <div className="sl-score-ring" role="img" aria-label={`Score ${pctValue.toFixed(1)} percent`}>
+        <div className="sl-score-ring" role="img" aria-label={`Score ${Math.round(pctValue)} percent`}>
           <svg viewBox="0 0 120 120">
             <circle className="trk" cx="60" cy="60" r="52" />
             {pctValue > 0 ? (
               <circle className={`fil is-${tone}`} cx="60" cy="60" r="52" strokeDasharray={`${(Math.min(100, pctValue) / 100) * 2 * Math.PI * 52} ${2 * Math.PI * 52}`} />
             ) : null}
           </svg>
-          <span><b>{pctValue.toFixed(1)}%</b><small>Score</small></span>
+          <span><b>{scoreText}</b><small>Score</small></span>
         </div>
         <div className="sl-score-cell"><b>{result.correct_count} / {result.total_questions}</b><small>Correct</small></div>
-        <div className="sl-score-cell">
-          <span className={`sl-result ${passed ? 'is-pass' : 'is-low'}`}>
-            <Icon name={passed ? 'tick' : 'alert'} size={18} /> {passed ? 'Passed' : 'Needs improvement'}
-          </span>
+        <div className="sl-score-cell sl-score-cell--dist">
+          <BandPill score={pctValue} />
+          <Distribution
+            label="Answers"
+            total={result.total_questions || rows.length}
+            parts={[
+              { label: 'Correct', value: right.length, color: 'var(--band-strong)' },
+              { label: 'Incorrect', value: incorrect, color: 'var(--band-focus)' },
+              { label: 'Unanswered', value: unanswered, color: 'var(--band-none)' },
+            ]}
+          />
           <small>Result</small>
         </div>
         <div className="sl-score-cell sl-score-cell--wide">
@@ -527,24 +560,25 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
         </div>
       </section>
 
-      <div className="sl-tabs" role="tablist" aria-label="Results sections">
+      {/* Each section is its own URL view (Question review has a different layout), so this is
+          section navigation — buttons with aria-current — not an ARIA tablist (S12). */}
+      <nav className="sl-tabs" aria-label="Results sections">
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
-            role="tab"
             id={`sl-rt-${t.id}`}
-            aria-selected={viewId === t.id}
+            aria-current={viewId === t.id ? 'page' : undefined}
             className="sl-tab"
             onClick={() => go({ view: t.id, filter: t.id === 'review' ? 'all' : undefined })}
           >
             {t.label}
           </button>
         ))}
-      </div>
+      </nav>
 
       {viewId === 'overview' ? (
-        <div className="sl-results" role="tabpanel" aria-labelledby="sl-rt-overview">
+        <div className="sl-results">
           <section className="sl-card" aria-labelledby="sl-qs-h">
             <div className="sl-card-h sl-card-h--stack">
               <h3 id="sl-qs-h">Question summary</h3>
@@ -583,7 +617,7 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
           </aside>
         </div>
       ) : (
-        <div className="sl-results" role="tabpanel" aria-labelledby="sl-rt-study">
+        <div className="sl-results">
           <section className="sl-card" aria-labelledby="sl-sn-h">
             <div className="sl-card-h sl-card-h--stack">
               <h3 id="sl-sn-h">What to study next</h3>

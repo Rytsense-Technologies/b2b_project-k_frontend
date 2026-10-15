@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Icon } from '@/components/student/ui';
 import { REPORT_SKILLS, humanLabel, score100 } from '@/lib/student/interviewReport';
+import { BandPill, bandFor } from '@/components/shared/data-viz';
 
 function CardHead({ title, sub, action = null }) {
   return (
@@ -48,7 +49,7 @@ export function ReportHighlights({ report }) {
       </div>
       <div className="srp-hl">
         <div className="srp-hl-h"><Icon name="alert" size={16} /> Needs attention</div>
-        <b className={focus ? 'is-focus' : ''}>{focus || '—'}</b>
+        <b className={focus ? `srp-tone--${bandFor(focusScore)}` : ''}>{focus || '—'}</b>
         <small>{focusScore != null ? `${focusScore}/100 score` : 'Not scored'}</small>
       </div>
       <div className="srp-hl">
@@ -60,7 +61,7 @@ export function ReportHighlights({ report }) {
   );
 }
 
-/** Six skills, one categorical hue each (disc + % + bar). */
+/** Six skills, one categorical hue each (cat-1…6 in REPORT_SKILLS order) for disc + bar; band pill for the score (§0b / §0c). */
 export function SkillBreakdown({ breakdown }) {
   const b = breakdown || {};
   return (
@@ -73,7 +74,7 @@ export function SkillBreakdown({ breakdown }) {
             <li key={s.key} className={`srp-skill srp-skill--c${i + 1}`}>
               <span className="srp-skill-ic" aria-hidden="true"><Icon name={s.icon} size={18} /></span>
               <span className="srp-skill-name">{s.label}</span>
-              <span className="srp-skill-pct">{v == null ? '—' : `${v}%`}</span>
+              <span className="srp-skill-pct">{v != null ? <BandPill score={v} /> : null}{v == null ? '—' : <b>{v}<small>/100</small></b>}</span>
               <span className="srp-skill-bar" aria-hidden="true"><i style={{ width: `${v ?? 0}%` }} /></span>
             </li>
           );
@@ -172,6 +173,25 @@ export function TryAgainSoon() {
         <div className="srp-note srp-note--warm">
           <b>Suggested schedule</b>
           <p>One quick mock interview every day and one full interview every week.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Replaces "Try again soon" for a student who can't start an interview now (S5). */
+export function InterviewLocked({ reason }) {
+  return (
+    <section className="srp-card" aria-labelledby="srp-locked-h">
+      <CardHead title={<span id="srp-locked-h">Next interview</span>} sub="Not open for you yet" />
+      <div className="srp-stack">
+        <div className="srp-note srp-note--lock">
+          <Icon name="lock" size={20} />
+          <p>{reason || 'AI interviews open in your final year, or when your department assigns one.'}</p>
+        </div>
+        <div className="srp-note">
+          <b>Meanwhile</b>
+          <p>Work through the action plan and keep up with your chapter assessments. An assigned interview will appear on your dashboard.</p>
         </div>
       </div>
     </section>

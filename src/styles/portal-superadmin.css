@@ -95,7 +95,7 @@
 /* ---- mobile ---- */
 @media (max-width:760px){
   .sa-page .pm-filter .un-seg{align-self:stretch;max-width:100%;overflow-x:auto}
-  .sa-page .pm-filter .un-seg .sp-tab{flex:1 1 auto;justify-content:center;padding:0 10px}
+  .sa-page .pm-filter .un-seg .sp-tab{flex:0 0 auto;justify-content:center;padding:0 10px}
   .sa-account-who{flex:1 1 calc(100% - 80px)}
   .sa-account-h .sp-pill{margin-left:80px}
   .sa-page .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
@@ -189,3 +189,165 @@
 @media (max-width:520px){.sa-acad-detail{padding:12px}.sa-acad-subject-h{flex-wrap:wrap}.sa-acad-chapters li{flex-wrap:wrap}.sa-acad-chapters li .ad-actions{width:100%;justify-content:flex-end}}
 /* Keep absolutely positioned bits (sr-only labels) inside the scrolling table, not the page */
 .sp-table-wrap{position:relative}
+
+/* ===== Super Admin page fixes (QA SA-07…SA-20, Oct 2026) — appended by the superadmin-pages agent ===== */
+/* Own account row in Platform users: no role / deactivate actions */
+.sa-self-pill{background:var(--neutral-100,var(--mist));color:var(--muted-2)}
+/* Health: tones derived from the data */
+.sa-warn-text{color:var(--color-warning)}
+.sa-page .sd-state--warn{background:var(--warning-soft);border:1px solid var(--warning-line)}
+.sa-page .sd-state--warn .sd-i{color:var(--color-warning)}
+.sa-page .pm-chips > span.sa-health-chip{background:var(--neutral-0);font-weight:500}
+.sa-page .pm-chips > span.sa-health-chip--green{color:var(--teal-500)}
+.sa-page .pm-chips > span.sa-health-chip--amber{color:var(--color-warning)}
+.sa-page .pm-chips > span.sa-health-chip--red{color:var(--color-error)}
+/* Dashboard: "Attention needed" items link to where they are fixed */
+.sa-attn{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.sa-attn li{display:flex;gap:12px;align-items:flex-start}
+.sa-attn-link{display:inline;text-decoration:none}
+.sa-attn-link:hover,.sa-attn-link:focus-visible{text-decoration:underline}
+.sa-attn-link:focus-visible{outline:2px solid var(--on-brand);outline-offset:2px;border-radius:var(--radius-control)}
+.sa-attn-none{margin:0}
+/* Academic structure: "Add semester" stays visible beside the scrolling semester strip */
+.sa-acad-semrow{display:flex;align-items:stretch;gap:8px;min-width:0}
+.sa-acad-semrow .sa-acad-sems{flex:1;min-width:0}
+.sa-acad-semrow > .sa-acad-sem--add{flex:none;align-self:flex-start}
+@media (max-width:520px){.sa-acad-semrow{flex-direction:column}.sa-acad-semrow > .sa-acad-sem--add{align-self:flex-start}.sa-acad-subject-h > .sa-acad-subject-toggle{flex:1 1 100%}.sa-acad-subject-h > .ad-actions{width:100%;justify-content:flex-end}}
+/* ===== end Super Admin page fixes ===== */
+
+/* ===== Super Admin recipe v2 (redesign, 14 Oct 2026) — ModuleHead + tabs + panels with in-panel filters ===== */
+/* In-panel filters: search with icon, compact selects, chip toggles */
+.sa-page .pm-panel-tools .un-seg{flex:0 0 auto}
+.sa-filter-select{flex:0 1 220px;min-width:180px}
+.sa-filter-select--sm{flex-basis:170px;min-width:150px}
+.sa-filter-select .quirri-dd{width:100%}
+.sa-chip-toggle{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:var(--radius-control);border:1px solid var(--neutral-300);background:var(--panel);color:var(--ink-2);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.sa-chip-toggle:hover{border-color:var(--teal-300);color:var(--teal-500)}
+.sa-chip-toggle.is-on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sa-chip-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
+.sa-range{width:200px}
+.sa-range .quirri-dd{width:100%}
+
+/* Panel helpers */
+.sa-panel-state{padding:16px 24px}
+.sa-pad{padding:16px 24px}
+.sa-panel-foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line-soft);display:flex;justify-content:flex-end}
+.sa-gap-top{margin-top:12px}
+.sa-link-btn{background:none;border:0;padding:0;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.sa-plain-link{color:inherit;text-decoration:none}
+.sa-plain-link:hover,.sa-plain-link:focus-visible{color:var(--teal-500);text-decoration:underline}
+.sa-dot{width:12px;height:12px;border-radius:50%;flex:none}
+.sa-actions-cell{width:1%;white-space:nowrap}
+.sa-inst{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sa-inst small{font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-split{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:stretch}
+.sa-split > .sd-kpis{margin:0}
+.sd-kpi-v.is-focus{color:var(--accent-text)}
+.sa-wide-bars .dv-bar-name{white-space:normal}
+.sa-err-head{display:block;font-weight:500;overflow-wrap:anywhere}
+.sa-progress .dv-track{flex:1}
+
+/* Dashboard: attention list on white, comparison panel */
+.sa-attn-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px}
+.sa-attn-list li{display:flex;gap:12px;align-items:flex-start}
+.sa-attn-list small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-attn-dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none;background:var(--teal-300)}
+.sa-attn-dot.is-warning{background:var(--highlight)}
+.sa-attn-dot.is-error{background:var(--color-error)}
+.sa-attn-t{font-size:14px;line-height:22px;font-weight:500;color:var(--ink);text-decoration:none}
+.sa-attn-t:hover,.sa-attn-t:focus-visible{color:var(--teal-500);text-decoration:underline}
+.sa-attn-note{display:flex;align-items:center;gap:8px;margin:16px 0 0;padding-top:12px;border-top:1px solid var(--line-soft);font-size:12px;line-height:18px;color:var(--muted-2)}
+.sa-compare .sp-panel-h{flex-wrap:wrap;gap:12px}
+
+/* Health: one status strip coloured by the worst state */
+.sa-strip{display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card);border-left:4px solid var(--teal-500)}
+.sa-strip > div{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;min-width:0}
+.sa-strip b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.sa-strip span{font-size:14px;line-height:22px;color:var(--ink-2)}
+.sa-strip .sd-i{margin-top:2px;flex:none}
+.sa-strip.is-green{border-left-color:var(--progress)}
+.sa-strip.is-green .sd-i{color:var(--progress-text)}
+.sa-strip.is-amber{border-left-color:var(--highlight)}
+.sa-strip.is-amber .sd-i{color:var(--accent-text)}
+.sa-strip.is-red{border-left-color:var(--color-error)}
+.sa-strip.is-red .sd-i{color:var(--color-error)}
+.sa-svc-errs{display:flex;flex-direction:column;align-items:flex-end;flex:none;min-width:72px}
+.sa-svc-errs b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.sa-svc-errs small{font-size:11px;line-height:16px;color:var(--muted-2);white-space:nowrap}
+.sa-svc-errs.is-on b{color:var(--accent-text)}
+
+/* Platform users: role pills (role is a category, so it may use the categorical set) */
+.sa-role{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:var(--radius-control);font-size:12px;font-weight:500;white-space:nowrap;background:var(--neutral-100);color:var(--ink-2)}
+.sa-role--c1{background:var(--cat-1-soft);color:var(--cat-1-text)}
+.sa-role--c2{background:var(--cat-2-soft);color:var(--cat-2-text)}
+.sa-role--c4{background:var(--cat-4-soft);color:var(--cat-4-text)}
+.sa-role--c5{background:var(--cat-5-soft);color:var(--cat-5-text)}
+.sa-role--c6{background:var(--cat-6-soft);color:var(--cat-6-text)}
+.sa-you{margin-left:8px;height:20px;padding:0 8px;font-size:11px;vertical-align:middle}
+.sa-users-table .pm-person{max-width:320px}
+
+/* Row action menu (kebab), portalled to body */
+.sa-kebab{color:var(--ink-2)}
+.sa-menu{position:fixed;z-index:90;padding:6px;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-1),var(--shadow-3);border:1px solid var(--line);display:flex;flex-direction:column}
+.sa-menu-item{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border:0;border-radius:var(--radius-control);background:none;font:inherit;font-size:14px;color:var(--ink);text-align:left;cursor:pointer}
+.sa-menu-item .sd-i{color:var(--teal-500)}
+.sa-menu-item:hover:not(:disabled),.sa-menu-item:focus-visible{background:var(--surface-tint);outline:none}
+.sa-menu-item.is-danger{color:var(--color-error)}
+.sa-menu-item.is-danger .sd-i{color:var(--color-error)}
+.sa-menu-item:disabled{opacity:.5;cursor:not-allowed}
+
+/* College page */
+.sa-back{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;font-size:14px}
+.sa-record-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.sa-tabrow{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.sa-tabrow > .pm-tabs{flex:1 1 auto;min-width:0;margin-bottom:0}
+.sa-people{list-style:none;margin:0;padding:0}
+.sa-people li{display:flex;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--line-soft);flex-wrap:wrap}
+.sa-people li:first-child{border-top:0}
+.sa-people-main{flex:1 1 200px;min-width:0;display:flex;flex-direction:column}
+.sa-people-main b{font-size:14px;line-height:22px;font-weight:500}
+.sa-people-main small{font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
+.co-people li{flex-wrap:wrap}
+
+@media (max-width:1100px){
+  .sa-split{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Phones: tables become row cards (label on the left, value on the right) */
+@media (max-width:760px){
+  .sa-page .sp-table-wrap > table.sa-stack{min-width:0}
+  .sa-stack thead{display:none}
+  .sa-stack,.sa-stack tbody,.sa-stack tr,.sa-stack td{display:block;width:100%}
+  .sa-stack tr{padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+  .sa-stack tr:last-child{border-bottom:0}
+  .sa-stack td{padding:4px 0 !important;border:0 !important;text-align:left}
+  .sa-stack td:first-child{padding-bottom:8px !important}
+  .sa-stack td[data-label]{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;text-align:right}
+  .sa-stack td[data-label]::before{content:attr(data-label);flex:none;font-size:12px;line-height:22px;color:var(--muted-2);text-align:left}
+  .sa-stack td[data-label] .sa-inst{align-items:flex-end}
+  .sa-stack td.sa-actions-cell{width:100%;padding-top:8px !important}
+  .sa-stack .un-actions{justify-content:flex-start;flex-wrap:wrap}
+  .sa-stack .co-seat{min-width:150px}
+  .sa-stack tr.sa-err-detail td{padding:0 !important}
+  .sa-filter-select,.sa-filter-select--sm{flex:1 1 100%;min-width:0}
+  .sa-range{width:100%}
+  .sa-panel-state,.sa-pad{padding:12px 16px}
+  .sa-people li{padding:12px 16px}
+  .sa-svc-errs{min-width:0}
+  .sa-page .sp-rows .sp-row{flex-wrap:wrap;padding:14px 16px}
+  .sa-page .sd-kpis.sa-kpis--5{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sa-page .sd-kpis.sa-kpis--5 > :last-child{grid-column:1 / -1}
+}
+/* ===== end recipe v2 ===== */
+.sa-meta-loc{display:inline-flex;align-items:center;gap:4px}
+.dv-empty.sa-pad{padding:16px 24px}
+@media (max-width:760px){.dv-empty.sa-pad{padding:12px 16px}}
+.sa-inst > .sp-pill{align-self:flex-start}
+@media (max-width:760px){.sa-stack td[data-label] .sa-inst > .sp-pill{align-self:flex-end}}
+.sa-page .sa-attn-none{margin:0;font-size:14px;line-height:22px;color:var(--ink-2)}
+@media (max-width:760px){
+  .sa-page .sp-rows .sp-row .sp-row-main{flex:1 1 calc(100% - 64px)}
+  .sa-page .sp-rows .sp-row .sa-svc-errs{margin-left:52px;flex-direction:row;align-items:baseline;gap:6px}
+}
+.sa-filter-select--wide{flex:1 1 220px;min-width:200px;max-width:300px}
+@media (max-width:760px){.sa-filter-select--wide{max-width:none}}

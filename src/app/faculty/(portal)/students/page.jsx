@@ -1,55 +1,64 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   DetailDrawer,
   DrawerSection,
-  FilterBar,
-  Icon,
   IconButton,
   InfoList,
   KpiRow,
-  ModuleBanner,
+  ModuleHead,
   ModulePage,
   Pager,
   Panel,
   SearchBox,
   SectionState,
-  SegTabs,
+  TabNav,
+  TabPanel,
   countLabel,
   initials,
 } from '@/components/shared/module-ui';
-import ScoreCell from '@/components/superadmin/ScoreCell';
-import ScopeNotice from '@/components/faculty/ScopeNotice';
-import { Meter, minutesLabel } from '@/components/admin/insights';
-import toast from 'react-hot-toast';
+import { BANDS, BandPill, Distribution, RankList, ScoreMeter, bandFor } from '@/components/shared/data-viz';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
+import { minutesLabel } from '@/components/admin/insights';
 import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
+import { academicsApi } from '@/lib/api/superadmin/academics';
+import { analyticsApi } from '@/lib/api/analytics';
 import { mcqApi } from '@/lib/api/mcq';
-import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
+import { apiErrorMessage, asList, unwrap } from '@/lib/api/superadmin/http';
 import { userStatusLabel } from '@/lib/admin/userStatus';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
+import { useTabParam, useUrlState } from '@/hooks/useUrlState';
+import { FacultyScopeChip, ReadOnlyNote, dayLabel, pct } from '@/components/faculty/facultyKit';
 
 const PAGE_SIZE = 25;
-const STATUS_TABS = [
-  { value: '', label: 'All' },
+const STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
-  { value: 'pending_activation', label: 'Pending' },
+  { value: 'pending_activation', label: 'Pending activation' },
   { value: 'deactivated', label: 'Deactivated' },
+  { value: 'all', label: 'All statuses' },
 ];
 const STATUS_TONE = { active: 'sp-pill--good', pending_activation: 'sp-pill--low', deactivated: 'sp-pill--off' };
-
-function day(iso) {
-  const d = new Date(iso || '');
-  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-}
+const TABS = ['roster', 'performance', 'risk'];
 
 function yearLabel(s) {
   if (s.is_final_year) return 'Final year';
   return s.year_of_study ? `Year ${s.year_of_study}` : 'Year not set';
 }
 
-function StudentDrawer({ id, onClose }) {
+function Score({ value }) {
+  if (value == null) return <span className="ad-muted">—</span>;
+  return (
+    <span className="fa-score">
+      <b>{pct(value)}</b>
+      <BandPill score={value} />
+    </span>
+  );
+}
+
+function StudentDrawer({ id, onClose, subjectLimited = false }) {
   const { data, loading, error } = useAsyncResource(
     () => (id ? facultyDirectoryApi.student(id) : Promise.resolve(null)),
     [id],
@@ -80,8 +89,9 @@ function StudentDrawer({ id, onClose }) {
         </>
       ) : null}
       stats={m ? [
-        { label: 'Completion', value: m.completion != null ? `${m.completion}%` : '—' },
-        { label: 'Average score', value: m.avg_score != null ? `${m.avg_score}%` : '—' },
+        { label: 'Completion', value: pct(m.completion) },
+        { label: 'Quiz average', value: pct(m.quiz_avg) },
+        { label: 'Interview average', value: pct(m.interview_avg) },
       ] : null}
     >
       {error ? <SectionState tone="err" title="Could not load this student">{apiErrorMessage(error, 'Try again.')}</SectionState> : null}
@@ -93,7 +103,7 @@ function StudentDrawer({ id, onClose }) {
                 { label: 'Programme', value: data.program_name || 'Not set' },
                 { label: 'Semester', value: data.semester_name || 'Not set' },
                 { label: 'Year', value: yearLabel(data) },
-                { label: 'Last active', value: day(data.last_login_at) || 'Never' },
+                { label: 'Last active', value: dayLabel(data.last_login_at) || 'Never' },
               ]}
             />
           </DrawerSection>
@@ -103,18 +113,18 @@ function StudentDrawer({ id, onClose }) {
                 { label: 'Chapters completed', value: `${countLabel(m.chapters_completed)} of ${countLabel(m.chapters_available)}` },
                 { label: 'Watch time', value: minutesLabel(m.watch_minutes) },
                 { label: 'Tutor questions', value: countLabel(m.qa) },
-                { label: 'Quiz pass rate', value: data.pass_rate != null ? `${data.pass_rate}%` : '—' },
+                { label: 'Quiz pass rate', value: pct(data.pass_rate) },
               ]}
             />
           </DrawerSection>
-          <DrawerSection title={`Chapter quizzes (${countLabel(data.quizzes.length)})`}>
+          <DrawerSection title={`${subjectLimited ? 'Quizzes in your subjects' : 'Chapter quizzes'} (${countLabel(data.quizzes.length)})`}>
             {data.quizzes.length ? (
               <ul className="fa-mini-list">
                 {data.quizzes.map((q, i) => (
                   <li key={`${q.chapter}-${q.at}-${i}`}>
-                    <div><b>{q.chapter || 'Chapter quiz'}</b><small>{`${q.correct}/${q.total} correct · ${day(q.at) || ''}`}</small></div>
+                    <div><b>{q.chapter || 'Chapter quiz'}</b><small>{`${q.correct}/${q.total} correct${dayLabel(q.at) ? ` · ${dayLabel(q.at)}` : ''}`}</small></div>
                     <span className="fa-mini-actions">
-                      <ScoreCell value={q.score} />
+                      <ScoreMeter value={q.score} label={q.chapter || 'Quiz score'} />
                       {q.can_download ? (
                         <IconButton
                           icon="download"
@@ -127,7 +137,7 @@ function StudentDrawer({ id, onClose }) {
                   </li>
                 ))}
               </ul>
-            ) : <p className="ad-muted">No quizzes taken yet.</p>}
+            ) : <p className="ad-muted">{subjectLimited ? 'No quizzes taken in your subjects yet.' : 'No quizzes taken yet.'}</p>}
           </DrawerSection>
           <DrawerSection title={`Mock interviews (${countLabel(data.interviews.length)})`}>
             {data.work_on ? <p className="ad-muted">Work on: <b>{data.work_on}</b></p> : null}
@@ -135,8 +145,8 @@ function StudentDrawer({ id, onClose }) {
               <ul className="fa-mini-list">
                 {data.interviews.map((r) => (
                   <li key={r.session_id}>
-                    <div><b>{r.position || 'Mock interview'}</b><small>{[day(r.at), r.work_on ? `Work on ${r.work_on}` : null].filter(Boolean).join(' · ')}</small></div>
-                    <ScoreCell value={r.score} />
+                    <div><b>{r.position || 'Mock interview'}</b><small>{[dayLabel(r.at), r.work_on ? `Work on ${r.work_on}` : null].filter(Boolean).join(' · ')}</small></div>
+                    <Score value={r.score} />
                   </li>
                 ))}
               </ul>
@@ -148,126 +158,303 @@ function StudentDrawer({ id, onClose }) {
   );
 }
 
+/** Students in scope: roster (server paged), performance and who needs attention (analytics). */
 export default function FacultyStudentsPage() {
   const { scope } = useFacultyScope();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const [tab, setTab] = useTabParam(TABS, 'roster');
+  const [url, setUrl] = useUrlState({ q: '', status: 'active', program: '', semester: '', year: '', student: '' });
+  const [search, setSearch] = useState(url.q);
   const [page, setPage] = useState(1);
-  const [openId, setOpenId] = useState(null);
-  useEffect(() => { setPage(1); }, [search, status]);
 
-  const { data, loading, error, reload } = useAsyncResource(
-    () => facultyDirectoryApi.students({ q: search, status, page, pageSize: PAGE_SIZE }),
-    [search, status, page],
+  useEffect(() => {
+    const t = setTimeout(() => { if (search !== url.q) setUrl({ q: search }); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+  useEffect(() => { setPage(1); }, [url.q, url.status, url.program, url.semester, url.year]);
+
+  // Programme -> Semester options (GET /academics/programs is department-scoped for HOD / Faculty).
+  const programs = useAsyncResource(() => academicsApi.listPrograms().then(unwrap), []);
+  const programList = useMemo(() => asList(programs.data, []), [programs.data]);
+  const semesters = useAsyncResource(
+    () => (url.program ? academicsApi.getProgram(url.program).then(unwrap) : Promise.resolve(null)),
+    [url.program],
   );
+  const semesterList = semesters.data?.semesters || [];
+  const maxYears = Math.max(4, ...programList.map((p) => Number(p.duration_years) || 0));
+
+  const status = url.status === 'all' ? '' : url.status;
+  const { data, loading, error, reload } = useAsyncResource(
+    () => facultyDirectoryApi.students({
+      q: url.q, status, programId: url.program, semesterId: url.semester, yearOfStudy: url.year, page, pageSize: PAGE_SIZE,
+    }),
+    [url.q, status, url.program, url.semester, url.year, page],
+  );
+  const insights = useAsyncResource(() => analyticsApi.department({}), []);
+
   const rows = useMemo(() => asList(data, []), [data]);
   const total = data?.total ?? 0;
   const first = loading && !data;
-  const filtered = Boolean(search || status);
+  const filtered = Boolean(url.q || url.status !== 'active' || url.program || url.semester || url.year);
+  const clearFilters = () => { setSearch(''); setUrl({ q: '', status: 'active', program: '', semester: '', year: '' }); };
+  // Names of the filters that are hiding rows (for the empty state).
+  const activeFilters = [
+    url.q ? `“${url.q}”` : null,
+    url.program ? (programList.find((p) => p.id === url.program)?.name || 'a programme') : null,
+    url.semester ? (semesterList.find((x) => x.id === url.semester)?.name || 'a semester') : null,
+    url.year ? `Year ${url.year}` : null,
+    url.status !== 'active' ? (STATUS_OPTIONS.find((o) => o.value === url.status)?.label || url.status) : null,
+  ].filter(Boolean);
+  const limited = Boolean(scope && !scope.is_hod && scope.subject_limited);
+  const openStudent = (id) => setUrl({ student: id }, { push: true });
+
+  const a = insights.data;
+  const aFirst = insights.loading && !a;
+  const analyticsStudents = a?.students || [];
+  const atRisk = a?.at_risk || [];
+  const ranked = analyticsStudents.filter((s) => s.quiz_avg != null)
+    .sort((x, y) => y.quiz_avg - x.quiz_avg).slice(0, 10);
+  const bandCounts = { strong: 0, ok: 0, focus: 0, none: 0 };
+  analyticsStudents.forEach((s) => { bandCounts[bandFor(s.quiz_avg)] += 1; });
+  const bandParts = [
+    ...BANDS.map((b) => ({ key: b.key, label: b.label, value: bandCounts[b.key] })),
+    { key: 'none', label: 'No quizzes yet', value: bandCounts.none },
+  ];
+
+  const scopeEmpty = limited
+    ? 'Students appear once your College Admin places them in a programme you teach.'
+    : 'Students in your department appear here.';
 
   return (
     <ModulePage className="fa-page">
-      <ModuleBanner
-        icon="users"
-        eyebrow="Teaching"
-        title="Students"
-        lede="Your students' chapter completion, quiz scores, tutor questions and mock interviews. Open a student for the full record."
+      <ModuleHead
+        lede="Open a student for their full learning, quiz and interview record."
+        chips={<FacultyScopeChip scope={scope} />}
       />
 
-      <ScopeNotice scope={scope} what="students" />
+      <ReadOnlyNote scope={scope} what="students" />
 
-      <KpiRow
-        label="Students summary"
-        items={[
-          { icon: 'users', label: filtered ? 'Matching students' : 'Students', value: first ? null : countLabel(total), sub: scope?.subject_limited ? 'In your subjects' : 'In your department' },
-          { icon: 'target', label: 'With quiz scores', value: first ? null : countLabel(data?.summary?.with_scores ?? 0), sub: 'Took at least one chapter quiz' },
-          { icon: 'mic', label: 'Final year', value: first ? null : countLabel(data?.summary?.final_year ?? 0), sub: 'Eligible for mock interviews' },
-          { icon: 'tree', label: 'Not in a programme', value: first ? null : countLabel(data?.summary?.unplaced ?? 0), sub: 'College Admin places them' },
+      <div className="fa-tabs-fit fa-tabs-fit--3">
+      <TabNav
+        label="Students"
+        idBase="fa-students"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: 'roster', label: 'Roster', count: data ? total : null },
+          { value: 'performance', label: 'Performance' },
+          { value: 'risk', label: 'At risk', count: a ? atRisk.length : null },
         ]}
       />
+      </div>
 
-      <FilterBar label="Find students">
-        <SearchBox placeholder="Search name or email…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <SegTabs label="Status" options={STATUS_TABS} value={status} onChange={setStatus} />
-      </FilterBar>
-
-      {error ? (
-        <SectionState
-          tone="err"
-          title="Could not load students"
-          action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>Try again</button>}
+      <TabPanel value="roster" current={tab} idBase="fa-students">
+        {error ? (
+          <SectionState
+            tone="err"
+            title="Could not load students"
+            action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>Try again</button>}
+          >
+            {apiErrorMessage(error, 'Please try again.')}
+          </SectionState>
+        ) : null}
+        <Panel
+          title={!scope ? 'Students' : limited ? 'Your students' : 'Department students'}
+          sub={!data ? null : limited && data.summary?.unplaced ? `Includes ${countLabel(data.summary.unplaced)} not yet placed in a programme.` : `${countLabel(total)} student${total === 1 ? '' : 's'}`}
+          bodyClassName={null}
+          toolbar={(
+            <>
+              <SearchBox placeholder="Search name or email…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              {programList.length ? (
+                <div className="fa-filter-select">
+                  <QuirriSelect
+                    ariaLabel="Filter by programme"
+                    value={url.program}
+                    onChange={(e) => setUrl({ program: e.target.value, semester: '' })}
+                    options={[{ value: '', label: 'All programmes' }, ...programList.map((p) => ({ value: p.id, label: p.name }))]}
+                  />
+                </div>
+              ) : null}
+              {url.program && semesterList.length ? (
+                <div className="fa-filter-select">
+                  <QuirriSelect
+                    ariaLabel="Filter by semester"
+                    value={url.semester}
+                    onChange={(e) => setUrl({ semester: e.target.value })}
+                    options={[{ value: '', label: 'All semesters' }, ...semesterList.map((s) => ({ value: s.id, label: s.name }))]}
+                  />
+                </div>
+              ) : null}
+              <div className="fa-filter-select fa-filter-select--sm">
+                <QuirriSelect
+                  ariaLabel="Filter by year of study"
+                  value={url.year}
+                  onChange={(e) => setUrl({ year: e.target.value })}
+                  options={[{ value: '', label: 'All years' }, ...Array.from({ length: maxYears }, (_, i) => ({ value: String(i + 1), label: `Year ${i + 1}` }))]}
+                />
+              </div>
+              <div className="fa-filter-select fa-filter-select--sm">
+                <QuirriSelect
+                  ariaLabel="Filter by account status"
+                  value={url.status}
+                  onChange={(e) => setUrl({ status: e.target.value })}
+                  options={STATUS_OPTIONS}
+                />
+              </div>
+              {filtered ? (
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>
+                  Clear
+                </button>
+              ) : null}
+            </>
+          )}
         >
-          {apiErrorMessage(error, 'Please try again.')}
-        </SectionState>
-      ) : null}
-
-      <Panel title="Your students" sub={`${countLabel(total)} student${total === 1 ? '' : 's'}`} bodyClassName={null}>
-        {first ? <div className="sp-panel-b"><SectionState title="Loading students…" /></div> : null}
-        {data && !rows.length ? (
-          <div className="sp-panel-b">
-            <SectionState title={filtered ? 'No students match' : 'No students yet'}>
-              {filtered
-                ? 'Try another name, email or status.'
-                : scope?.subject_limited
-                  ? 'Students appear once your College Admin places them in a programme you teach.'
-                  : 'Students in your department appear here.'}
-            </SectionState>
-          </div>
-        ) : null}
-        {rows.length ? (
-          <>
-            <div className="sp-table-wrap">
-              <table className="sp-table un-table ad-stack">
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>Programme</th>
-                    <th>Completion</th>
-                    <th className="num">Quizzes</th>
-                    <th className="num">Interviews</th>
-                    <th className="num">Avg score</th>
-                    <th>Status</th>
-                    <th aria-label="Actions" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((s) => (
-                    <tr key={s.id}>
-                      <td>
-                        <button type="button" className="ad-person-btn pm-person" onClick={() => setOpenId(s.id)}>
-                          <span className="pm-av" aria-hidden="true">{initials(s.name, 'S')}</span>
-                          <span><b>{s.name}</b><small>{s.email}</small></span>
-                        </button>
-                      </td>
-                      <td data-label="Programme">
-                        <span className="ad-cell-2">
-                          <span>{s.program_name || 'Not set'}</span>
-                          <small>{[s.semester_name, yearLabel(s)].filter(Boolean).join(' · ')}</small>
-                        </span>
-                      </td>
-                      <td data-label="Completion"><Meter value={s.completion} /></td>
-                      <td className="num" data-label="Quizzes">{countLabel(s.attempt_count)}</td>
-                      <td className="num" data-label="Interviews">{countLabel(s.interviews)}</td>
-                      <td className="num" data-label="Avg score"><ScoreCell value={s.avg_score} /></td>
-                      <td data-label="Status">
-                        <span className={`sp-pill ${STATUS_TONE[s.status] || ''}`}><i className="un-dot" aria-hidden="true" />{userStatusLabel({ status: s.status })}</span>
-                      </td>
-                      <td>
-                        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setOpenId(s.id)}>
-                          <Icon name="eye" size={14} /> View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {first ? <div className="sp-panel-b"><SectionState title="Loading students…" /></div> : null}
+          {data && !rows.length ? (
+            <div className="sp-panel-b">
+              <SectionState
+                title={filtered ? 'No students match these filters' : 'No students yet'}
+                action={filtered ? <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear filters</button> : null}
+              >
+                {filtered ? `Filtered by ${activeFilters.join(', ')}.` : scopeEmpty}
+              </SectionState>
             </div>
-            <Pager page={page} pageSize={PAGE_SIZE} total={total} shown={rows.length} onPage={setPage} noun="students" />
-          </>
-        ) : null}
-      </Panel>
+          ) : null}
+          {rows.length ? (
+            <>
+              <div className="sp-table-wrap">
+                <table className="sp-table un-table ad-stack fa-click-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Programme</th>
+                      <th>Completion</th>
+                      <th>Quiz average</th>
+                      <th>Interview average</th>
+                      <th>Last active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((s) => (
+                      <tr key={s.id} onClick={() => openStudent(s.id)}>
+                        <td>
+                          <button
+                            type="button"
+                            className="ad-person-btn pm-person"
+                            onClick={(e) => { e.stopPropagation(); openStudent(s.id); }}
+                          >
+                            <span className="pm-av" aria-hidden="true">{initials(s.name, 'S')}</span>
+                            <span>
+                              <b>{s.name}</b>
+                              <small>{s.status === 'active' ? s.email : `${s.email} · ${userStatusLabel({ status: s.status })}`}</small>
+                            </span>
+                          </button>
+                        </td>
+                        <td data-label="Programme">
+                          <span className="ad-cell-2">
+                            <span>{s.program_name || 'Not placed yet'}</span>
+                            <small>{[s.semester_name, yearLabel(s)].filter(Boolean).join(' · ')}</small>
+                          </span>
+                        </td>
+                        <td data-label="Completion"><ScoreMeter value={s.completion} label="Completion" /></td>
+                        <td data-label="Quiz average">
+                          <span className="ad-cell-2"><Score value={s.quiz_avg} /><small>{`${countLabel(s.attempt_count)} quiz${s.attempt_count === 1 ? '' : 'zes'}`}</small></span>
+                        </td>
+                        <td data-label="Interview average">
+                          <span className="ad-cell-2"><Score value={s.interview_avg} /><small>{`${countLabel(s.interviews)} mock${s.interviews === 1 ? '' : 's'}`}</small></span>
+                        </td>
+                        <td data-label="Last active" className="sa-muted">{dayLabel(s.last_login_at) || 'Never'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pager page={page} pageSize={PAGE_SIZE} total={total} shown={rows.length} onPage={setPage} noun="students" />
+            </>
+          ) : null}
+        </Panel>
+      </TabPanel>
 
-      <StudentDrawer id={openId} onClose={() => setOpenId(null)} />
+      <TabPanel value="performance" current={tab} idBase="fa-students">
+        {insights.error ? (
+          <SectionState tone="err" title="Could not load performance" action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => insights.reload().catch(() => {})}>Try again</button>}>
+            {apiErrorMessage(insights.error, 'Please try again.')}
+          </SectionState>
+        ) : null}
+        {insights.error && !a ? null : (
+        <>
+        <KpiRow
+          label="Performance summary"
+          items={[
+            { icon: 'users', label: 'Students', value: aFirst ? null : countLabel(a?.totals?.students ?? 0), sub: !scope ? 'In your scope' : limited ? 'In your subjects' : 'In your department' },
+            { icon: 'book', label: 'Avg completion', value: aFirst ? null : pct(a?.totals?.completion), sub: 'To date' },
+            { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: `Mock interviews: ${aFirst ? '—' : pct(a?.totals?.interview_avg)}` },
+            { icon: 'check', label: 'Quiz pass rate', value: aFirst ? null : pct(a?.totals?.pass_rate), sub: 'Of all quiz attempts' },
+          ]}
+        />
+        <div className="dv-grid">
+          <Panel title="Top students" sub="By chapter quiz average, last 30 days.">
+            {aFirst ? <SectionState title="Loading…" /> : (
+              <RankList
+                label="Top students by quiz average"
+                suffix="%"
+                format={(v) => Math.round(v)}
+                empty="No quiz scores yet. Rankings appear once students take chapter quizzes."
+                rows={ranked.map((s) => ({ key: s.id, name: s.student, sub: s.email, value: s.quiz_avg }))}
+              />
+            )}
+          </Panel>
+          <Panel title="Quiz score bands" sub="Each student's chapter quiz average.">
+            {aFirst ? <SectionState title="Loading…" /> : (
+              <Distribution label="Students by score band" parts={bandParts} empty="No students in scope yet." />
+            )}
+          </Panel>
+        </div>
+        </>
+        )}
+      </TabPanel>
+
+      <TabPanel value="risk" current={tab} idBase="fa-students">
+        <Panel
+          title="Students who need attention"
+          sub="Low scores, behind on chapters or no learning activity in the last 30 days. Most reasons first."
+          bodyClassName=""
+        >
+          {aFirst ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
+          {insights.error ? (
+            <div className="sp-panel-b"><SectionState tone="err" title="Could not load">{apiErrorMessage(insights.error, 'Please try again.')}</SectionState></div>
+          ) : null}
+          {a && !atRisk.length ? (
+            <div className="sp-panel-b">
+              <SectionState title="No one flagged">Students with low scores or no learning activity show up here.</SectionState>
+            </div>
+          ) : null}
+          {atRisk.length ? (
+            <ul className="fa-risk fa-risk--full">
+              {atRisk.map((s) => (
+                <li key={s.id}>
+                  <button type="button" onClick={() => openStudent(s.id)}>
+                    <span className="pm-av fa-av" aria-hidden="true">{initials(s.student, 'S')}</span>
+                    <span className="sp-row-main">
+                      <b>{s.student}</b>
+                      <span className="fa-reasons">
+                        {s.reasons.map((r) => <span key={r} className="fa-reason">{r}</span>)}
+                      </span>
+                    </span>
+                    <dl className="fa-risk-nums">
+                      <div><dt>Completion</dt><dd><ScoreMeter value={s.completion} label="Completion" /></dd></div>
+                      <div><dt>Quiz average</dt><dd><Score value={s.quiz_avg} /></dd></div>
+                      <div><dt>Interview average</dt><dd><Score value={s.interview_avg} /></dd></div>
+                    </dl>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Panel>
+      </TabPanel>
+
+      <StudentDrawer id={url.student || null} onClose={() => setUrl({ student: '' })} subjectLimited={limited} />
     </ModulePage>
   );
 }

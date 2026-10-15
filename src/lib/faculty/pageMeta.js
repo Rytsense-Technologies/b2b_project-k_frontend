@@ -45,3 +45,47 @@ export const PAGE_META = {
     subtitle: 'Completion, assessment performance, and Q&A demand for your department.',
   },
 };
+
+const GATED = 'Available to your head of department.';
+
+/** Role-neutral wording while GET /faculty/me is loading (no HOD-only phrasing flashes for Faculty). */
+const NEUTRAL = {
+  '/faculty/dashboard': { title: 'Dashboard', subtitle: 'Review queues and activity in your scope.' },
+  '/faculty/interviews': { title: 'Interviews', subtitle: 'Mock interview assignments and results.' },
+  '/faculty/staff': { title: 'Department staff', subtitle: '' },
+  '/faculty/reports': { title: 'Reports', subtitle: '' },
+  '/faculty/analytics': { title: 'Analytics', subtitle: 'Completion, quiz scores and tutor questions.' },
+};
+
+/**
+ * Role-aware header: PAGE_META is written for the HOD; Faculty (and screens a Faculty
+ * member can't use) get their own wording. `scope` is GET /faculty/me (null while loading).
+ */
+export function facultyPageMeta(route, scope) {
+  const base = PAGE_META[route] || { title: 'HOD / Faculty', subtitle: '' };
+  if (!scope) return NEUTRAL[route] || base;
+  if (scope.is_hod) return base;
+  const limited = Boolean(scope.subject_limited);
+  switch (route) {
+    case '/faculty/dashboard':
+      return { ...base, subtitle: limited ? 'Review queues and activity for the subjects you teach.' : base.subtitle };
+    case '/faculty/interviews':
+      return scope.can_assign_interviews ? base : {
+        ...base,
+        subtitle: 'Mock interviews your HOD assigned, and how your students are doing.',
+      };
+    case '/faculty/analytics':
+      return {
+        title: 'Analytics',
+        subtitle: limited
+          ? 'Completion, quiz scores and tutor questions for the students and subjects you teach.'
+          : 'Completion, quiz scores and tutor questions across your department (view only).',
+      };
+    case '/faculty/staff':
+      return scope.can_see_staff ? base : { ...base, subtitle: GATED };
+    case '/faculty/reports':
+      return scope.can_export_reports ? base : { ...base, subtitle: GATED };
+    default:
+      return base;
+  }
+}

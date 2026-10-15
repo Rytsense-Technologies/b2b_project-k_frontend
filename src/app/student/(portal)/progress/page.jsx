@@ -2,39 +2,65 @@
 
 import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
-import PerformanceChart from '@/components/student/dashboard/PerformanceChart';
 import { Icon, SectionState } from '@/components/student/ui';
+import { HeadChip, ModuleHead, Panel, SegTabs, TabNav, TabPanel } from '@/components/shared/module-ui';
+import { BANDS, BandPill, BarList, Distribution, TrendChart, bandFor, dataColor } from '@/components/shared/data-viz';
+import ScoreRing from '@/components/shared/ScoreRing';
+import { subjectColor, subjectTileStyle } from '@/components/student/subjectColor';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { useUrlState } from '@/hooks/useUrlState';
+import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
-import { loadStudentHome, scoreBand } from '@/lib/student/dashboardModel';
+import { loadStudentHomeData } from '@/components/student/studentHome';
 import { assessmentHref, classroomHref, SUBJECTS_PATH } from '@/lib/student/learning';
 import '@/styles/student-progress.css';
 
 /**
- * My progress — owner mock-ups (Oct 2026): Overview + Details tabs.
- *   Overview: KPI strip · learning record + assessment history · recommended next step · interview practice
- *   Details:  per-subject completion / performance · chapter table · chronological learning record ·
- *             assessment review · interview practice
- * Tab and subject live in the query string (?tab=details&subject=…). Live student APIs only.
+ * My progress (redesign spec student.md §7, 14 Oct 2026) — four tabs in ?tab=:
+ *   Overview     KPIs (watched ring · assessment average band · interviews) · completion by subject ·
+ *                score trend · recommended next step (the one orange action)
+ *   By subject   subject chips (subject colour) · chapter table with status filter · learning record
+ *   Assessments  band distribution + history table
+ *   Interviews   list, score trend, report links, assigned interviews
+ * Live student APIs only. While loading: skeletons — no CTAs or "nothing yet" copy.
  */
 
 const INTERVIEWS = '/student/interviews';
-
-const TABS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'details', label: 'Details' },
-];
+/** Single-series trends: teal line, orange markers (design-system §2b Charts). */
+const TEAL = '#0E5C6B';
+const GREY_HEX = '#BCC1C3';
+/** Same hue as subjectColor(), as hex for the chart. */
+const subjectHex = (key) => (String(key || '').startsWith('subject:') ? dataColor(String(key).slice(8), { hex: true }) : GREY_HEX);
+const TAB_VALUES = ['overview', 'subject', 'assessments', 'interviews'];
 
 const pct = (n) => (n != null && n !== '' && Number.isFinite(Number(n)) ? `${Math.round(Number(n))}%` : '—');
+/** Interview scores read "41/100"; quiz scores read "41%" (S11). */
+const outOf100 = (n) => (n != null && n !== '' && Number.isFinite(Number(n)) ? `${Math.round(Number(n))}/100` : '—');
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-const tone = (score) => scoreBand(score).key;
 const reportHref = (id) => `/student/reports/view?session=${encodeURIComponent(id)}`;
 const jobOf = (row) => ({ job_id: row.jobId, chapter_title: row.title });
 const toTime = (iso) => Date.parse(iso || '') || 0;
 
+const CHAPTER_FILTERS = [
+  { value: 'all', label: 'All' },
+  { value: 'new', label: 'Not started' },
+  { value: 'progress', label: 'In progress' },
+  { value: 'watched', label: 'Watched' },
+  { value: 'ready', label: 'Assessment ready' },
+  { value: 'done', label: 'Completed' },
+];
+/** One status per chapter (S7), so the filter counts add up to All. */
+function rowStatus(r) {
+  if (r.quiz === 'done') return 'done';
+  if (r.quiz === 'open') return 'ready';
+  if (r.watchComplete) return 'watched';
+  if (r.watchPercent > 0) return 'progress';
+  return 'new';
+}
+function rowMatches(f, r) {
+  return f === 'all' || rowStatus(r) === f;
+}
+
 /* ------------------------------------------------------------------ next step */
-/** One recommended action from the student's own data (latest result first). */
 function nextStep(m) {
   const rows = m?.chapterRows || [];
   const latest = m?.trend?.length ? m.trend[m.trend.length - 1] : null;
@@ -43,7 +69,7 @@ function nextStep(m) {
   const watching = rows.find((r) => r.watchPercent > 0 && !r.watchComplete);
   const unwatched = rows.find((r) => r.watchPercent === 0);
 
-  if (latestRow && latest.score < 75) {
+  if (latestRow && bandFor(latest.score) !== 'strong') {
     return {
       icon: 'bookOpen',
       title: 'Review your assessment',
@@ -81,13 +107,24 @@ function nextStep(m) {
       links: [{ label: 'Ask AI tutor', icon: 'chat', href: classroomHref(resume.subjectKey, resume.jobId, 'tutor') }],
     };
   }
-  if (rows.length) {
+  if (rows.length && m?.canSelfInterview) {
     return {
       icon: 'mic',
       title: 'Put it into practice',
       body: 'Your lectures and assessments are up to date. A mock interview turns what you learned into answers.',
       primary: { label: 'Start mock interview', icon: 'mic', href: INTERVIEWS },
       links: latestRow ? [{ label: 'Review your last assessment', icon: 'doc', href: assessmentHref(jobOf(latestRow), latestRow.subjectKey, { view: 'review' }) }] : [],
+    };
+  }
+  if (rows.length) {
+    return {
+      icon: 'tick',
+      title: 'You’re up to date',
+      body: 'Every published lecture is watched and assessed. Revise any chapter with your AI tutor while you wait for the next one.',
+      primary: latestRow
+        ? { label: 'Review your last assessment', icon: 'doc', href: assessmentHref(jobOf(latestRow), latestRow.subjectKey, { view: 'review' }) }
+        : { label: 'Go to My subjects', icon: 'book', href: SUBJECTS_PATH },
+      links: latestRow ? [{ label: 'Ask AI tutor', icon: 'chat', href: classroomHref(latestRow.subjectKey, latestRow.jobId, 'tutor') }] : [],
     };
   }
   return {
@@ -100,14 +137,33 @@ function nextStep(m) {
 }
 
 /* ------------------------------------------------------------------ small parts */
-function StatusPill({ row }) {
+function WatchPill({ row }) {
   if (row.watchComplete) return <span className="spg-pill spg-pill--good"><Icon name="tick" size={14} /> Watched</span>;
   if (row.watchPercent > 0) return <span className="spg-pill spg-pill--teal">{row.watchPercent}% watched</span>;
   return <span className="spg-pill">Not started</span>;
 }
 
-function ScoreChip({ score }) {
-  return <span className={`spg-score spg-score--${tone(score)}`}>{pct(score)}</span>;
+function Score({ score, interview = false }) {
+  return (
+    <span className="spg-score">
+      <BandPill score={score} label={score == null ? 'Not scored' : undefined} />
+      <b>{score == null ? '—' : <>{Math.round(Number(score))}<small>{interview ? '/100' : '%'}</small></>}</b>
+    </span>
+  );
+}
+
+/** Interview CTA — or, when interviews aren't open for this student, why not (S9). */
+function InterviewCta({ m, label }) {
+  if (!m) return null;
+  if (!m.canSelfInterview) {
+    return (
+      <p className="spg-lockhint">
+        <Icon name="lock" size={16} />
+        <span>{m.interviewLockReason || 'AI interviews open in your final year.'} <Link href={INTERVIEWS}>Why it’s locked</Link></span>
+      </p>
+    );
+  }
+  return <Link className="sd-btn sd-btn--outline" href={INTERVIEWS}><Icon name="mic" size={16} /> {label}</Link>;
 }
 
 function Empty({ icon, title, children, action }) {
@@ -121,15 +177,14 @@ function Empty({ icon, title, children, action }) {
   );
 }
 
-/** Assessment cell + action for one chapter (Details table). */
+function Skeleton({ rows = 3 }) {
+  return <div className="spg-skel" aria-hidden="true">{Array.from({ length: rows }, (_, i) => <span key={i} />)}</div>;
+}
+
 function chapterAction(row) {
-  if (row.quiz === 'done') {
-    return { cell: <ScoreChip score={row.score} />, action: { label: 'Review', href: assessmentHref(jobOf(row), row.subjectKey, { view: 'review' }) } };
-  }
-  if (row.quiz === 'open') {
-    return { cell: <span className="spg-muted-strong">Unlocked</span>, action: { label: 'Take', href: assessmentHref(jobOf(row), row.subjectKey), accent: true } };
-  }
-  if (row.quiz === 'watch_required') {
+  if (row.quiz === 'done') return { cell: <Score score={row.score} />, action: { label: 'Review', href: assessmentHref(jobOf(row), row.subjectKey, { view: 'review' }) } };
+  if (row.quiz === 'open') return { cell: <span className="spg-muted-strong">Unlocked</span>, action: { label: 'Take', href: assessmentHref(jobOf(row), row.subjectKey) } };
+  if (row.quiz === 'watch_required' || (row.quiz === 'unchecked' && !row.watchComplete)) {
     return { cell: <span className="spg-muted"><Icon name="lock" size={14} /> Watch to unlock</span>, action: { label: row.watchPercent ? 'Resume' : 'Watch', href: classroomHref(row.subjectKey, row.jobId) } };
   }
   return { cell: <span className="spg-muted">No assessment</span>, action: { label: 'Open', href: classroomHref(row.subjectKey, row.jobId) } };
@@ -137,443 +192,349 @@ function chapterAction(row) {
 
 /* ------------------------------------------------------------------ page */
 function ProgressView() {
-  const [url, setUrl] = useUrlState({ tab: 'overview', subject: '' });
-  const tab = url.tab === 'details' ? 'details' : 'overview';
-  const { data: m, loading, error, reload } = useAsyncResource(loadStudentHome, []);
+  const [tab, setTab] = useTabParam(TAB_VALUES, 'overview');
+  const [url, setUrl] = useUrlState({ subject: '', f: 'all' });
+  const { data: m, loading, error, reload } = useAsyncResource(loadStudentHomeData, []);
   const isLoading = loading && !m;
 
   const w = m?.watch;
   const a = m?.assessments;
   const iv = m?.interviews;
-  const rows = m?.chapterRows || [];
+  const rows = useMemo(() => m?.chapterRows || [], [m]);
   const subjects = m?.subjects || [];
-  const history = [...(m?.trend || [])].reverse();
-  const latest = history[0] || null;
-  const latestRow = latest ? rows.find((r) => r.jobId === latest.jobId) : null;
-  const openAssignments = (m?.assignments || []).filter((x) => x.status === 'Open');
   const interviews = m?.interviewRows || [];
-  const step = nextStep(m);
-  const context = [m?.deptName, m?.collegeName].filter(Boolean).join(' · ');
+  const openAssignments = (m?.assignments || []).filter((x) => x.status === 'Open');
+  const step = m ? nextStep(m) : null;
 
-  /* the chapter the "learning record" spotlights: in progress → latest assessed → newest */
-  const focusRow = rows.find((r) => r.watchPercent > 0 && !r.watchComplete) || latestRow || rows[0] || null;
+  /* every completed assessment, newest first (chapterRows covers all looked-up chapters) */
+  const done = useMemo(
+    () => rows.filter((r) => r.quiz === 'done' && r.score != null).sort((x, y) => toTime(y.submittedAt) - toTime(x.submittedAt)),
+    [rows],
+  );
+  const bandParts = BANDS.map((b) => ({ key: b.key, label: b.label, value: done.filter((r) => bandFor(r.score) === b.key).length }));
+  /* Quiz trend: one line per subject (subject colours) when every subject has 2+ scores, else one teal line. */
+  const trendSubjects = [...new Set((m?.trend || []).map((t) => t.subjectKey))];
+  // Series keys stay plain (s0, s1…) — they become SVG gradient ids.
+  const quizTrend = (m?.trend || []).map((t) => ({ label: t.label, score: t.score, [`s${trendSubjects.indexOf(t.subjectKey)}`]: t.score }));
+  const perSubject = trendSubjects.length > 1
+    && trendSubjects.every((k) => (m?.trend || []).filter((t) => t.subjectKey === k).length >= 2);
+  const quizSeries = perSubject
+    ? trendSubjects.map((k, i) => ({ key: `s${i}`, name: (m?.trend || []).find((t) => t.subjectKey === k)?.subject || 'Subject', color: subjectHex(k) }))
+    : [{ key: 'score', name: 'Score', color: TEAL }];
+  const ivTrend = interviews.filter((r) => r.score != null).slice(0, 10).reverse().map((r, i) => ({ label: r.date || `#${i + 1}`, score: r.score }));
 
-  /* Details: one subject at a time (chips when there is more than one) */
+  /* By subject */
   const subject = subjects.find((s) => s.key === url.subject) || subjects[0] || null;
   const subjectRows = subject ? rows.filter((r) => r.subjectKey === subject.key) : [];
-  const subjectHistory = history.filter((h) => !subject || h.subjectKey === subject.key);
+  const shownRows = subjectRows.filter((r) => rowMatches(url.f, r));
+  const counts = Object.fromEntries(CHAPTER_FILTERS.map((f) => [f.value, subjectRows.filter((r) => rowMatches(f.value, r)).length]));
   const record = useMemo(() => {
     const events = [];
     subjectRows.forEach((r) => {
-      if (r.publishedAt) events.push({ at: toTime(r.publishedAt), date: r.published, kind: 'lecture', activity: `Lecture published: ${r.title}`, result: r.duration ? `Duration ${r.duration}` : '—', row: r });
-      if (r.submittedAt) events.push({ at: toTime(r.submittedAt), date: r.submitted, kind: 'assessment', activity: `Assessment completed: ${r.title}`, result: `Score ${pct(r.score)}${r.correct ? ` · ${r.correct} correct` : ''}`, row: r });
+      if (r.publishedAt) events.push({ at: toTime(r.publishedAt), date: r.published, kind: 'lecture', activity: `Lecture published: ${r.title}`, row: r });
+      if (r.submittedAt) events.push({ at: toTime(r.submittedAt), date: r.submitted, kind: 'assessment', activity: `Assessment completed: ${r.title}`, row: r });
     });
     return events.sort((x, y) => y.at - x.at);
   }, [subjectRows]);
 
-  const interviewKpi = iv?.total
-    ? { value: pct(iv.avg), tone: tone(iv.avg), sub: `Average of ${plural(iv.total, 'completed interview')}` }
-    : { value: m ? 'Not started' : null, tone: null, sub: openAssignments.length ? `${plural(openAssignments.length, 'interview')} assigned to you` : 'No completed interviews' };
-
-  const onTabKey = (e) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    e.preventDefault();
-    const next = tab === 'overview' ? 'details' : 'overview';
-    setUrl({ tab: next });
-    document.getElementById(`spg-tab-${next}`)?.focus();
-  };
-
-  const interviewList = () => (
-    openAssignments.length || interviews.length ? (
-      <ul className="spg-ivlist">
-        {openAssignments.map((x) => (
-          <li key={`as-${x.id}`}>
-            <span className="spg-ic spg-ic--teal" aria-hidden="true"><Icon name="clip" size={18} /></span>
-            <div className="spg-ivlist-main">
-              <b>{x.title}</b>
-              <span>{['Assigned by your department', x.mode === 'Full' ? 'Full' : 'Mock', x.dueShort ? `Due ${x.dueShort}` : null].filter(Boolean).join(' · ')}</span>
-            </div>
-            <span className="spg-pill">Not started</span>
-          </li>
-        ))}
-        {interviews.slice(0, 3).map((r) => (
-          <li key={`iv-${r.id}`}>
-            <Link className="spg-ivlink" href={reportHref(r.id)} aria-label={`${r.title}, ${pct(r.score)} — open report`}>
-              <span className="spg-ic spg-ic--teal" aria-hidden="true"><Icon name="mic" size={18} /></span>
-              <span className="spg-ivlist-main">
-                <b>{r.title}</b>
-                <span>{[r.mode === 'full' ? 'Full' : 'Mock', r.date].filter(Boolean).join(' · ')}</span>
-              </span>
-              <ScoreChip score={r.score} />
-              <Icon name="chev" size={16} />
-            </Link>
-          </li>
-        ))}
-      </ul>
-    ) : null
-  );
+  const tabs = [
+    { value: 'overview', label: 'Overview' },
+    { value: 'subject', label: 'By subject', count: m ? subjects.length : undefined },
+    { value: 'assessments', label: 'Assessments', count: m ? done.length : undefined },
+    { value: 'interviews', label: 'Interviews', count: m && iv?.total != null ? iv.total : undefined },
+  ];
 
   return (
-    <div className={`spg spg-hide-topbar animate-fade-in${isLoading ? ' is-loading' : ''}`} aria-busy={isLoading}>
-      <header className="spg-head">
-        <h1>My progress</h1>
-        <p>{context || 'Understand your learning, not just your completion.'}</p>
-      </header>
+    <div className={`spg animate-fade-in${isLoading ? ' is-loading' : ''}`} aria-busy={isLoading}>
+      {m?.deptName || m?.collegeName ? (
+        <ModuleHead chips={<HeadChip icon="building">{[m.deptName, m.collegeName].filter(Boolean).join(' · ')}</HeadChip>} />
+      ) : null}
 
-      <div className="spg-tabs" role="tablist" aria-label="Progress views">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            id={`spg-tab-${t.id}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            aria-controls={`spg-panel-${t.id}`}
-            tabIndex={tab === t.id ? 0 : -1}
-            className={`spg-tab${tab === t.id ? ' is-on' : ''}`}
-            onClick={() => setUrl({ tab: t.id })}
-            onKeyDown={onTabKey}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <TabNav tabs={tabs} value={tab} onChange={setTab} label="Progress views" idBase="spg-tab" />
 
       {error && !m ? (
         <SectionState
           tone="err"
           title="Could not load your progress"
-          action={(
-            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}>
-              <Icon name="refresh" size={16} /> Try again
-            </button>
-          )}
+          action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}><Icon name="refresh" size={16} /> Try again</button>}
         >
           {apiErrorMessage(error, 'Please try again in a moment.')}
         </SectionState>
       ) : null}
 
-      {tab === 'overview' ? (
-        /* ================================================================ OVERVIEW */
-        <div id="spg-panel-overview" role="tabpanel" aria-labelledby="spg-tab-overview" className="spg-panel">
-          <section className="spg-card spg-kpis" aria-label="Progress summary">
+      {/* ================================================================ OVERVIEW */}
+      <TabPanel value="overview" current={tab} idBase="spg-tab">
+        <div className="spg-panel">
+          <section className="spg-kpis" aria-label="Progress summary">
             <div className="spg-kpi">
-              <span className="spg-ic spg-ic--blue" aria-hidden="true"><Icon name="playCircle" size={22} /></span>
-              <div className="spg-kpi-body">
-                <span className="spg-kpi-l">Chapters watched</span>
+              <span className="spg-kpi-l">Chapters watched</span>
+              <div className="spg-kpi-row">
+                {w ? <ScoreRing score={w.percent} size={56} tone="progress" suffix="%" label={`${w.percent}% of chapters watched`} /> : <span className="spg-skel-ring" aria-hidden="true" />}
                 <b className="spg-kpi-v">{w ? `${w.finished}/${w.total}` : '—'}</b>
-                <span className="spg-kpi-s">{w?.total ? `${w.percent}% of published chapters` : 'No chapters published yet'}</span>
-                {w?.total ? <span className="spg-meter" role="presentation"><i style={{ width: `${w.percent}%` }} /></span> : null}
               </div>
+              <span className="spg-kpi-s">{w ? (w.total ? 'Published chapters' : 'No chapters published yet') : ' '}</span>
             </div>
             <div className="spg-kpi">
-              <span className="spg-ic spg-ic--orange" aria-hidden="true"><Icon name="clip" size={22} /></span>
-              <div className="spg-kpi-body">
-                <span className="spg-kpi-l">Assessment score</span>
-                <b className={`spg-kpi-v${a?.avg != null ? ` spg-tone--${tone(a.avg)}` : ''}`}>{a?.avg != null ? pct(a.avg) : (m ? '—' : '')}</b>
-                <span className="spg-kpi-s">{a?.done ? `Based on ${plural(a.done, 'assessment')}` : 'After your first assessment'}</span>
-                {a?.avg != null ? <span className={`spg-band spg-band--${tone(a.avg)}`}>{scoreBand(a.avg).label}</span> : null}
+              <span className="spg-kpi-l">Assessment average</span>
+              <div className="spg-kpi-row">
+                <b className="spg-kpi-v">{pct(a?.avg)}</b>
+                {a ? <BandPill score={a.avg} label={a.avg == null ? 'No scores yet' : undefined} /> : null}
               </div>
+              <span className="spg-kpi-s">{a ? (a.done ? `Based on ${plural(a.done, 'assessment')}` : 'After your first assessment') : ' '}</span>
             </div>
             <div className="spg-kpi">
-              <span className="spg-ic spg-ic--teal" aria-hidden="true"><Icon name="mic" size={22} /></span>
-              <div className="spg-kpi-body">
-                <span className="spg-kpi-l">Interview practice</span>
-                <b className={`spg-kpi-v${interviewKpi.tone ? ` spg-tone--${interviewKpi.tone}` : ''}`}>{interviewKpi.value ?? ''}</b>
-                <span className="spg-kpi-s">{interviewKpi.sub}</span>
+              <span className="spg-kpi-l">Interviews done</span>
+              <div className="spg-kpi-row">
+                <b className="spg-kpi-v">{m ? (iv?.total ?? 0) : '—'}</b>
+                {iv?.avg != null ? <BandPill score={iv.avg} /> : null}
               </div>
+              <span className="spg-kpi-s">{m ? (iv?.avg != null ? `Average ${outOf100(iv.avg)}` : openAssignments.length ? `${plural(openAssignments.length, 'interview')} assigned` : 'No completed interviews') : ' '}</span>
             </div>
           </section>
 
           <div className="spg-grid">
-            <section className="spg-card" aria-labelledby="spg-lr-h">
-              <div className="spg-card-h">
-                <h2 id="spg-lr-h">Your learning record</h2>
-                <p>{subjects.length > 1 ? `${plural(subjects.length, 'subject')} · ${plural(rows.length, 'chapter')}` : (subjects[0]?.name || m?.deptName || 'Your published lectures')}</p>
-              </div>
-
-              {focusRow ? (
-                <div className="spg-records">
-                  <Link className="spg-record" href={classroomHref(focusRow.subjectKey, focusRow.jobId)}>
-                    <span className="spg-ic spg-ic--blue" aria-hidden="true"><Icon name="playCircle" size={20} /></span>
-                    <span className="spg-record-main"><small>Chapter</small><b>{focusRow.title}</b></span>
-                    <StatusPill row={focusRow} />
-                    <span className="spg-record-end">{w ? `${w.finished}/${w.total} chapters` : ''}</span>
-                  </Link>
-                  {latestRow ? (
-                    <Link className="spg-record" href={assessmentHref(jobOf(latestRow), latestRow.subjectKey)}>
-                      <span className="spg-ic spg-ic--orange" aria-hidden="true"><Icon name="clip" size={20} /></span>
-                      <span className="spg-record-main"><small>Latest assessment</small><b>{latestRow.title}</b></span>
-                      <ScoreChip score={latest.score} />
-                      <span className="spg-record-end spg-textlink">View results <Icon name="arrow" size={14} /></span>
-                    </Link>
-                  ) : null}
-                </div>
-              ) : (
-                <Empty icon="book" title={isLoading ? 'Loading your learning record…' : 'No lectures yet'}>
-                  {isLoading ? null : 'Your chapters appear here once lectures are published for your department.'}
-                </Empty>
-              )}
-
-              <div className="spg-sub">
-                <h3 className="spg-h3-gap">Assessment history</h3>
-                {history.length ? (
-                  <>
-                    <div className="spg-table-wrap">
-                      <table className="spg-table">
-                        <thead><tr><th>Date</th><th>Chapter</th><th className="num">Score</th><th>Action</th></tr></thead>
-                        <tbody>
-                          {history.map((h) => {
-                            const r = rows.find((x) => x.jobId === h.jobId);
-                            return (
-                              <tr key={`${h.jobId}-${h.date}`}>
-                                <td data-label="Date">{h.label}</td>
-                                <td data-label="Chapter"><b>{h.title}</b>{subjects.length > 1 ? <small>{h.subject}</small> : null}</td>
-                                <td data-label="Score" className="num"><b className={`spg-tone--${tone(h.score)}`}>{h.score}%</b></td>
-                                <td data-label="Action">
-                                  <Link className="spg-textlink" href={assessmentHref(jobOf(r || { jobId: h.jobId, title: h.title }), h.subjectKey, { view: 'review' })}>
-                                    Review answers <Icon name="arrow" size={14} />
-                                  </Link>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {history.length > 1 ? (
-                      <div className="spg-chart">
-                        <PerformanceChart items={m.trend} ariaLabel="Your chapter assessment scores over time" />
-                      </div>
-                    ) : (
-                      <p className="spg-note"><Icon name="info" size={18} /> One completed assessment. More results are needed to show a trend.</p>
-                    )}
-                  </>
-                ) : (
-                  <p className="spg-note"><Icon name="info" size={18} /> {isLoading ? 'Loading your scores…' : 'No assessments yet. Finish a lecture to 100% to unlock its assessment.'}</p>
+            <div className="spg-col">
+              <Panel title="Completion by subject" sub="Chapters watched in each subject">
+                {isLoading ? <Skeleton rows={2} /> : (
+                  <BarList
+                    label="Completion by subject"
+                    max={100}
+                    suffix="%"
+                    empty="Your subjects appear once lectures are published for your department."
+                    items={subjects.map((s) => ({
+                      key: s.key, label: s.name, value: s.completion ?? 0, sub: `${s.watchedCount}/${s.chapterCount}`, color: subjectColor(s.key), href: `${SUBJECTS_PATH}?s=${encodeURIComponent(s.key)}`,
+                    }))}
+                  />
                 )}
-              </div>
-            </section>
+              </Panel>
+              <Panel title="Assessment scores" sub="Your latest chapter assessments over time">
+                {isLoading ? <Skeleton rows={2} /> : quizTrend.length >= 2 ? (
+                  <TrendChart data={quizTrend} series={quizSeries} height={200} suffix="%" />
+                ) : (
+                  <p className="spg-note"><Icon name="info" size={18} /> {quizTrend.length ? 'One completed assessment. Two or more show a trend.' : 'No assessments yet. Finish a lecture to 100% to unlock its assessment.'}</p>
+                )}
+              </Panel>
+            </div>
 
-            <aside className="spg-card spg-next" aria-labelledby="spg-ns-h">
+            <aside className="spg-next" aria-labelledby="spg-ns-h">
               <div className="spg-next-tag">
-                <span className="spg-next-ic" aria-hidden="true"><Icon name={step.icon} size={24} /></span>
+                <span className="spg-next-ic" aria-hidden="true"><Icon name={step?.icon || 'target'} size={22} /></span>
                 <span>Recommended next step</span>
               </div>
-              <h2 id="spg-ns-h">{isLoading ? 'Reading your progress…' : step.title}</h2>
-              {!isLoading ? <p>{step.body}</p> : null}
-              {!isLoading ? (
-                <Link className="spg-btn spg-btn--accent spg-btn--block" href={step.primary.href}>
-                  <Icon name={step.primary.icon} size={18} /> {step.primary.label}
-                </Link>
-              ) : null}
-              {!isLoading && step.links.length ? (
-                <ul className="spg-next-links">
-                  {step.links.map((l) => (
-                    <li key={l.label}>
-                      <Link href={l.href}>
-                        <Icon name={l.icon} size={20} /> <span>{l.label}</span> <Icon name="chev" size={16} />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              {step ? (
+                <>
+                  <h2 id="spg-ns-h">{step.title}</h2>
+                  <p>{step.body}</p>
+                  <Link className="sd-btn sd-btn--amber sd-btn--block" href={step.primary.href}>
+                    <Icon name={step.primary.icon} size={18} /> {step.primary.label}
+                  </Link>
+                  {step.links.length ? (
+                    <ul className="spg-next-links">
+                      {step.links.map((l) => (
+                        <li key={l.label}>
+                          <Link href={l.href}><Icon name={l.icon} size={18} /> <span>{l.label}</span> <Icon name="chev" size={16} /></Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : <Skeleton rows={3} />}
             </aside>
           </div>
-
-          <section className="spg-card spg-ivstrip" aria-labelledby="spg-ivs-h">
-            <span className="spg-ic spg-ic--round" aria-hidden="true"><Icon name="mic" size={22} /></span>
-            <div className="spg-ivstrip-main">
-              <small id="spg-ivs-h">Interview practice</small>
-              {openAssignments[0] ? (
-                <>
-                  <b>{openAssignments[0].title}</b>
-                  <span>{['Assigned by your department', openAssignments[0].department, openAssignments[0].dueShort ? `Due ${openAssignments[0].dueShort}` : null].filter(Boolean).join(' · ')}{openAssignments.length > 1 ? ` · +${openAssignments.length - 1} more` : ''}</span>
-                </>
-              ) : interviews[0] ? (
-                <>
-                  <b>{interviews[0].title}</b>
-                  <span>{[interviews[0].mode === 'full' ? 'Full interview' : 'Mock interview', interviews[0].date].filter(Boolean).join(' · ')}</span>
-                </>
-              ) : (
-                <>
-                  <b>Practise with an AI interviewer</b>
-                  <span>A 5-minute mock interview with instant feedback on your answers.</span>
-                </>
-              )}
-            </div>
-            {openAssignments[0] ? <span className="spg-pill">Not started</span> : interviews[0] ? <ScoreChip score={interviews[0].score} /> : null}
-            {interviews[0] && !openAssignments[0] ? (
-              <Link className="spg-btn spg-btn--outline" href={reportHref(interviews[0].id)}>View report</Link>
-            ) : null}
-            <Link className="spg-btn spg-btn--outline-accent" href={INTERVIEWS}>
-              <Icon name="mic" size={16} /> {openAssignments[0] ? `Start ${openAssignments[0].mode.toLowerCase()} interview` : 'Start mock interview'}
-            </Link>
-          </section>
         </div>
-      ) : (
-        /* ================================================================ DETAILS */
-        <div id="spg-panel-details" role="tabpanel" aria-labelledby="spg-tab-details" className="spg-panel">
+      </TabPanel>
+
+      {/* ================================================================ BY SUBJECT */}
+      <TabPanel value="subject" current={tab} idBase="spg-tab">
+        <div className="spg-panel">
           {subjects.length > 1 ? (
             <div className="spg-chips" role="group" aria-label="Subject">
               {subjects.map((s) => (
-                <button key={s.key} type="button" className={`spg-chip${subject?.key === s.key ? ' is-on' : ''}`} aria-pressed={subject?.key === s.key} onClick={() => setUrl({ subject: s.key })}>
+                <button key={s.key} type="button" className={`spg-chip${subject?.key === s.key ? ' is-on' : ''}`} aria-pressed={subject?.key === s.key} onClick={() => setUrl({ subject: s.key, f: 'all' })}>
+                  <i className="spg-dot" style={{ background: subjectColor(s.key) }} aria-hidden="true" />
                   {s.name} <small>{s.watchedCount}/{s.chapterCount}</small>
                 </button>
               ))}
             </div>
           ) : null}
 
-          <div className="spg-grid">
-            <section className="spg-card" aria-labelledby="spg-subj-h">
-              {subject ? (
-                <>
-                  <div className="spg-subj-h">
-                    <span className="spg-ic spg-ic--blue" aria-hidden="true"><Icon name="bookOpen" size={22} /></span>
-                    <div>
-                      <h2 id="spg-subj-h">{subject.name}</h2>
-                      <p>{plural(subject.chapterCount, 'published chapter')}</p>
-                    </div>
-                    <Link className="spg-btn spg-btn--outline spg-subj-open" href={classroomHref(subject.key)}>Open classroom <Icon name="arrow" size={14} /></Link>
-                  </div>
-
-                  <div className="spg-metrics">
-                    <div className="spg-metric">
-                      <span className="spg-ic spg-ic--blue" aria-hidden="true"><Icon name="playCircle" size={20} /></span>
-                      <div>
-                        <span className="spg-kpi-l">Learning completion</span>
-                        <b className="spg-kpi-v">{pct(subject.completion)}</b>
-                        <span className="spg-kpi-s">{subject.watchedCount} of {plural(subject.chapterCount, 'chapter')} watched</span>
-                        <span className="spg-meter" role="presentation"><i style={{ width: `${subject.completion || 0}%` }} /></span>
-                      </div>
-                    </div>
-                    <div className="spg-metric">
-                      <span className="spg-ic spg-ic--orange" aria-hidden="true"><Icon name="clip" size={20} /></span>
-                      <div>
-                        <span className="spg-kpi-l">Assessment performance</span>
-                        <b className={`spg-kpi-v${subject.avgScore != null ? ` spg-tone--${tone(subject.avgScore)}` : ''}`}>{pct(subject.avgScore)}</b>
-                        <span className="spg-kpi-s">{subject.quizDone ? `${plural(subject.quizDone, 'completed assessment')}` : 'No assessments completed yet'}</span>
-                        {subject.avgScore != null ? <span className={`spg-band spg-band--${tone(subject.avgScore)}`}>{scoreBand(subject.avgScore).label}</span> : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="spg-sub">
-                    <h3>Chapter performance</h3>
-                    <p className="spg-sub-p">Your progress for each published chapter.</p>
-                    <div className="spg-table-wrap">
-                      <table className="spg-table">
-                        <thead><tr><th>Chapter</th><th>Learning status</th><th>Assessment</th><th>Action</th></tr></thead>
-                        <tbody>
-                          {subjectRows.map((r) => {
-                            const c = chapterAction(r);
-                            return (
-                              <tr key={r.jobId}>
-                                <td data-label="Chapter"><b>{r.title}</b>{r.duration ? <small>{r.duration} lecture</small> : null}</td>
-                                <td data-label="Learning status"><StatusPill row={r} /></td>
-                                <td data-label="Assessment">{c.cell}</td>
-                                <td data-label="Action">
-                                  <Link className={`spg-btn spg-btn--sm ${c.action.accent ? 'spg-btn--accent' : 'spg-btn--outline'}`} href={c.action.href}>
-                                    {c.action.label} <Icon name="chev" size={14} />
-                                  </Link>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div className="spg-sub">
-                    <h3>Learning record</h3>
-                    <p className="spg-sub-p">A chronological record of your learning activity.</p>
-                    {record.length ? (
-                      <div className="spg-table-wrap">
-                        <table className="spg-table">
-                          <thead><tr><th>Date</th><th>Activity</th><th>Result</th></tr></thead>
-                          <tbody>
-                            {record.map((e) => (
-                              <tr key={`${e.kind}-${e.row.jobId}`}>
-                                <td data-label="Date">{e.date || '—'}</td>
-                                <td data-label="Activity">
-                                  <span className="spg-activity"><i className={`spg-dot spg-dot--${e.kind}`} aria-hidden="true" />{e.activity}</span>
-                                </td>
-                                <td data-label="Result" className={e.kind === 'assessment' ? `spg-tone--${tone(e.row.score)}` : ''}>{e.result}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : <p className="spg-note"><Icon name="info" size={18} /> Nothing recorded yet.</p>}
-                    <p className="spg-note"><Icon name="info" size={18} /> Your score reflects the assessment. Watching a chapter does not measure mastery.</p>
-                  </div>
-                </>
-              ) : (
-                <Empty icon="book" title={isLoading ? 'Loading your subjects…' : 'No subjects yet'}>
-                  {isLoading ? null : 'Your subjects appear once lectures are published for your department.'}
-                </Empty>
-              )}
-            </section>
-
-            <div className="spg-side">
-              <section className="spg-card" aria-labelledby="spg-ar-h">
-                <div className="spg-side-h">
-                  <span className="spg-ic spg-ic--orange" aria-hidden="true"><Icon name="clip" size={22} /></span>
+          {isLoading ? <Panel><Skeleton rows={4} /></Panel> : subject ? (
+            <>
+              <section className="spg-card spg-subj">
+                <div className="spg-subj-h">
+                  <span className="spg-ic" style={subjectTileStyle(subject.key)} aria-hidden="true"><Icon name="bookOpen" size={22} /></span>
                   <div>
-                    <h2 id="spg-ar-h">Assessment review</h2>
-                    {subjectHistory[0] ? (
-                      <>
-                        <b className={`spg-big spg-tone--${tone(subjectHistory[0].score)}`}>{subjectHistory[0].score}%</b>
-                        <p>{subjectHistory.length > 1 ? `Latest of ${plural(subjectHistory.length, 'assessment')}` : 'Based on 1 assessment'}</p>
-                      </>
-                    ) : <p>No assessments completed in this subject yet.</p>}
+                    <h2>{subject.name}</h2>
+                    <p>{plural(subject.chapterCount, 'published chapter')}</p>
+                  </div>
+                  <Link className="sd-btn sd-btn--outline spg-subj-open" href={`${SUBJECTS_PATH}?s=${encodeURIComponent(subject.key)}`}>Open subject <Icon name="arrow" size={14} /></Link>
+                </div>
+                <div className="spg-metrics">
+                  <div className="spg-metric">
+                    <span className="spg-kpi-l">Learning completion</span>
+                    <b className="spg-kpi-v">{pct(subject.completion)}</b>
+                    <span className="spg-meter" aria-hidden="true"><i style={{ width: `${subject.completion || 0}%`, background: subjectColor(subject.key) }} /></span>
+                    <span className="spg-kpi-s">{subject.watchedCount} of {plural(subject.chapterCount, 'chapter')} watched</span>
+                  </div>
+                  <div className="spg-metric">
+                    <span className="spg-kpi-l">Assessment average</span>
+                    <div className="spg-kpi-row">
+                      <b className="spg-kpi-v">{pct(subject.avgScore)}</b>
+                      <BandPill score={subject.avgScore} label={subject.avgScore == null ? 'No scores yet' : undefined} />
+                    </div>
+                    <span className="spg-kpi-s">{subject.quizDone ? plural(subject.quizDone, 'completed assessment') : 'No assessments completed yet'}</span>
                   </div>
                 </div>
-                {subjectHistory[0] ? (() => {
-                  const h = subjectHistory[0];
-                  const r = rows.find((x) => x.jobId === h.jobId) || { jobId: h.jobId, title: h.title, subjectKey: h.subjectKey };
-                  return (
-                    <>
-                      <ul className="spg-facts">
-                        <li><Icon name="calendar" size={18} /> {h.date}</li>
-                        <li><Icon name="doc" size={18} /> {h.title}</li>
-                        <li><Icon name="bars" size={18} /> Score: {h.score}%{r.correct ? ` · ${r.correct} correct` : ''}</li>
-                      </ul>
-                      <div className="spg-stack">
-                        <Link className="spg-btn spg-btn--accent spg-btn--block" href={assessmentHref(jobOf(r), r.subjectKey)}>View results</Link>
-                        <Link className="spg-btn spg-btn--outline spg-btn--block" href={classroomHref(r.subjectKey, r.jobId, 'tutor')}><Icon name="chat" size={18} /> Ask AI tutor</Link>
-                      </div>
-                    </>
-                  );
-                })() : (
-                  <div className="spg-stack">
-                    <Link className="spg-btn spg-btn--outline spg-btn--block" href={subject ? classroomHref(subject.key) : SUBJECTS_PATH}><Icon name="play" size={18} /> Continue learning</Link>
-                  </div>
+              </section>
+
+              <Panel
+                title="Chapter performance"
+                sub="Your progress for each published chapter"
+                toolbar={(
+                  <SegTabs label="Chapter status" value={url.f} onChange={(v) => setUrl({ f: v })} options={CHAPTER_FILTERS.map((f) => ({ ...f, count: counts[f.value] }))} />
                 )}
-              </section>
+                bodyClassName=""
+              >
+                {shownRows.length ? (
+                  <div className="spg-table-wrap">
+                    <table className="spg-table">
+                      <thead><tr><th>Chapter</th><th>Learning status</th><th>Assessment</th><th><span className="sr-only">Action</span></th></tr></thead>
+                      <tbody>
+                        {shownRows.map((r) => {
+                          const c = chapterAction(r);
+                          return (
+                            <tr key={r.jobId}>
+                              <td data-label="Chapter"><b>{r.title}</b>{r.duration ? <small>{r.duration} lecture</small> : null}</td>
+                              <td data-label="Learning status"><WatchPill row={r} /></td>
+                              <td data-label="Assessment">{c.cell}</td>
+                              <td data-label="Action" className="spg-act">
+                                <Link className="sd-btn sd-btn--sm sd-btn--outline" href={c.action.href}>{c.action.label} <Icon name="chev" size={14} /></Link>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : <p className="spg-none">No chapters match this filter.</p>}
+              </Panel>
 
-              <section className="spg-card" aria-labelledby="spg-ip-h">
-                <div className="spg-side-h">
-                  <span className="spg-ic spg-ic--teal" aria-hidden="true"><Icon name="mic" size={22} /></span>
-                  <div>
-                    <h2 id="spg-ip-h">Interview practice</h2>
-                    <p>Your upcoming and completed interview sessions.</p>
+              <Panel title="Learning record" sub="A chronological record of your learning activity" bodyClassName="">
+                {record.length ? (
+                  <div className="spg-table-wrap">
+                    <table className="spg-table">
+                      <thead><tr><th>Date</th><th>Activity</th><th>Result</th></tr></thead>
+                      <tbody>
+                        {record.map((e) => (
+                          <tr key={`${e.kind}-${e.row.jobId}`}>
+                            <td data-label="Date" className="spg-nowrap">{e.date || '—'}</td>
+                            <td data-label="Activity"><span className="spg-activity"><i className={`spg-dot spg-dot--${e.kind}`} aria-hidden="true" />{e.activity}</span></td>
+                            <td data-label="Result">
+                              {e.kind === 'assessment' ? <Score score={e.row.score} /> : (e.row.duration ? `Duration ${e.row.duration}` : '—')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                </div>
-                {interviewList()}
-                {!interviews.length ? (
-                  <div className="spg-mini-empty">
-                    <span className="spg-ic spg-ic--grey" aria-hidden="true"><Icon name="chat" size={16} /></span>
-                    <span><b>No completed interviews</b><small>You haven’t completed any interview sessions yet.</small></span>
-                  </div>
-                ) : null}
-                <Link className="spg-btn spg-btn--outline-accent spg-btn--block" href={INTERVIEWS}><Icon name="mic" size={16} /> Start mock interview</Link>
-              </section>
-            </div>
-          </div>
+                ) : <p className="spg-none">Nothing recorded yet.</p>}
+                <p className="spg-note spg-note--pad"><Icon name="info" size={18} /> Your score reflects the assessment. Watching a chapter does not measure mastery.</p>
+              </Panel>
+            </>
+          ) : (
+            <Panel><Empty icon="book" title="No subjects yet">Your subjects appear once lectures are published for your department.</Empty></Panel>
+          )}
         </div>
-      )}
+      </TabPanel>
+
+      {/* ================================================================ ASSESSMENTS */}
+      <TabPanel value="assessments" current={tab} idBase="spg-tab">
+        <div className="spg-panel">
+          <Panel title="Score bands" sub={m ? `${plural(done.length, 'completed assessment')}` : ' '}>
+            {isLoading ? <Skeleton rows={1} /> : <Distribution parts={bandParts} label="Assessment score bands" empty="No completed assessments yet." />}
+          </Panel>
+          <Panel title="Assessment history" sub="Newest first — review the answers for any chapter" bodyClassName="">
+            {isLoading ? <div className="spg-pad"><Skeleton rows={3} /></div> : done.length ? (
+              <div className="spg-table-wrap">
+                <table className="spg-table">
+                  <thead><tr><th>Date</th><th>Chapter</th><th>Score</th><th><span className="sr-only">Action</span></th></tr></thead>
+                  <tbody>
+                    {done.map((r) => (
+                      <tr key={r.jobId}>
+                        <td data-label="Date" className="spg-nowrap">{r.submitted || '—'}</td>
+                        <td data-label="Chapter">
+                          <b>{r.title}</b>
+                          <small><i className="spg-dot" style={{ background: subjectColor(r.subjectKey) }} aria-hidden="true" /> {r.subject}{r.correct ? ` · ${r.correct} correct` : ''}</small>
+                        </td>
+                        <td data-label="Score"><Score score={r.score} /></td>
+                        <td data-label="Action" className="spg-act">
+                          <Link className="spg-textlink" href={assessmentHref(jobOf(r), r.subjectKey, { view: 'review' })}>Review answers <Icon name="arrow" size={14} /></Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <Empty icon="clip" title="No assessments yet" action={<Link className="sd-btn sd-btn--outline sd-btn--sm" href={SUBJECTS_PATH}>Go to My subjects</Link>}>
+                Finish a lecture to 100% to unlock its assessment.
+              </Empty>
+            )}
+          </Panel>
+        </div>
+      </TabPanel>
+
+      {/* ================================================================ INTERVIEWS */}
+      <TabPanel value="interviews" current={tab} idBase="spg-tab">
+        <div className="spg-panel">
+          {isLoading ? <Panel><Skeleton rows={3} /></Panel> : (
+            <div className="spg-grid spg-grid--even">
+              <Panel title="Interview sessions" sub="Your completed and assigned interviews" action={interviews.length ? <Link className="sd-btn sd-btn--ghost sd-btn--sm" href="/student/reports">All reports <Icon name="chev" size={14} /></Link> : null}>
+                {openAssignments.length || interviews.length ? (
+                  <ul className="spg-ivlist">
+                    {openAssignments.map((x) => (
+                      <li key={`as-${x.id}`}>
+                        <span className="spg-ic spg-ic--sm" aria-hidden="true"><Icon name="clip" size={18} /></span>
+                        <div className="spg-ivlist-main">
+                          <b>{x.title}</b>
+                          <span>{['Assigned', x.mode, x.dueShort ? `Due ${x.dueShort}` : null].filter(Boolean).join(' · ')}</span>
+                        </div>
+                        <span className="spg-pill">Not started</span>
+                      </li>
+                    ))}
+                    {interviews.slice(0, 8).map((r) => (
+                      <li key={`iv-${r.id}`}>
+                        <Link className="spg-ivlink" href={reportHref(r.id)} aria-label={`${r.title}, ${outOf100(r.score)} — open report`}>
+                          <span className="spg-ic spg-ic--sm" aria-hidden="true"><Icon name="mic" size={18} /></span>
+                          <span className="spg-ivlist-main">
+                            <b>{r.title}</b>
+                            <span>{[r.mode === 'full' ? 'Full interview' : 'Mock interview', r.date].filter(Boolean).join(' · ')}</span>
+                          </span>
+                          <Score score={r.score} interview />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <Empty icon="mic" title="No completed interviews">Your interview reports appear here once you complete one.</Empty>
+                )}
+                <div className="spg-ivcta">
+                  {openAssignments.length ? (
+                    <Link className="sd-btn sd-btn--outline" href={INTERVIEWS}><Icon name="mic" size={16} /> Start assigned interview</Link>
+                  ) : <InterviewCta m={m} label="Start mock interview" />}
+                </div>
+              </Panel>
+              <Panel title="Score trend" sub="Interview scores out of 100">
+                {ivTrend.length >= 2 ? (
+                  <TrendChart data={ivTrend} series={[{ key: 'score', name: 'Score', color: TEAL }]} height={220} suffix="/100" />
+                ) : (
+                  <p className="spg-note"><Icon name="info" size={18} /> Two or more scored interviews show a trend.</p>
+                )}
+              </Panel>
+            </div>
+          )}
+        </div>
+      </TabPanel>
     </div>
   );
 }

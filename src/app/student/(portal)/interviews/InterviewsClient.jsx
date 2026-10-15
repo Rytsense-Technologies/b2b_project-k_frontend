@@ -11,6 +11,11 @@ import QuirriSelect from '@/components/superadmin/QuirriSelect';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { QuirriRHFField } from '@/components/superadmin/quirri-ui';
 import { Icon, SectionState } from '@/components/student/ui';
+import { TabNav, TabPanel } from '@/components/shared/module-ui';
+import { BandPill } from '@/components/shared/data-viz';
+import { useTabParam } from '@/hooks/useUrlState';
+import { formatDate, reportHref, score100 } from '@/lib/student/interviewReport';
+import { titleCase } from '@/lib/student/learning';
 import { interviewProfileApi, resumesFromList } from '@/lib/api/interviewProfile';
 import { interviewApi, parseLivekitStartResponse } from '@/lib/api/interview';
 import { interviewAssignmentsApi } from '@/lib/api/interviewAssignments';
@@ -144,12 +149,22 @@ export default function StudentInterviewsPage() {
   );
   const { data: reportsData } = useAsyncResource(() => reportsApi.getLivekit({ page: 1, page_size: 50 }), []);
   const { data: assignmentsData } = useAsyncResource(() => interviewAssignmentsApi.list(), []);
-  const { data: eligibility } = useAsyncResource(() => interviewApi.eligibility(), []);
+  const { data: eligibility, loading: eligLoading } = useAsyncResource(() => interviewApi.eligibility(), []);
+  // Until eligibility is known, show a skeleton — never the wizard that may turn into the locked card (S2).
+  const eligPending = !eligibility && eligLoading;
   const locked = eligibility ? eligibility.eligible === false : false;
+  const [tab, setTab] = useTabParam(['start', 'assigned', 'history'], 'start');
 
   const resumes = useMemo(() => resumesFromList(resumesData), [resumesData]);
   const reports = useMemo(() => asList(reportsData, []), [reportsData]);
   const openAssignments = useMemo(() => asList(assignmentsData, []).filter((a) => a.status !== 'closed'), [assignmentsData]);
+  // Assigned tab: every assignment, open first, then by due date (soonest first).
+  const allAssignments = useMemo(() => [...asList(assignmentsData, [])].sort((x, y) => {
+    const ox = x.status === 'closed' ? 1 : 0;
+    const oy = y.status === 'closed' ? 1 : 0;
+    if (ox !== oy) return ox - oy;
+    return (Date.parse(x.due_at || '') || Infinity) - (Date.parse(y.due_at || '') || Infinity);
+  }), [assignmentsData]);
   const selectedResume = resumes.find((r) => r.id === resumeId) || null;
   const reportTotal = reportsData?.kpi?.total_reports ?? reports.length;
 
@@ -325,20 +340,114 @@ export default function StudentInterviewsPage() {
   /* ====================================================== render */
   return (
     <div className="siv animate-fade-in">
+      <TabNav
+        label="Interview sections"
+        idBase="siv-tab"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: 'start', label: 'Start interview' },
+          { value: 'assigned', label: 'Assigned', count: assignmentsData ? openAssignments.length : undefined },
+          { value: 'history', label: 'History', count: reportsData ? reportTotal : undefined },
+        ]}
+      />
+
+      <TabPanel value="assigned" current={tab} idBase="siv-tab">
+        <section className="siv-card siv-list-card" aria-label="Assigned interviews">
+          <div className="siv-list-h">
+            <div>
+              <h2>Assigned by your department</h2>
+              <p>Mock and full interviews your faculty or HOD asked you to take.</p>
+            </div>
+          </div>
+          {!assignmentsData ? <div className="siv-skel" aria-hidden="true"><span /><span /></div> : allAssignments.length ? (
+            <ul className="siv-list">
+              {allAssignments.map((a) => {
+                const closed = a.status === 'closed';
+                const full = String(a.mode || '').toLowerCase() === 'full';
+                return (
+                  <li key={a.id} className="siv-list-row">
+                    <span className={`siv-list-ic siv-list-ic--${full ? 'full' : 'mock'}`} aria-hidden="true"><Icon name={full ? 'layers' : 'spark'} size={18} /></span>
+                    <div className="siv-list-main">
+                      <b>{a.title || 'Interview assignment'}</b>
+                      <span>{[full ? 'Full interview' : 'Mock interview', a.department_name, a.due_at ? `Due ${formatDate(a.due_at)}` : 'No due date'].filter(Boolean).join(' · ')}</span>
+                    </div>
+                    <span className={`sp-pill sp-pill--${closed ? 'off' : 'good'}`}>{closed ? 'Closed' : 'Open'}</span>
+                    {!closed && !locked ? (
+                      <button
+                        type="button"
+                        className="sd-btn sd-btn--outline sd-btn--sm"
+                        onClick={() => { setValue('mode', full ? 'full' : 'mock', { shouldValidate: true }); setTab('start'); toast.success('Mode set from your assignment.'); }}
+                      >
+                        Start <Icon name="chev" size={14} />
+                      </button>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <SectionState title="No interviews assigned">When your department assigns a mock or full interview, it shows up here and you get an email.</SectionState>
+          )}
+        </section>
+      </TabPanel>
+
+      <TabPanel value="history" current={tab} idBase="siv-tab">
+        <section className="siv-card siv-list-card" aria-label="Interview history">
+          <div className="siv-list-h">
+            <div>
+              <h2>Your interview history</h2>
+              <p>Scored sessions, newest first. Open one for the full feedback.</p>
+            </div>
+            {reports.length ? <Link className="sd-btn sd-btn--ghost sd-btn--sm" href="/student/reports">All reports <Icon name="chev" size={14} /></Link> : null}
+          </div>
+          {!reportsData ? <div className="siv-skel" aria-hidden="true"><span /><span /></div> : reports.length ? (
+            <ul className="siv-list">
+              {reports.slice(0, 10).map((r) => {
+                const sc = score100(r.score);
+                const full = String(r.interview_type || '').toLowerCase() === 'full';
+                return (
+                  <li key={r.session_id}>
+                    <Link className="siv-list-row siv-list-row--link" href={reportHref(r.session_id)}>
+                      <span className={`siv-list-ic siv-list-ic--${full ? 'full' : 'mock'}`} aria-hidden="true"><Icon name="mic" size={18} /></span>
+                      <div className="siv-list-main">
+                        <b>{titleCase(r.title || 'Interview')}</b>
+                        <span>{[full ? 'Full interview' : 'Mock interview', formatDate(r.completed_date)].filter(Boolean).join(' · ')}</span>
+                      </div>
+                      <BandPill score={sc} label={sc == null ? 'Not scored' : undefined} />
+                      <b className="siv-list-score">{sc ?? '—'}{sc != null ? <small>/100</small> : null}</b>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <SectionState title="No interviews completed yet">Your scored reports appear here after your first interview.</SectionState>
+          )}
+        </section>
+      </TabPanel>
+
+      <TabPanel value="start" current={tab} idBase="siv-tab">
+      {eligPending ? (
+        <div className="siv-skel siv-skel--start" aria-busy="true" aria-label="Checking whether interviews are open for you"><span /><span /><span /></div>
+      ) : (
+      <div className="siv-start-panel">
       {openAssignments.length ? (
         <section className="siv-assigned" aria-label="Assigned interviews">
           <Icon name="clip" size={18} />
           <span>
             <b>Assigned by your department:</b> {openAssignments[0].title || 'Interview'} · {openAssignments[0].mode === 'full' ? 'Full' : 'Mock'} interview
-            {openAssignments.length > 1 ? ` (+${openAssignments.length - 1} more)` : ''}
+            {openAssignments.length > 1 ? (
+              <> · <button type="button" className="siv-linkbtn" onClick={() => setTab('assigned')}>See all {openAssignments.length}</button></>
+            ) : ''}
           </span>
-          <button
+          {locked ? null : <button
             type="button"
             className="siv-linkbtn"
             onClick={() => { setValue('mode', openAssignments[0].mode === 'full' ? 'full' : 'mock', { shouldValidate: true }); toast.success('Mode set from your assignment.'); }}
           >
             Use this mode
-          </button>
+          </button>}
         </section>
       ) : null}
 
@@ -351,8 +460,8 @@ export default function StudentInterviewsPage() {
             Your faculty can still assign you a practice interview — it will appear here and you will get an email.
           </p>
           <div className="siv-locked-actions">
-            <a className="siv-btn siv-btn--soft" href="/student/reports">See past interview reports</a>
-            <a className="siv-btn siv-btn--soft" href="/student/subjects">Go to my subjects</a>
+            <Link className="sd-btn sd-btn--outline" href="/student/reports">See past interview reports</Link>
+            <Link className="sd-btn sd-btn--ghost" href="/student/subjects">Go to my subjects</Link>
           </div>
         </section>
       ) : (
@@ -387,7 +496,7 @@ export default function StudentInterviewsPage() {
                 control={control}
                 name="position"
                 fieldType="academicLabel"
-                label={<>Target Role<span className="siv-req">*</span></>}
+                label={<>Target role<span className="siv-req">*</span></>}
                 placeholder="e.g. Frontend Developer"
               />
               <div className="siv-two">
@@ -396,7 +505,7 @@ export default function StudentInterviewsPage() {
                   control={control}
                   render={({ field }) => (
                     <QuirriSelect
-                      label={<>Experience Level<span className="siv-req">*</span></>}
+                      label={<>Experience level<span className="siv-req">*</span></>}
                       name={field.name}
                       value={field.value}
                       onChange={field.onChange}
@@ -408,14 +517,14 @@ export default function StudentInterviewsPage() {
                   )}
                 />
                 <div className="field">
-                  <label htmlFor="siv-lang">Interview Language</label>
+                  <label htmlFor="siv-lang">Interview language</label>
                   <input id="siv-lang" value={INTERVIEW_LANGUAGE} readOnly aria-describedby="siv-lang-hint" className="siv-readonly" />
                   <div id="siv-lang-hint" className="hint">English is used for all interviews.</div>
                 </div>
               </div>
               <div className="field">
                 <label htmlFor="siv-jd" className="siv-label-row">
-                  Job Description (Optional)
+                  Job description (optional)
                 </label>
                 <div className="siv-textarea">
                   <textarea
@@ -455,7 +564,7 @@ export default function StudentInterviewsPage() {
               ) : null}
 
               <div>
-                <h3 className="siv-h3">Choose Interview Mode</h3>
+                <h3 className="siv-h3">Choose interview mode</h3>
                 <p className="siv-sub">Select the mode that best fits your preparation needs.</p>
               </div>
               <div className="siv-modes" role="radiogroup" aria-label="Interview mode">
@@ -472,10 +581,10 @@ export default function StudentInterviewsPage() {
                       onClick={() => setValue('mode', m, { shouldValidate: true })}
                     >
                       <span className="siv-mode-top">
-                        <span className="siv-mode-ic" aria-hidden="true"><Icon name={m === 'full' ? 'layers' : 'spark'} size={22} /></span>
+                        <span className={`siv-mode-ic siv-mode-ic--${m}`} aria-hidden="true"><Icon name={m === 'full' ? 'layers' : 'spark'} size={22} /></span>
                         <span className="siv-radio" aria-hidden="true" />
                       </span>
-                      <b>{mm.label}</b>
+                      <b>{m === 'full' ? 'Full interview' : 'Mock interview'}</b>
                       <span className="siv-mode-blurb">{mm.blurb}</span>
                       <span className="siv-mode-meta">
                         <span><Icon name="clock" size={16} /> Estimated duration: {mm.duration}</span>
@@ -521,7 +630,7 @@ export default function StudentInterviewsPage() {
               />
 
               <section aria-labelledby="siv-res-h">
-                <h3 className="siv-h3" id="siv-res-h">Resume Disclaimer<span className="siv-req">*</span></h3>
+                <h3 className="siv-h3" id="siv-res-h">Resume disclaimer<span className="siv-req">*</span></h3>
                 <div className="siv-resume">
                   <b>Please confirm your profile resume is updated</b>
                   <p>Select the resume you want to use for this interview. If you need to make changes, upload an updated resume below before continuing. Your resume is prepared (parsed) when you start.</p>
@@ -534,7 +643,7 @@ export default function StudentInterviewsPage() {
                     </div>
                   ) : null}
                   <div className="siv-resume-actions">
-                    <button type="button" className="siv-btn siv-btn--soft" onClick={openPicker} disabled={resumesLoading || !resumes.length}>
+                    <button type="button" className="sd-btn sd-btn--soft" onClick={openPicker} disabled={resumesLoading || !resumes.length}>
                       {selectedResume ? 'Change resume' : 'Select resume'}
                     </button>
                     <input
@@ -545,7 +654,7 @@ export default function StudentInterviewsPage() {
                       accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }}
                     />
-                    <button type="button" className="siv-btn siv-btn--teal" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    <button type="button" className="sd-btn sd-btn--teal" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                       <Icon name="upload" size={16} /> {uploading ? 'Uploading…' : 'Upload updated resume'}
                     </button>
                     <span className="siv-muted">Supported: PDF, DOC, DOCX · max 10 MB</span>
@@ -584,7 +693,7 @@ export default function StudentInterviewsPage() {
                 ) : (
                   <>
                     {devices.error ? <p className="siv-warn" role="alert">{devices.error}</p> : null}
-                    <button type="button" className="siv-btn siv-btn--danger" onClick={devices.request} disabled={devices.camera === 'checking'}>
+                    <button type="button" className="sd-btn sd-btn--danger" onClick={devices.request} disabled={devices.camera === 'checking'}>
                       {devices.camera === 'checking' ? 'Waiting for permission…' : 'Enable camera & microphone'}
                     </button>
                   </>
@@ -595,12 +704,12 @@ export default function StudentInterviewsPage() {
 
           <div className="siv-foot">
             {step > 1 ? (
-              <button type="button" className="siv-btn siv-btn--soft" onClick={() => setStep((s) => s - 1)} disabled={starting}>
+              <button type="button" className="sd-btn sd-btn--soft" onClick={() => setStep((s) => s - 1)} disabled={starting}>
                 <Icon name="back" size={16} /> Back
               </button>
             ) : <span />}
             {step < 3 ? (
-              <button type="button" className="siv-btn siv-btn--teal" onClick={goNext} disabled={step === 2 && showGuidelines && !guidelinesAck}>
+              <button type="button" className="sd-btn sd-btn--teal" onClick={goNext} disabled={step === 2 && showGuidelines && !guidelinesAck}>
                 Next <Icon name="arrow" size={16} />
               </button>
             ) : null}
@@ -610,7 +719,7 @@ export default function StudentInterviewsPage() {
         {/* ------------------------------------------------ summary */}
         <aside className="siv-card siv-summary" aria-labelledby="siv-sum-h">
           <div className="siv-sum-head">
-            <h2 id="siv-sum-h">Interview Summary</h2>
+            <h2 id="siv-sum-h">Interview summary</h2>
             <p>Review your interview details before you begin.</p>
             <div className="siv-sum-tiles">
               <div><span>Time</span><b>{meta.time}</b></div>
@@ -618,11 +727,11 @@ export default function StudentInterviewsPage() {
             </div>
           </div>
           <div className="siv-sum-body">
-            <h3>Interview Details</h3>
+            <h3>Interview details</h3>
             <dl className="siv-dl">
               <div><dt>Role</dt><dd>{values.position?.trim() || '—'}</dd></div>
               <div><dt>Experience</dt><dd>{values.experience ? experienceLabel(values.experience) : '—'}</dd></div>
-              <div><dt>Mode</dt><dd>{meta.label}</dd></div>
+              <div><dt>Mode</dt><dd>{mode === 'full' ? 'Full interview' : 'Mock interview'}</dd></div>
               <div><dt>Difficulty</dt><dd>{DIFFICULTY_OPTIONS.find((o) => o.value === values.difficulty)?.label || '—'}</dd></div>
               <div><dt>Language</dt><dd>{INTERVIEW_LANGUAGE}</dd></div>
               <div><dt>Job description</dt><dd>{jobDescription.trim() ? 'Added' : 'None'}</dd></div>
@@ -632,8 +741,8 @@ export default function StudentInterviewsPage() {
               <b><Icon name="check" size={18} /> Ready to begin?</b>
               <p>Your AI interviewer is prepared with role-based questions and instant feedback throughout your practice.</p>
             </div>
-            <button type="button" className="siv-btn siv-btn--accent siv-btn--block siv-start" disabled={!step3Done || starting} onClick={() => beginStart()}>
-              {starting ? 'Starting your interview…' : <>Start Interview <Icon name="arrow" size={16} /></>}
+            <button type="button" className="sd-btn sd-btn--amber sd-btn--block siv-start" disabled={!step3Done || starting} onClick={() => beginStart()}>
+              {starting ? 'Starting your interview…' : <>Start interview <Icon name="arrow" size={16} /></>}
             </button>
             <p className={`siv-hint${step3Done ? ' is-ready' : ''}`} aria-live="polite">
               <span aria-hidden="true">{step3Done ? <Icon name="check" size={14} /> : '!'}</span> {startHint}
@@ -643,6 +752,9 @@ export default function StudentInterviewsPage() {
         </aside>
       </div>
       )}
+      </div>
+      )}
+      </TabPanel>
 
       <QuirriModal
         open={pickerOpen}

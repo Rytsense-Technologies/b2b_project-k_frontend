@@ -3,12 +3,13 @@
 import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import McqStudentQuiz from '@/components/shared/McqStudentQuiz';
+import { subjectColor } from '@/components/student/subjectColor';
 import { Icon, SectionState } from '@/components/student/ui';
 import { eduVideoApi } from '@/lib/api/admin/eduVideo';
 import { asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState } from '@/hooks/useUrlState';
-import { SUBJECTS_PATH, classroomHref, subjectKey } from '@/lib/student/learning';
+import { SUBJECTS_PATH, classroomHref, subjectKey, subjectName } from '@/lib/student/learning';
 import '@/styles/student-learning.css';
 
 /**
@@ -28,16 +29,17 @@ function AssessmentInner() {
   const subject = url.subject || (job ? subjectKey(job) : '');
 
   const context = {
-    subjectName: job?.department_name || 'My subjects',
+    subjectName: job ? subjectName(job) : '',
+    subjectColor: job ? subjectColor(job) : (subject ? subjectColor(subject) : null),
     sourceFilename: job?.source_filename || '',
-    subjectsHref: subject ? classroomHref(subject) : SUBJECTS_PATH,
+    subjectsHref: subject ? `${SUBJECTS_PATH}?s=${encodeURIComponent(subject)}` : SUBJECTS_PATH,
     classroomHref: subject ? classroomHref(subject, jobId) : SUBJECTS_PATH,
     tutorHref: subject ? classroomHref(subject, jobId, 'tutor') : SUBJECTS_PATH,
   };
 
   if (!jobId) {
     return (
-      <div className="sl sl-hide-topbar">
+      <div className="sl">
         <SectionState
           tone="err"
           title="Missing chapter"

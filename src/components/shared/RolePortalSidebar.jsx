@@ -14,6 +14,7 @@ import { authApi } from '@/lib/api/auth';
 import { clearTokens } from '@/lib/tokens';
 import { clearFacultyScopeCache } from '@/hooks/useFacultyScope';
 import { useAuth } from '@/hooks/useAuth';
+import { titleCase } from '@/lib/student/learning';
 import toast from 'react-hot-toast';
 
 function getInitials(name, email, fallback = 'U') {
@@ -56,7 +57,10 @@ export default function RolePortalSidebar({
   }, [sidebarOpen, hideTip]);
 
   const u = sessionUIReady ? user : null;
-  const displayName = u?.name?.trim() || u?.first_name || ariaLabel;
+  // Until the profile arrives, show neutral placeholders - never "Your college / Student Student".
+  const pending = !u;
+  // Names are stored as typed ("siva prakasham m"); show them title-cased.
+  const displayName = titleCase(u?.name?.trim() || u?.first_name || '') || ariaLabel;
   const displayEmail = u?.email || '';
   const initials = getInitials(u?.name, u?.email, fallbackInitials);
   const tenantName = u?.college_name || u?.tenant_name || tenantTitle;
@@ -110,10 +114,19 @@ export default function RolePortalSidebar({
           ? tipHandlers(tenantSub ? `${tenantName} · ${tenantSub}` : tenantName, 'right')
           : {})}
       >
-        <div className="mark" aria-hidden="true">{tenantInitials}</div>
+        <div className={`mark${pending ? ' rps-sk' : ''}`} aria-hidden="true">{pending ? '' : tenantInitials}</div>
         <div className="txt">
-          <div className="nm">{tenantName}</div>
-          {tenantSub ? <div className="sc">{tenantSub}</div> : null}
+          {pending ? (
+            <>
+              <div className="nm"><span className="rps-sk rps-sk--line" aria-hidden="true" /></div>
+              <div className="sc"><span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /></div>
+            </>
+          ) : (
+            <>
+              <div className="nm">{tenantName}</div>
+              {tenantSub ? <div className="sc">{tenantSub}</div> : null}
+            </>
+          )}
         </div>
       </div>
 
@@ -149,10 +162,19 @@ export default function RolePortalSidebar({
             ? tipHandlers(`${displayName} · ${displayEmail || ariaLabel}`, 'right')
             : {})}
         >
-          <div className="av">{initials}</div>
+          <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
           <div className="who-meta">
-            <div className="n">{displayName}</div>
-            <div className="r">{displayEmail || ariaLabel}</div>
+            {pending ? (
+              <>
+                <div className="n"><span className="rps-sk rps-sk--line" aria-hidden="true" /></div>
+                <div className="r"><span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /></div>
+              </>
+            ) : (
+              <>
+                <div className="n">{displayName}</div>
+                <div className="r">{displayEmail || ariaLabel}</div>
+              </>
+            )}
           </div>
           <button
             type="button"

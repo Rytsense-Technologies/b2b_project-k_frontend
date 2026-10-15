@@ -22,7 +22,7 @@ export const PAGE_META = {
   },
   '/superadmin/users': {
     title: 'Platform users',
-    subtitle: 'Every user across every institution.',
+    subtitle: 'Every user across every institution. Only Super Admins see this view.',
   },
   '/superadmin/content': {
     title: 'Upload & content',

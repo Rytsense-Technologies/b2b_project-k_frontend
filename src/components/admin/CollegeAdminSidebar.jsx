@@ -167,6 +167,8 @@ export default function CollegeAdminSidebar() {
   }, [sidebarOpen, hideTip]);
 
   const u = sessionUIReady ? user : null;
+  // Neutral placeholders until the profile loads - never "Your college / College Admin".
+  const pending = !u;
   const displayName = u?.name?.trim() || u?.first_name || 'College Admin';
   const displayEmail = u?.email || '';
   const initials = getInitials(u?.name, u?.email);
@@ -224,10 +226,11 @@ export default function CollegeAdminSidebar() {
             )
           : {})}
       >
-        <div className="mark" aria-hidden="true">{tenantInitials}</div>
+        <div className={`mark${pending ? ' rps-sk' : ''}`} aria-hidden="true">{pending ? '' : tenantInitials}</div>
         <div className="txt">
-          <div className="nm">{collegeName}</div>
-          {universityName ? <div className="sc">{universityName}</div> : null}
+          <div className="nm">{pending ? <span className="rps-sk rps-sk--line" aria-hidden="true" /> : collegeName}</div>
+          {pending ? <div className="sc"><span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /></div> : null}
+          {!pending && universityName ? <div className="sc">{universityName}</div> : null}
         </div>
       </div>
 
@@ -269,10 +272,10 @@ export default function CollegeAdminSidebar() {
             ? tipHandlers(`${displayName} · ${displayEmail || 'College Admin'}`, 'right')
             : {})}
         >
-          <div className="av">{initials}</div>
+          <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
           <div className="who-meta">
-            <div className="n">{displayName}</div>
-            <div className="r">{displayEmail || 'College Admin'}</div>
+            <div className="n">{pending ? <span className="rps-sk rps-sk--line" aria-hidden="true" /> : displayName}</div>
+            <div className="r">{pending ? <span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /> : (displayEmail || 'College Admin')}</div>
           </div>
           <button
             type="button"

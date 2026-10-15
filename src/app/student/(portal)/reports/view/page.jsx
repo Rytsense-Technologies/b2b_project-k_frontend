@@ -4,6 +4,7 @@ import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Icon, SectionState } from '@/components/student/ui';
+import { TabNav, TabPanel } from '@/components/shared/module-ui';
 import ReportHero from '@/components/student/reports/ReportHero';
 import ReportRecording from '@/components/student/reports/ReportRecording';
 import QuestionFeedback from '@/components/student/reports/QuestionFeedback';
@@ -11,17 +12,21 @@ import ShareResults from '@/components/student/reports/ShareResults';
 import {
   ActionPlan,
   ContinueFooter,
+  InterviewLocked,
   KeyInsights,
   NextPractice,
   ReportHighlights,
   SkillBreakdown,
   TryAgainSoon,
 } from '@/components/student/reports/ReportSections';
+import { interviewApi } from '@/lib/api/interview';
 import { reportsApi } from '@/lib/api/reports';
 import { asList } from '@/lib/api/superadmin/http';
 import { REPORTS_PATH, formatDate, score100, useInterviewReport } from '@/lib/student/interviewReport';
+import { titleCase } from '@/lib/student/learning';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
+import { useTabParam } from '@/hooks/useUrlState';
 import '@/styles/student-reports.css';
 
 const START_PATH = '/student/interviews';
@@ -52,8 +57,7 @@ function useReportContext(sessionId, ready) {
 }
 
 function firstNameOf(user) {
-  const n = String(user?.first_name || user?.name || '').trim().split(/\s+/)[0] || '';
-  return n ? n.charAt(0).toUpperCase() + n.slice(1) : '';
+  return titleCase(String(user?.first_name || user?.name || '').trim().split(/\s+/)[0] || '');
 }
 
 function ReportInner() {
@@ -62,6 +66,14 @@ function ReportInner() {
   const { phase, errorMessage, report, slowHint } = useInterviewReport(sessionId);
   const { item, previous } = useReportContext(sessionId, phase === 'ready');
   const { user } = useAuth();
+  const [tab, setTab] = useTabParam(['summary', 'questions', 'plan'], 'summary');
+  // Retake / keep-practising actions only for students who can start an interview (S5).
+  // Unknown (still loading or failed) -> hide them rather than offer a locked action.
+  const { data: eligibility } = useAsyncResource(() => interviewApi.eligibility(), []);
+  const canInterview = eligibility ? eligibility.eligible !== false : false;
+  const lockReason = eligibility && eligibility.eligible === false
+    ? (eligibility.reason || 'AI interviews open in your final year, or when your department assigns one.')
+    : null;
 
   const back = (
     <Link className="srp-back" href={REPORTS_PATH}>
@@ -105,7 +117,7 @@ function ReportInner() {
         <SectionState
           tone="err"
           title={phase === 'cancelled' ? 'No report for this interview' : 'Could not load this report'}
-          action={<Link className="sd-btn sd-btn--teal sd-btn--sm" href={START_PATH}>Start a new interview</Link>}
+          action={<Link className="sd-btn sd-btn--teal sd-btn--sm" href={REPORTS_PATH}><Icon name="back" size={16} /> Back to reports</Link>}
         >
           {errorMessage || 'Please try again.'}
         </SectionState>
@@ -115,9 +127,9 @@ function ReportInner() {
 
   const score = score100(report.overall_score);
   const type = item?.interview_type || null;
-  const role = item?.title || 'Interview';
+  const role = titleCase(item?.title || 'Interview');
   const date = formatDate(item?.completed_date || report.recording_started_at);
-  const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.name || '';
+  const name = titleCase([user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.name || '');
 
   return (
     <div className="srp animate-fade-in">
@@ -130,28 +142,58 @@ function ReportInner() {
         </div>
       </div>
 
-      <ReportHero score={score} previous={previous} firstName={firstNameOf(user)} summary={report.summary} retakeHref={START_PATH} />
-      <ReportHighlights report={report} />
-      <ReportRecording report={report} sessionId={sessionId} interviewType={type} />
+      <ReportHero
+        score={score}
+        previous={previous}
+        firstName={firstNameOf(user)}
+        summary={report.summary}
+        retakeHref={canInterview ? START_PATH : null}
+        lockReason={lockReason}
+      />
 
-      <div className="srp-grid-2">
-        <SkillBreakdown breakdown={report.score_breakdown} />
-        <NextPractice items={report.recommended_next_practice} />
-      </div>
+      <TabNav
+        label="Report sections"
+        idBase="srp-tab"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: 'summary', label: 'Summary' },
+          { value: 'questions', label: 'Questions', count: Array.isArray(report.turn_scores) ? report.turn_scores.length : undefined },
+          { value: 'plan', label: 'Plan' },
+        ]}
+      />
 
-      <QuestionFeedback turns={report.turn_scores} fileBase={`interview-feedback-${role.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`} />
+      <TabPanel value="summary" current={tab} idBase="srp-tab">
+        <div className="srp-tabpanel">
+          <ReportHighlights report={report} />
+          <div className="srp-grid-2">
+            <SkillBreakdown breakdown={report.score_breakdown} />
+            <KeyInsights items={report.key_insights} />
+          </div>
+        </div>
+      </TabPanel>
 
-      <div className="srp-grid-wide">
-        <KeyInsights items={report.key_insights} />
-        <ShareResults score={score} role={role} typeLabel={typeLabel(type)} date={date} name={name} />
-      </div>
+      <TabPanel value="questions" current={tab} idBase="srp-tab">
+        <div className="srp-tabpanel">
+          <QuestionFeedback turns={report.turn_scores} fileBase={`interview-feedback-${role.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`} />
+          {/* Recording / audio exist for full interviews only — no empty boxes for mocks. */}
+          {type !== 'mock' ? <ReportRecording report={report} sessionId={sessionId} interviewType={type} /> : null}
+        </div>
+      </TabPanel>
 
-      <div className="srp-grid-wide">
-        <ActionPlan items={report.action_plan} />
-        <TryAgainSoon />
-      </div>
-
-      <ContinueFooter href={START_PATH} />
+      <TabPanel value="plan" current={tab} idBase="srp-tab">
+        <div className="srp-tabpanel">
+          <div className="srp-grid-2">
+            <NextPractice items={report.recommended_next_practice} />
+            <ActionPlan items={report.action_plan} />
+          </div>
+          <div className="srp-grid-wide">
+            <ShareResults score={score} role={role} typeLabel={typeLabel(type)} date={date} name={name} />
+            {canInterview ? <TryAgainSoon /> : <InterviewLocked reason={lockReason} />}
+          </div>
+          {canInterview ? <ContinueFooter href={START_PATH} /> : null}
+        </div>
+      </TabPanel>
     </div>
   );
 }

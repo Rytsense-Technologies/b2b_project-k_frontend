@@ -59,20 +59,6 @@ export function formatDurationSec(sec) {
 }
 
 /** Owner score bands: ≥75 strong · 50–74 on track · <50 needs improvement (orange, never red). */
-export function scoreBandKey(n) {
-  if (n == null) return 'none';
-  if (n >= 75) return 'good';
-  if (n >= 50) return 'mid';
-  return 'low';
-}
-
-export const BAND_LABEL = {
-  good: 'Strong',
-  mid: 'On track',
-  low: 'Needs improvement',
-  none: 'Not scored',
-};
-
 /** Reports module routes — the list and one report. */
 export const REPORTS_PATH = '/student/reports';
 export const reportHref = (sessionId) => `/student/reports/view?session=${encodeURIComponent(sessionId)}`;

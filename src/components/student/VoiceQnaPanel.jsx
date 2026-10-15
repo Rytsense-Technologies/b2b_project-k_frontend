@@ -4,16 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import toast from 'react-hot-toast';
 import { Icon, SectionState } from '@/components/student/ui';
-import {
-  voiceQnaApi, readVoiceQnaToken, voiceQnaCanRetry, voiceQnaErrorMessage,
-} from '@/lib/api/voiceQna';
+import { voiceQnaApi, voiceQnaCanRetry, voiceQnaErrorMessage } from '@/lib/api/voiceQna';
 import { formatLivekitError, livekitUrlFromApi } from '@/lib/livekitUrl';
 
 function formatWhen(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toUpperCase()}`;
+  return `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toUpperCase()}`;
 }
 
 /**
@@ -77,11 +75,6 @@ export default function VoiceQnaPanel({
   }, [disconnectRoom]);
 
   const loadList = useCallback(async () => {
-    if (!readVoiceQnaToken()) {
-      setConversations([]);
-      setListError('');
-      return;
-    }
     setListLoading(true);
     setListError('');
     try {
@@ -89,7 +82,8 @@ export default function VoiceQnaPanel({
       setConversations(Array.isArray(rows) ? rows : []);
     } catch (err) {
       setConversations([]);
-      if (err?.message === 'missing_token' || err?.status === 401) {
+      // 401/403 = no history access for this session yet — show the empty state, not an error.
+      if (err?.message === 'missing_token' || err?.status === 401 || err?.status === 403) {
         setListError('');
       } else {
         setListError(err?.message || 'Could not load past doubts.');
@@ -100,7 +94,7 @@ export default function VoiceQnaPanel({
   }, []);
 
   const loadDetail = useCallback(async (id, { quiet = false } = {}) => {
-    if (!id || !readVoiceQnaToken()) return;
+    if (!id) return;
     if (!quiet) setDetailLoading(true);
     try {
       const data = await voiceQnaApi.get(id);
@@ -269,6 +263,9 @@ export default function VoiceQnaPanel({
   };
 
   const turns = Array.isArray(detail?.turns) ? detail.turns : [];
+  // Sessions where nothing was asked add noise - hide them (older API
+  // responses without `has_questions` keep everything).
+  const shownConversations = conversations.filter((c) => c.has_questions !== false || c.id === selectedId);
   const statusLabel = phase === 'connecting'
     ? 'Connecting'
     : phase === 'live' && tutorJoined
@@ -285,19 +282,19 @@ export default function VoiceQnaPanel({
       <section className="sl-card sl-history" aria-labelledby="sl-hist-h">
         <div className="sl-card-h sl-card-h--stack">
           <h3 id="sl-hist-h">Session history</h3>
-          <span>{listLoading ? 'Loading…' : `${conversations.length} saved session${conversations.length === 1 ? '' : 's'}`}</span>
+          <span>{listLoading ? 'Loading…' : `${shownConversations.length} saved session${shownConversations.length === 1 ? '' : 's'}`}</span>
         </div>
         {listError ? <SectionState tone="err" title="Could not load past sessions">{listError}</SectionState> : null}
-        {!listLoading && !conversations.length && !listError ? (
+        {!listLoading && !shownConversations.length && !listError ? (
           <div className="sl-empty sl-empty--plain">
             <span className="sl-empty-ic" aria-hidden="true"><Icon name="doc" size={26} /></span>
             <b>No past questions yet</b>
-            <p>Your completed conversations will appear here.</p>
+            <p>Your past questions appear here after your first session.</p>
           </div>
         ) : null}
-        {conversations.length ? (
+        {shownConversations.length ? (
           <ul className="sl-sessions">
-            {conversations.map((row) => {
+            {shownConversations.map((row) => {
               const active = row.id === selectedId;
               return (
                 <li key={row.id} className={`sl-session${active ? ' is-active' : ''}`}>
@@ -311,20 +308,20 @@ export default function VoiceQnaPanel({
                   <div className="sl-session-actions">
                     <button
                       type="button"
-                      className="sl-btn sl-btn--outline sl-btn--sm"
+                      className="sd-btn sd-btn--outline sd-btn--sm"
                       onClick={() => startCall({ resumeId: row.id })}
                       disabled={phase !== 'idle'}
                     >
                       Continue
                     </button>
                     {confirmDeleteId === row.id ? (
-                      <button type="button" className="sl-btn sl-btn--danger sl-btn--sm" onClick={() => removeConversation(row.id)}>
+                      <button type="button" className="sd-btn sd-btn--danger sd-btn--sm" onClick={() => removeConversation(row.id)}>
                         Confirm delete
                       </button>
                     ) : (
                       <button
                         type="button"
-                        className="sl-btn sl-btn--ghost sl-btn--sm"
+                        className="sd-btn sd-btn--ghost sd-btn--sm"
                         onClick={() => setConfirmDeleteId(row.id)}
                         aria-label={`Delete ${row.title || 'conversation'}`}
                       >
@@ -376,22 +373,21 @@ export default function VoiceQnaPanel({
               <span><Icon name="mic" size={34} /></span>
             </span>
             {isLive || isConnecting ? (
-              <button type="button" className="sl-btn sl-btn--outline" onClick={hangUp}>
+              <button type="button" className="sd-btn sd-btn--outline" onClick={hangUp}>
                 <Icon name="phone" size={18} /> {isConnecting ? 'Cancel' : 'End session'}
               </button>
             ) : (
-              <button type="button" className="sl-btn sl-btn--accent sl-btn--lg" onClick={() => startCall()} disabled={!jobId}>
+              <button type="button" className="sd-btn sd-btn--amber sd-btn--lg" onClick={() => startCall()} disabled={!jobId}>
                 Start voice session
               </button>
             )}
-            <span className="sl-voice-lang-h">Supported languages</span>
-            <div className="sl-voice-langs"><span>English</span><span>Tamil</span><span>Tanglish</span></div>
+            <p className="sl-voice-langs"><Icon name="chat" size={18} /> Speaks English, Tamil and Tanglish</p>
           </div>
 
           {isLive && needsAudioUnlock ? (
             <div className="sl-audio-unlock" role="status">
               <span><Icon name="info" size={18} /> Your browser paused the tutor&apos;s audio.</span>
-              <button type="button" className="sl-btn sl-btn--outline sl-btn--sm" onClick={unlockAudio}>Enable audio</button>
+              <button type="button" className="sd-btn sd-btn--outline sd-btn--sm" onClick={unlockAudio}>Enable audio</button>
             </div>
           ) : null}
 
@@ -400,7 +396,7 @@ export default function VoiceQnaPanel({
               tone="err"
               title={callError.title}
               action={callError.retry && phase === 'idle' ? (
-                <button type="button" className="sl-btn sl-btn--outline sl-btn--sm" onClick={() => startCall(lastStart)}>
+                <button type="button" className="sd-btn sd-btn--outline sd-btn--sm" onClick={() => startCall(lastStart)}>
                   <Icon name="refresh" size={14} /> Retry
                 </button>
               ) : null}

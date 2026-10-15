@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
@@ -8,9 +8,9 @@ import QuirriModal from '@/components/superadmin/QuirriModal';
 import { QuirriRHFField, QuirriSelect } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage,
-  ModuleBanner,
+  ModuleHead,
+  HeadChip,
   KpiRow,
-  FilterBar,
   SegTabs,
   SearchBox,
   Panel,
@@ -24,8 +24,10 @@ import {
 } from '@/components/shared/module-ui';
 import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { academicsApi } from '@/lib/api/superadmin/academics';
+import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { useUrlState } from '@/hooks/useUrlState';
 import {
   MAX_PROGRAMME_SEMESTERS,
   programmeCreateSchema,
@@ -349,11 +351,147 @@ function ToggleModal({ target, onConfirm, onClose }) {
         </>
       )}
     >
-      <ConfirmNote danger={deactivating} title={deactivating ? 'This is a soft delete.' : `The ${target.noun} becomes active again.`}>
+      <ConfirmNote danger={deactivating} title={deactivating ? 'Nothing is deleted.' : `The ${target.noun} becomes active again.`}>
         {deactivating
           ? `${target.name} is hidden from active lists and can't take new content. Everything under it is kept, and you can reactivate it at any time.`
           : `${target.name} appears in active lists again.`}
       </ConfirmNote>
+    </QuirriModal>
+  );
+}
+
+/* ------------------------------------------------------------ subject teachers */
+/**
+ * Pick the faculty / HODs who teach one subject. The API stores assignments per
+ * staff member (PUT /academics/staff/{id}/subjects replaces their whole list), so
+ * each changed person's current list is read first and only this subject is added
+ * to or removed from it.
+ */
+function SubjectTeachersModal({ subject, programme, onClose, onSaved }) {
+  const departmentId = programme?.department_id;
+  const collegeId = programme?.college_id;
+  const { data, loading, error, reload } = useAsyncResource(async () => {
+    if (!departmentId) return [];
+    const [fac, hod] = await Promise.all([
+      fetchData(() => usersApi.getUsers({ role: 'faculty', tenantId: collegeId, pageSize: 100 })),
+      fetchData(() => usersApi.getUsers({ role: 'hod', tenantId: collegeId, pageSize: 100 })),
+    ]);
+    return [...asList(fac, []), ...asList(hod, [])]
+      .filter((u) => String(u.department_id || '') === String(departmentId))
+      .filter((u) => String(u.status || '').toLowerCase() !== 'deactivated');
+  }, [departmentId, collegeId]);
+
+  const staff = useMemo(() => {
+    const list = [...asList(data, [])];
+    // Anyone already assigned stays visible so they can be removed.
+    (subject.staff || []).forEach((p) => {
+      if (!list.some((u) => String(u.id) === String(p.id))) list.push(p);
+    });
+    const nameOf = (u) => u.name || [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email;
+    return list.map((u) => ({ ...u, label: nameOf(u) })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [data, subject.staff]);
+
+  const initial = useMemo(() => new Set((subject.staff || []).map((p) => String(p.id))), [subject.staff]);
+  const [picked, setPicked] = useState(() => new Set(initial));
+  const [saving, setSaving] = useState(false);
+  const toggle = (id) => setPicked((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+  const changedIds = staff.map((u) => String(u.id)).filter((id) => initial.has(id) !== picked.has(id));
+
+  const save = async () => {
+    setSaving(true);
+    const failed = [];
+    for (const id of changedIds) {
+      try {
+        const current = await fetchData(() => academicsApi.getStaffSubjects(id));
+        const ids = new Set((current?.assigned || []).map((x) => String(x.id)));
+        if (picked.has(id)) ids.add(String(subject.id));
+        else ids.delete(String(subject.id));
+        await academicsApi.setStaffSubjects(id, [...ids]);
+      } catch (err) {
+        const who = staff.find((u) => String(u.id) === id)?.label || 'One teacher';
+        failed.push(`${who}: ${apiErrorMessage(err, 'could not be updated')}`);
+      }
+    }
+    setSaving(false);
+    if (failed.length) {
+      toast.error(failed.join('\n'));
+      await onSaved(false);
+      return;
+    }
+    toast.success('Teachers updated');
+    await onSaved(true);
+  };
+
+  const deptName = programme?.department_name || 'this department';
+
+  return (
+    <QuirriModal
+      open
+      onClose={onClose}
+      title="Assign teachers"
+      crumb={[subject.name, programme?.department_name].filter(Boolean).join(' · ')}
+      footer={(
+        <>
+          <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <div className="right">
+            <button type="button" className="sd-btn sd-btn--amber" onClick={save} disabled={saving || !changedIds.length}>
+              {saving ? 'Saving…' : 'Save teachers'}
+            </button>
+          </div>
+        </>
+      )}
+    >
+      <div className="un-form ad-subj-pick">
+        {loading && !data ? <SectionState title="Loading teachers…" /> : null}
+        {error ? (
+          <SectionState
+            tone="err"
+            title="Could not load teachers"
+            action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>Try again</button>}
+          >
+            {apiErrorMessage(error, 'Try again in a moment.')}
+          </SectionState>
+        ) : null}
+        {data && !staff.length ? (
+          <SectionState title={`No teachers in ${deptName} yet`}>
+            Add faculty or an HOD to this department first, then assign them here.
+          </SectionState>
+        ) : null}
+        {staff.length ? (
+          <>
+            <div className="ad-subj-head">
+              <span className="sa-muted">Faculty and HODs of {deptName}</span>
+              <span className="sp-pill sp-pill--teal">{countLabel(picked.size)} selected</span>
+            </div>
+            <fieldset className="ad-subj-group">
+              <legend>Teaches {subject.name}</legend>
+              {staff.map((u) => {
+                const id = String(u.id);
+                return (
+                  <label key={id} className={`ad-subj-opt${picked.has(id) ? ' is-on' : ''}`}>
+                    <input type="checkbox" checked={picked.has(id)} onChange={() => toggle(id)} />
+                    <span>
+                      <b>{u.label}</b>
+                      <small>
+                        {[
+                          u.role === 'hod' ? 'HOD' : 'Faculty',
+                          u.email,
+                          String(u.status || '').toLowerCase().includes('pending') ? 'Invite pending' : null,
+                        ].filter(Boolean).join(' · ')}
+                      </small>
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+          </>
+        ) : null}
+      </div>
     </QuirriModal>
   );
 }
@@ -405,6 +543,11 @@ function SubjectCard({ subject, canEdit, showInactive, openModal, onChanged }) {
         {!active ? <StatusPill active={false} /> : null}
         {canEdit ? (
           <div className="ad-actions">
+            {active ? (
+              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => openModal({ type: 'subject-teachers', subject })}>
+                <Icon name="users" size={14} /> {subject.staff?.length ? 'Teachers' : 'Assign teachers'}
+              </button>
+            ) : null}
             <IconButton icon="edit" label={`Edit ${subject.name}`} onClick={() => openModal({ type: 'subject-edit', subject, onDone: refresh })} />
             <IconButton
               icon={active ? 'lock' : 'refresh'}
@@ -468,26 +611,27 @@ function SubjectCard({ subject, canEdit, showInactive, openModal, onChanged }) {
 }
 
 /* ------------------------------------------------------------ page */
-/**
- * Programme > Semester > Subject > Chapter workspace (SOW §6.2).
- * Super Admin: every college (college filter). College Admin: pass
- * `collegeId` - the college is fixed and the server scopes every call to it.
- */
-export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId = null, initialDepartment = '', header = null }) {
+function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment = '', header = null }) {
   const fixedCollege = Boolean(fixedCollegeId);
-  const [college, setCollege] = useState(fixedCollegeId || '');
-  const [department, setDepartment] = useState(initialDepartment || '');
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('active');
-  const [selectedId, setSelectedId] = useState(null);
-  const [semesterId, setSemesterId] = useState(null);
+  // Filters live in the URL. Super Admin: '' = not chosen yet (defaults to the first college), 'all' = every college.
+  // programme / semester: the selected ones, so refresh and Back reopen them ('' = the first one).
+  const [url, setUrl] = useUrlState({ university: '', college: '', department: initialDepartment || '', q: '', status: 'active', programme: '', semester: '' });
+  const [searchInput, setSearchInput] = useState(url.q);
+  useEffect(() => { setSearchInput(url.q); }, [url.q]);
+  useEffect(() => {
+    const next = searchInput.trim();
+    if (next === url.q) return undefined;
+    const t = setTimeout(() => setUrl({ q: next }), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  const department = url.department;
+  const search = url.q;
+  const status = url.status === 'all' ? 'all' : 'active';
   const [modal, setModal] = useState(null);
   const showInactive = status === 'all';
   const canEdit = true; // Super Admin / College Admin write; the server enforces scope
-
-  useEffect(() => {
-    if (fixedCollegeId) setCollege(fixedCollegeId);
-  }, [fixedCollegeId]);
 
   const { data: collegeData } = useAsyncResource(
     () => (fixedCollege ? Promise.resolve(null) : fetchData(() => collegesApi.list({ pageSize: 100 }))),
@@ -495,30 +639,51 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
   );
   const colleges = useMemo(() => asList(collegeData, []), [collegeData]);
 
+  // Universities come from the college rows (no extra request).
+  const universityOptions = useMemo(() => {
+    const m = new Map();
+    colleges.forEach((c) => { if (c.university_id) m.set(String(c.university_id), c.university_name || 'University'); });
+    return [...m.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [colleges]);
+  const collegesInUniversity = useMemo(
+    () => colleges.filter((c) => !url.university || String(c.university_id) === url.university),
+    [colleges, url.university],
+  );
+
+  // Super Admin: open on the first college (kept in ?college=) so programmes never mix colleges by default.
+  useEffect(() => {
+    if (fixedCollege || url.college || !collegesInUniversity.length) return;
+    const first = collegesInUniversity.find((c) => c.is_active !== false) || collegesInUniversity[0];
+    setUrl({ college: String(first.id) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fixedCollege, url.college, collegesInUniversity]);
+
+  const college = fixedCollege ? fixedCollegeId : (url.college === 'all' ? '' : url.college);
+  const collegeRow = colleges.find((c) => String(c.id) === String(college)) || null;
+
   const { data: deptData } = useAsyncResource(
     () => (college ? fetchData(() => departmentsApi.list({ college_id: college, pageSize: 100 })) : Promise.resolve(null)),
     [college],
   );
   const departments = useMemo(() => asList(deptData, []), [deptData]);
 
+  const waitingForCollege = !fixedCollege && !url.college;
   const scope = { college_id: college, department_id: department };
   const { data: summary, reload: reloadSummary } = useAsyncResource(
-    () => fetchData(() => academicsApi.summary(scope)),
-    [college, department],
+    () => (waitingForCollege ? Promise.resolve(null) : fetchData(() => academicsApi.summary(scope))),
+    [college, department, waitingForCollege],
   );
   const { data: programData, loading: programsLoading, error: programsError, reload: reloadPrograms } = useAsyncResource(
-    () => fetchData(() => academicsApi.listPrograms({ ...scope, q: search, include_inactive: showInactive })),
-    [college, department, search, showInactive],
+    () => (waitingForCollege
+      ? Promise.resolve(null)
+      : fetchData(() => academicsApi.listPrograms({ ...scope, q: search, include_inactive: showInactive }))),
+    [college, department, search, showInactive, waitingForCollege],
   );
   const programmes = useMemo(() => asList(programData, []), [programData]);
 
-  useEffect(() => {
-    if (!programmes.length) {
-      setSelectedId(null);
-      return;
-    }
-    if (!programmes.some((p) => p.id === selectedId)) setSelectedId(programmes[0].id);
-  }, [programmes, selectedId]);
+  // Selected programme from ?programme= (falls back to the first one; the default is not written).
+  const selectedId = (programmes.find((p) => String(p.id) === url.programme) || programmes[0])?.id ?? null;
+  const setSelectedId = (id) => setUrl({ programme: id ? String(id) : '', semester: '' });
 
   const { data: programme, loading: programmeLoading, reload: reloadProgramme } = useAsyncResource(
     () => (selectedId ? fetchData(() => academicsApi.getProgram(selectedId)) : Promise.resolve(null)),
@@ -528,13 +693,9 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
     () => (programme?.semesters || []).filter((s) => showInactive || s.is_active !== false),
     [programme, showInactive],
   );
-  useEffect(() => {
-    if (!semesters.length) {
-      setSemesterId(null);
-      return;
-    }
-    if (!semesters.some((s) => s.id === semesterId)) setSemesterId(semesters[0].id);
-  }, [semesters, semesterId]);
+  // Selected semester from ?semester= (falls back to the programme's first semester).
+  const semesterId = (semesters.find((s) => String(s.id) === url.semester) || semesters[0])?.id ?? null;
+  const setSemesterId = (id) => setUrl({ semester: id ? String(id) : '' });
   const semester = semesters.find((s) => s.id === semesterId) || null;
 
   const { data: subjectData, loading: subjectsLoading, reload: reloadSubjects } = useAsyncResource(
@@ -580,66 +741,89 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
     }
   };
 
-  const collegeOptions = [{ value: '', label: 'All colleges' }, ...colleges.map((c) => ({ value: c.id, label: c.code ? `${c.name} (${c.code})` : c.name }))];
+  const collegeOptions = [{ value: 'all', label: url.university ? 'All colleges in this university' : 'All colleges' }, ...collegesInUniversity.map((c) => ({
+    value: String(c.id),
+    label: `${c.code ? `${c.name} (${c.code})` : c.name}${c.is_active === false ? ' — inactive' : ''}`,
+  }))];
   const departmentOptions = [{ value: '', label: 'All departments' }, ...departments.map((d) => ({ value: d.id, label: d.name }))];
   const progActive = programme?.is_active !== false;
   const semActive = semester?.is_active !== false;
+  const filtering = Boolean(search || department || status !== 'active');
+
+  const scopeChip = fixedCollege
+    ? <HeadChip icon="building">Your college</HeadChip>
+    : <HeadChip icon="building">{collegeRow ? collegeRow.name : url.college === 'all' ? 'All colleges' : 'Loading…'}</HeadChip>;
+
+  const withContent = Number(summary?.chapters_with_content) || 0;
+  const chapterTotal = Number(summary?.chapters) || 0;
 
   return (
-    <ModulePage className="sa-page sa-acad">
-      {header}
-      <ModuleBanner
-        icon="tree"
-        eyebrow="Academic hierarchy"
-        title="Academic structure"
-        lede="Programmes, semesters, subjects and chapters under each department. Chapters are what uploaded content and student progress are tagged to."
-        chips={(
-          <div className="un-hier" aria-label="Hierarchy">
-            <span>Department</span><Icon name="chev" size={12} />
-            <span className="is-on">Programme</span><Icon name="chev" size={12} />
-            <span>Semester</span><Icon name="chev" size={12} />
-            <span>Subject</span><Icon name="chev" size={12} />
-            <span>Chapter</span>
-          </div>
-        )}
+    <ModulePage className="sa-page sa-acad as-page">
+      <ModuleHead
+        chips={scopeChip}
         actions={(
           <button type="button" className="sd-btn sd-btn--amber" onClick={() => setModal({ type: 'program-new' })}>
             <Icon name="plus" size={16} /> New programme
           </button>
         )}
       />
+      {header}
 
       <KpiRow
         label="Academic structure summary"
         items={[
-          { icon: 'layers', label: 'Programmes', value: summary ? countLabel(summary.programs) : null, sub: 'Active' },
-          { icon: 'calendar', label: 'Semesters', value: summary ? countLabel(summary.semesters) : null, sub: 'Across active programmes' },
+          { icon: 'layers', label: 'Programmes', value: summary ? countLabel(summary.programs) : null, sub: summary ? `${plural(summary.semesters, 'semester')} in all` : 'Active' },
           { icon: 'book', label: 'Subjects', value: summary ? countLabel(summary.subjects) : null, sub: 'Active' },
-          { icon: 'doc', label: 'Chapters', value: summary ? countLabel(summary.chapters) : null, sub: summary ? `${countLabel(summary.chapters_with_content)} with uploaded content` : null },
+          { icon: 'doc', label: 'Chapters', value: summary ? countLabel(chapterTotal) : null, sub: 'Content and progress are tagged to these' },
+          {
+            icon: 'video',
+            label: 'Chapters with content',
+            value: summary ? `${countLabel(withContent)} of ${countLabel(chapterTotal)}` : null,
+            sub: summary && chapterTotal ? `${Math.round((withContent / chapterTotal) * 100)}% have uploaded content` : 'Upload content to fill chapters',
+            tone: summary && chapterTotal && withContent < chapterTotal ? 'focus' : undefined,
+          },
         ]}
       />
 
-      <FilterBar label="Structure filters">
-        <SearchBox placeholder="Search programme name or code…" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <section className="pm-panel-tools as-filters" role="search" aria-label="Structure filters">
+        <SearchBox placeholder="Search programmes" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
         {fixedCollege ? null : (
-          <QuirriSelect
-            ariaLabel="Filter by college"
-            value={college}
-            onChange={(e) => { setCollege(e.target.value); setDepartment(''); }}
-            placeholder="All colleges"
-            options={collegeOptions}
-          />
+          <>
+            {universityOptions.length > 1 ? (
+              <QuirriSelect
+                ariaLabel="Filter by university"
+                value={url.university}
+                onChange={(e) => setUrl({ university: e.target.value, college: '', department: '' })}
+                options={[{ value: '', label: 'All universities' }, ...universityOptions]}
+              />
+            ) : null}
+            <QuirriSelect
+              ariaLabel="Filter by college"
+              value={url.college}
+              onChange={(e) => setUrl({ college: e.target.value, department: '' })}
+              options={collegeOptions}
+            />
+          </>
         )}
         <QuirriSelect
           ariaLabel="Filter by department"
           value={department}
-          onChange={(e) => setDepartment(e.target.value)}
+          onChange={(e) => setUrl({ department: e.target.value })}
           placeholder={college ? 'All departments' : 'Pick a college first'}
           disabled={!college}
           options={departmentOptions}
         />
-        <SegTabs label="Show" options={STATUS_FILTERS} value={status} onChange={setStatus} />
-      </FilterBar>
+        <SegTabs label="Show" options={STATUS_FILTERS} value={status} onChange={(v) => setUrl({ status: v })} />
+        {filtering ? (
+          <button
+            type="button"
+            className="sd-btn sd-btn--ghost sd-btn--sm"
+            onClick={() => { setSearchInput(''); setUrl({ q: '', department: '', status: 'active' }); }}
+          >
+            Clear filters
+          </button>
+        ) : null}
+      </section>
 
       {programsError ? (
         <SectionState tone="err" title="Could not load programmes">{apiErrorMessage(programsError, 'Please try again.')}</SectionState>
@@ -659,7 +843,7 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
                     onClick={() => setSelectedId(p.id)}
                   >
                     <b>{p.name}{p.code ? <span className="un-code">{p.code}</span> : null}</b>
-                    <small>{fixedCollege ? p.department_name : `${p.department_name} · ${p.college_name}`}</small>
+                    <small>{fixedCollege || college ? p.department_name : `${p.department_name} · ${p.college_name}`}</small>
                     <small>{plural(p.semester_count, 'semester')} · {plural(p.subject_count, 'subject')} · {plural(p.chapter_count, 'chapter')}</small>
                     {p.is_active === false ? <StatusPill active={false} /> : null}
                   </button>
@@ -669,14 +853,14 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
           ) : (
             <PanelEmpty
               icon="layers"
-              title={programsLoading ? 'Loading programmes…' : search ? 'No programmes match' : 'No programmes yet'}
-              action={!programsLoading && !search ? (
+              title={programsLoading || waitingForCollege ? 'Loading programmes…' : filtering ? 'No programmes match' : 'No programmes yet'}
+              action={!programsLoading && !waitingForCollege && !filtering ? (
                 <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setModal({ type: 'program-new' })}>
                   <Icon name="plus" size={14} /> Add a programme
                 </button>
               ) : null}
             >
-              {programsLoading ? null : search ? 'Try another name or code.' : 'Create a programme under a department to start building semesters, subjects and chapters.'}
+              {programsLoading || waitingForCollege ? null : filtering ? 'Try another name, department or status.' : 'Create a programme under a department to start building semesters, subjects and chapters.'}
             </PanelEmpty>
           )}
         </Panel>
@@ -704,20 +888,44 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
             </PanelEmpty>
           ) : (
             <div className="sa-acad-detail">
-              <div className="sa-acad-sems" role="tablist" aria-label="Semesters">
-                {semesters.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={s.id === semesterId}
-                    className={`sa-acad-sem${s.id === semesterId ? ' is-on' : ''}${s.is_active === false ? ' is-off' : ''}`}
-                    onClick={() => setSemesterId(s.id)}
-                  >
-                    {s.name}
-                    <small>{plural(s.subject_count, 'subject')}</small>
-                  </button>
-                ))}
+              <div className="sa-acad-semrow as-semrow">
+                {/* Semesters wrap onto more rows, so an 8–12 semester programme is fully visible. */}
+                <div
+                  className="sa-acad-sems as-sems"
+                  role="tablist"
+                  aria-label="Semesters"
+                  onKeyDown={(e) => {
+                    const keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+                    if (!(e.key in keys) && e.key !== 'Home' && e.key !== 'End') return;
+                    e.preventDefault();
+                    const i = semesters.findIndex((x) => x.id === semesterId);
+                    const n = semesters.length;
+                    const j = e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : (i + keys[e.key] + n) % n;
+                    const next = semesters[j];
+                    if (!next) return;
+                    setSemesterId(next.id);
+                    e.currentTarget.querySelector(`[data-sem="${next.id}"]`)?.focus();
+                  }}
+                >
+                  {semesters.map((s) => {
+                    const empty = !Number(s.subject_count);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={s.id === semesterId}
+                        tabIndex={s.id === semesterId ? 0 : -1}
+                        data-sem={s.id}
+                        className={`sa-acad-sem${s.id === semesterId ? ' is-on' : ''}${s.is_active === false ? ' is-off' : ''}${empty ? ' is-empty' : ''}`}
+                        onClick={() => setSemesterId(s.id)}
+                      >
+                        {s.name}
+                        <small>{empty ? 'No subjects' : plural(s.subject_count, 'subject')}</small>
+                      </button>
+                    );
+                  })}
+                </div>
                 {progActive ? (
                   <button
                     type="button"
@@ -783,7 +991,7 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
         <ProgrammeModal
           programme={modal.type === 'program-edit' ? modal.programme : null}
           colleges={colleges.filter((c) => c.is_active !== false)}
-          defaults={{ college, department }}
+          defaults={{ college: college || '', department }}
           fixedCollege={fixedCollege}
           onClose={close}
           onSaved={async (saved) => {
@@ -862,7 +1070,32 @@ export default function AcademicStructureWorkspace({ collegeId: fixedCollegeId =
           onSubmit={submitSimple((v) => academicsApi.updateChapter(modal.chapter.id, { title: v.title }), 'Chapter renamed')}
         />
       ) : null}
+      {modal?.type === 'subject-teachers' ? (
+        <SubjectTeachersModal
+          subject={modal.subject}
+          programme={programme}
+          onClose={close}
+          onSaved={async (ok) => {
+            if (ok) close();
+            await reloadSubjects();
+          }}
+        />
+      ) : null}
       {modal?.type === 'toggle' ? <ToggleModal target={modal.target} onConfirm={runToggle} onClose={close} /> : null}
     </ModulePage>
+  );
+}
+
+/**
+ * Programme > Semester > Subject > Chapter workspace (SOW §6.2).
+ * Super Admin: every college (university + college filter, first college by default). College Admin:
+ * pass `collegeId` - the college is fixed and the server scopes every call to it.
+ * Filters read the URL, so the workspace renders inside a Suspense boundary.
+ */
+export default function AcademicStructureWorkspace(props) {
+  return (
+    <Suspense fallback={<SectionState title="Loading academic structure…" />}>
+      <AcademicStructure {...props} />
+    </Suspense>
   );
 }

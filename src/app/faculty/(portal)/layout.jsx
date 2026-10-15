@@ -1,12 +1,14 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+// Pages read the URL (useSearchParams); Next needs a Suspense boundary for the production build.
+import { Suspense, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setRoleDataOnly } from '@/store/slices/authSlice';
 import { selectSidebarOpen } from '@/store/slices/uiSlice';
 import { getRoleCookie, getTenantCookie, clearRoleCookie, clearTenantCookie } from '@/lib/tokens';
-import { PAGE_META } from '@/lib/faculty/pageMeta';
+import { PAGE_META, facultyPageMeta } from '@/lib/faculty/pageMeta';
+import { useFacultyScope } from '@/hooks/useFacultyScope';
 import FacultySidebar from '@/components/faculty/FacultySidebar';
 import FacultyAccessGate from '@/components/faculty/FacultyAccessGate';
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
@@ -19,6 +21,7 @@ export default function FacultyLayout({ children }) {
   // Name / college in the sidebar come from /auth/me (a new tab has none).
   useHydrateProfile({ always: true });
   const { navOpen, openNav, closeNav } = useMobileNav();
+  const { scope } = useFacultyScope();
 
   useEffect(() => {
     const role = getRoleCookie();
@@ -41,7 +44,7 @@ export default function FacultyLayout({ children }) {
   const matchedRoute = Object.keys(PAGE_META)
     .filter((k) => pathname?.startsWith(k))
     .sort((a, b) => b.length - a.length)[0];
-  const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'HOD / Faculty', subtitle: '' };
+  const meta = matchedRoute ? facultyPageMeta(matchedRoute, scope) : { title: 'Page not found', subtitle: '' };
 
   return (
     <div className={`app q-app-shell ${mobileNavShellClass(navOpen)}`}>
@@ -55,7 +58,7 @@ export default function FacultyLayout({ children }) {
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}
           </div>
         </div>
-        <div className="content"><FacultyAccessGate>{children}</FacultyAccessGate></div>
+        <main className="content" id="main-content"><FacultyAccessGate><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></FacultyAccessGate></main>
       </div>
     </div>
   );

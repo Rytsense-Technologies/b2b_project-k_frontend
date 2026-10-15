@@ -1,14 +1,15 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import QuirriSelect from '@/components/superadmin/QuirriSelect';
 import { Icon, SectionState } from '@/components/student/ui';
+import { BANDS, BandPill, Distribution, bandFor } from '@/components/shared/data-viz';
 import { leaderboardApi } from '@/lib/api/leaderboard';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { useUrlState } from '@/hooks/useUrlState';
+import { useUrlSearch, useUrlState } from '@/hooks/useUrlState';
 import '@/styles/student-leaderboard.css';
 
 /*
@@ -20,12 +21,8 @@ import '@/styles/student-leaderboard.css';
 const REFRESH_MS = 15000;
 const LIMIT = 100;
 
-function tone(score) {
-  if (score == null) return 'mid';
-  if (score >= 75) return 'good';
-  if (score >= 50) return 'mid';
-  return 'low';
-}
+/** Podium only when it adds something: three or more ranked students. */
+const PODIUM_MIN = 3;
 
 function initials(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -51,8 +48,18 @@ function timeAgo(ts) {
   return `${m} min ago`;
 }
 
+/** Class-average comparison; "0 pts above" reads as "at the class average" (S21). */
+function classAvgNote(me, classAvg) {
+  if (!me || classAvg == null) return 'Average of ranked students';
+  const diff = Math.round((Number(me.avg_score) - Number(classAvg)) * 10) / 10;
+  if (!Number.isFinite(diff)) return 'Average of ranked students';
+  if (Math.abs(diff) < 0.5) return 'You’re at the class average';
+  const pts = Math.round(Math.abs(diff));
+  return `You’re ${pts} point${pts === 1 ? '' : 's'} ${diff > 0 ? 'above' : 'below'} average`;
+}
+
 function ScoreCell({ score }) {
-  const t = tone(score);
+  const t = bandFor(score);
   return (
     <span className="slb-scorecell">
       <span className={`slb-bar is-${t}`} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, score || 0))}%` }} /></span>
@@ -60,6 +67,8 @@ function ScoreCell({ score }) {
     </span>
   );
 }
+
+const rankTier = (rank) => (rank === 1 ? 'r1' : rank === 2 ? 'r2' : rank === 3 ? 'r3' : 'rn');
 
 function Hero({ me, participants, scopeLabel, filtered, onHowItWorks }) {
   if (!me) {
@@ -82,6 +91,7 @@ function Hero({ me, participants, scopeLabel, filtered, onHowItWorks }) {
     );
   }
   const top = me.rank === 1;
+  const tier = rankTier(me.rank);
   const message = top
     ? `You’re at the top of ${scopeLabel}. Keep it up!`
     : me.gap_to_next != null
@@ -89,7 +99,7 @@ function Hero({ me, participants, scopeLabel, filtered, onHowItWorks }) {
       : 'Keep taking assessments to move up.';
   return (
     <section className="slb-hero" aria-label="Your position">
-      <div className={`slb-rank${top ? ' is-top' : ''}`} role="img" aria-label={`Your rank: ${me.rank} of ${participants}`}>
+      <div className={`slb-rank is-${tier}`} role="img" aria-label={`Your rank: ${me.rank} of ${participants}`}>
         <small>Rank</small><b>#{me.rank}</b>
       </div>
       <div>
@@ -97,13 +107,17 @@ function Hero({ me, participants, scopeLabel, filtered, onHowItWorks }) {
         <p>{message}</p>
         <div className="slb-hero-stats">
           <span className="slb-chip"><Icon name="trend" size={14} /> {top ? <b>Top of the class</b> : <>Ahead of <b>{Math.max(0, participants - me.rank)}</b> classmate{participants - me.rank === 1 ? '' : 's'}</>}</span>
+          {me.percentile != null && participants > 1 ? (
+            <span className="slb-chip"><Icon name="chart" size={14} /> At or above <b>{me.percentile}%</b> of your class</span>
+          ) : null}
           <span className="slb-chip"><Icon name="target" size={14} /> Average <b>{me.avg_score}%</b></span>
           <span className="slb-chip"><Icon name="check" size={14} /> <b>{me.correct}/{me.questions}</b> correct</span>
           <span className="slb-chip"><Icon name="doc" size={14} /> <b>{me.attempt_count}</b> assessment{me.attempt_count === 1 ? '' : 's'}</span>
         </div>
       </div>
       <div className="slb-hero-cta">
-        <Link className="sd-btn sd-btn--amber" href="/student/subjects"><Icon name="play" size={16} /> Take a chapter assessment</Link>
+        {/* Already ranked: more lectures + their assessments move you up. */}
+        <Link className="sd-btn sd-btn--amber" href="/student/subjects"><Icon name="bookOpen" size={16} /> Continue learning</Link>
         <button type="button" className="sd-btn sd-btn--glass sd-btn--sm" onClick={onHowItWorks}><Icon name="info" size={14} /> How ranking works</button>
       </div>
     </section>
@@ -112,11 +126,16 @@ function Hero({ me, participants, scopeLabel, filtered, onHowItWorks }) {
 
 function LeaderboardInner() {
   const [url, setUrl] = useUrlState({ job: '', q: '' });
+  // Local box, URL written debounced — typing never loses characters (S1).
+  const [q, setQ] = useUrlSearch(url.q, (v) => setUrl({ q: v }));
   const [howOpen, setHowOpen] = useState(false);
   const [fetchedAt, setFetchedAt] = useState(0);
   const [, setTick] = useState(0);
+  const searchRef = useRef(null);
+  const lastFetch = useRef(0);
 
   const loader = useCallback(async () => {
+    lastFetch.current = Date.now();
     const res = await leaderboardApi.get({ limit: LIMIT, jobId: url.job || undefined });
     setFetchedAt(Date.now());
     return res;
@@ -126,7 +145,11 @@ function LeaderboardInner() {
   // Live: every 15 s while visible, on focus, and instantly when an
   // assessment is submitted in another tab (BroadcastChannel from the quiz).
   useEffect(() => {
-    const refresh = () => { if (document.visibilityState === 'visible') reload().catch(() => {}); };
+    // focus + visibilitychange + interval can fire together; one fetch per 5 s is enough.
+    const refresh = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastFetch.current < 5000) return;
+      reload().catch(() => {});
+    };
     const id = setInterval(refresh, REFRESH_MS);
     const clock = setInterval(() => setTick((t) => t + 1), 15000);
     document.addEventListener('visibilitychange', refresh);
@@ -152,10 +175,18 @@ function LeaderboardInner() {
   const assessments = Array.isArray(data?.assessments) ? data.assessments : [];
   const selected = assessments.find((a) => a.job_id === url.job);
 
-  const search = url.q.trim().toLowerCase();
+  const search = q.trim().toLowerCase();
+  const filtered = Boolean(url.job || search);
+  // The Clear button unmounts once filters are gone — keep focus in the search box (N8).
+  const clearFilters = () => { setQ(''); setUrl({ job: '', q: '' }); searchRef.current?.focus(); };
   const rows = search ? items.filter((r) => r.name.toLowerCase().includes(search)) : items;
   const meInList = items.some((r) => r.is_me);
-  const podium = !search ? items.slice(0, 3) : [];
+  const podium = !search && items.length >= PODIUM_MIN ? items.slice(0, 3) : [];
+  const bandParts = useMemo(() => {
+    const counts = { strong: 0, ok: 0, focus: 0 };
+    items.forEach((r) => { const b = bandFor(r.avg_score); if (counts[b] != null) counts[b] += 1; });
+    return BANDS.map((b) => ({ key: b.key, label: b.label, value: counts[b.key] }));
+  }, [items]);
   const participation = cohort ? Math.round((participants / cohort) * 100) : null;
 
   const options = [{ value: '', label: 'All assessments' }, ...assessments.map((a) => ({ value: a.job_id, label: a.title || 'Chapter assessment' }))];
@@ -186,18 +217,18 @@ function LeaderboardInner() {
         </div>
         <div className="slb-card slb-kpi">
           <div className="slb-kpi-h"><Icon name="chart" size={16} /> Class average</div>
-          <b className={data?.class_avg != null ? `slb-tone--${tone(data.class_avg)}` : ''}>{data?.class_avg != null ? `${data.class_avg}%` : '—'}</b>
-          <small>{me && data?.class_avg != null ? (me.avg_score >= data.class_avg ? `You’re ${Math.round((me.avg_score - data.class_avg) * 10) / 10} pts above` : `You’re ${Math.round((data.class_avg - me.avg_score) * 10) / 10} pts below`) : 'Average of ranked students'}</small>
+          <b className="slb-kpi-v">{data?.class_avg != null ? `${data.class_avg}%` : '—'}{data?.class_avg != null ? <BandPill score={data.class_avg} /> : null}</b>
+          <small>{classAvgNote(me, data?.class_avg)}</small>
         </div>
         <div className="slb-card slb-kpi">
           <div className="slb-kpi-h"><Icon name="trophy" size={16} /> Top score</div>
-          <b className={data?.top_score != null ? `slb-tone--${tone(data.top_score)}` : ''}>{data?.top_score != null ? `${data.top_score}%` : '—'}</b>
+          <b className={data?.top_score != null ? `slb-tone--${bandFor(data.top_score)}` : ''}>{data?.top_score != null ? `${data.top_score}%` : '—'}</b>
           <small>{items[0] ? titleCase(items[0].name) : 'No scores yet'}</small>
         </div>
         <div className="slb-card slb-kpi">
-          <div className="slb-kpi-h"><Icon name="clock" size={16} /> Last submission</div>
+          <div className="slb-kpi-h"><Icon name="clock" size={16} /> Latest submission</div>
           <b>{formatDate(data?.updated_at)}</b>
-          <small>{selected ? selected.title : 'Across all assessments'}</small>
+          <small>{selected ? `Most recent attempt · ${selected.title}` : 'Most recent attempt in your class'}</small>
         </div>
       </section>
 
@@ -205,15 +236,26 @@ function LeaderboardInner() {
         <QuirriSelect ariaLabel="Assessment" value={url.job} options={options} onChange={(e) => setUrl({ job: e.target.value })} disabled={!assessments.length} />
         <label className="slb-search">
           <Icon name="search" size={18} />
-          <input type="search" value={url.q} onChange={(e) => setUrl({ q: e.target.value })} placeholder="Search classmates…" aria-label="Search classmates" />
+          <input ref={searchRef} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search classmates…" aria-label="Search classmates" />
         </label>
         <div className="slb-live" aria-live="polite">
-          <span><i aria-hidden="true" /> Live · updated {timeAgo(fetchedAt)}</span>
-          <button type="button" className="sd-btn sd-btn--light sd-btn--sm" onClick={() => reload().catch(() => {})} aria-label="Refresh leaderboard">
+          {filtered ? <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear</button> : null}
+          <span><i aria-hidden="true" /> Auto-refreshing · board checked {timeAgo(fetchedAt)}</span>
+          <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})} aria-label="Refresh leaderboard">
             <Icon name="refresh" size={14} /> Refresh
           </button>
         </div>
       </div>
+
+      {items.length ? (
+        <section className="slb-card slb-dist" aria-labelledby="slb-dist-h">
+          <div className="slb-dist-h">
+            <h3 id="slb-dist-h">Class score bands</h3>
+            <p>{selected ? `Average score on ${selected.title}` : 'Average score across submitted assessments'} · {participants} student{participants === 1 ? '' : 's'}</p>
+          </div>
+          <Distribution parts={bandParts} label="Class score bands" />
+        </section>
+      ) : null}
 
       {!items.length ? (
         <SectionState
@@ -227,14 +269,14 @@ function LeaderboardInner() {
           {podium.length ? (
             <section className="slb-podium" aria-label="Top students">
               {[podium[1], podium[0], podium[2]].filter(Boolean).map((p) => (
-                <article key={p.user_id} className={`slb-card slb-pod is-${p.rank}${p.is_me ? ' is-me' : ''}`}>
-                  <span className="slb-medal" aria-label={`Rank ${p.rank}`}>{p.rank}</span>
+                <article key={p.user_id} className={`slb-card slb-pod is-${rankTier(p.rank)}${p.is_me ? ' is-me' : ''}`}>
+                  <span className={`slb-medal is-${rankTier(p.rank)}`} aria-label={`Rank ${p.rank}`}>{p.rank}</span>
                   <span className={`slb-av${p.is_me ? ' is-me' : ''}`} aria-hidden="true">{initials(p.name)}</span>
                   <div>
                     <b>{titleCase(p.name)}{p.is_me ? <span className="slb-you">You</span> : null}</b>
                     <span>{p.correct}/{p.questions} correct · {p.attempt_count} assessment{p.attempt_count === 1 ? '' : 's'}</span>
                   </div>
-                  <strong className={`slb-tone--${tone(p.avg_score)}`}>{p.avg_score}%</strong>
+                  <strong className={`slb-tone--${bandFor(p.avg_score)}`}>{p.avg_score}%</strong>
                 </article>
               ))}
             </section>
@@ -244,7 +286,7 @@ function LeaderboardInner() {
             <div className="slb-table-h">
               <div>
                 <h3 id="slb-table-h">{selected ? selected.title : 'All students'}</h3>
-                <p>{search ? `${rows.length} match${rows.length === 1 ? '' : 'es'} for “${url.q.trim()}”` : `${participants} ranked student${participants === 1 ? '' : 's'} in ${scopeLabel}`}</p>
+                <p>{search ? `${rows.length} match${rows.length === 1 ? '' : 'es'} for “${q.trim()}”` : `${participants} ranked student${participants === 1 ? '' : 's'} in ${scopeLabel}`}</p>
               </div>
             </div>
 
@@ -267,7 +309,7 @@ function LeaderboardInner() {
                     <tbody>
                       {rows.map((r) => (
                         <tr key={r.user_id} className={r.is_me ? 'is-me' : ''} aria-current={r.is_me ? 'true' : undefined}>
-                          <td><span className={`slb-rankcell is-${r.rank}`}>{r.rank}</span></td>
+                          <td><span className={`slb-rankcell is-${rankTier(r.rank)}`}>{r.rank}</span></td>
                           <td>
                             <span className="slb-student">
                               <span className={`slb-av${r.is_me ? ' is-me' : ''}`} aria-hidden="true">{initials(r.name)}</span>
@@ -284,7 +326,7 @@ function LeaderboardInner() {
                         <>
                           <tr className="is-sep"><td colSpan={6}>…</td></tr>
                           <tr className="is-me" aria-current="true">
-                            <td><span className="slb-rankcell">{me.rank}</span></td>
+                            <td><span className={`slb-rankcell is-${rankTier(me.rank)}`}>{me.rank}</span></td>
                             <td><span className="slb-student"><span className="slb-av is-me" aria-hidden="true">{initials(me.name)}</span><span><b>{titleCase(me.name)}</b><span className="slb-you">You</span></span></span></td>
                             <td className="num"><ScoreCell score={me.avg_score} /></td>
                             <td className="num">{me.correct}/{me.questions}</td>
@@ -300,13 +342,13 @@ function LeaderboardInner() {
                 <ol className="slb-cards" aria-label="Rankings">
                   {[...rows, ...(!search && me && !meInList ? [me] : [])].map((r) => (
                     <li key={r.user_id} className={r.is_me ? 'is-me' : ''}>
-                      <span className={`slb-rankcell is-${r.rank}`}>{r.rank}</span>
+                      <span className={`slb-rankcell is-${rankTier(r.rank)}`}>{r.rank}</span>
                       <span className={`slb-av${r.is_me ? ' is-me' : ''}`} aria-hidden="true">{initials(r.name)}</span>
                       <span>
                         <b>{titleCase(r.name)}</b>{r.is_me ? <span className="slb-you">You</span> : null}
                         <small>{r.correct}/{r.questions} correct · {r.attempt_count} assessment{r.attempt_count === 1 ? '' : 's'}</small>
                       </span>
-                      <b className={`slb-tone--${tone(r.avg_score)}`}>{r.avg_score}%</b>
+                      <b className={`slb-tone--${bandFor(r.avg_score)}`}>{r.avg_score}%</b>
                     </li>
                   ))}
                 </ol>

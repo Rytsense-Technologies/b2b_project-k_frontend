@@ -1,60 +1,118 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import PortalHero from '@/components/shared/PortalHero';
-import { ModulePage, KpiRow, Panel, Icon, SectionState, countLabel } from '@/components/shared/module-ui';
-import ScopeNotice from '@/components/faculty/ScopeNotice';
+import { ModulePage, KpiRow, Panel, Icon, SectionState, countLabel, initials } from '@/components/shared/module-ui';
+import { BarList, Distribution } from '@/components/shared/data-viz';
 import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
+import { analyticsApi } from '@/lib/api/analytics';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
+import { useAuth } from '@/hooks/useAuth';
+import { titleCase } from '@/lib/student/learning';
+import {
+  OVERDUE_DAYS, ageLabel, daysSince, pct, useFacultySubjects, useSubjectColor,
+} from '@/components/faculty/facultyKit';
 
-function when(iso) {
-  const d = new Date(iso || '');
-  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+const queueHref = (q) => `${q.kind === 'video' ? '/faculty/videos' : '/faculty/mcq'}?job=${encodeURIComponent(q.job_id)}`;
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
-/** HOD / Faculty home: what is waiting for review in their scope, live. */
+const READINESS = [
+  { key: 'not_started', label: 'Not started', color: 'var(--band-none)' },
+  { key: 'practising', label: 'Practising', color: 'var(--cat-1)' },
+  { key: 'ready', label: 'Ready', color: 'var(--progress)' },
+];
+
+/** HOD / Faculty home: what is waiting for review, who needs attention, how each subject is doing. */
 export default function FacultyDashboardPage() {
   const { scope } = useFacultyScope();
+  const { user } = useAuth();
+  // Name and time-of-day exist only in the browser: render them after mount (no hydration mismatch).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const { data, loading, error, reload } = useAsyncResource(() => facultyDirectoryApi.overview(), []);
+  const insights = useAsyncResource(() => analyticsApi.department({}), []);
+  const subjects = useFacultySubjects();
+  const colorFor = useSubjectColor();
+
   const first = loading && !data;
-  const kpi = (v) => (first ? null : countLabel(v ?? 0));
+  const a = insights.data;
+  const aFirst = insights.loading && !a;
+  // A failed request shows its error, never zeros that look like real data.
+  const failed = Boolean(error) && !data;
+  const aFailed = Boolean(insights.error) && !a;
+  const errNote = (title, err, retry) => (
+    <SectionState
+      tone="err"
+      title={title}
+      action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => retry()}>Try again</button>}
+    >
+      {apiErrorMessage(err, 'Try again in a moment.')}
+    </SectionState>
+  );
   const isHod = Boolean(scope?.is_hod);
-  const where = scope?.department_name || 'your department';
+  const readOnly = Boolean(scope?.read_only);
+  const dept = scope?.department_name || 'your department';
+  const name = !mounted ? '' : titleCase(String(user?.name || user?.first_name || '').trim().split(/\s+/)[0] || '');
+  const next = data?.queue?.[0] || null;
+
+  const scopeLine = !scope
+    ? 'Loading your scope…'
+    : isHod
+      ? `${dept} · whole department`
+      : readOnly
+        ? `${dept} · view only until your College Admin assigns you subjects`
+        : (scope.subjects || []).map((s) => [s.name, s.code].filter(Boolean).join(' · ')).join(', ');
+
+  const sideRows = [
+    { label: 'Videos to review', value: data?.videos_awaiting },
+    { label: 'MCQ sets to approve', value: data?.mcq_to_approve },
+    { label: 'Chapters without questions', value: data?.mcq_not_generated },
+  ];
+
+  // Chapter pipeline across the subjects in scope.
+  const subjItems = subjects.data?.items || [];
+  const sum = (k) => subjItems.reduce((n, s) => n + (Number(s[k]) || 0), 0);
+  const pipeline = [
+    { label: 'Published', value: sum('published'), color: 'var(--progress)' },
+    { label: 'In review', value: sum('in_review'), color: 'var(--cat-3)' },
+    { label: 'In progress', value: sum('in_progress'), color: 'var(--cat-1)' },
+    { label: 'No video yet', value: sum('no_content'), color: 'var(--band-none)' },
+  ];
+
+  const cohort = a?.interview_cohort || [];
+  const readiness = READINESS.map((r) => ({ ...r, value: cohort.filter((c) => c.status === r.key).length }));
+  const atRisk = a?.at_risk || [];
 
   return (
     <ModulePage className="fa-page">
       <PortalHero
-        eyebrow={scope ? `${isHod ? 'Head of department' : 'Faculty'} · ${where}` : 'HOD / Faculty'}
-        title="Review queue"
-        description="Generated chapter videos and MCQs land here for your approval. Nothing reaches students until it is published and its questions are approved."
-        secondaryHref="/faculty/videos"
-        secondaryLabel="Review videos"
-        primaryHref="/faculty/mcq"
-        primaryLabel="Review MCQs"
-        sideTitle="Your scope"
-        sideItems={scope ? [
-          {
-            id: 'scope',
-            title: isHod ? 'Whole department' : scope.read_only ? 'Department, view only' : 'Your subjects',
-            body: isHod
-              ? `You review every chapter in ${where}, assign mock interviews and see all results.`
-              : scope.read_only
-                ? 'Your College Admin has not assigned you subjects yet, so you can look but not publish or approve.'
-                : `${(scope.subjects || []).map((s) => s.name).join(', ')} — content and students of these subjects.`,
-            tone: 'info',
-          },
-          {
-            id: 'publish',
-            title: 'You decide what goes live',
-            body: 'Chapters stay hidden from students until they are published, and quizzes until their questions are approved.',
-            tone: 'info',
-          },
-        ] : []}
-      />
-
-      <ScopeNotice scope={scope} what="chapters and students" />
+        eyebrow={scope ? (isHod ? 'Head of department' : 'Faculty') : 'Dashboard'}
+        title={!mounted ? 'Dashboard' : name ? `${greeting()}, ${name}` : greeting()}
+        description={scopeLine}
+        secondaryHref="/faculty/subjects"
+        secondaryLabel="Open subjects"
+        primaryHref={next && !readOnly ? queueHref(next) : undefined}
+        primaryLabel={next && !readOnly ? 'Review next' : undefined}
+        sideTitle="Waiting on you"
+      >
+        <ul className="fa-hero-counts">
+          {sideRows.map((r) => (
+            <li key={r.label}>
+              <span>{r.label}</span>
+              <b>{data ? countLabel(r.value ?? 0) : '—'}</b>
+            </li>
+          ))}
+        </ul>
+      </PortalHero>
 
       {error ? (
         <SectionState
@@ -66,43 +124,99 @@ export default function FacultyDashboardPage() {
         </SectionState>
       ) : null}
 
+      {failed || aFailed ? null : (
       <KpiRow
-        label="Review summary"
+        label="Learning summary"
         items={[
-          { icon: 'video', label: 'Videos to review', value: kpi(data?.videos_awaiting), sub: data ? `${countLabel(data.videos_published)} published · ${countLabel(data.videos_in_progress)} in progress` : 'Sent by your College Admin' },
-          { icon: 'check', label: 'MCQ sets to approve', value: kpi(data?.mcq_to_approve), sub: data?.mcq_not_generated ? `${countLabel(data.mcq_not_generated)} chapters without questions yet` : 'Generated and waiting' },
-          { icon: 'book', label: 'Subjects', value: kpi(data?.subjects), sub: isHod ? 'In your department' : 'Assigned to you' },
-          { icon: 'users', label: 'Students', value: kpi(data?.students), sub: isHod || scope?.read_only ? 'Active in your department' : 'Active in your subjects' },
+          { icon: 'users', label: 'Active students', value: first ? null : countLabel(data?.students ?? 0), sub: !scope ? 'In your scope' : isHod || readOnly ? 'In your department' : 'In your subjects' },
+          { icon: 'book', label: 'Chapter completion', value: aFirst ? null : pct(a?.totals?.completion), sub: 'To date' },
+          { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: `Mock interviews: ${aFirst ? '—' : pct(a?.totals?.interview_avg)}` },
+          { icon: 'alert', label: 'Need attention', value: aFirst ? null : countLabel(atRisk.length), sub: 'Low scores or no activity', tone: atRisk.length ? 'focus' : undefined },
         ]}
       />
+      )}
 
-      <div className="fa-dash-cols">
+      <div className="dv-grid">
         <Panel
           title="Waiting for you"
-          sub={data?.read_only ? 'View only — you can open these but not publish or approve yet.' : 'Newest first. Open one to review it.'}
+          sub={readOnly ? 'View only: you can open these but not publish or approve yet.' : 'Videos sent for review and question sets to approve.'}
+          action={data?.queue?.length ? (
+            <span className="fa-panel-links">
+              <Link className="sp-link" href="/faculty/videos">Videos</Link>
+              <Link className="sp-link" href="/faculty/mcq">MCQs</Link>
+            </span>
+          ) : null}
           bodyClassName=""
         >
-          {first ? <SectionState title="Loading…" /> : null}
+          {first ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
           {data && !data.queue.length ? (
             <div className="ad-empty">
               <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
               <div>
                 <b>All caught up</b>
-                <small>Chapters your College Admin sends for review, and question sets to approve, appear here.</small>
+                <small>Chapters your College Admin sends, and question sets to approve, appear here.</small>
               </div>
             </div>
           ) : null}
           {data?.queue?.length ? (
             <ul className="fa-queue">
-              {data.queue.map((q) => (
-                <li key={`${q.kind}-${q.job_id}`}>
-                  <Link href={`${q.kind === 'video' ? '/faculty/videos' : '/faculty/mcq'}?job=${q.job_id}`}>
-                    <span className="sp-row-ic" aria-hidden="true"><Icon name={q.kind === 'video' ? 'video' : 'check'} size={20} /></span>
+              {data.queue.map((q) => {
+                const age = daysSince(q.since);
+                const late = age != null && age > OVERDUE_DAYS;
+                return (
+                  <li key={`${q.kind}-${q.job_id}`}>
+                    <Link href={queueHref(q)}>
+                      <span className={`sp-row-ic fa-kind fa-kind--${q.kind}`} aria-hidden="true">
+                        <Icon name={q.kind === 'video' ? 'video' : 'check'} size={18} />
+                      </span>
+                      <span className="sp-row-main">
+                        <b>{q.chapter_title}</b>
+                        <span className="sp-row-meta">
+                          {q.kind === 'video' ? 'Video to review' : 'Questions to approve'}
+                          {ageLabel(q.since) && !late ? ` · sent ${ageLabel(q.since) === 'today' ? 'today' : `${ageLabel(q.since)} ago`}` : ''}
+                        </span>
+                      </span>
+                      {late ? <span className="sp-pill sp-pill--low">{`Waiting ${age} days`}</span> : null}
+                      <span className="fa-go" aria-hidden="true"><Icon name="chev" size={16} /></span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </Panel>
+
+        <Panel
+          title="Students who need attention"
+          sub="Low scores, behind on chapters or no activity in the last 30 days."
+          action={atRisk.length ? <Link className="sp-link" href="/faculty/students?tab=risk">See all</Link> : null}
+          bodyClassName=""
+        >
+          {aFirst ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
+          {insights.error ? (
+            <div className="sp-panel-b">
+              <SectionState tone="err" title="Could not load students">{apiErrorMessage(insights.error, 'Try again.')}</SectionState>
+            </div>
+          ) : null}
+          {a && !atRisk.length ? (
+            <div className="ad-empty">
+              <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
+              <div>
+                <b>No one flagged</b>
+                <small>Students with low scores or no learning activity show up here.</small>
+              </div>
+            </div>
+          ) : null}
+          {atRisk.length ? (
+            <ul className="fa-risk">
+              {atRisk.slice(0, 5).map((s) => (
+                <li key={s.id}>
+                  <Link href={`/faculty/students?tab=risk&student=${encodeURIComponent(s.id)}`}>
+                    <span className="pm-av fa-av" aria-hidden="true">{initials(s.student, 'S')}</span>
                     <span className="sp-row-main">
-                      <b>{q.chapter_title}</b>
-                      <span className="sp-row-meta">
-                        {q.kind === 'video' ? 'Video to review' : 'Questions to approve'}
-                        {when(q.since) ? ` · ${when(q.since)}` : ''}
+                      <b>{s.student}</b>
+                      <span className="fa-reasons">
+                        {s.reasons.map((r) => <span key={r} className="fa-reason">{r}</span>)}
                       </span>
                     </span>
                     <span className="fa-go" aria-hidden="true"><Icon name="chev" size={16} /></span>
@@ -112,26 +226,39 @@ export default function FacultyDashboardPage() {
             </ul>
           ) : null}
         </Panel>
-        <Panel title="Shortcuts" sub="Everything in your scope." bodyClassName="">
-          <ul className="fa-queue">
-            {[
-              { href: '/faculty/subjects', icon: 'book', title: 'Subjects', body: 'Chapters and their review status' },
-              { href: '/faculty/students', icon: 'users', title: 'Students', body: 'Progress, quizzes and interviews' },
-              { href: '/faculty/interviews', icon: 'mic', title: 'Interview assignments', body: isHod ? 'Assign mock interviews to cohorts' : 'Cohorts and their results' },
-              { href: '/faculty/analytics', icon: 'chart', title: 'Analytics', body: 'Completion, scores and Q&A demand' },
-            ].map((m) => (
-              <li key={m.href}>
-                <Link href={m.href}>
-                  <span className="sp-row-ic" aria-hidden="true"><Icon name={m.icon} size={18} /></span>
-                  <span className="sp-row-main">
-                    <b>{m.title}</b>
-                    <span className="sp-row-meta">{m.body}</span>
-                  </span>
-                  <span className="fa-go" aria-hidden="true"><Icon name="chev" size={16} /></span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+      </div>
+
+      <div className="dv-grid dv-grid--3">
+        <Panel title="Completion by subject" sub="Chapters finished by learners, to date.">
+          {aFailed ? errNote('Could not load completion', insights.error, insights.reload) : aFirst ? <SectionState title="Loading…" /> : (
+            <BarList
+              label="Completion by subject"
+              suffix="%"
+              max={100}
+              empty="No subjects with published chapters yet."
+              items={(a?.subjects || []).map((s) => ({
+                key: s.subject_id,
+                label: s.subject,
+                sub: s.code || undefined,
+                value: s.completion ?? 0,
+                color: colorFor(s.subject_id),
+              }))}
+            />
+          )}
+        </Panel>
+        <Panel title="Chapter pipeline" sub="Every chapter in your scope, by video status.">
+          {subjects.error && !subjects.data ? errNote('Could not load chapters', subjects.error, subjects.reload) : subjects.loading && !subjects.data ? <SectionState title="Loading…" /> : (
+            <Distribution label="Chapter pipeline" parts={pipeline} empty="No chapters in your subjects yet." />
+          )}
+        </Panel>
+        <Panel
+          title="Interview readiness"
+          sub="Final-year students and anyone who practised."
+          action={<Link className="sp-link fa-link-tap" href="/faculty/interviews">Open</Link>}
+        >
+          {aFailed ? errNote('Could not load readiness', insights.error, insights.reload) : aFirst ? <SectionState title="Loading…" /> : (
+            <Distribution label="Interview readiness" parts={readiness} empty="No mock interviews yet." />
+          )}
         </Panel>
       </div>
     </ModulePage>

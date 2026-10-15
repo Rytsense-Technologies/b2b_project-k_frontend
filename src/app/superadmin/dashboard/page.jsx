@@ -1,322 +1,364 @@
 'use client';
 
+import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
-import PortalHero from '@/components/shared/PortalHero';
 import {
   ModulePage,
-  KpiRow,
+  ModuleHead,
+  HeadChip,
   Panel,
   Kpi,
+  SegTabs,
   Icon,
   SectionState,
-  initials,
 } from '@/components/shared/module-ui';
-import { dashboardApi } from '@/lib/api/superadmin/modules';
+import { BarList, RankList, DonutChart, BandPill } from '@/components/shared/data-viz';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
+import {
+  dashboardApi, collegesApi, healthApi, notificationsApi, fetchData,
+} from '@/lib/api/superadmin/modules';
+import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, apiErrorMessage, isApiUnavailable, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
-import ScoreCell from '@/components/superadmin/ScoreCell';
+import { useUrlState } from '@/hooks/useUrlState';
+import { formatCount, formatMinutes, formatPct } from '@/lib/superadmin/format';
+import { overallHealth, toNumber } from '@/lib/superadmin/health';
 
-const METRIC_ICONS = ['building', 'users', 'tick', 'chart', 'clock'];
+/** The five ranges GET /dashboard accepts (reports.py RANGES). */
+const RANGES = [
+  { value: 'last_7_days', label: 'Last 7 days' },
+  { value: 'last_30_days', label: 'Last 30 days' },
+  { value: 'last_90_days', label: 'Last 90 days' },
+  { value: 'this_semester', label: 'This semester' },
+  { value: 'all_time', label: 'All time' },
+];
+const RANGE_KEYS = RANGES.map((r) => r.value);
 
-/** Expected platform metrics — shown as "—" until the dashboard API reports them. */
-const METRIC_PLACEHOLDERS = [
-  { k: 'Institutions', icon: 'building' },
-  { k: 'Active students', icon: 'users' },
-  { k: 'Completion rate', icon: 'tick' },
-  { k: 'Avg assessment', icon: 'chart' },
+const METRICS = [
+  { value: 'completion', label: 'Completion' },
+  { value: 'score', label: 'Avg score' },
+  { value: 'watch', label: 'Watch time' },
+  { value: 'qa', label: 'Q&A' },
 ];
 
-const SHORTCUTS = [
-  { href: '/superadmin/universities', icon: 'book', title: 'Universities', body: 'Top of the academic hierarchy' },
-  { href: '/superadmin/colleges', icon: 'building', title: 'Colleges', body: 'Onboard colleges and their admins' },
-  { href: '/superadmin/departments', icon: 'tree', title: 'Departments', body: 'Departments under each college' },
-  { href: '/superadmin/users', icon: 'users', title: 'Platform users', body: 'Everyone, across every institution' },
-];
+const plural = (n, one, many) => `${formatCount(n)} ${Number(n) === 1 ? one : many}`;
 
-const TONE = { green: 'sp-pill--good', amber: 'sp-pill--low', red: 'sp-pill--err', blue: 'sp-pill--teal', grey: '' };
-
-function pickMetrics(data) {
-  const fromArray = asList(data?.metrics, []);
-  if (fromArray.length) {
-    return fromArray.map((m) => ({
-      k: m.title || m.k || m.label,
-      v: m.value ?? m.v,
-      s: m.trend || m.s || m.subtitle,
-      up: m.trendUp || String(m.trend || '').includes('+'),
-    }));
+/** Total from a 1-row list call, or null when the call failed (never a guessed 0). */
+async function totalOf(request) {
+  try {
+    const d = await fetchData(request);
+    if (d?.total != null) return Number(d.total);
+    return asList(d, []).length;
+  } catch {
+    return null;
   }
-  const keys = [
-    ['institutions', 'Institutions', data?.institutions_note],
-    ['active_students', 'Active students', data?.students_note],
-    ['completion_rate', 'Completion rate', data?.completion_note],
-    ['avg_assessment', 'Avg assessment', data?.assessment_note],
-    ['watch_time', 'Watch time', data?.watch_note],
-  ];
-  return keys
-    .filter(([key]) => data?.[key] != null)
-    .map(([key, label, note]) => ({
-      k: label,
-      v: data[key],
-      s: note || '',
-    }));
 }
 
-function pillVariant(status) {
-  const v = String(status || '').toLowerCase();
-  if (v.includes('healthy') || v.includes('active') || v.includes('ok')) return 'green';
-  if (v.includes('low') || v.includes('push') || v.includes('pending') || v.includes('amber')) return 'amber';
-  if (v.includes('fail') || v.includes('retry') || v.includes('error')) return 'red';
-  if (v.includes('generat') || v.includes('progress')) return 'blue';
-  return 'grey';
+/**
+ * Real attention items from data the Super Admin already has access to: platform
+ * health problems, failed deliveries, pending invites and inactive colleges.
+ */
+async function loadAttention() {
+  const [health, pendingInvites, inactiveColleges, failedRecent] = await Promise.all([
+    fetchOptional(() => healthApi.getStatus()).catch(() => null),
+    totalOf(() => usersApi.getUsers({ status: 'pending', pageSize: 1 })),
+    totalOf(() => collegesApi.list({ is_active: false, pageSize: 1 })),
+    // Same 7-day window the retry endpoint uses, so the number matches what Retry resends.
+    totalOf(() => notificationsApi.listDeliveries({ status: 'failed', days: 7, page: 1, page_size: 1 })),
+  ]);
+  const items = [];
+  if (health) items.push(...overallHealth(health).items);
+  if (failedRecent) {
+    items.push({
+      id: 'failed-notifications',
+      title: `${plural(failedRecent, 'notification', 'notifications')} failed in the last 7 days`,
+      body: 'Retry them from Notifications.',
+      tone: 'warning',
+      href: '/superadmin/notifications?status=failed&days=7',
+    });
+  }
+  if (pendingInvites) {
+    items.push({
+      id: 'pending-invites',
+      title: `${plural(pendingInvites, 'invite', 'invites')} not accepted yet`,
+      body: 'These people have not set a password. Resend the invite if needed.',
+      tone: 'info',
+      href: '/superadmin/users?tab=pending',
+    });
+  }
+  if (inactiveColleges) {
+    items.push({
+      id: 'inactive-colleges',
+      title: `${plural(inactiveColleges, 'college is', 'colleges are')} deactivated`,
+      body: 'Their people cannot sign in. Reactivate from Colleges if this is a mistake.',
+      tone: 'info',
+      href: '/superadmin/colleges?status=false',
+    });
+  }
+  return { items, checked: Boolean(health) || pendingInvites != null || inactiveColleges != null };
 }
 
-function Pill({ status, children, dot = true }) {
+function AttentionList({ items }) {
   return (
-    <span className={`sp-pill ${TONE[pillVariant(status)]}`.trim()}>
-      {dot ? <i className="un-dot" aria-hidden="true" /> : null}
-      {children}
-    </span>
+    <ul className="sa-attn-list">
+      {items.map((item) => (
+        <li key={item.id}>
+          <span className={`sa-attn-dot is-${item.tone || 'info'}`} aria-hidden="true" />
+          <div>
+            <Link className="sa-attn-t" href={item.href}>{item.title}</Link>
+            {item.body ? <small>{item.body}</small> : null}
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-/** Empty panel body: Teal 300 outline icon, title, one line. */
-function PanelEmpty({ icon, title, children }) {
-  return (
-    <div className="sa-empty">
-      <span className="sa-empty-ic" aria-hidden="true"><Icon name={icon} size={24} /></span>
-      <div>
-        <b>{title}</b>
-        {children ? <p>{children}</p> : null}
-      </div>
-    </div>
-  );
+/** "48.5%" / 48.5 / "—" -> number or null. */
+function pct(value) {
+  return toNumber(value);
 }
 
-export default function SuperAdminDashboard() {
+function DashboardView() {
+  const [url, setUrl] = useUrlState({ range: 'last_30_days', metric: 'completion' });
+  const range = RANGE_KEYS.includes(url.range) ? url.range : 'last_30_days';
+  const metric = METRICS.some((m) => m.value === url.metric) ? url.metric : 'completion';
+  const rangeLabel = RANGES.find((r) => r.value === range)?.label || 'Last 30 days';
+
   const { data, loading, error, reload } = useAsyncResource(
-    () => fetchOptional(() => dashboardApi.getOverview({ range: 'last_30_days' })),
-    [],
+    () => fetchOptional(() => dashboardApi.getOverview({ range })),
+    [range],
   );
+  const { data: attention, loading: attentionLoading, reload: reloadAttention } = useAsyncResource(loadAttention, []);
   // Live like the student pages: every minute + when the tab regains focus.
-  const ago = useTimeAgo(useLiveRefresh(reload));
+  const ago = useTimeAgo(useLiveRefresh(() => Promise.all([reload({ silent: true }), reloadAttention({ silent: true })])));
 
   const unavailable = !loading && data == null && !error;
   const hardError = error && !isApiUnavailable(error);
+  const firstLoad = loading && !data;
 
-  const metrics = pickMetrics(data);
-  const activity = asList(
-    data?.institution_activity || data?.learning_activity || data?.institutions_activity,
-    [],
-  );
-  const topics = asList(data?.top_qa || data?.top_topics || data?.qa_topics, []);
-  const pipeline = asList(data?.content_pipeline || data?.pipeline || data?.jobs, []);
-  const maxTopic = Math.max(...topics.map((t) => Number(t.count || t.value || 0)), 1);
+  const metrics = useMemo(() => {
+    const byTitle = {};
+    asList(data?.metrics, []).forEach((m) => { byTitle[String(m.title || '').toLowerCase()] = m; });
+    return byTitle;
+  }, [data]);
+  const activity = useMemo(() => asList(data?.institution_activity, []), [data]);
+  const topics = asList(data?.top_qa, []);
+  const pipeline = asList(data?.content_pipeline, []);
 
-  const kpis = metrics.length
-    ? metrics.map((m, i) => ({ icon: METRIC_ICONS[i % METRIC_ICONS.length], label: m.k, value: m.v, sub: m.s || null }))
-    : METRIC_PLACEHOLDERS.map((m) => ({ icon: m.icon, label: m.k, value: null, sub: loading ? 'Loading…' : 'Not reported yet' }));
+  // Watch time is not a platform metric in the API yet; the per-institution rows add up exactly.
+  const watchMinutes = activity.reduce((a, r) => a + (Number(r.watch_minutes) || 0), 0);
+  const mix = activity.reduce((acc, r) => ({
+    qa: acc.qa + (Number(r.qa) || 0),
+    assessments: acc.assessments + (Number(r.assessments) || 0),
+    interviews: acc.interviews + (Number(r.interviews) || 0),
+  }), { qa: 0, assessments: 0, interviews: 0 });
+
+  const m = (key) => metrics[key] || null;
+  const avgScore = pct(m('avg assessment score')?.value);
+  const kpis = [
+    { icon: 'building', label: 'Institutions', value: m('institutions') ? formatCount(m('institutions').value) : null, sub: m('institutions')?.trend },
+    { icon: 'users', label: 'Active students', value: m('active students') ? formatCount(m('active students').value) : null, sub: 'Active student accounts' },
+    { icon: 'tick', label: 'Completion rate', value: m('completion rate')?.value, sub: m('completion rate')?.trend },
+    {
+      icon: 'chart',
+      label: 'Avg assessment score',
+      value: m('avg assessment score')?.value,
+      sub: avgScore != null ? <><BandPill score={avgScore} /> {m('avg assessment score')?.trend}</> : m('avg assessment score')?.trend,
+    },
+    { icon: 'clock', label: 'Watch time', value: data ? formatMinutes(watchMinutes) : null, sub: `Across ${plural(activity.length, 'active college', 'active colleges')}` },
+  ];
+
+  const comparison = useMemo(() => {
+    const pick = {
+      completion: (r) => r.completion,
+      score: (r) => r.avg_score,
+      watch: (r) => r.watch_minutes,
+      qa: (r) => r.qa,
+    }[metric];
+    return activity
+      .map((r) => ({
+        key: String(r.id),
+        label: r.institution || r.college,
+        sub: r.university || r.code || null,
+        value: pick(r) == null ? null : Number(pick(r)),
+        href: `/superadmin/colleges/${r.id}`,
+      }))
+      .sort((a, b) => (b.value ?? -1) - (a.value ?? -1));
+  }, [activity, metric]);
+
+  const isBand = metric === 'completion' || metric === 'score';
+  const attentionItems = attention?.items || [];
 
   return (
     <ModulePage className="sa-page sa-dash">
-      <PortalHero
-        eyebrow="Super Admin · Platform"
-        title="Platform overview"
-        description="Every university, college and user on Quirri, in one place. Content and health signals roll up here across all tenants."
-        secondaryHref="/superadmin/health"
-        secondaryLabel="View platform health"
-        primaryHref="/superadmin/universities"
-        primaryLabel="Onboard a university"
-        sideTitle="Attention needed"
-        sideBadge={hardError ? 'Error' : unavailable ? 'Soon' : `Live · ${ago}`}
-        sideItems={hardError ? [{
-          id: 'err',
-          title: 'Could not load dashboard signals',
-          body: apiErrorMessage(error, 'Please try again.'),
-          tone: 'error',
-        }] : unavailable ? [{
-          id: 'soon',
-          title: 'Platform analytics not live yet',
-          body: 'Dashboard APIs are not available. Manage universities, colleges, and users from their modules.',
-          tone: 'info',
-        }] : [{
-          id: 'empty',
-          title: 'Counts are live',
-          body: 'Totals, watch time, Q&A and scores come straight from the platform database and refresh every minute.',
-          tone: 'info',
-        }]}
+      <ModuleHead
+        chips={(
+          <>
+            <HeadChip icon="refresh" tone="grey">Live · {ago}</HeadChip>
+          </>
+        )}
+        actions={(
+          <div className="sa-range">
+            <QuirriSelect
+              ariaLabel="Date range"
+              value={range}
+              onChange={(e) => setUrl({ range: e.target.value })}
+              options={RANGES}
+            />
+          </div>
+        )}
       />
 
-      {kpis.length > 4 ? (
-        <section className={`sd-kpis sa-kpis--${kpis.length >= 6 ? 6 : 5}`} aria-label="Platform summary">
-          {kpis.map((k) => <Kpi key={k.label} icon={k.icon} label={k.label} value={k.value} sub={k.sub} />)}
-        </section>
-      ) : (
-        <KpiRow label="Platform summary" items={kpis} />
-      )}
+      <section className="sd-kpis sa-kpis--5" aria-label="Platform summary">
+        {kpis.map((k) => (
+          <Kpi key={k.label} icon={k.icon} label={k.label} value={firstLoad ? null : (k.value ?? '—')} sub={firstLoad ? 'Loading…' : k.sub} />
+        ))}
+      </section>
 
       {unavailable ? (
         <SectionState title="Dashboard metrics not available">
-          Panels below stay empty until the dashboard API is reachable. No sample numbers are shown.
+          The dashboard API is not reachable. No sample numbers are shown.
         </SectionState>
       ) : null}
-
       {hardError ? (
-        <SectionState tone="err" title="Could not load the dashboard">
+        <SectionState
+          tone="err"
+          title="Could not load the dashboard"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}>
+              <Icon name="refresh" size={16} /> Try again
+            </button>
+          )}
+        >
           {apiErrorMessage(error, 'Please try again.')}
         </SectionState>
       ) : null}
 
       <div className="sa-cols">
         <Panel
-          title="Institution activity"
-          sub="Learning, Q&A and assessment performance per institution."
-          action={<Link className="sp-link" href="/superadmin/colleges">All colleges <Icon name="arrow" size={14} /></Link>}
-          bodyClassName={null}
-        >
-          {activity.length ? (
-            <div className="sp-table-wrap">
-              <table className="sp-table un-table sa-table-tight">
-                <thead>
-                  <tr>
-                    <th>Institution</th>
-                    <th className="num">Students</th>
-                    <th className="num">Watch time</th>
-                    <th className="num">Completion</th>
-                    <th className="num">Q&amp;A</th>
-                    <th className="num">Avg score</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activity.map((row) => {
-                    const name = row.institution || row.college || row.name;
-                    return (
-                      <tr key={row.id || row.institution || row.college}>
-                        <td>
-                          <div className="pm-person">
-                            <span className="un-mono un-mono--sm">{initials(name)}</span>
-                            <div>
-                              <b>{name}</b>
-                              {row.university || row.sub ? <small>{row.university || row.sub}</small> : null}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="num">{row.students ?? row.student_count ?? '—'}</td>
-                        <td className="num">{row.watch_time ?? row.duration ?? '—'}</td>
-                        <td className="num">{row.completion == null ? <span className="sa-muted">—</span> : `${row.completion}%`}</td>
-                        <td className="num">{row.qa ?? row.questions ?? '—'}</td>
-                        <td className="num"><ScoreCell value={row.avg_score ?? row.score ?? row.quality} /></td>
-                        <td><Pill status={row.status}>{row.status || '—'}</Pill></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <PanelEmpty icon="building" title={loading ? 'Loading activity…' : 'No institution activity yet'}>
-              {loading ? null : 'Per-institution learning, Q&A and scores appear here once students start using Quirri.'}
-            </PanelEmpty>
+          title="Institution comparison"
+          sub={`${METRICS.find((x) => x.value === metric)?.label} per active college · ${rangeLabel.toLowerCase()}`}
+          action={(
+            <SegTabs
+              label="Compare by"
+              options={METRICS}
+              value={metric}
+              onChange={(v) => setUrl({ metric: v })}
+            />
           )}
+          className="sa-compare"
+        >
+          {firstLoad ? <p className="dv-empty">Loading institutions…</p> : (
+            <BarList
+              label="Institution comparison"
+              items={comparison}
+              colorBy={isBand ? 'band' : 'series'}
+              max={isBand ? 100 : undefined}
+              format={metric === 'watch' ? formatMinutes : isBand ? formatPct : undefined}
+              empty="No active colleges yet. Colleges appear here once they are onboarded."
+            />
+          )}
+          <div className="sa-panel-foot">
+            <Link className="sp-link" href="/superadmin/reports">
+              Open institution report <Icon name="arrow" size={14} />
+            </Link>
+          </div>
         </Panel>
 
-        <Panel title="Top Q&A queries" sub="Most-asked questions to the AI tutor across all institutions, last 30 days.">
-          {topics.length ? (
-            <div className="sa-bars">
-              {topics.map((t, i) => {
-                const count = Number(t.count || t.value || 0);
-                const width = Math.round((count / maxTopic) * 100);
-                return (
-                  <div className="cmp sa-topq" key={t.topic || t.name || i}>
-                    <div className="nm">
-                      {t.topic || t.name || t.nm}
-                      {t.chapter ? <small>{t.chapter}</small> : null}
-                    </div>
-                    <div className="track">
-                      <i style={{ width: `${width}%` }} />
-                    </div>
-                    <div className="val">{count || t.val || '—'}</div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <PanelEmpty icon="chat" title={loading ? 'Loading questions…' : 'No questions asked yet'}>
-              {loading ? null : 'The questions students ask the AI tutor most often show up here.'}
-            </PanelEmpty>
+        <Panel title="Attention needed" sub="Things to act on, with a link to where they are fixed.">
+          {attentionItems.length ? <AttentionList items={attentionItems.slice(0, 6)} /> : (
+            <p className="sa-attn-none">
+              {attentionLoading && !attention
+                ? 'Checking the platform…'
+                : attention?.checked
+                  ? 'Nothing needs attention. Services, invites, colleges and notifications look normal.'
+                  : 'Could not check the platform right now. It will try again in a minute.'}
+            </p>
+          )}
+          {data && !pipeline.length ? (
+            <p className="sa-attn-note"><Icon name="layers" size={14} /> No chapters generating right now.</p>
+          ) : null}
+        </Panel>
+      </div>
+
+      <div className="dv-grid">
+        <Panel title="Top Q&A queries" sub={`Most-asked questions to the AI tutor · ${rangeLabel.toLowerCase()}`}>
+          {firstLoad ? <p className="dv-empty">Loading questions…</p> : (
+            <RankList
+              label="Top Q&A queries"
+              rows={topics.map((t, i) => ({ key: `${i}-${t.topic}`, name: t.topic, sub: t.chapter || null, value: Number(t.count) || 0 }))}
+              showBand={false}
+              empty="No questions asked in this range."
+            />
+          )}
+        </Panel>
+        <Panel title="Activity mix" sub={`Q&A turns, assessments and interviews · ${rangeLabel.toLowerCase()}`}>
+          {firstLoad ? <p className="dv-empty">Loading activity…</p> : (
+            <DonutChart
+              centerLabel="Activities"
+              parts={[
+                { label: 'Q&A', value: mix.qa },
+                { label: 'Assessments', value: mix.assessments },
+                { label: 'Interviews', value: mix.interviews },
+              ]}
+              empty="No learning activity in this range."
+            />
           )}
         </Panel>
       </div>
 
-      <Panel
-        title="Content pipeline"
-        sub="AI generation jobs currently moving through the pipeline, across all institutions."
-        action={<Link className="sp-link" href="/superadmin/health">Platform health <Icon name="arrow" size={14} /></Link>}
-        bodyClassName={null}
-      >
-        {pipeline.length ? (
+      {pipeline.length ? (
+        <Panel
+          title="Content pipeline"
+          sub="Chapters being turned into lectures and assessments right now."
+          action={<Link className="sp-link" href="/superadmin/content">Upload &amp; content <Icon name="arrow" size={14} /></Link>}
+          bodyClassName={null}
+        >
           <div className="sp-table-wrap">
-            <table className="sp-table un-table sa-table-tight">
+            <table className="sp-table un-table sa-table-tight sa-stack">
               <thead>
                 <tr>
                   <th>Chapter</th>
                   <th>Institution</th>
                   <th>Stage</th>
                   <th>Progress</th>
-                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {pipeline.map((row) => {
-                  const progress = Number(row.progress ?? row.percent ?? 0);
+                  const progress = Math.min(100, Math.max(0, Number(row.progress) || 0));
                   return (
-                    <tr key={row.id || row.chapter}>
+                    <tr key={row.id}>
                       <td>
-                        <div className="pm-person">
-                          <span className="sp-row-ic"><Icon name="video" size={18} /></span>
-                          <div>
-                            <b>{row.chapter || row.chapter_title || row.title}</b>
-                            {row.meta || row.subject ? <small>{row.meta || row.subject}</small> : null}
-                          </div>
-                        </div>
+                        <b>{row.chapter}</b>
+                        {row.meta ? <small className="sa-row-code">{row.meta}</small> : null}
                       </td>
-                      <td>{row.institution || row.college || '—'}</td>
-                      <td>{row.stage || '—'}</td>
-                      <td>
+                      <td data-label="Institution">{row.institution || '—'}</td>
+                      <td data-label="Stage">{row.stage || '—'}</td>
+                      <td data-label="Progress">
                         <div className="sa-progress">
-                          <div className={`bar${progress >= 100 ? ' green' : ''}`}>
-                            <i style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
-                          </div>
-                          <small>{Math.min(100, Math.max(0, progress))}%</small>
+                          <span className="dv-track"><span style={{ width: `${progress}%`, background: 'var(--teal-500)' }} /></span>
+                          <small>{progress}%</small>
                         </div>
                       </td>
-                      <td><Pill status={row.status}>{row.status || '—'}</Pill></td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        ) : (
-          <PanelEmpty icon="layers" title={loading ? 'Loading pipeline…' : 'No pipeline jobs right now'}>
-            {loading ? null : 'Chapters being turned into lectures and assessments appear here while they process.'}
-          </PanelEmpty>
-        )}
-      </Panel>
-
-      <section className="sa-shortcuts" aria-label="Manage the platform">
-        {SHORTCUTS.map((s) => (
-          <Link key={s.href} href={s.href} className="sa-shortcut">
-            <span className="sp-row-ic"><Icon name={s.icon} size={18} /></span>
-            <span className="sa-shortcut-t">
-              <b>{s.title}</b>
-              <small>{s.body}</small>
-            </span>
-            <Icon name="chev" size={16} className="sa-shortcut-go" />
-          </Link>
-        ))}
-      </section>
+        </Panel>
+      ) : null}
     </ModulePage>
+  );
+}
+
+export default function SuperAdminDashboard() {
+  return (
+    <Suspense fallback={<SectionState title="Loading dashboard…" />}>
+      <DashboardView />
+    </Suspense>
   );
 }

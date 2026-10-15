@@ -193,3 +193,132 @@
 .pm-form-error{margin:4px 0 0;font-size:12.5px;line-height:18px;font-weight:500;color:var(--red)}
 .pm-slice .pm-person b{white-space:normal;overflow-wrap:anywhere}
 @media (max-width:760px){.pm-slice .pm-go-cell{display:none}}
+
+/* ---- Overlays: focusable panels (focus is moved in programmatically) ---- */
+.un-drawer:focus,.pm-form-drawer:focus{outline:none}
+
+/* ---- Segmented tabs on phones: few tabs wrap; long strips scroll with an edge fade cue ---- */
+@media (max-width:560px){
+  .sp-tabs.un-seg.pm-seg--few{flex-wrap:wrap;overflow-x:visible}
+  .sp-tabs.un-seg.pm-seg--few .sp-tab{flex:1 1 auto;justify-content:center}
+  .sp-tabs.un-seg{scroll-snap-type:x proximity;scrollbar-width:none}
+  .sp-tabs.un-seg::-webkit-scrollbar{display:none}
+  .sp-tabs.un-seg .sp-tab{scroll-snap-align:center;flex:none}
+  .sp-tabs.un-seg.pm-seg--fade-end{-webkit-mask-image:linear-gradient(to right,#000 80%,transparent);mask-image:linear-gradient(to right,#000 80%,transparent)}
+  .sp-tabs.un-seg.pm-seg--fade-start{-webkit-mask-image:linear-gradient(to left,#000 80%,transparent);mask-image:linear-gradient(to left,#000 80%,transparent)}
+  .sp-tabs.un-seg.pm-seg--fade-start.pm-seg--fade-end{-webkit-mask-image:linear-gradient(to right,transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(to right,transparent,#000 20%,#000 80%,transparent)}
+}
+
+/* ---- Reviewer question cards: options are a read-only list ---- */
+.fa-opts-list{list-style:none;margin:0;padding:0}
+.fa-opts-list .sp-opt{cursor:default}
+.fa-opts-list .sp-opt-label{flex:1;min-width:0;overflow-wrap:break-word}
+.fa-opts-list .sp-opt-tag{display:inline-flex;align-items:center;gap:4px;flex:none}
+
+/* ---- Info notes never push past the panel on phones ---- */
+.fa-note > div{min-width:0;overflow-wrap:break-word}
+
+/* ---- Content studio rows: titles and sources wrap; failure reason is readable and expandable ---- */
+.ad-jobs .pm-person{align-items:flex-start}
+.ad-jobs .pm-person > div{min-width:0}
+.ad-jobs .pm-person b,.ad-jobs .pm-person small{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.ad-jobs td .edu-video-error{display:block;-webkit-line-clamp:unset;overflow:visible;max-width:40ch;overflow-wrap:anywhere;cursor:auto}
+.ad-err-toggle{display:inline-flex;align-items:center;min-height:32px;margin:2px 0 0;padding:0;border:0;background:none;font:inherit;font-size:12px;line-height:18px;font-weight:500;color:var(--teal-500);text-decoration:underline;cursor:pointer}
+.ad-err-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px;border-radius:var(--radius-control)}
+.ad-err-toggle{margin-left:8px}
+@media (max-width:760px){
+  .ad-jobs td .edu-video-error{max-width:none}
+  .ad-err-toggle{margin-left:0;display:flex;min-height:44px;align-items:center}
+}
+
+/* ---- Brand checkbox (label + hidden native input + drawn box) ---- */
+.pm-check{position:relative;display:flex;align-items:flex-start;gap:12px;min-height:44px;padding:10px 0;cursor:pointer}
+.pm-check input[type="checkbox"]{position:absolute;opacity:0;width:1px !important;height:1px !important;min-height:0 !important;margin:0;padding:0;border:0;pointer-events:none}
+.pm-check-box{width:20px;height:20px;flex:none;margin-top:1px;display:grid;place-items:center;border:1.5px solid var(--muted-2);border-radius:var(--radius-control);background:var(--panel);color:transparent;transition:background-color .15s ease-out,border-color .15s ease-out}
+.pm-check-box .sd-i{width:14px;height:14px}
+.pm-check input:checked + .pm-check-box{background:var(--teal-500);border-color:var(--teal-500);color:var(--on-brand)}
+.pm-check input:focus-visible + .pm-check-box{outline:2px solid var(--teal-500);outline-offset:2px}
+.pm-check-text{display:flex;flex-direction:column;min-width:0}
+.pm-check-text b{font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+.pm-check-text small{font-size:12px;line-height:18px;color:var(--muted-2)}
+
+/* ==========================================================================
+   Content studio (EduVideoContentStudio) — tabs, row menu, inline steps
+   ========================================================================== */
+.sd-kpi-v.is-focus{color:var(--accent-text)}
+.cs-seg-row{flex:1 1 100%;min-width:0}
+.cs-jobs td{vertical-align:top}
+.cs-jobs th:nth-child(4),.cs-jobs .cs-date{white-space:nowrap}
+.cs-where{display:flex;flex-direction:column;min-width:0;max-width:32ch}
+.cs-where span{font-size:14px;line-height:22px;color:var(--ink);overflow-wrap:anywhere}
+.cs-where small{font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
+.cs-where small.is-muted{color:var(--neutral-400)}
+.cs-jobs .ad-actions{flex-wrap:nowrap}
+.cs-kebab{flex:none}
+.cs-menu{position:fixed;z-index:80;width:224px;padding:8px;display:flex;flex-direction:column;gap:2px;background:var(--neutral-0);border:1px solid var(--line);border-radius:var(--radius-control);box-shadow:var(--shadow-1),var(--shadow-3)}
+.cs-menu-item{display:flex;align-items:center;gap:10px;width:100%;min-height:36px;padding:8px 10px;border:0;border-radius:var(--radius-control);background:transparent;font:inherit;font-size:14px;line-height:20px;color:var(--ink);text-align:left;cursor:pointer}
+.cs-menu-item .sd-i{color:var(--teal-500);flex:none}
+.cs-menu-item:hover,.cs-menu-item:focus-visible{background:var(--neutral-50);outline:none}
+.cs-menu-item:focus-visible{box-shadow:inset 0 0 0 2px var(--teal-500)}
+.cs-menu-item.is-danger,.cs-menu-item.is-danger .sd-i{color:var(--color-error)}
+.cs-menu-item:disabled{opacity:.5;cursor:not-allowed}
+.cs-steps{list-style:none;margin:0 0 8px;padding:12px 16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;background:var(--neutral-50);border-radius:var(--radius-control)}
+.cs-steps li{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.cs-steps .pm-step-n{width:28px;height:28px;font-size:13px}
+.cs-steps b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+.cs-steps small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
+@media (max-width:760px){
+  .cs-steps{grid-template-columns:1fr;gap:12px}
+  .cs-where{max-width:none;align-items:flex-end;text-align:right}
+  .cs-jobs .ad-actions{flex-wrap:wrap}
+}
+
+/* Light in-panel filters for the shared content / MCQ / structure modules (search icon + compact selects) */
+:is(.cs-page,.mq-page,.as-page) .pm-panel-tools .search{flex:1 1 240px;min-width:200px;position:relative}
+:is(.cs-page,.mq-page,.as-page) .pm-panel-tools .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--teal-500);pointer-events:none}
+:is(.cs-page,.mq-page,.as-page) .pm-panel-tools .search input{width:100%;padding-left:42px;min-height:44px;background:#fff}
+:is(.cs-page,.mq-page,.as-page) .pm-panel-tools .quirri-dd{flex:0 1 200px;min-width:168px;width:auto}
+@media (max-width:768px){
+  :is(.cs-page,.mq-page,.as-page) .pm-panel-tools .search,
+  :is(.cs-page,.mq-page,.as-page) .pm-panel-tools .quirri-dd{flex:1 1 100%;min-width:0}
+}
+
+/* ==========================================================================
+   MCQ review (McqReviewWorkspace) — chapters grouped by subject
+   ========================================================================== */
+.mq-chapters .pm-list{max-height:none;overflow:visible;padding-top:0}
+.mq-groups{max-height:min(72vh,760px);overflow-y:auto;padding:8px 0}
+.mq-group + .mq-group{border-top:1px solid var(--line-soft,var(--line));margin-top:4px;padding-top:4px}
+.mq-group-h{display:flex;align-items:center;gap:8px;margin:0;padding:8px 20px 4px;font-size:12px;line-height:18px;font-weight:500;color:var(--neutral-600)}
+.mq-group-h span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mq-group-h small{font-size:12px;line-height:18px;color:var(--muted-2);font-variant-numeric:tabular-nums}
+.mq-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.mq-sub{display:flex !important;flex-wrap:wrap;align-items:center;gap:4px 12px}
+.mq-subject{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.mq-split{grid-template-columns:minmax(300px,360px) minmax(0,1fr)}
+@media (max-width:1100px){
+  .mq-split{grid-template-columns:1fr}
+  .mq-groups{max-height:420px}
+}
+.mq-split.is-single{grid-template-columns:minmax(0,1fr)}
+.mq-split.is-single .fa-review-col:empty{display:none}
+.mq-chapters .pm-panel-tools .search{flex:1 1 100% !important}
+.mq-chapters .pm-panel-tools .quirri-dd{flex:1 1 140px !important}
+
+/* ==========================================================================
+   Academic structure (AcademicStructureWorkspace) — filter row + semester grid
+   ========================================================================== */
+.as-filters{border:0;border-radius:var(--radius-card);background:var(--neutral-0);box-shadow:var(--shadow-card);padding:16px}
+.as-semrow{align-items:flex-start}
+.as-semrow .as-sems{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;overflow:visible;padding-bottom:0}
+.as-sems .sa-acad-sem{min-width:0;width:100%;text-align:left}
+.as-sems .sa-acad-sem.is-empty:not(.is-on){background:var(--neutral-50);color:var(--muted-2)}
+.as-sems .sa-acad-sem.is-empty:not(.is-on) small{color:var(--neutral-400)}
+.as-semrow > .sa-acad-sem--add{white-space:nowrap}
+@media (max-width:520px){
+  .as-semrow .as-sems{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .as-filters{padding:12px}
+}
+@media (max-width:760px){
+  .as-semrow > .sa-acad-sem--add{min-height:44px}
+}

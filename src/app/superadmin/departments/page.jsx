@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
@@ -12,15 +13,13 @@ import {
 } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage,
-  ModuleBanner,
+  ModuleHead,
+  HeadChip,
   KpiRow,
-  FilterBar,
   SegTabs,
-  ViewToggle,
   Panel,
   StatusPill,
   IconButton,
-  Mono,
   InfoList,
   DetailDrawer,
   DrawerSection,
@@ -37,8 +36,14 @@ import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/mod
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { collegeOptionLabel } from '@/lib/superadmin/format';
 import { departmentCreateSchema, departmentUpdateSchema } from '@/lib/validation';
 import { ROLES } from '@/lib/permissions';
+import { BarList, Distribution, dataColor } from '@/components/shared/data-viz';
+import { useUrlState } from '@/hooks/useUrlState';
+import {
+  useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
+} from '@/lib/superadmin/listState';
 
 const EMPTY_FORM = {
   college_id: '',
@@ -47,13 +52,7 @@ const EMPTY_FORM = {
   hod_user_id: '',
 };
 
-const PAGE_SIZE = 25;
-
-const STATUS_FILTERS = [
-  { value: '', label: 'All' },
-  { value: 'true', label: 'Active' },
-  { value: 'false', label: 'Inactive' },
-];
+const PAGE_SIZE = 50;
 
 function isActiveDept(dept) {
   return dept?.is_active !== false;
@@ -215,7 +214,7 @@ function DepartmentFormModal({
                 error={fieldState.error?.message}
                 disabled={Boolean(editingId)}
                 placeholder="Select a college"
-                options={colleges.map((c) => ({ value: c.id, label: c.name }))}
+                options={colleges.map((c) => ({ value: c.id, label: collegeOptionLabel(c, colleges) }))}
               />
             )}
           />
@@ -272,7 +271,7 @@ function DepartmentFormModal({
         {editingId ? (
           <div className="un-form-note">
             <Icon name="info" size={16} />
-            Use Deactivate / Reactivate to change active status (soft delete).
+            To stop or restart this department, use Deactivate or Reactivate in the list. Nothing is deleted.
           </div>
         ) : null}
       </form>
@@ -308,7 +307,7 @@ function StatusConfirm({ row, busy, onCancel, onConfirm }) {
     >
       <ConfirmNote
         danger={deactivating}
-        title={deactivating ? 'This is a soft delete.' : 'The department becomes active again.'}
+        title={deactivating ? 'Nothing is deleted.' : 'The department becomes active again.'}
       >
         {deactivating
           ? `${row.name} is hidden from active lists. Its records are kept and you can reactivate it at any time.`
@@ -384,12 +383,16 @@ function DepartmentDrawer({ row, onClose, onEdit, onToggle }) {
 }
 
 /* ---------------------------------------------------------------- page */
-export default function DepartmentsPage() {
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [collegeFilter, setCollegeFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [view, setView] = useState('grid');
+const HOD_FILTERS = [
+  { value: '', label: 'Any HOD' },
+  { value: 'none', label: 'No HOD' },
+];
+
+function DepartmentsView() {
+  const [url, setUrl] = useUrlState({ q: '', college: '', status: 'all', hod: '', page: '1' });
+  const page = pageParam(url.page);
+  const noHod = url.hod === 'none';
+  const [search, setSearch] = useDebouncedUrlSearch(url.q, (q) => setUrl({ q, page: '1' }));
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formDefaults, setFormDefaults] = useState(EMPTY_FORM);
@@ -398,38 +401,61 @@ export default function DepartmentsPage() {
   const [confirmRow, setConfirmRow] = useState(null);
   const [drawerRow, setDrawerRow] = useState(null);
 
+  // All colleges, inactive ones too (marked), so their departments can still be found.
   const { data: collegeData } = useAsyncResource(
-    () => fetchData(() => collegesApi.list({ page: 1, page_size: 100, is_active: true })),
+    () => fetchData(() => collegesApi.list({ page: 1, page_size: 100 })),
     [],
   );
   const colleges = useMemo(() => asList(collegeData, []), [collegeData]);
+  const activeColleges = useMemo(() => colleges.filter((c) => c.is_active !== false), [colleges]);
 
   const listParams = useMemo(() => ({
-    q: search.trim() || undefined,
-    college_id: collegeFilter || undefined,
-    is_active: status === '' ? undefined : status === 'true',
+    q: url.q || undefined,
+    college_id: url.college || undefined,
+    is_active: activeParam(url.status),
     page,
     pageSize: PAGE_SIZE,
-  }), [search, status, collegeFilter, page]);
+  }), [url.q, url.status, url.college, page]);
 
   const { data, loading, error, reload } = useAsyncResource(
     () => fetchData(() => departmentsApi.list(listParams)),
     [listParams],
   );
 
-  const departments = useMemo(() => asList(data, []), [data]);
-  const total = data?.total ?? departments.length;
-  const pageSize = data?.page_size ?? PAGE_SIZE;
-  const listedAll = departments.length >= total;
-  const filtered = Boolean(search || status || collegeFilter);
-  const activeCount = departments.filter(isActiveDept).length;
-  const studentSum = departments.reduce((acc, d) => acc + (Number(d.student_count) || 0), 0);
-  const withHod = departments.filter((d) => d.hod_name || d.hod_user_id).length;
-  const scopeNote = listedAll ? 'In this list' : 'On this page';
+  /* Summary over every department (max page size 100) of the chosen college, or the platform. */
+  const { data: allData, reload: reloadAll } = useAsyncResource(
+    () => fetchData(() => departmentsApi.list({ college_id: url.college || undefined, page: 1, pageSize: 100 })),
+    [url.college],
+  );
+  const all = useMemo(() => asList(allData, []), [allData]);
+  const allTotal = totalOf(allData, all);
+  const activeAll = all.filter(isActiveDept);
+  const withoutHod = activeAll.filter((d) => !(d.hod_name || d.hod_user_id)).length;
+  const enrolled = activeAll.reduce((acc, d) => acc + (Number(d.student_count) || 0), 0);
+  const collegeName = url.college ? colleges.find((c) => String(c.id) === url.college)?.name : null;
+  const partial = allData && all.length < allTotal;
+  const scope = partial
+    ? `First ${countLabel(all.length)} of ${countLabel(allTotal)}`
+    : collegeName ? `In ${collegeName}` : 'Across all colleges';
+
+  const pageRows = useMemo(() => asList(data, []), [data]);
+  // "No HOD" is a client filter over the loaded page (the API has no HOD filter).
+  const departments = useMemo(
+    () => (noHod ? pageRows.filter((d) => !(d.hod_name || d.hod_user_id)) : pageRows),
+    [pageRows, noHod],
+  );
+  const total = totalOf(data, pageRows);
+  const filtersOn = Boolean(url.q || url.college || url.status !== 'all' || noHod);
+  const shownCount = noHod ? departments.length : total;
+
+  const refreshAll = () => {
+    reload();
+    reloadAll().catch(() => {});
+  };
 
   const openCreate = () => {
     setEditingId(null);
-    setFormDefaults({ ...EMPTY_FORM });
+    setFormDefaults({ ...EMPTY_FORM, college_id: url.college || '' });
     setModalOpen(true);
   };
 
@@ -451,7 +477,7 @@ export default function DepartmentsPage() {
       await departmentsApi.deactivate(dept.id, { force });
       toast.success(force ? 'Department archived with enrolled students' : 'Department deactivated');
       setForceTarget(null);
-      reload();
+      refreshAll();
     } catch (err) {
       if (err?.response?.status === 409 && !force) {
         setForceTarget(dept);
@@ -464,8 +490,7 @@ export default function DepartmentsPage() {
   };
 
   const handleToggleActive = async (dept) => {
-    const active = dept.is_active !== false;
-    if (active) {
+    if (isActiveDept(dept)) {
       await runDeactivate(dept, false);
       return;
     }
@@ -473,7 +498,7 @@ export default function DepartmentsPage() {
     try {
       await departmentsApi.reactivate(dept.id);
       toast.success('Department reactivated');
-      reload();
+      refreshAll();
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to reactivate department'));
     } finally {
@@ -482,53 +507,34 @@ export default function DepartmentsPage() {
   };
 
   const closeDrawer = useCallback(() => setDrawerRow(null), []);
-
   const askToggle = (dept) => {
     setDrawerRow(null);
     setConfirmRow(dept);
   };
-
   const confirmToggle = async () => {
     if (!confirmRow) return;
     await handleToggleActive(confirmRow);
     setConfirmRow(null);
   };
 
-  const RowActions = ({ row }) => {
-    const active = isActiveDept(row);
-    return (
-      <div className="un-actions">
-        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setDrawerRow(row)}>
-          View
-        </button>
-        <IconButton icon="edit" label={`Edit ${row.name}`} onClick={() => openEdit(row)} />
-        <IconButton
-          icon={active ? 'lock' : 'refresh'}
-          label={active ? `Deactivate ${row.name}` : `Reactivate ${row.name}`}
-          danger={active}
-          disabled={togglingId === row.id}
-          onClick={() => askToggle(row)}
-        />
-      </div>
-    );
-  };
+  const studentBars = activeAll
+    .map((d) => ({
+      key: String(d.id),
+      label: d.name,
+      sub: url.college ? (d.code || null) : d.college_name,
+      value: Number(d.student_count) || 0,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+  const hodParts = [
+    { label: 'HOD assigned', value: activeAll.length - withoutHod, color: 'var(--cat-2)' },
+    { label: 'No HOD', value: withoutHod, color: 'var(--highlight)' },
+  ];
 
   return (
     <ModulePage className="sa-page">
-      <ModuleBanner
-        icon="tree"
-        eyebrow="Academic hierarchy"
-        title="Departments"
-        lede="Departments sit beneath a college. Create them here, assign an optional HOD, and deactivate them when they are no longer used."
-        chips={(
-          <>
-            <span>University</span>
-            <Icon name="chev" size={14} />
-            <span>College</span>
-            <Icon name="chev" size={14} />
-            <span className="is-on">Department</span>
-          </>
-        )}
+      <ModuleHead
+        chips={collegeName ? <HeadChip icon="building">{collegeName}</HeadChip> : null}
         actions={(
           <button type="button" className="sd-btn sd-btn--amber" onClick={openCreate}>
             <Icon name="plus" size={16} /> New department
@@ -539,110 +545,110 @@ export default function DepartmentsPage() {
       <KpiRow
         label="Departments summary"
         items={[
-          { icon: 'tree', label: 'Departments', value: data ? countLabel(total) : null, sub: filtered ? 'Matching these filters' : 'Across all colleges' },
-          { icon: 'tick', label: 'Active', value: data ? countLabel(activeCount) : null, sub: scopeNote },
-          { icon: 'user', label: 'With an HOD', value: data ? countLabel(withHod) : null, sub: scopeNote },
-          { icon: 'users', label: 'Students', value: data ? countLabel(studentSum) : null, sub: listedAll ? 'Enrolled in listed departments' : 'Enrolled, this page' },
+          { icon: 'tree', label: 'Departments', value: allData ? countLabel(allTotal) : null, sub: allData ? `${countLabel(activeAll.length)} active · ${scope.toLowerCase()}` : null },
+          { icon: 'alert', label: 'Without an HOD', value: allData ? countLabel(withoutHod) : null, tone: withoutHod ? 'focus' : undefined, sub: allData ? (withoutHod ? 'Active departments that need one' : 'Every active department has one') : null },
+          { icon: 'users', label: 'Students enrolled', value: allData ? countLabel(enrolled) : null, sub: allData ? `In active departments · ${scope.toLowerCase()}` : null },
         ]}
       />
 
-      <FilterBar label="Filter departments">
-        <SearchBox
-          placeholder="Search department or code…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-        />
-        <QuirriSelect
-          ariaLabel="Filter by college"
-          value={collegeFilter}
-          onChange={(e) => {
-            setCollegeFilter(e.target.value);
-            setPage(1);
-          }}
-          placeholder="All colleges"
-          options={colleges.map((c) => ({ value: c.id, label: c.name }))}
-        />
-        <SegTabs
-          label="Filter by status"
-          options={STATUS_FILTERS}
-          value={status}
-          onChange={(v) => {
-            setStatus(v);
-            setPage(1);
-          }}
-        />
-        <ViewToggle value={view} onChange={setView} />
-      </FilterBar>
-
-      {error ? (
-        <SectionState
-          tone="err"
-          title="Could not load departments"
-          action={(
-            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
-              <Icon name="refresh" size={16} /> Try again
-            </button>
-          )}
-        >
-          {apiErrorMessage(error, 'Please try again. If migrations are not applied yet, the API may be unavailable.')}
-        </SectionState>
-      ) : null}
-
-      {loading && !departments.length ? <SectionState title="Loading departments…" /> : null}
-
-      {!loading && !error && !departments.length ? (
-        <SectionState
-          title={filtered ? 'No departments match these filters' : 'No departments yet'}
-          action={!filtered ? (
-            <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={openCreate}>
-              <Icon name="plus" size={16} /> Add the first department
-            </button>
-          ) : null}
-        >
-          {filtered ? 'Try a different name, college or status.' : 'Departments you add under a college appear here.'}
-        </SectionState>
-      ) : null}
-
-      {departments.length && view === 'grid' ? (
-        <div className="un-grid sa-grid">
-          {departments.map((dept) => {
-            const active = isActiveDept(dept);
-            return (
-              <article key={dept.id} className={`un-card${active ? '' : ' is-inactive'}`}>
-                <button type="button" className="un-card-main" onClick={() => setDrawerRow(dept)}>
-                  <div className="un-card-top">
-                    <Mono name={dept.name} muted={!active} />
-                    <StatusPill active={active} />
-                  </div>
-                  <h3 className="sa-card-title">{dept.name}</h3>
-                  <div className="un-card-meta">
-                    {dept.code ? <span className="un-code">{dept.code}</span> : null}
-                    <span><Icon name="building" size={13} /> {dept.college_name || 'College not set'}</span>
-                  </div>
-                  <div className="un-card-stats">
-                    <div><b>{countLabel(dept.student_count ?? 0)}</b><small>Students</small></div>
-                    <div>
-                      <b className={`sa-stat-text${dept.hod_name ? ' is-set' : ''}`}>{dept.hod_name || 'Not set'}</b>
-                      <small>HOD</small>
-                    </div>
-                  </div>
-                </button>
-                <div className="un-card-foot">
-                  <RowActions row={dept} />
-                </div>
-              </article>
-            );
-          })}
+      {activeAll.length > 1 ? (
+        <div className="dv-grid">
+          <Panel title="Students by department" sub={collegeName ? `Departments of ${collegeName}` : 'Largest departments across the platform'}>
+            <BarList label="Students by department" items={studentBars} />
+          </Panel>
+          <Panel title="HOD coverage" sub="Active departments with and without a head of department.">
+            <Distribution label="HOD coverage" parts={hodParts} />
+            {withoutHod ? (
+              <button type="button" className="sp-link sa-link-btn sa-gap-top" onClick={() => setUrl({ hod: 'none', status: 'true', page: '1' })}>
+                Show departments without an HOD <Icon name="arrow" size={14} />
+              </button>
+            ) : null}
+          </Panel>
         </div>
       ) : null}
 
-      {departments.length && view === 'list' ? (
-        <Panel bodyClassName={null}>
+      <Panel
+        title="All departments"
+        sub={data ? `${countLabel(shownCount)} ${shownCount === 1 ? 'department' : 'departments'}${filtersOn ? ' match these filters' : ''}${noHod && total > pageRows.length ? ' on this page' : ''}` : null}
+        bodyClassName={null}
+        toolbar={(
+          <>
+            <SearchBox
+              placeholder="Search department or code…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <div className="sa-filter-select">
+              <QuirriSelect
+                ariaLabel="Filter by college"
+                value={url.college}
+                onChange={(e) => setUrl({ college: e.target.value, page: '1' })}
+                placeholder="All colleges"
+                options={colleges.map((c) => ({ value: String(c.id), label: collegeOptionLabel(c, colleges) }))}
+              />
+            </div>
+            <SegTabs
+              label="Filter by status"
+              options={ACTIVE_FILTERS}
+              value={url.status}
+              onChange={(v) => setUrl({ status: v, page: '1' })}
+            />
+            <button
+              type="button"
+              className={`sa-chip-toggle${noHod ? ' is-on' : ''}`}
+              aria-pressed={noHod}
+              onClick={() => setUrl({ hod: noHod ? '' : 'none', page: '1' })}
+            >
+              {HOD_FILTERS[1].label}
+            </button>
+            {filtersOn ? (
+              <button
+                type="button"
+                className="sd-btn sd-btn--ghost sd-btn--sm"
+                onClick={() => setUrl({ q: '', college: '', status: 'all', hod: '', page: '1' })}
+              >
+                Clear
+              </button>
+            ) : null}
+          </>
+        )}
+      >
+        {error ? (
+          <div className="sa-panel-state">
+            <SectionState
+              tone="err"
+              title="Could not load departments"
+              action={(
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
+                  <Icon name="refresh" size={16} /> Try again
+                </button>
+              )}
+            >
+              {apiErrorMessage(error, 'Please try again.')}
+            </SectionState>
+          </div>
+        ) : null}
+
+        {loading && !pageRows.length ? <div className="sa-panel-state"><SectionState title="Loading departments…" /></div> : null}
+
+        {!loading && !error && !departments.length ? (
+          <div className="sa-panel-state">
+            <SectionState
+              title={filtersOn ? 'No departments match these filters' : 'No departments yet'}
+              action={!filtersOn ? (
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={openCreate}>
+                  <Icon name="plus" size={16} /> Add the first department
+                </button>
+              ) : null}
+            >
+              {filtersOn ? 'Try a different name, college or status.' : 'Departments you add under a college appear here.'}
+            </SectionState>
+          </div>
+        ) : null}
+
+        {departments.length ? (
           <div className="sp-table-wrap">
-            <table className="sp-table un-table">
+            <table className="sp-table un-table sa-table-tight sa-stack">
               <thead>
                 <tr>
                   <th>Department</th>
@@ -650,7 +656,7 @@ export default function DepartmentsPage() {
                   <th>HOD</th>
                   <th className="num">Students</th>
                   <th>Status</th>
-                  <th aria-label="Actions" />
+                  <th><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -660,33 +666,51 @@ export default function DepartmentsPage() {
                     <tr key={dept.id}>
                       <td>
                         <button type="button" className="un-name-btn" onClick={() => setDrawerRow(dept)}>
-                          <Mono name={dept.name} size="sm" muted={!active} />
+                          <span className="sa-dot" style={{ background: dataColor(String(dept.id)) }} aria-hidden="true" />
                           <span>
                             <b>{dept.name}</b>
-                            <small>{dept.code || '—'}</small>
+                            <small>{dept.code || 'No code'}</small>
                           </span>
                         </button>
                       </td>
-                      <td>{dept.college_name || '—'}</td>
-                      <td className="sa-nowrap">{dept.hod_name || '—'}</td>
-                      <td className="num"><b>{countLabel(dept.student_count ?? 0)}</b></td>
-                      <td><StatusPill active={active} /></td>
-                      <td><RowActions row={dept} /></td>
+                      <td data-label="College">
+                        {dept.college_id ? (
+                          <Link className="sa-plain-link" href={`/superadmin/colleges/${dept.college_id}`}>{dept.college_name || '—'}</Link>
+                        ) : (dept.college_name || '—')}
+                      </td>
+                      <td data-label="HOD">
+                        {dept.hod_name ? dept.hod_name : <span className="pm-missing"><Icon name="alert" size={14} /> Not assigned</span>}
+                      </td>
+                      <td data-label="Students" className="num">{countLabel(dept.student_count ?? 0)}</td>
+                      <td data-label="Status"><StatusPill active={active} /></td>
+                      <td className="sa-actions-cell">
+                        <div className="un-actions">
+                          <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setDrawerRow(dept)}>View</button>
+                          <IconButton icon="edit" label={`Edit ${dept.name}`} onClick={() => openEdit(dept)} />
+                          <IconButton
+                            icon={active ? 'lock' : 'refresh'}
+                            label={active ? `Deactivate ${dept.name}` : `Reactivate ${dept.name}`}
+                            danger={active}
+                            disabled={togglingId === dept.id}
+                            onClick={() => askToggle(dept)}
+                          />
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        </Panel>
-      ) : null}
+        ) : null}
+      </Panel>
 
       <Pager
         page={page}
-        pageSize={pageSize}
+        pageSize={PAGE_SIZE}
         total={total}
-        shown={departments.length}
-        onPage={setPage}
+        shown={pageRows.length}
+        onPage={(p) => setUrl({ page: String(p) }, { push: true })}
         noun="departments"
       />
 
@@ -710,9 +734,9 @@ export default function DepartmentsPage() {
           open={modalOpen}
           editingId={editingId}
           initialValues={formDefaults}
-          colleges={colleges}
+          colleges={editingId ? colleges : activeColleges}
           onClose={() => setModalOpen(false)}
-          onSaved={reload}
+          onSaved={refreshAll}
         />
       ) : null}
 
@@ -746,5 +770,13 @@ export default function DepartmentsPage() {
         ) : null}
       </QuirriModal>
     </ModulePage>
+  );
+}
+
+export default function DepartmentsPage() {
+  return (
+    <Suspense fallback={<SectionState title="Loading departments…" />}>
+      <DepartmentsView />
+    </Suspense>
   );
 }

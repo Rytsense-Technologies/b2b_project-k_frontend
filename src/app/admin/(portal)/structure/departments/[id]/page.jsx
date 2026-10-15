@@ -19,6 +19,7 @@ import {
 } from '@/components/shared/module-ui';
 import { usePageHeader } from '@/components/shared/PageHeader';
 import DepartmentFormDrawer from '@/components/admin/departments/DepartmentFormDrawer';
+import HodPickerModal from '@/components/admin/departments/HodPickerModal';
 import { useDepartmentStatus } from '@/components/admin/departments/useDepartmentStatus';
 import {
   DEPARTMENTS_PATH,
@@ -28,13 +29,15 @@ import {
   dateLabel,
   httpStatus,
   loadDepartmentPeople,
+  departmentHod,
+  hodCanReview,
 } from '@/components/admin/departments/departmentModel';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { academicsApi } from '@/lib/api/superadmin/academics';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
-import { useUrlState } from '@/hooks/useUrlState';
+import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 
 const TABS = ['overview', 'people'];
 const ROLE_LABEL = { hod: 'HOD', faculty: 'Faculty' };
@@ -46,8 +49,9 @@ const ROLE_LABEL = { hod: 'HOD', faculty: 'Faculty' };
 function DepartmentRecord() {
   const { id } = useParams();
   const { tenantId } = useAuth();
-  const [url, setUrl] = useUrlState({ tab: 'overview', created: '' });
-  const tab = TABS.includes(url.tab) ? url.tab : 'overview';
+  const [url, setUrl] = useUrlState({ created: '' });
+  // Tab switches push history, so Back returns to the previous tab (same as other modules).
+  const [tab, setTab] = useTabParam(TABS, 'overview');
   const [drawer, setDrawer] = useState(null); // null | 'edit' | 'hod'
 
   const { data: dept, loading, error, reload } = useAsyncResource(
@@ -67,13 +71,23 @@ function DepartmentRecord() {
   const status = useDepartmentStatus({ onChanged: () => reload().catch(() => {}) });
 
   const active = isActiveDept(dept);
-  const hasHod = Boolean(dept?.hod_name || dept?.hod_user_id);
   const staff = people?.staff || [];
   const students = people?.students || [];
-  const hodUser = useMemo(
-    () => staff.find((u) => dept?.hod_user_id && String(u.id) === String(dept.hod_user_id)) || null,
-    [staff, dept?.hod_user_id],
+  // One source for the header fact, the HOD panel and the People tab (departmentHod).
+  const hod = useMemo(
+    () => departmentHod(dept, people?.collegeStaff || staff),
+    [dept, people, staff],
   );
+  const hasHod = hodCanReview(hod);
+  const hodUser = hod.user;
+  const hodId = hodCanReview(hod) && hodUser ? String(hodUser.id) : null;
+  const hodFact = peopleLoading && !people
+    ? (dept?.hod_name || '…')
+    : hod.state === 'none'
+      ? 'Not assigned'
+      : hod.state === 'elsewhere'
+        ? `${hod.name} (in ${hod.otherDepartment || 'another department'})`
+        : hod.name;
 
   usePageHeader(dept ? {
     title: dept.name,
@@ -108,7 +122,7 @@ function DepartmentRecord() {
       { label: 'Departments', href: DEPARTMENTS_PATH },
       { label: 'Department' },
     ],
-  }, [dept, error, active, hasHod]);
+  }, [dept, error, active, hasHod, peopleLoading]);
 
   if (error) {
     const code = httpStatus(error);
@@ -195,7 +209,7 @@ function DepartmentRecord() {
           </>
         )}
         facts={[
-          { label: 'Head of department', value: dept.hod_name || (dept.hod_user_id ? 'Assigned' : 'Not assigned'), tone: hasHod ? null : 'amber' },
+          { label: 'Head of department', value: hodFact, tone: hasHod || (peopleLoading && !people) ? null : 'amber' },
           { label: 'Students enrolled', value: studentCount == null ? '—' : countLabel(studentCount) },
           { label: 'Staff', value: staffCount == null ? '—' : countLabel(staffCount) },
           { label: 'Added on', value: dateLabel(dept.created_at) || '—', tone: dept.created_at ? null : 'muted' },
@@ -206,7 +220,7 @@ function DepartmentRecord() {
         label="Department sections"
         idBase="dept-tab"
         value={tab}
-        onChange={(v) => setUrl({ tab: v })}
+        onChange={setTab}
         tabs={[
           { value: 'overview', label: 'Overview' },
           { value: 'people', label: 'People', count: peopleLoading ? null : staff.length + students.length },
@@ -257,20 +271,13 @@ function DepartmentRecord() {
             <Panel
               title="Head of department"
               sub="Reviews and approves this department's chapter videos and MCQs."
-              action={active && hasHod ? (
-                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setDrawer('hod')}>Change</button>
+              action={active && hod.state !== 'none' ? (
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setDrawer('hod')}>
+                  {hod.state === 'role' ? 'Set as head' : 'Change'}
+                </button>
               ) : null}
             >
-              {hasHod ? (
-                <PeopleList
-                  people={[{
-                    id: dept.hod_user_id || 'hod',
-                    name: dept.hod_name || fullName(hodUser) || 'Assigned',
-                    email: hodUser?.email,
-                    meta: 'HOD',
-                  }]}
-                />
-              ) : (
+              {peopleLoading && !people ? <SectionState title="Loading…" /> : hod.state === 'none' ? (
                 <SectionState
                   title="No HOD yet"
                   action={active ? (
@@ -279,8 +286,32 @@ function DepartmentRecord() {
                     </button>
                   ) : null}
                 >
-                  Chapters for this department can't be reviewed until someone is assigned.
+                  Until someone is assigned, only faculty assigned to a subject can review that subject&apos;s chapters.
+                  Chapters not linked to a subject wait for an HOD.
                 </SectionState>
+              ) : (
+                <>
+                  <PeopleList
+                    people={[{
+                      id: hodUser?.id || dept.hod_user_id || 'hod',
+                      name: hod.name,
+                      email: hodUser?.email,
+                      meta: hod.state === 'elsewhere' ? `In ${hod.otherDepartment || 'another department'}` : 'HOD',
+                    }]}
+                  />
+                  {hod.state === 'role' ? (
+                    <p className="ad-muted">
+                      Has the HOD role in this department, so they already review its chapters.
+                      Set them as head to show them on department records.
+                    </p>
+                  ) : null}
+                  {hod.state === 'elsewhere' ? (
+                    <p className="pm-form-error" role="status">
+                      {hod.name} is placed in {hod.otherDepartment || 'another department'}, so they can&apos;t review this
+                      department&apos;s chapters. Choose someone placed in {dept.name}.
+                    </p>
+                  ) : null}
+                </>
               )}
             </Panel>
 
@@ -320,7 +351,7 @@ function DepartmentRecord() {
                   id: u.id,
                   name: fullName(u),
                   email: u.email,
-                  meta: String(u.id) === String(dept.hod_user_id) ? 'HOD' : (ROLE_LABEL[u.role] || 'Faculty'),
+                  meta: hodId && String(u.id) === hodId ? 'HOD' : (ROLE_LABEL[u.role] || 'Faculty'),
                 }))}
                 empty={<SectionState title="No staff placed here yet">Add faculty in Staff & HOD and choose this department.</SectionState>}
               />
@@ -350,10 +381,17 @@ function DepartmentRecord() {
       </TabPanel>
 
       <DepartmentFormDrawer
-        open={Boolean(drawer)}
+        open={drawer === 'edit'}
         department={dept}
         tenantId={tenantId}
-        focus={drawer === 'hod' ? 'hod' : null}
+        onClose={() => setDrawer(null)}
+        onSaved={() => { setDrawer(null); reload().catch(() => {}); }}
+      />
+      <HodPickerModal
+        open={drawer === 'hod'}
+        department={dept}
+        tenantId={tenantId}
+        preselect={hod.state === 'role' ? hodUser?.id : ''}
         onClose={() => setDrawer(null)}
         onSaved={() => { setDrawer(null); reload().catch(() => {}); }}
       />

@@ -1,21 +1,24 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
+import RevokeInviteModal from '@/components/admin/RevokeInviteModal';
 import StudentPlacementFields from '@/components/shared/StudentPlacementFields';
 import StudentPlacementModal from '@/components/shared/StudentPlacementModal';
 import StudentBulkImport from '@/components/admin/StudentBulkImport';
-import { QuirriRHFField, QuirriCombobox } from '@/components/superadmin/quirri-ui';
+import { QuirriRHFField, QuirriCombobox, QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import {
   Icon,
   ModulePage,
-  ModuleBanner,
-  KpiRow,
-  FilterBar,
+  ModuleHead,
+  HeadChip,
+  TabNav,
+  TabPanel,
   SegTabs,
   SearchBox,
   Panel,
@@ -31,10 +34,13 @@ import {
   initials,
   countLabel,
 } from '@/components/shared/module-ui';
+import { BarList, Distribution } from '@/components/shared/data-viz';
+import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { academicsApi } from '@/lib/api/superadmin/academics';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
 import { isDeactivated, isPending, statusVariant, userStatusLabel } from '@/lib/admin/userStatus';
@@ -43,10 +49,10 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 
 const TONE = { red: 'err', amber: 'low', green: 'good' };
 
+// Pending invites have their own tab; the directory filters by Active / Deactivated.
 const STATUS_FILTERS = [
   { value: '', label: 'All' },
   { value: 'active', label: 'Active' },
-  { value: 'pending', label: 'Pending activation' },
   { value: 'inactive', label: 'Deactivated' },
 ];
 
@@ -62,7 +68,11 @@ function dateLabel(value) {
 }
 
 function lastActive(user) {
-  return dateLabel(user?.last_active || user?.last_login || user?.updated_at);
+  const value = user?.last_login_at || user?.last_active || user?.last_login;
+  if (!value) return 'Never';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'Never';
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 /* ------------------------------------------------------------------ form */
@@ -316,51 +326,172 @@ function ChangeDepartmentModal({ open, user, departmentOptions, onClose, onSaved
   );
 }
 
+/**
+ * Yearly rollover (POST /users/bulk-promote-year): preview first (dry_run), then an explicit
+ * confirm. The server promotes every active student of this college by one year, capped at
+ * each student's own programme length.
+ */
+function PromoteYearModal({ open, onClose, onDone }) {
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let live = true;
+    setPreview(null);
+    setError('');
+    setBusy(true);
+    usersApi.bulkPromoteYear({ dryRun: true })
+      .then((res) => { if (live) setPreview(unwrap(res)); })
+      .catch((err) => { if (live) setError(getApiErrorMessage(err, 'Could not prepare the preview.')); })
+      .finally(() => { if (live) setBusy(false); });
+    return () => { live = false; };
+  }, [open]);
+
+  const confirm = async () => {
+    setBusy(true);
+    try {
+      const res = unwrap(await usersApi.bulkPromoteYear({ dryRun: false }));
+      toast.success(`${countLabel(res?.promoted_count ?? 0)} student${res?.promoted_count === 1 ? '' : 's'} moved to the next year`);
+      await onDone();
+      onClose();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Could not promote students'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const promoted = preview?.promoted_count ?? 0;
+  return (
+    <QuirriModal
+      open={open}
+      onClose={() => { if (!busy) onClose(); }}
+      title="Promote students to the next year?"
+      crumb="Every active student in your college · once per academic year"
+      footer={(
+        <>
+          <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={busy}>Cancel</button>
+          <div className="right">
+            <button type="button" className="sd-btn sd-btn--teal" onClick={confirm} disabled={busy || !preview || !promoted}>
+              {busy && preview ? 'Promoting…' : promoted ? `Promote ${countLabel(promoted)} student${promoted === 1 ? '' : 's'}` : 'Promote'}
+            </button>
+          </div>
+        </>
+      )}
+    >
+      <div className="un-form">
+        {error ? <ConfirmNote danger title="Preview failed">{error}</ConfirmNote> : null}
+        {!preview && !error ? <SectionState title="Checking every student…" /> : null}
+        {preview ? (
+          <>
+            <ConfirmNote title="Nothing has changed yet.">
+              This is a preview. Each student moves up one year, never past their own programme length.
+            </ConfirmNote>
+            <div className="ad-promote-sum">
+              <div><b>{countLabel(preview.promoted_count)}</b><small>Move to the next year</small></div>
+              <div><b>{countLabel(preview.already_final_year_count)}</b><small>Already in final year (left as is)</small></div>
+              <div className={preview.skipped_missing_data_count ? 'is-focus' : ''}>
+                <b>{countLabel(preview.skipped_missing_data_count)}</b><small>Skipped: year or programme length not set</small>
+              </div>
+            </div>
+            {preview.skipped_missing_data_count ? (
+              <p className="ad-muted">
+                Set the programme (or year and length) for skipped students from their record, then run this again.
+                {` ${(preview.skipped_missing_data || []).slice(0, 3).map((s) => s.email).filter(Boolean).join(', ')}`}
+                {preview.skipped_missing_data_count > 3 ? '…' : ''}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+    </QuirriModal>
+  );
+}
+
 /* ---------------------------------------------------------------- page */
-export default function StudentsPage() {
+const TABS = ['all', 'pending', 'import'];
+const PAGE_SIZE = 25;
+const YEAR_OPTIONS = [1, 2, 3, 4, 5].map((y) => ({ value: String(y), label: `Year ${y}` }));
+const STATUS_HEX = { active: 'var(--band-strong)', pending: 'var(--cat-1)', inactive: 'var(--band-none)' };
+
+function StudentsWorkspace() {
   const { tenantId } = useAuth();
   const { show, hide, TipLayer } = useQuirriTip();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const [tab, setTab] = useTabParam(TABS, 'all');
+  const [url, setUrl] = useUrlState({ q: '', dept: '', prog: '', sem: '', year: '', status: '', page: '1' });
+  const [searchInput, setSearchInput] = useState(url.q);
+  const page = Math.max(1, Number(url.page) || 1);
   const [createOpen, setCreateOpen] = useState(false);
   const [acting, setActing] = useState(false);
   const [drawerUser, setDrawerUser] = useState(null);
   const [confirmUser, setConfirmUser] = useState(null);
   const [deptUser, setDeptUser] = useState(null);
   const [placementUser, setPlacementUser] = useState(null);
-  const [importOpen, setImportOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 25;
+  // Pending invites are cancelled, not deactivated (POST /users/{id}/revoke-invite).
+  const [revokeUser, setRevokeUser] = useState(null);
+  const [promoteOpen, setPromoteOpen] = useState(false);
+
+  // URL → input (Back/Forward), input → URL (debounced)
+  useEffect(() => { setSearchInput(url.q); }, [url.q]);
+  useEffect(() => {
+    if (searchInput === url.q) return undefined;
+    const t = setTimeout(() => setUrl({ q: searchInput.trim(), page: '1' }), 300);
+    return () => clearTimeout(t);
+  }, [searchInput, url.q, setUrl]);
 
   const { data: deptData } = useAsyncResource(
     () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
     [tenantId],
   );
+  const departments = useMemo(() => asList(deptData, []), [deptData]);
   const departmentOptions = useMemo(
-    () => asList(deptData, []).map((d) => ({
+    () => departments.map((d) => ({
       value: d.id,
       label: d.code ? `${d.name} (${d.code})` : d.name,
     })),
-    [deptData],
+    [departments],
   );
 
-  // A new search / status starts again at page 1.
-  const setSearchAndReset = (value) => { setSearch(value); setPage(1); };
-  const setStatusAndReset = (value) => { setStatus(value); setPage(1); };
+  // Programme -> semester filter options, scoped to the chosen department (academics API).
+  const { data: programData } = useAsyncResource(
+    () => fetchData(() => academicsApi.listPrograms(url.dept ? { department_id: url.dept } : {})),
+    [tenantId, url.dept],
+  );
+  const programOptions = useMemo(
+    () => asList(programData, []).filter((p) => p.is_active !== false).map((p) => ({ value: p.id, label: p.code ? `${p.name} (${p.code})` : p.name })),
+    [programData],
+  );
+  const { data: programDetail } = useAsyncResource(
+    () => (url.prog ? fetchData(() => academicsApi.getProgram(url.prog)) : Promise.resolve(null)),
+    [url.prog],
+  );
+  const semesterOptions = useMemo(
+    () => (programDetail?.semesters || []).filter((x) => x.is_active !== false).map((x) => ({ value: x.id, label: x.name })),
+    [programDetail],
+  );
 
+  // The list for the open tab: All (optionally Active / Deactivated) or Pending invites.
+  const listStatus = tab === 'pending' ? 'pending' : url.status;
   const { data, loading, error, reload } = useAsyncResource(async () => {
+    if (tab === 'import') return null;
     const res = await usersApi.getUsers({
       page,
       pageSize: PAGE_SIZE,
-      search,
+      search: url.q,
       role: ROLES.STUDENT,
-      status,
+      status: listStatus,
+      departmentId: url.dept,
+      programId: tab === 'all' ? url.prog : '',
+      semesterId: tab === 'all' ? url.sem : '',
+      yearOfStudy: tab === 'all' ? url.year : '',
       tenantId: tenantId || undefined,
     });
     return unwrap(res);
-  }, [search, status, tenantId, page]);
+  }, [tab, url.q, listStatus, url.dept, url.prog, url.sem, url.year, tenantId, page]);
 
-  // Status counts for the whole college (not just this page).
+  // Status counts for the whole college (not just this page) — tab counts + status split.
   const { data: countData, reload: reloadCounts } = useAsyncResource(async () => {
     const one = (s) => usersApi.getUsers({ page: 1, pageSize: 1, role: ROLES.STUDENT, status: s, tenantId: tenantId || undefined })
       .then(unwrap).then((r) => (typeof r?.total === 'number' ? r.total : 0));
@@ -370,13 +501,25 @@ export default function StudentsPage() {
   const reloadAll = useCallback(async () => { await Promise.all([reload(), reloadCounts()]); }, [reload, reloadCounts]);
 
   const students = useMemo(() => {
+    if (!data) return [];
     if (Array.isArray(data)) return data;
     return asList(data?.users || data, []);
   }, [data]);
 
   const total = typeof data?.total === 'number' ? data.total : students.length;
   const counts = countData || { active: null, pending: null, inactive: null };
-  const ready = !(loading && !students.length);
+  const everyone = countData ? counts.active + counts.pending + counts.inactive : null;
+  const firstLoad = loading && !data;
+
+  const deptBars = useMemo(() => departments
+    .map((d) => ({ key: String(d.id), label: d.name, value: Number(d.student_count) || 0 }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6), [departments]);
+
+  const changeTab = (v) => {
+    setTab(v);
+    if (v === 'pending' && url.status) setUrl({ status: '', page: '1' });
+  };
 
   const handleToggleStatus = async (user) => {
     setActing(true);
@@ -440,149 +583,328 @@ export default function StudentsPage() {
           />
         </span>
       ) : isDeactivated(user) ? (
-        <IconButton
-          icon="refresh"
-          label={`Reactivate ${fullName(user)}`}
-          disabled={acting}
-          onClick={() => askToggle(user)}
-        />
+        <span onMouseEnter={(e) => show(e, 'Reactivate', 'top')} onMouseLeave={hide}>
+          <IconButton
+            icon="refresh"
+            label={`Reactivate ${fullName(user)}`}
+            disabled={acting}
+            onClick={() => askToggle(user)}
+          />
+        </span>
       ) : (
-        <IconButton
-          icon="lock"
-          danger
-          label={`Deactivate ${fullName(user)}`}
-          disabled={acting}
-          onClick={() => askToggle(user)}
-        />
+        <span onMouseEnter={(e) => show(e, 'Deactivate', 'top')} onMouseLeave={hide}>
+          <IconButton
+            icon="lock"
+            danger
+            label={`Deactivate ${fullName(user)}`}
+            disabled={acting}
+            onClick={() => askToggle(user)}
+          />
+        </span>
       )}
     </div>
   );
 
   const confirmDeactivating = confirmUser ? !isDeactivated(confirmUser) : false;
-  const filtered = Boolean(search || status);
+  const filtered = Boolean(url.q || url.dept || (tab === 'all' && (url.status || url.prog || url.sem || url.year)));
+  const clearFilters = () => {
+    setSearchInput('');
+    setUrl({ q: '', dept: '', prog: '', sem: '', year: '', status: '', page: '1' });
+    // Clear unmounts itself: move focus to the search box instead of letting it fall to BODY.
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => document.querySelector('.pm-panel-tools input')?.focus());
+    }
+  };
+  const deptName = departmentOptions.find((o) => o.value === url.dept)?.label;
+
+  const toolbar = (
+    <>
+      <SearchBox
+        placeholder="Search name or email…"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+      />
+      <QuirriSelect
+        ariaLabel="Filter by department"
+        value={url.dept}
+        onChange={(e) => setUrl({ dept: e.target.value, prog: '', sem: '', page: '1' })}
+        placeholder="All departments"
+        options={departmentOptions}
+      />
+      {tab === 'all' ? (
+        <>
+          <QuirriSelect
+            ariaLabel="Filter by programme"
+            value={url.prog}
+            onChange={(e) => setUrl({ prog: e.target.value, sem: '', page: '1' })}
+            placeholder={programOptions.length ? 'All programmes' : 'No programmes'}
+            options={programOptions}
+          />
+          <QuirriSelect
+            ariaLabel="Filter by semester"
+            value={url.sem}
+            onChange={(e) => setUrl({ sem: e.target.value, page: '1' })}
+            placeholder={url.prog ? 'All semesters' : 'Pick a programme first'}
+            options={semesterOptions}
+            disabled={!url.prog}
+          />
+          <QuirriSelect
+            ariaLabel="Filter by year of study"
+            value={url.year}
+            onChange={(e) => setUrl({ year: e.target.value, page: '1' })}
+            placeholder="All years"
+            options={YEAR_OPTIONS}
+          />
+        </>
+      ) : null}
+      {tab === 'all' ? (
+        <SegTabs
+          label="Filter by status"
+          options={STATUS_FILTERS}
+          value={url.status}
+          onChange={(v) => setUrl({ status: v, page: '1' })}
+        />
+      ) : null}
+      {filtered ? (
+        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear</button>
+      ) : null}
+    </>
+  );
+
+  const listState = (
+    <>
+      {error ? (
+        <div className="sp-panel-b">
+          <SectionState
+            tone="err"
+            title="Could not load students"
+            action={(
+              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
+                <Icon name="refresh" size={16} /> Try again
+              </button>
+            )}
+          >
+            {error?.message || 'Please try again.'}
+          </SectionState>
+        </div>
+      ) : null}
+      {firstLoad ? <div className="sp-panel-b"><SectionState title="Loading students…" /></div> : null}
+      {!loading && !error && data && !students.length ? (
+        <div className="sp-panel-b">
+          {tab === 'pending' ? (
+            <SectionState title={filtered ? 'No pending invites match these filters' : 'No pending invites'}>
+              {filtered ? 'Try another name, email or department.' : 'Everyone you invited has activated their account.'}
+            </SectionState>
+          ) : (
+            <SectionState
+              title={filtered ? 'No students match these filters' : 'No students yet'}
+              action={filtered ? (
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear filters</button>
+              ) : (
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setCreateOpen(true)}>
+                  <Icon name="plus" size={16} /> Add the first student
+                </button>
+              )}
+            >
+              {filtered ? 'Try a different name, email, department, programme, year or status.' : 'Add a student, or import a CSV, to send activation invites.'}
+            </SectionState>
+          )}
+        </div>
+      ) : null}
+    </>
+  );
 
   return (
     <ModulePage className="ad-page">
-      <ModuleBanner
-        icon="users"
-        eyebrow="People"
-        title="Students"
-        lede="Add students one at a time or import up to 100 from a CSV. Each student gets an activation link and sets their own password — you never set it for them."
-        actions={(
+      <ModuleHead
+        chips={(
           <>
-            <button type="button" className="sd-btn sd-btn--glass" onClick={() => setImportOpen(true)}>
-              <Icon name="upload" size={16} /> Bulk import
+            <HeadChip icon="building">Your college</HeadChip>
+            {deptName && tab !== 'import' ? <HeadChip icon="tree" tone="grey">{deptName}</HeadChip> : null}
+          </>
+        )}
+        actions={tab !== 'import' ? (
+          <>
+            <button type="button" className="sd-btn sd-btn--outline" onClick={() => setPromoteOpen(true)}>
+              <Icon name="trend" size={16} /> Promote to next year
             </button>
             <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
               <Icon name="plus" size={16} /> Add student
             </button>
           </>
-        )}
+        ) : null}
       />
 
-      <KpiRow
-        label="Students summary"
-        items={[
-          { icon: 'users', label: filtered ? 'Matching students' : 'Students', value: ready ? countLabel(total) : null, sub: filtered ? 'For these filters' : 'In your college' },
-          { icon: 'tick', label: 'Active', value: counts.active != null ? countLabel(counts.active) : null, sub: 'Can sign in' },
-          { icon: 'mail', label: 'Pending activation', value: counts.pending != null ? countLabel(counts.pending) : null, sub: 'Invite sent, not yet used' },
-          { icon: 'lock', label: 'Deactivated', value: counts.inactive != null ? countLabel(counts.inactive) : null, sub: 'Soft-deleted, restorable' },
+      <TabNav
+        label="Students sections"
+        idBase="students-tab"
+        value={tab}
+        onChange={changeTab}
+        tabs={[
+          { value: 'all', label: 'All students', count: everyone == null ? null : countLabel(everyone) },
+          { value: 'pending', label: 'Pending invites', count: counts.pending == null ? null : countLabel(counts.pending) },
+          { value: 'import', label: 'Bulk import' },
         ]}
       />
 
-      <FilterBar label="Filter students">
-        <SearchBox
-          placeholder="Search name or email…"
-          value={search}
-          onChange={(e) => setSearchAndReset(e.target.value)}
-        />
-        <SegTabs label="Filter by status" options={STATUS_FILTERS} value={status} onChange={setStatusAndReset} />
-      </FilterBar>
+      <TabPanel value="all" current={tab} idBase="students-tab">
+        <div className="dv-grid ad-viz-row">
+          <Panel title="Account status" sub="Every student in your college">
+            {countData ? (
+              <Distribution
+                label="Account status"
+                parts={[
+                  { label: 'Active', value: counts.active, color: STATUS_HEX.active },
+                  { label: 'Pending invite', value: counts.pending, color: STATUS_HEX.pending },
+                  { label: 'Deactivated', value: counts.inactive, color: STATUS_HEX.inactive },
+                ]}
+                empty="No students yet."
+              />
+            ) : <p className="dv-empty">Loading…</p>}
+          </Panel>
+          <Panel
+            title="Students by department"
+            sub="Placed in each active department"
+            action={(
+              <Link className="sp-link" href="/admin/structure/departments">
+                Departments <Icon name="arrow" size={14} />
+              </Link>
+            )}
+          >
+            {deptData ? (
+              <BarList
+                label="Students by department"
+                items={deptBars}
+                empty="No departments yet. Create one under Academic structure."
+              />
+            ) : <p className="dv-empty">Loading…</p>}
+          </Panel>
+        </div>
 
-      {error ? (
-        <SectionState
-          tone="err"
-          title="Could not load students"
-          action={(
-            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
-              <Icon name="refresh" size={16} /> Try again
-            </button>
-          )}
-        >
-          {error?.message || 'Please try again.'}
-        </SectionState>
-      ) : null}
-
-      {loading && !students.length ? <SectionState title="Loading students…" /> : null}
-
-      {!loading && !error && !students.length ? (
-        <SectionState
-          title={filtered ? 'No students match these filters' : 'No students yet'}
-          action={!filtered ? (
-            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setCreateOpen(true)}>
-              <Icon name="plus" size={16} /> Add the first student
-            </button>
-          ) : null}
-        >
-          {filtered ? 'Try a different name, email or status.' : 'Add a student to send them an activation invite.'}
-        </SectionState>
-      ) : null}
-
-      {students.length ? (
         <Panel
           title="Student directory"
-          sub={`${countLabel(total)} student${total === 1 ? '' : 's'}`}
+          sub={firstLoad ? 'Loading…' : `${countLabel(total)} student${total === 1 ? '' : 's'}${filtered ? (total === 1 ? ' matches these filters' : ' match these filters') : ''}`}
           bodyClassName={null}
+          toolbar={toolbar}
         >
-          <div className="sp-table-wrap">
-            <table className="sp-table un-table ad-stack">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Department</th>
-                  <th>Programme</th>
-                  <th>Status</th>
-                  <th>Last active</th>
-                  <th aria-label="Actions" />
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((user) => {
-                  const name = fullName(user);
-                  return (
-                    <tr key={user.id}>
-                      <td>
-                        <button type="button" className="ad-person-btn pm-person" onClick={() => setDrawerUser(user)}>
-                          <span className="pm-av" aria-hidden="true">{initials(name, 'S')}</span>
-                          <span>
-                            <b>{name}</b>
-                            <small>{user.email}</small>
-                          </span>
-                        </button>
-                      </td>
-                      <td data-label="Department">{user.department_name || user.department || '—'}</td>
-                      <td data-label="Programme">
-                        {user.program_name ? (
-                          <span className="ad-cell-2">
-                            <span>{user.program_name}</span>
-                            <small>{user.semester_name || 'Semester not set'}</small>
-                          </span>
-                        ) : <span className="ad-muted">Not set</span>}
-                      </td>
-                      <td data-label="Status">
-                        <StatusPill active on={userStatusLabel(user)} tone={TONE[statusVariant(user)]} />
-                      </td>
-                      <td data-label="Last active">{lastActive(user)}</td>
-                      <td><RowActions user={user} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <Pager page={page} pageSize={PAGE_SIZE} total={total} shown={students.length} onPage={setPage} noun="students" />
+          {listState}
+          {students.length ? (
+            <div className="sp-table-wrap">
+              <table className="sp-table un-table ad-stack">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Department</th>
+                    <th>Programme</th>
+                    <th className="num">Year</th>
+                    <th>Status</th>
+                    <th>Last active</th>
+                    <th aria-label="Actions" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((user) => {
+                    const name = fullName(user);
+                    return (
+                      <tr key={user.id}>
+                        <td>
+                          <button type="button" className="ad-person-btn pm-person" onClick={() => setDrawerUser(user)}>
+                            <span className="pm-av" aria-hidden="true">{initials(name, 'S')}</span>
+                            <span>
+                              <b>{name}</b>
+                              <small>{user.email}</small>
+                            </span>
+                          </button>
+                        </td>
+                        <td data-label="Department">{user.department_name || user.department || <span className="ad-muted">Not placed</span>}</td>
+                        <td data-label="Programme">
+                          {user.program_name ? (
+                            <span className="ad-cell-2">
+                              <span>{user.program_name}</span>
+                              <small>{user.semester_name || 'Semester not set'}</small>
+                            </span>
+                          ) : <span className="ad-muted">Not set</span>}
+                        </td>
+                        <td data-label="Year" className="num">{user.year_of_study ? countLabel(user.year_of_study) : '—'}</td>
+                        <td data-label="Status">
+                          <StatusPill active on={userStatusLabel(user)} tone={TONE[statusVariant(user)]} />
+                        </td>
+                        <td data-label="Last active">{lastActive(user)}</td>
+                        <td><RowActions user={user} /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          <Pager page={page} pageSize={PAGE_SIZE} total={total} shown={students.length} onPage={(p) => setUrl({ page: String(p) }, { push: true })} noun="students" />
         </Panel>
-      ) : null}
+      </TabPanel>
+
+      <TabPanel value="pending" current={tab} idBase="students-tab">
+        <Panel
+          title="Pending invites"
+          sub="Students who have not set a password yet. Resend the link, or cancel an invite sent by mistake."
+          bodyClassName={null}
+          toolbar={toolbar}
+        >
+          {listState}
+          {students.length ? (
+            <div className="sp-table-wrap">
+              <table className="sp-table un-table ad-stack">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Department</th>
+                    <th>Invited on</th>
+                    <th aria-label="Actions" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((user) => {
+                    const name = fullName(user);
+                    return (
+                      <tr key={user.id}>
+                        <td>
+                          <button type="button" className="ad-person-btn pm-person" onClick={() => setDrawerUser(user)}>
+                            <span className="pm-av" aria-hidden="true">{initials(name, 'S')}</span>
+                            <span>
+                              <b>{name}</b>
+                              <small>{user.email}</small>
+                            </span>
+                          </button>
+                        </td>
+                        <td data-label="Department">{user.department_name || user.department || <span className="ad-muted">Not placed</span>}</td>
+                        <td data-label="Invited on">{user.created_at ? dateLabel(user.created_at) : '—'}</td>
+                        <td>
+                          <div className="un-actions">
+                            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" disabled={acting} onClick={() => handleResend(user)}>
+                              <Icon name="send" size={14} /> Resend
+                            </button>
+                            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setRevokeUser(user)}>
+                              Cancel invite
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+          <Pager page={page} pageSize={PAGE_SIZE} total={total} shown={students.length} onPage={(p) => setUrl({ page: String(p) }, { push: true })} noun="invites" />
+        </Panel>
+      </TabPanel>
+
+      <TabPanel value="import" current={tab} idBase="students-tab">
+        <StudentBulkImport
+          inline
+          onImported={reloadAll}
+          sampleDepartment={departmentOptions[0]?.label?.replace(/ \(.*\)$/, '')}
+        />
+      </TabPanel>
 
       <DetailDrawer
         open={Boolean(drawerUser)}
@@ -607,9 +929,11 @@ export default function StudentsPage() {
               type="button"
               className={`sd-btn sd-btn--sm ${isDeactivated(drawerUser) ? 'sd-btn--outline' : 'sd-btn--danger'}`}
               disabled={acting}
-              onClick={() => askToggle(drawerUser)}
+              onClick={() => (isPending(drawerUser)
+                ? setRevokeUser(drawerUser)
+                : askToggle(drawerUser))}
             >
-              {isDeactivated(drawerUser) ? 'Reactivate' : 'Deactivate'}
+              {isDeactivated(drawerUser) ? 'Reactivate' : isPending(drawerUser) ? 'Cancel invite' : 'Deactivate'}
             </button>
             {isPending(drawerUser) ? (
               <button
@@ -678,6 +1002,15 @@ export default function StudentsPage() {
         ) : null}
       </DetailDrawer>
 
+      {revokeUser ? (
+        <RevokeInviteModal
+          user={revokeUser}
+          name={fullName(revokeUser)}
+          onClose={() => setRevokeUser(null)}
+          onDone={async () => { setRevokeUser(null); setDrawerUser(null); await reloadAll(); }}
+        />
+      ) : null}
+
       <QuirriModal
         open={Boolean(confirmUser)}
         onClose={() => setConfirmUser(null)}
@@ -744,13 +1077,6 @@ export default function StudentsPage() {
         />
       ) : null}
 
-      <StudentBulkImport
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
-        onImported={reloadAll}
-        sampleDepartment={departmentOptions[0]?.label?.replace(/ \(.*\)$/, '')}
-      />
-
       {createOpen ? (
         <CreateStudentModal
           key="create-student"
@@ -761,7 +1087,16 @@ export default function StudentsPage() {
           onSaved={reloadAll}
         />
       ) : null}
+      <PromoteYearModal open={promoteOpen} onClose={() => setPromoteOpen(false)} onDone={reloadAll} />
       <TipLayer />
     </ModulePage>
+  );
+}
+
+export default function StudentsPage() {
+  return (
+    <Suspense fallback={<SectionState title="Loading students…" />}>
+      <StudentsWorkspace />
+    </Suspense>
   );
 }

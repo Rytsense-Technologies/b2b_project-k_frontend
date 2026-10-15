@@ -233,8 +233,8 @@ function unwrapJobPayload(res) {
   const status = res?.status;
   const err = new Error(
     status >= 300 && status < 400
-      ? 'Upload was redirected before the API responded. Check that the video API origin is :8000, not the Next.js app.'
-      : 'Upload succeeded but no job_id was returned.',
+      ? 'The upload could not be completed. Please try again.'
+      : 'The upload finished but the chapter was not created. Please try again.',
   );
   err.response = res;
   throw err;
@@ -333,9 +333,12 @@ export const eduVideoApi = {
    * made from that one browser and could never show the same job to a
    * different browser/device/role.
    */
-  listJobs({ status, departmentId, q, tenantId, page = 1, pageSize = 25 } = {}) {
+  listJobs({ status, departmentId, q, tenantId, reviewState, subjectId, page = 1, pageSize = 25 } = {}) {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
+    // Reviewer tabs: to_review | changes_requested | in_progress | published (to_review is oldest first).
+    if (reviewState) params.set('review_state', reviewState);
+    if (subjectId) params.set('subject_id', subjectId);
     if (departmentId) params.set('department_id', departmentId);
     if (q) params.set('q', q);
     // Super Admin only — filter platform job list to one college.

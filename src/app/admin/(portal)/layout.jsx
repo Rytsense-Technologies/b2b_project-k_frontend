@@ -1,7 +1,8 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+// Pages read the URL (useSearchParams); Next needs a Suspense boundary for the production build.
+import { Suspense, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setRoleDataOnly } from '@/store/slices/authSlice';
 import { selectSidebarOpen } from '@/store/slices/uiSlice';
@@ -54,7 +55,7 @@ export default function CollegeAdminLayout({ children }) {
             leading={<MobileNavButton navOpen={navOpen} onOpen={openNav} />}
           />
 
-          <div className="content">{children}</div>
+          <main className="content"><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
         </div>
       </PageHeaderProvider>
     </div>

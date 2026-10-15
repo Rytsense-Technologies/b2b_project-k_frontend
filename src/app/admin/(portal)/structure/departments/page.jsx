@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import {
   Icon,
   ModulePage,
+  ModuleHead,
+  HeadChip,
   KpiRow,
-  FilterBar,
   SegTabs,
   SearchBox,
   Panel,
@@ -15,18 +16,19 @@ import {
   Mono,
   Pager,
   SectionState,
-  HierarchyStrip,
   countLabel,
 } from '@/components/shared/module-ui';
-import { usePageHeader } from '@/components/shared/PageHeader';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import StructureTabs from '@/components/admin/StructureTabs';
 import DepartmentFormDrawer from '@/components/admin/departments/DepartmentFormDrawer';
 import {
-  HIERARCHY,
   STATUS_FILTERS,
   departmentPath,
   isActiveDept,
   httpStatus,
+  loadCollegeStaff,
+  departmentHod,
+  hodCanReview,
 } from '@/components/admin/departments/departmentModel';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
@@ -35,15 +37,32 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUrlState } from '@/hooks/useUrlState';
 
 const PAGE_SIZE = 100;
+const HOD_FILTERS = [
+  { value: 'with', label: 'With an HOD' },
+  { value: 'without', label: 'Without an HOD' },
+];
+
+function HodCell({ hod, ready }) {
+  if (hodCanReview(hod)) return hod.name;
+  if (!ready) return <span className="ad-muted">Checking…</span>;
+  if (hod?.state === 'elsewhere') {
+    return (
+      <span className="pm-missing">
+        <Icon name="alert" size={14} /> {hod.name} is in {hod.otherDepartment || 'another department'}
+      </span>
+    );
+  }
+  return <span className="pm-missing"><Icon name="alert" size={14} /> Not assigned</span>;
+}
 
 /**
  * College Admin → Academic structure → Departments (list).
- * Slice 1 of docs/ux/ux-architecture.md: list → create (drawer) → record page.
+ * Recipe v2: head (scope + one orange action) → route tabs → KPIs → one panel with its filters.
  */
 function DepartmentsList() {
   const router = useRouter();
   const { tenantId } = useAuth();
-  const [url, setUrl] = useUrlState({ q: '', status: 'true', page: '1' });
+  const [url, setUrl] = useUrlState({ q: '', status: 'true', hod: '', page: '1' });
   const [searchInput, setSearchInput] = useState(url.q);
   const [createOpen, setCreateOpen] = useState(false);
   const page = Math.max(1, Number(url.page) || 1);
@@ -70,19 +89,30 @@ function DepartmentsList() {
 
   const rows = useMemo(() => asList(data, []), [data]);
   const total = typeof data?.total === 'number' ? data.total : rows.length;
-  const withHod = rows.filter((d) => d.hod_name || d.hod_user_id).length;
+  // Same HOD rule as the department record (departmentHod), so list and detail agree.
+  const { data: collegeStaff } = useAsyncResource(() => loadCollegeStaff(tenantId), [tenantId]);
+  const staffReady = Array.isArray(collegeStaff);
+  const hodByDept = useMemo(() => {
+    const map = new Map();
+    rows.forEach((d) => map.set(d.id, departmentHod(d, collegeStaff || [])));
+    return map;
+  }, [rows, collegeStaff]);
+  const withoutHod = rows.filter((d) => !hodCanReview(hodByDept.get(d.id))).length;
   const enrolled = rows.reduce((acc, d) => acc + (Number(d.student_count) || 0), 0);
   const firstLoad = loading && !data;
   const statusLabel = STATUS_FILTERS.find((f) => f.value === url.status)?.label || 'Active';
   const searching = Boolean(url.q);
 
-  usePageHeader({
-    actions: (
-      <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
-        <Icon name="plus" size={16} /> New department
-      </button>
-    ),
-  }, []);
+  // HOD filter is client side: every department of a college fits on one page (PAGE_SIZE 100).
+  const shown = useMemo(() => {
+    if (!url.hod || !staffReady) return rows;
+    return rows.filter((d) => hodCanReview(hodByDept.get(d.id)) === (url.hod === 'with'));
+  }, [rows, url.hod, hodByDept, staffReady]);
+  const filtered = Boolean(url.q || url.hod || url.status !== 'true');
+  const clearFilters = () => {
+    setSearchInput('');
+    setUrl({ q: '', hod: '', status: 'true', page: '1' });
+  };
 
   const onCreated = (dept) => {
     setCreateOpen(false);
@@ -97,89 +127,121 @@ function DepartmentsList() {
 
   return (
     <ModulePage className="ad-page pm-slice">
+      <ModuleHead
+        chips={<HeadChip icon="building">Your college</HeadChip>}
+        actions={(
+          <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
+            <Icon name="plus" size={16} /> New department
+          </button>
+        )}
+      />
       <StructureTabs />
-      <HierarchyStrip label="Where departments sit in your college" levels={HIERARCHY} />
 
       <KpiRow
         label="Departments summary"
         items={[
-          { icon: 'tree', label: `${statusLabel} departments`, value: firstLoad ? null : countLabel(total), sub: searching ? 'Matching your search' : 'In your college' },
-          { icon: 'user', label: 'With an HOD', value: firstLoad ? null : countLabel(withHod), sub: 'Ready to review chapters' },
-          { icon: 'alert', label: 'Without an HOD', value: firstLoad ? null : countLabel(rows.length - withHod), sub: rows.length - withHod > 0 ? 'Open one to assign an HOD' : 'Nothing to do' },
-          { icon: 'users', label: 'Students enrolled', value: firstLoad ? null : countLabel(enrolled), sub: 'Across these departments' },
+          {
+            icon: 'tree',
+            label: `${statusLabel} departments`,
+            value: firstLoad ? null : countLabel(total),
+            sub: searching ? 'Matching your search' : 'In your college',
+          },
+          {
+            icon: 'alert',
+            label: 'Without an HOD',
+            value: firstLoad || !staffReady ? null : countLabel(withoutHod),
+            tone: staffReady && withoutHod > 0 ? 'focus' : undefined,
+            sub: withoutHod > 0 ? 'No one reviews their chapters yet' : 'Every department has a reviewer',
+          },
+          { icon: 'users', label: 'Students placed', value: firstLoad ? null : countLabel(enrolled), sub: 'Across these departments' },
         ]}
       />
 
-      <FilterBar label="Find departments">
-        <SearchBox
-          placeholder="Search by department name or code…"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
-        <SegTabs
-          label="Status"
-          options={STATUS_FILTERS}
-          value={url.status}
-          onChange={(v) => setUrl({ status: v, page: '1' })}
-        />
-      </FilterBar>
-
-      {error ? (
-        status === 403 ? (
-          <SectionState tone="err" title="You don't have access to departments">
-            Only College Admins can manage departments. If you think this is wrong, ask your Super Admin to check your role.
-          </SectionState>
-        ) : (
-          <SectionState
-            tone="err"
-            title="Could not load departments"
-            action={(
-              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}>
-                <Icon name="refresh" size={16} /> Try again
-              </button>
+      <Panel
+        title="Departments"
+        sub={firstLoad ? 'Loading…' : `${countLabel(shown.length)} of ${countLabel(total)} · open one to manage its HOD, people and status`}
+        bodyClassName={null}
+        toolbar={(
+          <>
+            <SearchBox
+              placeholder="Search by department name or code…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <QuirriSelect
+              ariaLabel="Filter by HOD"
+              value={url.hod}
+              onChange={(e) => setUrl({ hod: e.target.value, page: '1' })}
+              placeholder="Any HOD"
+              options={HOD_FILTERS}
+            />
+            <SegTabs
+              label="Status"
+              options={STATUS_FILTERS}
+              value={url.status}
+              onChange={(v) => setUrl({ status: v, page: '1' })}
+            />
+            {filtered ? (
+              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear</button>
+            ) : null}
+          </>
+        )}
+      >
+        {error ? (
+          <div className="sp-panel-b">
+            {status === 403 ? (
+              <SectionState tone="err" title="You don't have access to departments">
+                Only College Admins can manage departments. If you think this is wrong, ask your Super Admin to check your role.
+              </SectionState>
+            ) : (
+              <SectionState
+                tone="err"
+                title="Could not load departments"
+                action={(
+                  <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}>
+                    <Icon name="refresh" size={16} /> Try again
+                  </button>
+                )}
+              >
+                {apiErrorMessage(error, 'Check your connection and try again.')}
+              </SectionState>
             )}
-          >
-            {apiErrorMessage(error, 'Check your connection and try again.')}
-          </SectionState>
-        )
-      ) : null}
+          </div>
+        ) : null}
 
-      {firstLoad ? <SectionState title="Loading departments…" /> : null}
+        {firstLoad ? <div className="sp-panel-b"><SectionState title="Loading departments…" /></div> : null}
 
-      {!loading && !error && !rows.length ? (
-        searching ? (
-          <SectionState
-            title={`No departments match “${url.q}”`}
-            action={(
-              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setUrl({ q: '', page: '1' })}>
-                Clear search
-              </button>
+        {!loading && !error && !shown.length ? (
+          <div className="sp-panel-b">
+            {searching || url.hod ? (
+              <SectionState
+                title={searching ? `No departments match “${url.q}”` : 'No departments match this filter'}
+                action={(
+                  <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>
+                    Clear filters
+                  </button>
+                )}
+              >
+                Try another name or code, or change the HOD and status filters.
+              </SectionState>
+            ) : url.status === 'false' ? (
+              <SectionState title="No inactive departments">Departments you deactivate appear here and can be restored.</SectionState>
+            ) : (
+              <SectionState
+                title="No departments yet"
+                action={(
+                  <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setCreateOpen(true)}>
+                    <Icon name="plus" size={16} /> Create your first department
+                  </button>
+                )}
+              >
+                Departments organise your staff, students and chapters. Start with one, such as Computer Science.
+              </SectionState>
             )}
-          >
-            Try another name or code, or switch the status filter.
-          </SectionState>
-        ) : url.status === 'false' ? (
-          <SectionState title="No inactive departments">Departments you deactivate appear here and can be restored.</SectionState>
-        ) : (
-          <SectionState
-            title="No departments yet"
-            action={(
-              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setCreateOpen(true)}>
-                <Icon name="plus" size={16} /> Create your first department
-              </button>
-            )}
-          >
-            Departments organise your staff, students and chapters. Start with one, such as Computer Science.
-          </SectionState>
-        )
-      ) : null}
+          </div>
+        ) : null}
 
-      {rows.length ? (
-        <Panel
-          title="Departments"
-          sub={`${countLabel(rows.length)} of ${countLabel(total)} · open one to manage its HOD, people and status`}
-          bodyClassName={null}
-        >
+        {shown.length ? (
           <div className="sp-table-wrap">
             <table className="sp-table un-table ad-stack">
               <thead>
@@ -192,7 +254,7 @@ function DepartmentsList() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((d) => {
+                {shown.map((d) => {
                   const href = departmentPath(d.id);
                   const active = isActiveDept(d);
                   return (
@@ -210,13 +272,7 @@ function DepartmentsList() {
                           </span>
                         </Link>
                       </td>
-                      <td data-label="Head of department">
-                        {d.hod_name || d.hod_user_id ? (
-                          d.hod_name || 'Assigned'
-                        ) : (
-                          <span className="pm-missing"><Icon name="alert" size={14} /> Not assigned</span>
-                        )}
-                      </td>
+                      <td data-label="Head of department"><HodCell hod={hodByDept.get(d.id)} ready={staffReady} /></td>
                       <td data-label="Students" className="num">{countLabel(d.student_count ?? 0)}</td>
                       <td data-label="Status"><StatusPill active={active} /></td>
                       <td className="num pm-go-cell"><span className="pm-row-go" aria-hidden="true"><Icon name="chev" size={18} /></span></td>
@@ -226,17 +282,17 @@ function DepartmentsList() {
               </tbody>
             </table>
           </div>
-        </Panel>
-      ) : null}
+        ) : null}
 
-      <Pager
-        page={page}
-        pageSize={PAGE_SIZE}
-        total={total}
-        shown={rows.length}
-        noun="departments"
-        onPage={(p) => setUrl({ page: String(p) }, { push: true })}
-      />
+        <Pager
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          shown={rows.length}
+          noun="departments"
+          onPage={(p) => setUrl({ page: String(p) }, { push: true })}
+        />
+      </Panel>
 
       <DepartmentFormDrawer
         open={createOpen}
@@ -255,4 +311,3 @@ export default function DepartmentsPage() {
     </Suspense>
   );
 }
-

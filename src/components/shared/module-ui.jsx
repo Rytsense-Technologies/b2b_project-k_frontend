@@ -6,8 +6,10 @@
  * CSS: student-portal.css (.sp-* / .sd-*) + superadmin-universities.css (.un-*) + portal-modules.css (.pm-*),
  * all loaded globally from src/app/layout.js.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useOverlay } from '@/components/superadmin/overlayStack';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Icon, Kpi, SectionState } from '@/components/student/ui';
 import { SearchBox } from '@/components/superadmin/quirri-ui';
 
@@ -25,6 +27,37 @@ export function countLabel(n) {
 /** Module page wrapper — vertical 24px rhythm. */
 export function ModulePage({ className = '', children }) {
   return <div className={`animate-fade-in sp pm-page ${className}`.trim()}>{children}</div>;
+}
+
+/**
+ * Module page head (recipe v2, 14 Oct 2026): the page title already sits in the top bar, so module
+ * pages open with one quiet line — what this page is for, scope / context chips — and the ONE
+ * primary action on the right. The teal hero is kept for dashboards (PortalHero) only.
+ */
+export function ModuleHead({ lede, chips = null, actions = null }) {
+  // Actions only: a compact, right-aligned row instead of a near-empty band.
+  const solo = !lede && !chips;
+  return (
+    <section className={`pm-head${solo ? ' pm-head--solo' : ''}`}>
+      {solo ? null : (
+        <div className="pm-head-copy">
+          {lede ? <p>{lede}</p> : null}
+          {chips ? <div className="pm-head-chips">{chips}</div> : null}
+        </div>
+      )}
+      {actions ? <div className="pm-head-actions">{actions}</div> : null}
+    </section>
+  );
+}
+
+/** Small context chip for ModuleHead (scope, college, read-only…). tone: teal | orange | grey */
+export function HeadChip({ icon, tone = 'teal', children }) {
+  return (
+    <span className={`pm-chip pm-chip--${tone}`}>
+      {icon ? <Icon name={icon} size={14} /> : null}
+      {children}
+    </span>
+  );
 }
 
 /** Teal 500 banner with icon tile, overline, H2, lede, optional chips and ONE primary action. */
@@ -65,8 +98,56 @@ export function FilterBar({ children, label = 'Filters' }) {
 
 /** Segmented control. options: [{ value, label, count? }] */
 export function SegTabs({ options, value, onChange, label = 'Filter' }) {
+  const ref = useRef(null);
+  const [edges, setEdges] = useState({ start: false, end: false });
+
+  // Edge fade tells the user the strip scrolls; the selected tab is kept in view.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const next = { start: el.scrollLeft > 2, end: max - el.scrollLeft > 2 };
+      setEdges((p) => (p.start === next.start && p.end === next.end ? p : next));
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      el.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [options.length]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const tab = el.querySelector('[aria-selected="true"]');
+    if (!tab) return;
+    const r = tab.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    const target = el.scrollLeft + (r.left - box.left) - (el.clientWidth - r.width) / 2;
+    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }, [value]);
+
+  const few = options.length <= 4;
+  // Arrow keys move between segments (tablist pattern); only the selected one is a Tab stop.
+  const onKey = (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const i = Math.max(0, options.findIndex((o) => o.value === value));
+    const next = options[(i + (e.key === 'ArrowRight' ? 1 : options.length - 1)) % options.length];
+    onChange(next.value);
+    requestAnimationFrame(() => ref.current?.querySelector('[aria-selected="true"]')?.focus());
+  };
   return (
-    <div className="sp-tabs un-seg" role="tablist" aria-label={label}>
+    <div
+      ref={ref}
+      className={`sp-tabs un-seg${few ? ' pm-seg--few' : ''}${edges.start ? ' pm-seg--fade-start' : ''}${edges.end ? ' pm-seg--fade-end' : ''}`}
+      role="tablist"
+      aria-label={label}
+      onKeyDown={onKey}
+    >
       {options.map((o) => (
         <button
           key={o.label}
@@ -74,6 +155,7 @@ export function SegTabs({ options, value, onChange, label = 'Filter' }) {
           role="tab"
           className="sp-tab"
           aria-selected={value === o.value}
+          tabIndex={value === o.value || (!options.some((x) => x.value === value) && o === options[0]) ? 0 : -1}
           onClick={() => onChange(o.value)}
         >
           {o.icon ? <Icon name={o.icon} size={16} /> : null}
@@ -99,7 +181,7 @@ export function ViewToggle({ value, onChange }) {
 }
 
 /** White panel with H4 head (title, sub, action) — Prep card. */
-export function Panel({ title, sub, action = null, children, className = '', bodyClassName = 'sp-panel-b' }) {
+export function Panel({ title, sub, action = null, toolbar = null, children, className = '', bodyClassName = 'sp-panel-b' }) {
   return (
     <section className={`sp-panel ${className}`.trim()}>
       {title || action ? (
@@ -111,6 +193,8 @@ export function Panel({ title, sub, action = null, children, className = '', bod
           {action}
         </div>
       ) : null}
+      {/* Filters that belong to this list sit inside its panel, not in a separate band. */}
+      {toolbar ? <div className="pm-panel-tools" role="search">{toolbar}</div> : null}
       {bodyClassName ? <div className={bodyClassName}>{children}</div> : children}
     </section>
   );
@@ -162,17 +246,16 @@ export function InfoList({ items }) {
 
 /** Right-hand detail drawer with Teal hero. Esc and backdrop close. */
 export function DetailDrawer({ open, onClose, eyebrow, title, mono, pills = null, stats = null, footer = null, wide = false, children }) {
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose?.(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  const panelRef = useRef(null);
+  // Read view: focus the close button rather than the first field.
+  useOverlay(open, panelRef, onClose, { initialFocus: '.un-drawer-x' });
 
   if (!open) return null;
   return (
     <div className="un-drawer-wrap" role="presentation" onClick={onClose}>
       <aside
+        ref={panelRef}
+        tabIndex={-1}
         className={`un-drawer${wide ? ' pm-drawer--wide' : ''}`}
         role="dialog"
         aria-modal="true"
@@ -353,7 +436,33 @@ export function RecordHero({ overline, title, mono, muted = false, meta = null, 
 }
 
 /** Accessible underline tabs (role=tablist, arrow keys). tabs: [{ value, label, count? }] */
+// Keep the active tab visible when the strip scrolls (phones).
+function useActiveTabInView(ref, key) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const reveal = () => {
+      if (el.scrollWidth <= el.clientWidth) return;
+      const active = el.querySelector('.tab.active');
+      if (!active) return;
+      const r = active.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      if (r.left >= box.left && r.right <= box.right) return;
+      el.scrollLeft = Math.max(0, el.scrollLeft + (r.left - box.left) - (el.clientWidth - r.width) / 2);
+    };
+    reveal();
+    // Tab counts and fonts arrive after the first paint and change the strip's width.
+    const t1 = setTimeout(reveal, 150);
+    const t2 = setTimeout(reveal, 800);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(reveal) : null;
+    ro?.observe(el);
+    return () => { clearTimeout(t1); clearTimeout(t2); ro?.disconnect(); };
+  }, [ref, key]);
+}
+
 export function TabNav({ tabs, value, onChange, label = 'Sections', idBase = 'tab' }) {
+  const stripRef = useRef(null);
+  useActiveTabInView(stripRef, value);
   const onKey = (e) => {
     const i = tabs.findIndex((t) => t.value === value);
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -364,7 +473,7 @@ export function TabNav({ tabs, value, onChange, label = 'Sections', idBase = 'ta
     }
   };
   return (
-    <div className="tabs pm-tabs" role="tablist" aria-label={label} onKeyDown={onKey}>
+    <div ref={stripRef} className="tabs pm-tabs" role="tablist" aria-label={label} onKeyDown={onKey}>
       {tabs.map((t) => (
         <button
           key={t.value}
@@ -385,6 +494,30 @@ export function TabNav({ tabs, value, onChange, label = 'Sections', idBase = 'ta
   );
 }
 
+/**
+ * Route tabs for modules split into sub-pages (each tab is its own URL).
+ * tabs: [{ href, label, icon?, count?, exact? }]
+ */
+export function ModuleTabs({ tabs, label = 'Module sections' }) {
+  const pathname = usePathname() || '';
+  const stripRef = useRef(null);
+  useActiveTabInView(stripRef, pathname);
+  return (
+    <nav ref={stripRef} className="tabs pm-tabs pm-route-tabs" aria-label={label}>
+      {tabs.map((t) => {
+        const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`);
+        return (
+          <Link key={t.href} href={t.href} className={`tab${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
+            {t.icon ? <Icon name={t.icon} size={16} /> : null}
+            {t.label}
+            {t.count != null ? <span className="ct">{t.count}</span> : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function TabPanel({ value, current, idBase = 'tab', children }) {
   if (value !== current) return null;
   return (
@@ -400,35 +533,14 @@ export function TabPanel({ value, current, idBase = 'tab', children }) {
  */
 export function FormDrawer({ open, onClose, title, description, footer, children, busy = false }) {
   const panelRef = useRef(null);
-  const openerRef = useRef(null);
-  const closeRef = useRef(onClose);
-  const busyRef = useRef(busy);
-  closeRef.current = onClose;
-  busyRef.current = busy;
-
-  useEffect(() => {
-    if (!open) return undefined;
-    openerRef.current = typeof document !== 'undefined' ? document.activeElement : null;
-    const t = setTimeout(() => {
-      const el = panelRef.current?.querySelector('input, select, textarea, button.quirri-dd__trigger');
-      el?.focus();
-    }, 30);
-    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented && !busyRef.current) closeRef.current?.(); };
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-      openerRef.current?.focus?.();
-    };
-  }, [open]);
+  useOverlay(open, panelRef, onClose, { busy });
 
   if (!open) return null;
   return (
     <div className="un-drawer-wrap pm-form-drawer-wrap" role="presentation" onClick={() => { if (!busy) onClose?.(); }}>
       <aside
         ref={panelRef}
+        tabIndex={-1}
         className="un-drawer pm-form-drawer"
         role="dialog"
         aria-modal="true"

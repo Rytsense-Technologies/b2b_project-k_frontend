@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Icon } from '@/components/student/ui';
-import { BAND_LABEL, scoreBandKey } from '@/lib/student/interviewReport';
+import { bandFor } from '@/components/shared/data-viz';
 import { BRAND_ACCENT, BRAND_PRIMARY, PROGRESS } from '@/lib/constants/theme';
 
-const RING_COLOR = { good: PROGRESS, mid: 'white', low: BRAND_ACCENT, none: 'white' };
+const RING_COLOR = { strong: PROGRESS, ok: 'white', focus: BRAND_ACCENT, none: 'white' };
+const BAND_LABEL = { strong: 'Strong', ok: 'On track', focus: 'Needs focus', none: 'Not scored' };
 
 /** Draws a 1200×630 score card (teal, Poppins) and downloads it as PNG. */
 async function downloadScoreCard({ score, role, typeLabel, date, name }) {
@@ -22,7 +23,7 @@ async function downloadScoreCard({ score, role, typeLabel, date, name }) {
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const band = scoreBandKey(score);
+  const band = bandFor(score);
 
   ctx.fillStyle = BRAND_PRIMARY;
   ctx.fillRect(0, 0, W, H);

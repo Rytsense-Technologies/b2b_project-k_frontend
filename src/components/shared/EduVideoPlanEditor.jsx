@@ -397,10 +397,7 @@ export default function EduVideoPlanEditor({
             const detail = apiErrorMessage(legacyErr, '');
             const blockedOnDone = /awaiting review|current status:\s*done/i.test(detail);
             if (blockedOnDone || isNotFoundOrNotAllowed(legacyErr)) {
-              toast.error(
-                'Cannot regenerate finished videos yet — backend needs POST …/regenerate '
-                + '(or allow PUT /plan + submit on DONE). See docs/BACKEND_EDU_VIDEO_REQUEST_CHANGES.md.',
-              );
+              toast.error("This video can't be rebuilt right now. Please try again in a few minutes.");
               return;
             }
             throw legacyErr;
@@ -607,7 +604,7 @@ export default function EduVideoPlanEditor({
             : field.kind === 'bool'
               ? 'Use true or false'
               : field.kind === 'readOnly'
-                ? 'Set by the backend — not editable here'
+                ? 'Set automatically — not editable here'
                 : undefined
         }
       />
@@ -619,7 +616,7 @@ export default function EduVideoPlanEditor({
       open={open}
       onClose={onClose}
       title={job?.chapter_title || plan?.title || 'Edit lesson plan'}
-      crumb={job?.source_filename || (isReviewer ? 'HOD / Faculty review' : 'College Admin edit')}
+      crumb={job?.source_filename || (isReviewer ? 'HOD / Faculty review' : 'Edit slides')}
       wide
       footer={(
         <>
@@ -696,13 +693,7 @@ export default function EduVideoPlanEditor({
                   <b>Edit slides, then regenerate</b>
                   Apply HOD / Faculty feedback (or your own fixes), then choose Save &amp; regenerate.
                   Only fields for this slide’s visual type are shown.
-                  {!legacyEditable ? (
-                    <>
-                      {' '}
-                      Finished videos need <code>POST …/regenerate</code> on the backend first —
-                      see <code>docs/BACKEND_EDU_VIDEO_REQUEST_CHANGES.md</code>.
-                    </>
-                  ) : null}
+                  {!legacyEditable ? ' The video is rebuilt from your edits, which takes a few minutes.' : null}
                 </>
               )}
             </div>

@@ -44,14 +44,14 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
   }, [open, editing, department, reset]);
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || !editing) return undefined;
     let cancelled = false;
     setHodState('loading');
-    loadHodOptions(tenantId)
+    loadHodOptions(tenantId, department)
       .then((opts) => { if (!cancelled) { setHodOptions(opts); setHodState('ready'); } })
       .catch(() => { if (!cancelled) { setHodOptions([]); setHodState('error'); } });
     return () => { cancelled = true; };
-  }, [open, tenantId]);
+  }, [open, tenantId, editing, department]);
 
   useEffect(() => {
     if (!open || focus !== 'hod') return undefined;
@@ -102,7 +102,7 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
       title={editing ? `Edit ${department?.name || 'department'}` : 'New department'}
       description={editing
         ? 'Change the name, code or head of department. Status changes live on the department page.'
-        : 'Add a department to your college. You can assign an HOD now or later.'}
+        : 'Add a department to your college. You can assign its HOD once staff are placed in it.'}
       footer={(
         <>
           <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={saving}>Cancel</button>
@@ -136,6 +136,7 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
             hint="Short code used in lists and reports."
           />
         </FormSection>
+        {editing ? (
         <FormSection n={2} title="Head of department" sub="Optional. The HOD reviews this department's chapters before students see them.">
           <Controller
             control={control}
@@ -152,13 +153,25 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
                 disabled={hodState === 'loading'}
                 placeholder={hodState === 'loading' ? 'Loading staff…' : 'Optional — type to search'}
                 options={hodOptions}
-                emptyMessage="No active faculty or HOD accounts yet — add them in Staff & HOD"
-                hint={hodState === 'error' ? 'Could not load staff. You can assign an HOD later.' : 'Only active faculty and HOD accounts in your college are listed.'}
+                emptyMessage={`Nobody is placed in ${department?.name || 'this department'} yet`}
+                hint={hodState === 'error'
+                  ? 'Could not load staff. You can assign an HOD later.'
+                  : hodState === 'ready' && hodOptions.length === 0
+                    ? `Nobody is placed in ${department?.name || 'this department'} yet. Add staff in Staff & HOD and choose this department, then pick the HOD here.`
+                    : `Only active staff placed in ${department?.name || 'this department'} are listed.`}
                 full
               />
             )}
           />
         </FormSection>
+        ) : (
+          <FormSection n={2} title="Head of department" sub="Assign the HOD after the department exists.">
+            <p className="ad-muted">
+              An HOD must belong to the department. Create it first, place staff in it from Staff &amp; HOD,
+              then open the department and choose Assign HOD.
+            </p>
+          </FormSection>
+        )}
         {hasErrors ? (
           <p className="pm-form-error" role="alert">Check the highlighted fields and try again.</p>
         ) : null}

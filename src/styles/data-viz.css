@@ -1,0 +1,231 @@
+/* ==========================================================================
+   Quirri — data visuals (design-system.md §0c, owner decision 14 Oct 2026)
+   Data may use the categorical set on every chart, bar list, distribution,
+   score band and ranking. Buttons, status pills and navigation stay teal + orange.
+   Components: src/components/shared/data-viz.jsx
+   ========================================================================== */
+
+:root{
+  --band-strong:#5CB414; --band-strong-soft:#EEF7E6; --band-strong-text:#46921A;
+  --band-ok:#2C74E0;     --band-ok-soft:#E9F1FC;     --band-ok-text:#2C74E0;
+  --band-focus:#F5821F;  --band-focus-soft:#FEF0E3;  --band-focus-text:var(--accent-text);
+  --band-none:#BCC1C3;   --band-none-soft:#F1F2F3;   --band-none-text:#536064;
+  --rank-1:#F5821F; --rank-2:#2C74E0; --rank-3:#6C3CD8;
+}
+
+.dv-empty{margin:0;padding:12px 0;color:var(--muted);font-size:13px}
+
+/* ---------- Legend ---------- */
+.dv-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;padding:0;list-style:none;font-size:12px;color:var(--ink-2)}
+.dv-legend li{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.dv-legend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.dv-legend b{font-weight:500;color:var(--ink);margin-left:2px}
+.dv-legend--col{flex-direction:column;gap:8px}
+.dv-legend--col li{justify-content:flex-start}
+
+/* ---------- Bar list ---------- */
+.dv-bars{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+.dv-bar-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;min-width:0}
+.dv-bar-l{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;color:var(--ink)}
+.dv-bar-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dv-bar-name a{color:inherit;text-decoration:none}
+.dv-bar-name a:hover{color:var(--teal-500);text-decoration:underline}
+.dv-bar-l small{color:var(--muted);font-size:12px;white-space:nowrap}
+.dv-bar-v{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dv-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.dv-track{display:block;height:8px;border-radius:999px;background:var(--neutral-100,#EEF0F0);overflow:hidden}
+.dv-track > span{display:block;height:100%;border-radius:inherit;transition:width .4s ease}
+
+/* ---------- Rank list ---------- */
+.dv-rank{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.dv-rank li{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-card);background:var(--surface-tint)}
+.dv-rank-n{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;font-size:13px;font-weight:700;color:#fff;background:var(--teal-500)}
+.dv-rank-n--r1{background:var(--rank-1)}
+.dv-rank-n--r2{background:var(--rank-2)}
+.dv-rank-n--r3{background:var(--rank-3)}
+.dv-rank-n--rn{background:var(--teal-50);color:var(--teal-500)}
+.dv-rank-who{display:grid;min-width:0}
+.dv-rank-who b{font-size:14px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dv-rank-who b a{color:inherit;text-decoration:none}
+.dv-rank-who b a:hover{color:var(--teal-500);text-decoration:underline}
+.dv-rank-who small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dv-rank-v{font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---------- Score band pill ---------- */
+.dv-band{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--radius-control);font-size:12px;font-weight:500;white-space:nowrap}
+.dv-band--strong{background:var(--band-strong-soft);color:var(--band-strong-text)}
+.dv-band--ok{background:var(--band-ok-soft);color:var(--band-ok-text)}
+.dv-band--focus{background:var(--band-focus-soft);color:var(--band-focus-text)}
+.dv-band--none{background:var(--band-none-soft);color:var(--band-none-text)}
+
+/* ---------- Distribution ---------- */
+.dv-dist-bar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--neutral-100,#EEF0F0);gap:2px}
+.dv-dist-bar > span{display:block;height:100%;min-width:4px}
+
+/* ---------- Charts ---------- */
+.dv-chart{position:relative;width:100%;min-width:0}
+.dv-chart .recharts-surface{overflow:visible}
+.dv-tip{display:grid;gap:4px;padding:8px 10px;border-radius:var(--radius-control);background:var(--ink);color:#fff;font-size:12px;box-shadow:var(--shadow-card)}
+.dv-tip b{font-weight:500}
+.dv-tip span{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.86)}
+.dv-tip i{width:8px;height:8px;border-radius:2px}
+.dv-donut{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.dv-donut-c{position:relative;flex:0 0 auto}
+.dv-donut-t{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
+.dv-donut-t b{font-size:22px;font-weight:700;color:var(--ink);line-height:1.1}
+.dv-donut-t small{font-size:12px;color:var(--muted)}
+.dv-donut .dv-legend{margin:0;flex:1 1 140px}
+
+/* ---------- Meter ---------- */
+.dv-meter{display:inline-flex;align-items:center;gap:8px;min-width:120px}
+.dv-meter .dv-track{flex:1 1 auto;height:6px}
+.dv-meter b{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+
+/* ---------- KPI tiles: a little colour (categorical icon tiles, cycled; overrides the teal/orange alternation) ---------- */
+.sd-kpis > :nth-child(6n+1) .sd-kpi-h .sd-i{background:var(--cat-1-soft);color:var(--cat-1);stroke:var(--cat-1)}
+.sd-kpis > :nth-child(6n+2) .sd-kpi-h .sd-i{background:var(--cat-2-soft);color:var(--cat-2-text);stroke:var(--cat-2-text)}
+.sd-kpis > :nth-child(6n+3) .sd-kpi-h .sd-i{background:var(--cat-3-soft);color:var(--cat-3);stroke:var(--cat-3)}
+.sd-kpis > :nth-child(6n+4) .sd-kpi-h .sd-i{background:var(--cat-4-soft);color:var(--cat-4);stroke:var(--cat-4)}
+.sd-kpis > :nth-child(6n+5) .sd-kpi-h .sd-i{background:var(--cat-5-soft);color:var(--cat-5-text);stroke:var(--cat-5-text)}
+.sd-kpis > :nth-child(6n+6) .sd-kpi-h .sd-i{background:var(--cat-6-soft);color:var(--cat-6);stroke:var(--cat-6)}
+
+.stats > .stat:nth-child(6n+1) .k svg{background:var(--cat-1-soft);color:var(--cat-1);stroke:var(--cat-1)}
+.stats > .stat:nth-child(6n+2) .k svg{background:var(--cat-2-soft);color:var(--cat-2-text);stroke:var(--cat-2-text)}
+.stats > .stat:nth-child(6n+3) .k svg{background:var(--cat-3-soft);color:var(--cat-3);stroke:var(--cat-3)}
+.stats > .stat:nth-child(6n+4) .k svg{background:var(--cat-4-soft);color:var(--cat-4);stroke:var(--cat-4)}
+.stats > .stat:nth-child(6n+5) .k svg{background:var(--cat-5-soft);color:var(--cat-5-text);stroke:var(--cat-5-text)}
+.stats > .stat:nth-child(6n+6) .k svg{background:var(--cat-6-soft);color:var(--cat-6);stroke:var(--cat-6)}
+
+/* ---------- Two-column analytics grid ---------- */
+.dv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dv-grid--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dv-grid > .dv-span-2{grid-column:span 2}
+@media (max-width:1024px){
+  .dv-grid--3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:768px){
+  .dv-grid,.dv-grid--3{grid-template-columns:minmax(0,1fr)}
+  .dv-grid > .dv-span-2{grid-column:auto}
+  .dv-rank li{grid-template-columns:28px minmax(0,1fr) auto;gap:10px}
+  .dv-rank li .dv-band{display:none}
+  .dv-rank-n{width:28px;height:28px;font-size:12px}
+  .dv-donut{justify-content:center}
+}
+
+/* ---------- Route tabs (ModuleTabs) ---------- */
+.pm-route-tabs{margin-bottom:0;scrollbar-width:none}
+.pm-route-tabs::-webkit-scrollbar{display:none}
+.pm-route-tabs a.tab{display:inline-flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap}
+.pm-route-tabs a.tab .sd-i{color:currentColor}
+.pm-route-tabs a.tab.active{color:var(--teal-500)}
+
+/* ---------- Module head (recipe v2) ---------- */
+.pm-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;min-width:0}
+.pm-head-copy{display:grid;gap:8px;min-width:0;flex:1 1 320px}
+.pm-head-copy p{margin:0;font-size:14px;line-height:1.5;color:var(--ink-2);max-width:760px}
+.pm-head-chips{display:flex;flex-wrap:wrap;gap:8px}
+.pm-head-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.pm-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--radius-control);font-size:12px;font-weight:500;white-space:nowrap}
+.pm-chip--teal{background:var(--teal-50);color:var(--teal-500)}
+.pm-chip--orange{background:var(--accent-soft);color:var(--accent-text)}
+.pm-chip--grey{background:var(--neutral-50);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+@media (max-width:768px){
+  .pm-head{align-items:stretch}
+  .pm-head-actions{width:100%}
+  .pm-head-actions > .sd-btn{flex:1 1 auto;justify-content:center}
+}
+
+/* ---------- Filters inside a panel ---------- */
+.pm-panel-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:12px 18px;border-bottom:1px solid var(--line-soft,var(--line));background:var(--neutral-50)}
+.pm-panel-tools > *{min-width:0}
+.pm-panel-tools .sd-search,.pm-panel-tools .un-search{flex:1 1 240px}
+@media (max-width:768px){
+  .pm-panel-tools{padding:12px}
+  .pm-panel-tools > *{flex:1 1 100%}
+}
+
+/* ---------- Shared in-panel search (all portals) ---------- */
+.pm-panel-tools .search{position:relative;flex:1 1 240px;min-width:0;max-width:420px}
+.pm-panel-tools .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--teal-500);pointer-events:none}
+.pm-panel-tools .search input{width:100%;padding-left:42px;min-height:44px;background:#fff;border:1px solid var(--neutral-300);border-radius:var(--radius-control);font:inherit;font-size:14px;color:var(--ink)}
+.pm-panel-tools .search input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
+@media (max-width:768px){ .pm-panel-tools .search{max-width:none} }
+
+/* ---------- Tab strips: scroll hint on small screens ---------- */
+@media (max-width:768px){
+  .tabs.pm-tabs{
+    background:
+      linear-gradient(90deg,var(--canvas) 30%,rgba(238,240,240,0)) left / 28px 100% no-repeat local,
+      linear-gradient(270deg,var(--canvas) 30%,rgba(238,240,240,0)) right / 28px 100% no-repeat local,
+      linear-gradient(90deg,rgba(16,34,40,.10),rgba(16,34,40,0)) left / 12px 100% no-repeat scroll,
+      linear-gradient(270deg,rgba(16,34,40,.10),rgba(16,34,40,0)) right / 12px 100% no-repeat scroll;
+  }
+}
+
+/* ---------- Selects inside a panel toolbar ---------- */
+.pm-panel-tools .quirri-dd{flex:0 1 220px;min-width:160px}
+@media (max-width:768px){ .pm-panel-tools .quirri-dd{flex:1 1 100%;min-width:0} }
+
+/* ModuleHead with actions only: right-aligned, tucked under the top bar */
+.pm-head--solo{justify-content:flex-end;margin-bottom:-8px}
+@media (max-width:768px){ .pm-head--solo{margin-bottom:0} }
+
+/* ---------- Touch targets (§7: 44px on touch screens) ---------- */
+@media (pointer:coarse), (max-width:768px){
+  .sd-btn--sm,
+  .sp-tab,
+  .tabs .tab,
+  .pm-panel-tools .quirri-dd__trigger,
+  .dv-legend + .sd-btn{min-height:44px}
+  .sd-btn--sm{padding-left:14px;padding-right:14px}
+}
+
+/* Touch targets, round 2 (HOD verifier H7): icon buttons, inline links, sidebar items */
+@media (pointer:coarse), (max-width:768px){
+  .un-icon-btn,.modal-x,.un-drawer-x,.q-menu-btn,.mobile-nav-btn{min-width:44px;min-height:44px}
+  .sp-link,.dv-bar-name a,.dv-rank-who b a{display:inline-flex;align-items:center;min-height:44px}
+  .nav a{min-height:44px}
+}
+
+/* Sidebar identity skeleton while the profile loads (RolePortalSidebar) */
+.rps-sk{background:linear-gradient(90deg,var(--neutral-100,#EEF0F0),#F6F7F7,var(--neutral-100,#EEF0F0));background-size:200% 100%;animation:rps-sk 1.2s ease-in-out infinite;color:transparent}
+.rps-sk--line{display:block;height:10px;width:110px;border-radius:4px;margin:3px 0}
+.rps-sk--short{width:70px}
+@keyframes rps-sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.rps-sk{animation:none}}
+@media (pointer:coarse), (max-width:768px){
+  .q-nav-btn,.side-foot .logout{min-width:44px;min-height:44px}
+  .sp-panel-h a,.sp-panel-h .sp-link{display:inline-flex;align-items:center;min-height:44px}
+}
+
+/* Segmented chips that set a fixed height in portal CSS */
+@media (pointer:coarse), (max-width:768px){
+  .un-seg .sp-tab,.sp-tabs .sp-tab,.pm-chip-toggle,.sa-chip,.cs-tech-toggle{min-height:44px;height:auto}
+}
+
+/* Route loading fallback inside portal layouts (Suspense) */
+.pm-route-loading{padding:24px 0;color:var(--muted);font-size:14px}
+
+/* Final-check fixes: Super Admin toggle chips on phones; Academics filter selects at desktop */
+@media (pointer:coarse), (max-width:768px){
+  .sa-chip-toggle{min-height:44px}
+}
+.as-page .pm-panel-tools .quirri-dd,.as-filters .quirri-dd{flex:1 1 400px;min-width:300px;max-width:460px}
+@media (max-width:768px){ .as-page .pm-panel-tools .quirri-dd,.as-filters .quirri-dd{flex:1 1 100%;min-width:0;max-width:none} }
+
+/* Phone top bar: title block stays left-aligned and full width (drawer-shell rule centred short titles) */
+@media (max-width:860px){
+  .q-drawer-shell .topbar > div:not(.pm-topbar-actions){flex:1 1 auto}
+}
+@media (max-width:760px){
+  .q-drawer-shell .topbar.pm-topbar{align-items:stretch}
+}
+
+/* Touch targets, final: portal stylesheets load after this file (student layout), so the
+   44px minimum is enforced here regardless of cascade order. Phones and touch screens only. */
+@media (pointer:coarse), (max-width:768px){
+  .sd-btn,.sd-btn--sm,.sl-linkbtn,.sp-link,.sp-tab,.tabs .tab,.un-icon-btn,.q-nav-btn,.side-foot .logout,
+  .sa-chip-toggle,.fa-toggle,.fa-row-btn,.fa-subj-toggle{min-height:44px !important}
+  .sl-linkbtn,.sp-link{display:inline-flex;align-items:center}
+  .q-nav-btn,.side-foot .logout,.un-icon-btn{min-width:44px !important}
+}

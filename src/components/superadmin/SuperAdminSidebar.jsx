@@ -165,6 +165,7 @@ export default function SuperAdminSidebar() {
   }, [sidebarOpen, hideTip]);
 
   const u = sessionUIReady ? user : null;
+  const pending = !u;
   const displayName = u?.name?.trim() || u?.first_name || 'Super Admin';
   const displayEmail = u?.email || '';
   const initials = getInitials(u?.name, u?.email);
@@ -254,10 +255,10 @@ export default function SuperAdminSidebar() {
             ? tipHandlers(`${displayName} · ${displayEmail}`, 'right')
             : {})}
         >
-          <div className="av">{initials}</div>
+          <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
           <div className="who-meta">
-            <div className="n">{displayName}</div>
-            <div className="r">{displayEmail}</div>
+            <div className="n">{pending ? <span className="rps-sk rps-sk--line" aria-hidden="true" /> : displayName}</div>
+            <div className="r">{pending ? <span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /> : displayEmail}</div>
           </div>
           <button
             type="button"

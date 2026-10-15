@@ -32,20 +32,23 @@ export function formatDateTime(iso) {
   return `${date} · ${time.toUpperCase()}`;
 }
 
+/** Group label for lectures not linked to an academic-structure Subject (never a fake subject). */
+export const OTHER_LECTURES = 'Other lectures';
+
 /**
  * A chapter's subject: the academic-structure Subject when the chapter is
  * tagged to one (SOW §6.4.1 Programme > Semester > Subject > Chapter),
- * otherwise the department as a catch-all for untagged lectures.
+ * otherwise one "Other lectures" group (keyed by department) for untagged lectures.
  */
 export function subjectKey(job) {
   if (job?.subject_id) return `subject:${job.subject_id}`;
   return String(job?.department_id || job?.department_name || 'my-lectures');
 }
 
-export function subjectMeta(job, fallbackName) {
+export function subjectMeta(job) {
   if (job?.subject_id) {
     return {
-      name: job.subject_name,
+      name: job.subject_name || OTHER_LECTURES,
       code: job.subject_code || subjectCode(job.subject_name),
       semester: job.semester_name || null,
       semesterNumber: Number(job.semester_number) || 0,
@@ -53,8 +56,20 @@ export function subjectMeta(job, fallbackName) {
       linked: true,
     };
   }
-  const name = job?.department_name || fallbackName || 'Video lectures';
-  return { name, code: subjectCode(name), semester: null, semesterNumber: 999, program: null, linked: false };
+  return { name: OTHER_LECTURES, code: null, semester: null, semesterNumber: 999, program: null, linked: false };
+}
+
+/** Subject name to show next to a chapter (S1): the linked Subject, never the department. */
+export function subjectName(job) {
+  return subjectMeta(job).name;
+}
+
+/** "siva prakasham m" → "Siva Prakasham M"; job roles too ("frontend developer" → "Frontend Developer"). */
+export function titleCase(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/(^|[\s\-/(])([a-z])/g, (m, pre, ch) => pre + ch.toUpperCase());
 }
 
 export function subjectCode(name) {
@@ -77,12 +92,12 @@ function chapterOrder(a, b) {
  * Group published chapters into subjects, ordered by semester then name;
  * untagged lectures (no academic-structure chapter) come last.
  */
-export function buildSubjects(videos, fallbackName) {
+export function buildSubjects(videos) {
   const map = new Map();
   (videos || []).forEach((job) => {
     if (!job?.job_id) return;
     const key = subjectKey(job);
-    if (!map.has(key)) map.set(key, { key, ...subjectMeta(job, fallbackName), chapters: [] });
+    if (!map.has(key)) map.set(key, { key, ...subjectMeta(job), chapters: [] });
     map.get(key).chapters.push(job);
   });
   return Array.from(map.values())
@@ -104,15 +119,6 @@ export function assessmentHref(job, subject, extra = {}) {
   if (subject) qs.set('subject', subject);
   Object.entries(extra).forEach(([k, v]) => { if (v) qs.set(k, v); });
   return `/student/assessment?${qs.toString()}`;
-}
-
-export function scoreTone(score) {
-  if (score == null || score === '') return 'none';
-  const n = Number(score);
-  if (!Number.isFinite(n)) return 'none';
-  if (n >= 75) return 'good';
-  if (n >= 50) return 'mid';
-  return 'low';
 }
 
 export function pct(n, digits = 0) {

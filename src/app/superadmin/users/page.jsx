@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
@@ -10,12 +10,11 @@ import StudentPlacementModal from '@/components/shared/StudentPlacementModal';
 import { QuirriRHFField, QuirriSelect } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage,
-  ModuleBanner,
-  KpiRow,
-  FilterBar,
+  ModuleHead,
+  TabNav,
+  TabPanel,
   SegTabs,
   Panel,
-  IconButton,
   InfoList,
   DetailDrawer,
   DrawerSection,
@@ -28,6 +27,10 @@ import {
   initials,
   countLabel,
 } from '@/components/shared/module-ui';
+import { Distribution } from '@/components/shared/data-viz';
+import RowMenu from '@/components/superadmin/RowMenu';
+import { useUrlState, useTabParam } from '@/hooks/useUrlState';
+import { useDebouncedUrlSearch, pageParam } from '@/lib/superadmin/listState';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, asList, apiErrorMessage } from '@/lib/api/superadmin/http';
@@ -35,6 +38,8 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { ROLES } from '@/lib/permissions';
 import { platformUserCreateSchema } from '@/lib/validation';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
+import { useAuth } from '@/hooks/useAuth';
+import { formatDateTime, formatIndianPhone, collegeOptionLabel } from '@/lib/superadmin/format';
 
 const ROLE_OPTIONS = [
   { value: '', label: 'All roles' },
@@ -94,10 +99,24 @@ function userStatusLabel(user) {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
-function roleTone(role) {
-  const r = String(role || '').toLowerCase();
-  if (r.includes('super') || r.includes('college') || r === 'admin' || r === 'hod') return 'sp-pill--teal';
-  return '';
+/** Role is a category, so it may use the categorical set (redesign spec, superadmin.md §6). */
+const ROLE_COLOR = {
+  [ROLES.SUPERADMIN]: 'var(--cat-4)',
+  [ROLES.COLLEGE_ADMIN]: 'var(--cat-1)',
+  [ROLES.HOD]: 'var(--cat-5)',
+  [ROLES.FACULTY]: 'var(--cat-2)',
+  [ROLES.STUDENT]: 'var(--cat-6)',
+};
+const ROLE_CLASS = {
+  [ROLES.SUPERADMIN]: 'c4',
+  [ROLES.COLLEGE_ADMIN]: 'c1',
+  [ROLES.HOD]: 'c5',
+  [ROLES.FACULTY]: 'c2',
+  [ROLES.STUDENT]: 'c6',
+};
+
+function RolePill({ role }) {
+  return <span className={`sa-role sa-role--${ROLE_CLASS[role] || 'none'}`}>{roleLabel(role)}</span>;
 }
 
 function roleLabel(role) {
@@ -126,8 +145,10 @@ function institutionOf(user) {
 }
 
 function lastActive(user) {
-  return user?.last_active || user?.last_login || user?.updated_at || 'Never';
+  return formatDateTime(user?.last_login_at, 'Never');
 }
+
+const SELF_REASON = 'This is your own account. Another Super Admin must change its role or deactivate it.';
 
 function UserStatus({ user }) {
   return (
@@ -144,7 +165,8 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
     control,
     handleSubmit,
     setValue,
-    formState: { errors },
+    clearErrors,
+    formState: { errors, submitCount },
   } = useForm({
     resolver: zodResolver(platformUserCreateSchema),
     defaultValues: {
@@ -179,6 +201,8 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
     [deptData],
   );
   useEffect(() => { setValue('department_id', ''); }, [collegeId, setValue]);
+  // Switching role hides fields whose errors would otherwise keep the summary line up.
+  useEffect(() => { clearErrors(); }, [selectedRole, clearErrors]);
 
   const onCreate = handleSubmit(async (values) => {
     setActing(true);
@@ -290,7 +314,7 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
                   placeholder="Select institution"
                   error={fieldState.error?.message}
                   hint="Required for College Admin, HOD, Faculty, and Student. Optional for Super Admin."
-                  options={colleges.map((c) => ({ value: c.id, label: c.name }))}
+                  options={colleges.filter((c) => c.is_active !== false).map((c, _i, all) => ({ value: c.id, label: collegeOptionLabel(c, all) }))}
                 />
               )}
             />
@@ -344,7 +368,7 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
                 control={control}
                 name="course_duration_years"
                 fieldType="positiveInt"
-                label="Program duration (years)"
+                label="Programme duration (years)"
                 placeholder="e.g. 4"
                 hint="Optional — e.g. 3 for Arts, 4 for BTech."
               />
@@ -354,7 +378,7 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
                 fieldType="positiveInt"
                 label="Current year of study"
                 placeholder="e.g. 2"
-                hint="Cannot exceed program duration when both are set."
+                hint="Cannot exceed programme duration when both are set."
               />
             </div>
           </FormSection>
@@ -383,7 +407,7 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
           </FormSection>
         ) : null}
 
-        {Object.keys(errors).length > 0 ? (
+        {submitCount > 0 && Object.keys(errors).length > 0 ? (
           <div className="hint field-error" role="alert">
             Check the highlighted fields and try again.
           </div>
@@ -425,7 +449,7 @@ function StatusConfirm({ user, busy, onCancel, onConfirm }) {
     >
       <ConfirmNote
         danger={deactivating}
-        title={deactivating ? 'This is a soft delete.' : 'The user can sign in again.'}
+        title={deactivating ? 'Nothing is deleted.' : 'The user can sign in again.'}
       >
         {deactivating
           ? `${name} can no longer sign in. Their records are kept and you can reactivate the account at any time.`
@@ -436,7 +460,7 @@ function StatusConfirm({ user, busy, onCancel, onConfirm }) {
 }
 
 /* -------------------------------------------------------------- drawer */
-function UserDrawer({ user, acting, onClose, onResend, onToggle, onChangeRole, onPlacement }) {
+function UserDrawer({ user, isSelf, acting, onClose, onResend, onRevoke, onToggle, onChangeRole, onPlacement }) {
   if (!user) return null;
   const name = displayName(user);
   const pending = isPending(user);
@@ -445,9 +469,14 @@ function UserDrawer({ user, acting, onClose, onResend, onToggle, onChangeRole, o
   let footer;
   if (pending) {
     footer = (
-      <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={() => onResend(user)} disabled={acting}>
-        <Icon name="send" size={16} /> Resend invite
-      </button>
+      <>
+        <button type="button" className="sd-btn sd-btn--danger sd-btn--sm" onClick={() => onRevoke(user)} disabled={acting || isSelf}>
+          Cancel invite
+        </button>
+        <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={() => onResend(user)} disabled={acting}>
+          <Icon name="send" size={16} /> Resend invite
+        </button>
+      </>
     );
   } else if (deactivated) {
     footer = (
@@ -455,6 +484,9 @@ function UserDrawer({ user, acting, onClose, onResend, onToggle, onChangeRole, o
         <Icon name="refresh" size={16} /> Reactivate
       </button>
     );
+  } else if (isSelf) {
+    // Own account: no role / deactivate actions (the API refuses both); the Access section says why.
+    footer = null;
   } else {
     footer = (
       <>
@@ -497,7 +529,7 @@ function UserDrawer({ user, acting, onClose, onResend, onToggle, onChangeRole, o
         <InfoList
           items={[
             { label: 'Email', value: user.email, full: true },
-            { label: 'Phone', value: user.phone_number || user.phone },
+            { label: 'Phone', value: formatIndianPhone(user.phone_number || user.phone) || null },
             { label: 'Role', value: roleLabel(user.role) },
             { label: 'Institution', value: institutionOf(user) },
             { label: 'Department', value: user.department || user.department_name },
@@ -521,8 +553,8 @@ function UserDrawer({ user, acting, onClose, onResend, onToggle, onChangeRole, o
             The user cannot sign in. Reactivate to restore access with the same role.
           </SectionState>
         ) : (
-          <SectionState title="Signed up and active">
-            Role changes are guarded — an admin cannot raise a user above their own role.
+          <SectionState title={isSelf ? 'Your account' : 'Signed up and active'}>
+            {isSelf ? SELF_REASON : 'Role changes are guarded — an admin cannot raise a user above their own role.'}
           </SectionState>
         )}
       </DrawerSection>
@@ -531,12 +563,51 @@ function UserDrawer({ user, acting, onClose, onResend, onToggle, onChangeRole, o
 }
 
 /* ---------------------------------------------------------------- page */
-export default function UsersPage() {
-  const [search, setSearch] = useState('');
-  const [role, setRole] = useState('');
-  const [status, setStatus] = useState('');
-  const [institution, setInstitution] = useState('');
-  const [page, setPage] = useState(1);
+const STAFF_ROLES = [ROLES.COLLEGE_ADMIN, ROLES.HOD, ROLES.FACULTY];
+
+/** Module tabs: each one is the same table with a role / status preset. */
+const TABS = [
+  { value: 'all', label: 'All users' },
+  { value: 'students', label: 'Students' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'superadmins', label: 'Super Admins' },
+  { value: 'pending', label: 'Pending invites' },
+];
+const TAB_KEYS = TABS.map((t) => t.value);
+
+/**
+ * One call with include_counts=true: counts_by_role and counts_by_status for the caller's scope
+ * plus the institution / department / search filters (role and status filters are ignored).
+ */
+async function loadUserCounts({ q, institution, department }) {
+  const res = unwrap(await usersApi.getUsers({
+    page: 1, pageSize: 1, includeCounts: true, search: q, tenantId: institution, departmentId: department,
+  }));
+  const byRole = res?.counts_by_role || {};
+  const byStatus = res?.counts_by_status || {};
+  const roles = Object.fromEntries(Object.values(ROLES).map((r) => [r, Number(byRole[r]) || 0]));
+  // The Super Admins tab ignores institution / department (Super Admins have none), so its badge
+  // is counted the same way: platform-wide, search only.
+  let superadminsTab = roles[ROLES.SUPERADMIN];
+  if (institution || department) {
+    const sa = unwrap(await usersApi.getUsers({ page: 1, pageSize: 1, role: ROLES.SUPERADMIN, search: q }));
+    superadminsTab = typeof sa?.total === 'number' ? sa.total : null;
+  }
+  return {
+    superadminsTab,
+    all: Object.values(byRole).reduce((a, n) => a + (Number(n) || 0), 0),
+    active: Number(byStatus.active) || 0,
+    pending: Number(byStatus.pending_activation) || 0,
+    deactivated: Number(byStatus.deactivated) || 0,
+    roles,
+  };
+}
+
+function UsersView() {
+  const [tab] = useTabParam(TAB_KEYS, 'all');
+  const [url, setUrl] = useUrlState({ q: '', role: '', institution: '', department: '', status: '', page: '1' });
+  const page = pageParam(url.page);
+  const [search, setSearch] = useDebouncedUrlSearch(url.q, (q) => setUrl({ q, page: '1' }));
   const [createOpen, setCreateOpen] = useState(false);
   const [roleModal, setRoleModal] = useState(null);
   const [newRole, setNewRole] = useState('');
@@ -544,57 +615,88 @@ export default function UsersPage() {
   const [drawerUser, setDrawerUser] = useState(null);
   const [placementUser, setPlacementUser] = useState(null);
   const [confirmUser, setConfirmUser] = useState(null);
+  const [revokeUser, setRevokeUser] = useState(null);
   const { TipLayer } = useQuirriTip();
+  const { user: me } = useAuth();
+  const isSelf = useCallback((u) => Boolean(me?.id && u?.id && String(me.id) === String(u.id)), [me?.id]);
 
   const { data: collegeData } = useAsyncResource(
-    () => fetchData(() => collegesApi.list({})),
+    () => fetchData(() => collegesApi.list({ pageSize: 100 })),
     [],
   );
   const colleges = useMemo(() => asList(collegeData, []), [collegeData]);
+  const collegeById = useMemo(() => new Map(colleges.map((c) => [String(c.id), c])), [colleges]);
 
-  const listKey = useMemo(
-    () => ({ search, role, status, institution, page }),
-    [search, role, status, institution, page],
+  const { data: deptData } = useAsyncResource(
+    () => (url.institution
+      ? fetchData(() => departmentsApi.list({ college_id: url.institution, pageSize: 100 }))
+      : Promise.resolve(null)),
+    [url.institution],
   );
+  const departments = useMemo(() => asList(deptData, []), [deptData]);
 
-  const { data, loading, error, reload } = useAsyncResource(async () => {
-    const res = await usersApi.getUsers({
+  const { data: counts, reload: reloadCounts } = useAsyncResource(
+    () => loadUserCounts({ q: url.q, institution: url.institution, department: url.department }),
+    [url.q, url.institution, url.department],
+  );
+  const countScope = url.q || url.institution || url.department ? 'Matching search and institution' : 'Platform totals';
+
+  // Role / status presets per tab; the role select narrows within All and Staff.
+  const roleOptions = tab === 'staff'
+    ? [{ value: '', label: 'All staff roles' }, ...ROLE_OPTIONS.filter((o) => STAFF_ROLES.includes(o.value))]
+    : ROLE_OPTIONS;
+  const roleChoice = roleOptions.some((o) => o.value === url.role) ? url.role : '';
+  const query = useMemo(() => {
+    let role = roleChoice;
+    if (tab === 'students') role = ROLES.STUDENT;
+    else if (tab === 'superadmins') role = ROLES.SUPERADMIN;
+    else if (tab === 'staff' && !role) role = STAFF_ROLES.join(',');
+    else if (tab === 'pending') role = roleChoice;
+    return {
       page,
       pageSize: PAGE_SIZE,
-      search,
+      search: url.q,
       role,
-      status,
-      tenantId: institution,
-    });
-    return unwrap(res);
-  }, [listKey]);
+      status: tab === 'pending' ? 'pending' : url.status,
+      tenantId: tab === 'superadmins' ? '' : url.institution,
+      departmentId: tab === 'superadmins' ? '' : url.department,
+    };
+  }, [tab, roleChoice, page, url.q, url.status, url.institution, url.department]);
+
+  const { data, loading, error, reload } = useAsyncResource(
+    async () => unwrap(await usersApi.getUsers(query)),
+    [query],
+  );
 
   const users = useMemo(
     () => (Array.isArray(data) ? data : asList(data?.users || data, [])),
     [data],
   );
-
   const total = data?.total ?? users.length;
-  const pageSize = data?.page_size ?? PAGE_SIZE;
-  const filtered = Boolean(search || role || status || institution);
-  const listedAll = users.length >= total;
-  const scopeNote = listedAll ? 'In this list' : 'On this page';
+  const filtersOn = Boolean(url.q || roleChoice || url.status || url.institution || url.department);
 
-  const summary = useMemo(() => {
-    const out = { active: 0, pending: 0, deactivated: 0, roles: {} };
-    users.forEach((u) => {
-      if (isDeactivated(u)) out.deactivated += 1;
-      else if (isPending(u)) out.pending += 1;
-      else out.active += 1;
-      const key = u.role || 'other';
-      out.roles[key] = (out.roles[key] || 0) + 1;
-    });
-    return out;
-  }, [users]);
+  const refresh = async () => {
+    await reload();
+    reloadCounts().catch(() => {});
+  };
 
-  const roleChips = CREATE_ROLES
-    .filter((r) => summary.roles[r.value])
-    .map((r) => ({ label: r.label, count: summary.roles[r.value] }));
+  // One URL write: the tab plus a reset of the role / status presets (search and institution stay).
+  const changeTab = (v) => {
+    setUrl({ tab: v === 'all' ? null : v, role: '', status: '', page: '1' }, { push: true });
+  };
+
+  const institutionCell = (u) => {
+    const c = u?.tenant_id ? collegeById.get(String(u.tenant_id)) : null;
+    if (c) {
+      return (
+        <span className="sa-inst">
+          <span>{c.name}</span>
+          <small>{[c.code, c.is_active === false ? 'inactive' : null].filter(Boolean).join(' · ')}</small>
+        </span>
+      );
+    }
+    return institutionOf(u) || <span className="sa-muted">Platform</span>;
+  };
 
   const handleToggleStatus = async (user) => {
     setActing(true);
@@ -606,7 +708,7 @@ export default function UsersPage() {
         await usersApi.deactivate(user.id);
         toast.success('User deactivated');
       }
-      await reload();
+      await refresh();
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to update status'));
     } finally {
@@ -626,6 +728,23 @@ export default function UsersPage() {
     }
   };
 
+  const confirmRevoke = async () => {
+    const user = revokeUser;
+    if (!user) return;
+    setActing(true);
+    try {
+      await usersApi.revokeInvite(user.id);
+      toast.success(`Invite for ${user.email} cancelled`);
+      setRevokeUser(null);
+      setDrawerUser(null);
+      await refresh();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Could not cancel the invite'));
+    } finally {
+      setActing(false);
+    }
+  };
+
   const openRoleChange = (user) => {
     setDrawerUser(null);
     setRoleModal(user);
@@ -639,7 +758,7 @@ export default function UsersPage() {
       await usersApi.updateUserRole(roleModal.id, newRole);
       toast.success('Role updated');
       setRoleModal(null);
-      await reload();
+      await refresh();
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to update role'));
     } finally {
@@ -648,203 +767,270 @@ export default function UsersPage() {
   };
 
   const closeDrawer = useCallback(() => setDrawerUser(null), []);
-
   const askToggle = (user) => {
     setDrawerUser(null);
     setConfirmUser(user);
   };
-
   const confirmToggle = async () => {
     if (!confirmUser) return;
     await handleToggleStatus(confirmUser);
     setConfirmUser(null);
   };
 
-  const RowActions = ({ user }) => {
-    const name = displayName(user);
-    return (
-      <div className="un-actions">
-        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setDrawerUser(user)}>
-          View
-        </button>
-        {isPending(user) ? (
-          <IconButton icon="send" label={`Resend invite to ${name}`} disabled={acting} onClick={() => handleResend(user)} />
-        ) : isDeactivated(user) ? (
-          <IconButton icon="refresh" label={`Reactivate ${name}`} disabled={acting} onClick={() => askToggle(user)} />
-        ) : (
-          <>
-            <IconButton icon="shield" label={`Change role for ${name}`} disabled={acting} onClick={() => openRoleChange(user)} />
-            <IconButton icon="lock" label={`Deactivate ${name}`} danger disabled={acting} onClick={() => askToggle(user)} />
-          </>
-        )}
-      </div>
-    );
+  const menuItems = (user) => {
+    const pending = isPending(user);
+    const deactivated = isDeactivated(user);
+    const self = isSelf(user);
+    return [
+      { label: 'View details', icon: 'eye', onClick: () => setDrawerUser(user) },
+      pending ? { label: 'Resend invite', icon: 'send', disabled: acting, onClick: () => handleResend(user) } : null,
+      pending && !self ? { label: 'Cancel invite', icon: 'x', danger: true, disabled: acting, onClick: () => setRevokeUser(user) } : null,
+      !pending && !deactivated && !self ? { label: 'Change role', icon: 'shield', disabled: acting, onClick: () => openRoleChange(user) } : null,
+      user.role === ROLES.STUDENT && !deactivated && user.department_id
+        ? { label: 'Set programme', icon: 'tree', disabled: acting, onClick: () => setPlacementUser(user) } : null,
+      !pending && !deactivated && !self ? { label: 'Deactivate', icon: 'lock', danger: true, disabled: acting, onClick: () => askToggle(user) } : null,
+      deactivated ? { label: 'Reactivate', icon: 'refresh', disabled: acting, onClick: () => askToggle(user) } : null,
+    ];
   };
 
+  const n = (v) => (v == null ? null : countLabel(v));
+  const staffCount = counts
+    ? STAFF_ROLES.reduce((a, r) => (a == null || counts.roles[r] == null ? null : a + counts.roles[r]), 0)
+    : null;
+  const tabs = TABS.map((t) => ({
+    ...t,
+    count: !counts ? undefined : {
+      all: n(counts.all),
+      students: n(counts.roles[ROLES.STUDENT]),
+      staff: n(staffCount),
+      superadmins: n(counts.superadminsTab),
+      pending: n(counts.pending),
+    }[t.value] ?? undefined,
+  }));
+
+  const roleParts = CREATE_ROLES.map((r) => ({
+    label: r.label,
+    value: counts?.roles[r.value] || 0,
+    color: ROLE_COLOR[r.value],
+  }));
+  const statusParts = [
+    { label: 'Active', value: counts?.active || 0, color: 'var(--cat-2)' },
+    { label: 'Pending activation', value: counts?.pending || 0, color: 'var(--highlight)' },
+    { label: 'Deactivated', value: counts?.deactivated || 0, color: 'var(--neutral-200)' },
+  ];
+  const tabTitle = TABS.find((t) => t.value === tab)?.label || 'Users';
 
   return (
     <ModulePage className="sa-page">
       <TipLayer />
-      <ModuleBanner
-        icon="users"
-        eyebrow="Platform access"
-        title="Platform users"
-        lede="Every user across every institution. Only Super Admin can reach this view — each institution sees only its own people."
-        chips={roleChips.length ? roleChips.map((c) => (
-          <span key={c.label}>{c.label} · {countLabel(c.count)}</span>
-        )) : null}
+      <ModuleHead
         actions={(
-          <>
-            {/* Bulk CSV student import belongs to the College Admin portal (SOW §6.3). */}
-            <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
-              <Icon name="userPlus" size={16} /> Create user
-            </button>
-          </>
+          <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
+            <Icon name="userPlus" size={16} /> Create user
+          </button>
         )}
       />
 
-      <KpiRow
-        label="Users summary"
-        items={[
-          { icon: 'users', label: 'Users', value: data ? countLabel(total) : null, sub: filtered ? 'Matching these filters' : 'Across all institutions' },
-          { icon: 'tick', label: 'Active', value: data ? countLabel(summary.active) : null, sub: scopeNote },
-          { icon: 'mail', label: 'Pending activation', value: data ? countLabel(summary.pending) : null, sub: 'Invite sent, not signed in' },
-          { icon: 'lock', label: 'Deactivated', value: data ? countLabel(summary.deactivated) : null, sub: 'Soft-deleted, restorable' },
-        ]}
-      />
+      <TabNav tabs={tabs} value={tab} onChange={changeTab} label="User groups" idBase="users" />
 
-      <FilterBar label="Filter users">
-        <SearchBox
-          placeholder="Search name or email…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-        />
-        <QuirriSelect
-          ariaLabel="Filter by role"
-          value={role}
-          onChange={(e) => {
-            setRole(e.target.value);
-            setPage(1);
-          }}
-          options={ROLE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-        />
-        <QuirriSelect
-          ariaLabel="Filter by institution"
-          value={institution}
-          onChange={(e) => {
-            setInstitution(e.target.value);
-            setPage(1);
-          }}
-          placeholder="All institutions"
-          options={colleges.map((c) => ({ value: c.id, label: c.name }))}
-        />
-        <SegTabs
-          label="Filter by status"
-          options={STATUS_FILTERS}
-          value={status}
-          onChange={(v) => {
-            setStatus(v);
-            setPage(1);
-          }}
-        />
-      </FilterBar>
+      <TabPanel value={tab} current={tab} idBase="users">
+        {tab === 'all' ? (
+          <div className="dv-grid">
+            <Panel title="Users by role" sub={`${countScope}, every status.`}>
+              {counts ? <Distribution label="Users by role" parts={roleParts} /> : <p className="dv-empty">Loading…</p>}
+            </Panel>
+            <Panel title="Account status" sub={`${countScope}, every role.`}>
+              {counts ? <Distribution label="Account status" parts={statusParts} /> : <p className="dv-empty">Loading…</p>}
+            </Panel>
+          </div>
+        ) : null}
 
-      {error ? (
-        <SectionState
-          tone="err"
-          title="Could not load users"
-          action={(
-            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
-              <Icon name="refresh" size={16} /> Try again
-            </button>
+        <Panel
+          title={tabTitle}
+          sub={data ? `${countLabel(total)} ${total === 1 ? 'person' : 'people'}${filtersOn ? ' match these filters' : ''}` : null}
+          bodyClassName={null}
+          toolbar={(
+            <>
+              <SearchBox
+                placeholder="Search name or email…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {tab === 'all' || tab === 'staff' || tab === 'pending' ? (
+                <div className="sa-filter-select sa-filter-select--wide">
+                  <QuirriSelect
+                    ariaLabel="Filter by role"
+                    value={roleChoice}
+                    onChange={(e) => setUrl({ role: e.target.value, page: '1' })}
+                    options={roleOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+                  />
+                </div>
+              ) : null}
+              {tab !== 'superadmins' ? (
+                <>
+                  <div className="sa-filter-select sa-filter-select--wide">
+                    <QuirriSelect
+                      ariaLabel="Filter by institution"
+                      value={url.institution}
+                      onChange={(e) => setUrl({ institution: e.target.value, department: '', page: '1' })}
+                      placeholder="All institutions"
+                      options={colleges.map((c) => ({ value: String(c.id), label: collegeOptionLabel(c, colleges) }))}
+                    />
+                  </div>
+                  <div className="sa-filter-select sa-filter-select--wide">
+                    <QuirriSelect
+                      ariaLabel="Filter by department"
+                      value={url.department}
+                      onChange={(e) => setUrl({ department: e.target.value, page: '1' })}
+                      placeholder="Department"
+                      disabled={!url.institution || !departments.length}
+                      options={departments.map((d) => ({ value: String(d.id), label: d.code ? `${d.name} (${d.code})` : d.name }))}
+                    />
+                  </div>
+                </>
+              ) : null}
+              {tab !== 'pending' ? (
+                <SegTabs
+                  label="Filter by status"
+                  options={STATUS_FILTERS}
+                  value={url.status}
+                  onChange={(v) => setUrl({ status: v, page: '1' })}
+                />
+              ) : null}
+              {filtersOn ? (
+                <button
+                  type="button"
+                  className="sd-btn sd-btn--ghost sd-btn--sm"
+                  onClick={() => setUrl({ q: '', role: '', institution: '', department: '', status: '', page: '1' })}
+                >
+                  Clear
+                </button>
+              ) : null}
+            </>
           )}
         >
-          {apiErrorMessage(error, 'Please try again.')}
-        </SectionState>
-      ) : null}
-
-      {loading && !users.length ? <SectionState title="Loading users…" /> : null}
-
-      {!loading && !error && !users.length ? (
-        <SectionState
-          title={filtered ? 'No users match these filters' : 'No users yet'}
-          action={!filtered ? (
-            <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={() => setCreateOpen(true)}>
-              <Icon name="userPlus" size={16} /> Create the first user
-            </button>
+          {error ? (
+            <div className="sa-panel-state">
+              <SectionState
+                tone="err"
+                title="Could not load users"
+                action={(
+                  <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>
+                    <Icon name="refresh" size={16} /> Try again
+                  </button>
+                )}
+              >
+                {apiErrorMessage(error, 'Please try again.')}
+              </SectionState>
+            </div>
           ) : null}
-        >
-          {filtered ? 'Try a different name, role, institution or status.' : 'People you invite appear here once created.'}
-        </SectionState>
-      ) : null}
 
-      {users.length ? (
-        <Panel
-          title="All users"
-          sub={`${countLabel(total)} ${total === 1 ? 'person' : 'people'}${filtered ? ' match these filters' : ' on the platform'}`}
-          bodyClassName={null}
-        >
-          <div className="sp-table-wrap">
-            <table className="sp-table un-table sa-users-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Institution</th>
-                  <th>Status</th>
-                  <th>Last active</th>
-                  <th aria-label="Actions" />
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => {
-                  const name = displayName(user);
-                  return (
-                    <tr key={user.id}>
-                      <td>
-                        <button type="button" className="un-name-btn pm-person" onClick={() => setDrawerUser(user)}>
-                          <span className={`pm-av${isDeactivated(user) ? ' sa-av--muted' : ''}`}>{initials(name)}</span>
-                          <span>
-                            <b>{name}</b>
-                            <small>{user.email}</small>
-                          </span>
-                        </button>
-                      </td>
-                      <td><span className={`sp-pill ${roleTone(user.role)}`.trim()}>{roleLabel(user.role)}</span></td>
-                      <td>{institutionOf(user) || <span className="sa-muted">Platform</span>}</td>
-                      <td className="sa-nowrap"><UserStatus user={user} /></td>
-                      <td className="sa-muted sa-nowrap">{lastActive(user)}</td>
-                      <td><RowActions user={user} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {loading && !users.length ? <div className="sa-panel-state"><SectionState title="Loading users…" /></div> : null}
+
+          {!loading && !error && !users.length ? (
+            <div className="sa-panel-state">
+              <SectionState
+                title={filtersOn ? 'No users match these filters' : tab === 'pending' ? 'No pending invites' : 'No users here yet'}
+                action={!filtersOn && tab === 'all' ? (
+                  <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setCreateOpen(true)}>
+                    <Icon name="userPlus" size={16} /> Create the first user
+                  </button>
+                ) : null}
+              >
+                {filtersOn
+                  ? 'Try a different name, role, institution or status.'
+                  : tab === 'pending' ? 'Everyone you invited has set a password.' : 'People you invite appear here once created.'}
+              </SectionState>
+            </div>
+          ) : null}
+
+          {users.length ? (
+            <div className="sp-table-wrap">
+              <table className="sp-table un-table sa-table-tight sa-users-table sa-stack">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Institution</th>
+                    <th>Status</th>
+                    <th>Last active</th>
+                    <th><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => {
+                    const name = displayName(user);
+                    return (
+                      <tr key={user.id}>
+                        <td>
+                          <button type="button" className="un-name-btn pm-person" onClick={() => setDrawerUser(user)}>
+                            <span className={`pm-av${isDeactivated(user) ? ' sa-av--muted' : ''}`}>{initials(name)}</span>
+                            <span>
+                              <b>{name}{isSelf(user) ? <span className="sp-pill sa-self-pill sa-you">You</span> : null}</b>
+                              <small>{user.email}</small>
+                            </span>
+                          </button>
+                        </td>
+                        <td data-label="Role"><RolePill role={user.role} /></td>
+                        <td data-label="Institution">{institutionCell(user)}</td>
+                        <td data-label="Status" className="sa-nowrap"><UserStatus user={user} /></td>
+                        <td data-label="Last active" className="sa-muted sa-nowrap">{lastActive(user)}</td>
+                        <td className="sa-actions-cell">
+                          <div className="un-actions">
+                            <RowMenu label={`Actions for ${name}`} items={menuItems(user)} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </Panel>
-      ) : null}
 
-      <Pager
-        page={page}
-        pageSize={pageSize}
-        total={total}
-        shown={users.length}
-        onPage={setPage}
-        noun="users"
-      />
+        <Pager
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          shown={users.length}
+          onPage={(p) => setUrl({ page: String(p) }, { push: true })}
+          noun="users"
+        />
+      </TabPanel>
 
       <UserDrawer
         user={drawerUser}
+        isSelf={isSelf(drawerUser)}
         acting={acting}
         onClose={closeDrawer}
         onResend={handleResend}
+        onRevoke={(u) => setRevokeUser(u)}
         onToggle={askToggle}
         onChangeRole={openRoleChange}
         onPlacement={(u) => { setDrawerUser(null); setPlacementUser(u); }}
       />
+
+      <QuirriModal
+        open={Boolean(revokeUser)}
+        onClose={() => !acting && setRevokeUser(null)}
+        title="Cancel this invite?"
+        crumb={revokeUser ? `${displayName(revokeUser)} · ${revokeUser.email || ''}` : null}
+        footer={(
+          <>
+            <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setRevokeUser(null)} disabled={acting}>Keep invite</button>
+            <div className="right">
+              <button type="button" className="sd-btn un-btn-danger" onClick={confirmRevoke} disabled={acting}>
+                {acting ? 'Cancelling…' : 'Cancel invite'}
+              </button>
+            </div>
+          </>
+        )}
+      >
+        <ConfirmNote danger title="Their activation link stops working.">
+          This person never signed in, so nothing else is lost. You can invite the same email again later.
+        </ConfirmNote>
+      </QuirriModal>
 
       {placementUser ? (
         <StudentPlacementModal
@@ -866,9 +1052,9 @@ export default function UsersPage() {
           key="create-user"
           open={createOpen}
           colleges={colleges}
-          defaultCollegeId=""
+          defaultCollegeId={url.institution || ''}
           onClose={() => setCreateOpen(false)}
-          onSaved={reload}
+          onSaved={refresh}
         />
       ) : null}
 
@@ -909,5 +1095,13 @@ export default function UsersPage() {
         ) : null}
       </QuirriModal>
     </ModulePage>
+  );
+}
+
+export default function UsersPage() {
+  return (
+    <Suspense fallback={<SectionState title="Loading users…" />}>
+      <UsersView />
+    </Suspense>
   );
 }

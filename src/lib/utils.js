@@ -25,9 +25,9 @@ export function formatDuration(seconds) {
 
 /** Get score color class */
 export function getScoreColor(score) {
-  // Reference palette (design-system.md §0b): green = strong, teal = on track, amber = needs focus
+  // Score bands (design-system.md §0c): green = strong, blue = on track, orange = needs focus
   if (score >= 80) return '#46921A';
-  if (score >= 60) return '#0E5C6B';
+  if (score >= 60) return '#2C74E0';
   return '#F5821F';
 }
 

@@ -84,14 +84,14 @@ export const JOB_DESCRIPTION_MAX = 8000;
 /** Shown in the summary card and on the mode cards. */
 export const MODE_META = {
   mock: {
-    label: 'Mock Interview',
+    label: 'Mock interview',
     time: '5 mins',
     questions: '3',
     duration: '3 to 5 minutes',
     blurb: 'Best for daily use. Get 3 focused questions with instant feedback. Mock interview scores are not calculated — this is only for your training.',
   },
   full: {
-    label: 'Full Interview',
+    label: 'Full interview',
     time: '15 mins',
     questions: 'With follow-ups',
     duration: '10 to 15 minutes',

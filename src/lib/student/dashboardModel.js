@@ -6,19 +6,20 @@
  *   GET /reports/livekit                  (interview reports + KPI)
  *   GET /leaderboard                      (cohort rank)
  *   GET /interview-assignments            (active cohort assignments)
+ *   GET /livekit-interview/eligibility    (can this student start an AI interview)
  * Missing sources leave their section empty — never mocked.
  */
-import { eduVideoApi } from '@/lib/api/admin/eduVideo';
-import { interviewAssignmentsApi } from '@/lib/api/interviewAssignments';
-import { leaderboardApi } from '@/lib/api/leaderboard';
 import { mcqApi } from '@/lib/api/mcq';
-import { reportsApi } from '@/lib/api/reports';
-import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList } from '@/lib/api/superadmin/http';
-import { subjectKey, subjectMeta } from '@/lib/student/learning';
+import {
+  assessmentHref as chapterAssessmentHref,
+  classroomHref,
+  subjectKey,
+  subjectMeta,
+  subjectName,
+  titleCase,
+} from '@/lib/student/learning';
 
-/** Cap per-chapter quiz lookups so Home stays fast. */
-const MAX_QUIZ_LOOKUPS = 24;
 
 
 function toTime(iso) {
@@ -42,14 +43,6 @@ export function formatDuration(seconds) {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return null;
   const total = Math.round(seconds);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
-
-export function scoreBand(score) {
-  const n = Number(score);
-  if (!Number.isFinite(n)) return { key: 'none', label: 'Not scored' };
-  if (n >= 75) return { key: 'good', label: 'Strong' };
-  if (n >= 50) return { key: 'mid', label: 'On track' };
-  return { key: 'low', label: 'Needs revision' };
 }
 
 function avg(values) {
@@ -94,57 +87,6 @@ export async function quizStatus(jobId) {
   }
 }
 
-export async function loadStudentHome() {
-  const [meRes, videosRes, reportsRes, lbRes, assignRes] = await Promise.allSettled([
-    fetchData(() => settingsApi.get()),
-    eduVideoApi.listStudentVideos({ pageSize: 100 }),
-    reportsApi.getLivekit({ page: 1, page_size: 20 }),
-    leaderboardApi.get({ limit: 8 }),
-    interviewAssignmentsApi.list({}),
-  ]);
-
-  // Retry classroom list once — common race when access_token refreshes mid-flight.
-  let videosSettled = videosRes;
-  if (videosSettled.status === 'rejected') {
-    try {
-      const retry = await eduVideoApi.listStudentVideos({ pageSize: 100 });
-      videosSettled = { status: 'fulfilled', value: retry };
-    } catch (err) {
-      videosSettled = { status: 'rejected', reason: err };
-    }
-  }
-
-  if (videosSettled.status === 'rejected' && reportsRes.status === 'rejected') {
-    throw videosSettled.reason;
-  }
-
-  const me = meRes.status === 'fulfilled' ? (meRes.value?.user || meRes.value) : null;
-  const videos = videosSettled.status === 'fulfilled' ? asList(videosSettled.value, []) : null;
-  const reports = reportsRes.status === 'fulfilled' ? reportsRes.value : null;
-  const leaderboard = lbRes.status === 'fulfilled' ? lbRes.value : null;
-  const assignmentsPayload = assignRes.status === 'fulfilled' ? assignRes.value : null;
-  const chapters = (videos || [])
-    .filter((j) => j?.job_id)
-    .sort((a, b) => toTime(b.published_at) - toTime(a.published_at));
-
-  const lookups = chapters.slice(0, MAX_QUIZ_LOOKUPS);
-  const statuses = await Promise.all(lookups.map((j) => quizStatus(j.job_id)));
-  const quizByJob = new Map(lookups.map((j, i) => [j.job_id, statuses[i]]));
-
-  return buildHomeModel({
-    me,
-    chapters,
-    quizByJob,
-    reports,
-    leaderboard,
-    assignmentsPayload,
-    videosAvailable: videos !== null,
-    reportsAvailable: reports !== null,
-    leaderboardAvailable: leaderboard !== null,
-    assignmentsAvailable: assignmentsPayload !== null,
-  });
-}
-
 export function buildHomeModel({
   me,
   chapters,
@@ -152,6 +94,7 @@ export function buildHomeModel({
   reports,
   leaderboard,
   assignmentsPayload,
+  eligibility = null,
   videosAvailable,
   reportsAvailable,
   leaderboardAvailable,
@@ -165,7 +108,7 @@ export function buildHomeModel({
   chapters.forEach((job) => {
     const key = subjectKey(job);
     if (!subjectMap.has(key)) {
-      const meta = subjectMeta(job, deptName);
+      const meta = subjectMeta(job);
       subjectMap.set(key, { key, name: meta.name, semester: meta.semester, chapters: [] });
     }
     subjectMap.get(key).chapters.push(job);
@@ -206,7 +149,7 @@ export function buildHomeModel({
     .slice(-7)
     .map((x) => ({
       jobId: x.job.job_id,
-      subject: x.job.department_name || deptName || 'Video lectures',
+      subject: subjectName(x.job),
       subjectKey: subjectKey(x.job),
       label: shortDate(x.quiz.submittedAt),
       score: Math.round(x.quiz.percentage),
@@ -218,16 +161,16 @@ export function buildHomeModel({
   const upNext = open.slice(0, 4).map((x) => ({
     jobId: x.job.job_id,
     title: x.job.chapter_title || 'Chapter quiz',
-    subject: x.job.department_name || deptName || '',
+    subject: subjectName(x.job),
     kind: 'assessment',
   }));
 
   const assessmentsReady = open.slice(0, 5).map((x) => ({
     jobId: x.job.job_id,
     title: x.job.chapter_title || 'Chapter quiz',
-    subject: x.job.department_name || deptName || 'Video lectures',
+    subject: subjectName(x.job),
     cta: 'Take assessment',
-    href: `/student/assessment?job=${encodeURIComponent(x.job.job_id)}&title=${encodeURIComponent(x.job.chapter_title || 'Chapter quiz')}`,
+    href: chapterAssessmentHref(x.job, subjectKey(x.job)),
   }));
 
   /* ---------- watch / continue learning ---------- */
@@ -237,7 +180,10 @@ export function buildHomeModel({
     return {
       jobId: c.job_id,
       title: c.chapter_title || 'Untitled chapter',
-      subject: c.department_name || deptName || 'Video lectures',
+      subject: subjectName(c),
+      subjectKey: subjectKey(c),
+      href: classroomHref(subjectKey(c), c.job_id),
+      tutorHref: classroomHref(subjectKey(c), c.job_id, 'tutor'),
       duration: formatDuration(c.video_duration_seconds),
       published: longDate(c.published_at),
       watchPercent,
@@ -260,10 +206,15 @@ export function buildHomeModel({
   const recentLectures = chapters.slice(0, 3).map((c) => {
     const q = quizByJob.get(c.job_id);
     const watchPercent = clampPct(c.watch_percent);
+    const key = subjectKey(c);
     return {
       jobId: c.job_id,
       title: c.chapter_title || 'Lecture',
-      subject: c.department_name || deptName || 'Video lecture',
+      subject: subjectName(c),
+      subjectKey: key,
+      classroomHref: classroomHref(key, c.job_id),
+      tutorHref: classroomHref(key, c.job_id, 'tutor'),
+      assessmentHref: chapterAssessmentHref(c, key),
       duration: formatDuration(c.video_duration_seconds),
       published: longDate(c.published_at),
       watchPercent,
@@ -279,7 +230,7 @@ export function buildHomeModel({
     return {
       jobId: c.job_id,
       title: c.chapter_title || 'Untitled chapter',
-      subject: c.department_name || deptName || 'Video lectures',
+      subject: subjectName(c),
       subjectKey: subjectKey(c),
       duration: formatDuration(c.video_duration_seconds),
       published: longDate(c.published_at),
@@ -305,7 +256,7 @@ export function buildHomeModel({
 
   const interviewRows = reportItems.map((r) => ({
     id: r.session_id,
-    title: r.title || r.position || 'Interview',
+    title: titleCase(r.title || r.position || 'Interview'),
     mode: String(r.interview_type || '').toLowerCase() === 'full' ? 'full' : 'mock',
     score: Number.isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null,
     date: longDate(r.completed_date || r.started_at),
@@ -327,7 +278,7 @@ export function buildHomeModel({
   /* ---------- leaderboard ---------- */
   const lbItems = asList(leaderboard, []).map((row) => ({
     rank: row.rank,
-    name: row.name,
+    name: titleCase(row.name),
     avgScore: row.avg_score,
     attemptCount: row.attempt_count,
     isMe: Boolean(row.is_me),
@@ -347,7 +298,7 @@ export function buildHomeModel({
       detail: continueLearning.watchPercent > 0
         ? `You are at ${continueLearning.watchPercent}% — finish the lecture to unlock the assessment.`
         : 'Watch the chapter video, then take the assessment.',
-      href: '/student/subjects',
+      href: continueLearning.href,
     });
   }
   if (open[0]) {
@@ -356,7 +307,7 @@ export function buildHomeModel({
       tone: 'amber',
       title: `Take assessment · ${open[0].job.chapter_title || 'Chapter'}`,
       detail: 'Lecture finished — this quiz is unlocked for you.',
-      href: `/student/assessment?job=${encodeURIComponent(open[0].job.job_id)}&title=${encodeURIComponent(open[0].job.chapter_title || 'Chapter quiz')}`,
+      href: chapterAssessmentHref(open[0].job, subjectKey(open[0].job)),
     });
   } else if (locked[0]) {
     const wp = clampPct(locked[0].job.watch_percent);
@@ -365,7 +316,7 @@ export function buildHomeModel({
       tone: 'amber',
       title: `Unlock quiz · ${locked[0].job.chapter_title || 'Chapter'}`,
       detail: `Watch to 100% (now ${wp}%) to open the assessment.`,
-      href: '/student/subjects',
+      href: classroomHref(subjectKey(locked[0].job), locked[0].job.job_id),
     });
   }
   if (assignments[0]) {
@@ -385,7 +336,7 @@ export function buildHomeModel({
       tone: 'teal',
       title: 'Ask your AI Tutor',
       detail: 'Clarify a concept from your published lectures in English or Tamil.',
-      href: '/student/subjects',
+      href: chapters[0] ? classroomHref(subjectKey(chapters[0]), chapters[0].job_id, 'tutor') : '/student/subjects',
     });
   }
 
@@ -396,11 +347,13 @@ export function buildHomeModel({
   return {
     chapterRows,
     interviewRows,
-    // Self-started AI interviews are for final-year students (SOW §5.3);
-    // assigned ones are always allowed. Unknown -> don't hide anything.
-    canSelfInterview: me?.is_final_year !== false,
-    name: me?.first_name || me?.name?.trim()?.split(/\s+/)[0] || '',
-    fullName: me?.name || [me?.first_name, me?.last_name].filter(Boolean).join(' ') || '',
+    // Self-started AI interviews are for final-year students, or a cohort with an
+    // assignment (SOW §5.3) — GET /livekit-interview/eligibility decides.
+    // Unknown (endpoint failed) -> fall back to the profile flag; never hide by guess.
+    canSelfInterview: eligibility ? eligibility.eligible !== false : me?.is_final_year !== false,
+    interviewLockReason: eligibility && eligibility.eligible === false ? (eligibility.reason || null) : null,
+    name: titleCase(me?.first_name || me?.name?.trim()?.split(/\s+/)[0] || ''),
+    fullName: titleCase(me?.name || [me?.first_name, me?.last_name].filter(Boolean).join(' ') || ''),
     deptName,
     collegeName,
     videosAvailable,

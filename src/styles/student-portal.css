@@ -412,7 +412,8 @@ a.sd-chip:hover{border-color:var(--teal-500)}
 .sp-tabs{display:inline-flex;flex-wrap:nowrap;overflow-x:auto;gap:4px;padding:4px;border-radius:var(--radius-card);background:#fff;border:1px solid var(--line);align-self:flex-start;max-width:100%}
 .sp-tab{flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 18px;border-radius:var(--radius-control);border:0;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--ink-2);cursor:pointer;transition:background-color .15s ease-out,color .15s ease-out}
 .sp-tab:hover{color:var(--teal-700);background:var(--teal-50)}
-.sp-tab[aria-selected="true"]{background:var(--teal-500);color:#fff}
+/* Selected segment = orange + white (design-system §2b; matches quirri-accents.css). */
+.sp-tab[aria-selected="true"]{background:var(--accent);color:#fff}
 .sp-tab[aria-selected="true"] .sd-i{color:#fff}
 
 /* ---- subject cards grid ---- */
@@ -772,3 +773,44 @@ a.sp-tab{text-decoration:none}
 
 /* Assessment results: PDF report download (SOW §6.4.3) */
 .sl-report-dl{margin-top:12px}
+
+
+/* Phones: pages that draw their own header (classroom, results, progress,
+   interviews) still need the menu button - keep the topbar, hide its title. */
+@media (max-width:860px){
+  .q-drawer-shell .main:has(.sl-hide-topbar) > .topbar,
+  .q-drawer-shell .main:has(.spg-hide-topbar) > .topbar,
+  .q-drawer-shell .main:has(.siv-hide-topbar) > .topbar{display:flex;padding-bottom:0;min-height:0}
+  .q-drawer-shell .main:has(.sl-hide-topbar) > .topbar > div,
+  .q-drawer-shell .main:has(.spg-hide-topbar) > .topbar > div,
+  .q-drawer-shell .main:has(.siv-hide-topbar) > .topbar > div{display:none}
+}
+
+/* ---- buttons: one system for the student portal (redesign X3, 14 Oct 2026) ---- */
+a.sd-btn{text-decoration:none}
+.sd-btn:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
+.sd-btn--block{width:100%}
+.sd-btn--lg{min-height:52px;padding:0 36px;font-size:16px}
+.sd-btn--soft{background:var(--neutral-100);color:var(--ink)}
+.sd-btn--soft:hover{background:var(--neutral-200)}
+/* KpiRow with 3 / 2 items fills the row (S16). */
+.sd-kpis.pm-kpis--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sd-kpis.pm-kpis--2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:768px){.sd-kpis.pm-kpis--3,.sd-kpis.pm-kpis--2{grid-template-columns:minmax(0,1fr)}}
+/* Card titles across the student portal: the same 4px orange rule as Panel titles (§2b, S16). */
+.sh-card-t h3,
+.srp-card-h h3,
+.slb-table-h h3,
+.slb-dist-h h3,
+.siv-list-h h2,
+.sl-ov-section-h h3,
+.sl-card-h h3,
+.spg-subj-h h2{display:flex;align-items:center;gap:8px}
+.sh-card-t h3::before,
+.srp-card-h h3::before,
+.slb-table-h h3::before,
+.slb-dist-h h3::before,
+.siv-list-h h2::before,
+.sl-ov-section-h h3::before,
+.sl-card-h h3::before,
+.spg-subj-h h2::before{content:"";flex:none;width:4px;height:18px;border-radius:var(--radius-full);background:var(--highlight)}

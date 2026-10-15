@@ -105,12 +105,3 @@ export function Kpi({ icon, label, value, sub, tone }) {
     </div>
   );
 }
-
-/** Score → tone key used by .sp-score / .sd-tone-- classes. */
-export function scoreToneKey(score) {
-  const n = Number(score);
-  if (!Number.isFinite(n)) return 'none';
-  if (n >= 75) return 'good';
-  if (n >= 50) return 'mid';
-  return 'low';
-}

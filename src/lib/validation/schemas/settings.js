@@ -14,9 +14,11 @@ export const settingsPasswordSchema = z
     current_password: z
       .string({ required_error: 'Enter your current password' })
       .min(1, 'Enter your current password')
-      .max(128),
+      .max(128, 'Password must be 128 characters or fewer'),
     new_password: passwordField('New password'),
-    confirm_password: z.string({ required_error: 'Confirm your new password' }),
+    confirm_password: z
+      .string({ required_error: 'Confirm your new password' })
+      .min(1, 'Confirm your new password'),
   })
   .refine((data) => data.new_password === data.confirm_password, {
     message: 'New passwords do not match',

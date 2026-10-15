@@ -16,6 +16,11 @@ export const usersApi = {
     tenantId = '',
     status = '',
     is_active,
+    departmentId = '',
+    programId = '',
+    semesterId = '',
+    yearOfStudy = '',
+    includeCounts = false,
   } = {}) => {
     const query = {
       page,
@@ -23,6 +28,14 @@ export const usersApi = {
       q: q ?? search,
       role: role || undefined,
       tenant_id: tenantId || undefined,
+      // GET /users?department_id= (users.py list_users) - one department only.
+      department_id: departmentId || undefined,
+      // Student placement filters (list_users program_id / semester_id / year_of_study).
+      program_id: programId || undefined,
+      semester_id: semesterId || undefined,
+      year_of_study: yearOfStudy || undefined,
+      // Adds counts_by_role / counts_by_status (scope + institution / department / search).
+      include_counts: includeCounts ? 'true' : undefined,
     };
     if (is_active !== undefined && is_active !== '') {
       query.is_active = is_active;
@@ -92,6 +105,13 @@ export const usersApi = {
   },
 
   /** Maps to POST /auth/resend-activation { email } */
+  /** Cancel an invite that was never accepted (removes the pending account). */
+  revokeInvite: (userId) => api.post(`/users/${userId}/revoke-invite`),
+
+  /** Yearly rollover: +1 year for every active student (capped per student). dryRun previews counts only. */
+  bulkPromoteYear: ({ dryRun = true, tenantId } = {}) =>
+    api.post('/users/bulk-promote-year', { dry_run: dryRun, ...(tenantId ? { tenant_id: tenantId } : {}) }),
+
   resendInvite: (emailOrUser) => {
     const email = typeof emailOrUser === 'string'
       ? emailOrUser

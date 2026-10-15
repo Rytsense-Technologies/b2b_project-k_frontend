@@ -6,85 +6,115 @@ import PortalHero from '@/components/shared/PortalHero';
 import {
   Icon,
   KpiRow,
+  Mono,
   Panel,
   SectionState,
-  StatusPill,
-  initials,
   countLabel,
 } from '@/components/shared/module-ui';
-import { usersApi } from '@/lib/api/superadmin/users';
+import { BandPill, BarList, DonutChart } from '@/components/shared/data-viz';
 import { analyticsApi } from '@/lib/api/analytics';
-import { minutesLabel } from '@/components/admin/insights';
-import { unwrap, asList } from '@/lib/api/superadmin/http';
+import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
+import { asList } from '@/lib/api/superadmin/http';
+import { departmentHod, hodCanReview, loadCollegeStaff } from '@/components/admin/departments/departmentModel';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
-import { ROLES } from '@/lib/permissions';
-import { statusVariant, userStatusLabel } from '@/lib/admin/userStatus';
+import { formatPct } from '@/lib/superadmin/format';
 
-const TONE = { red: 'err', amber: 'low', green: 'good' };
+const STAGE = {
+  awaiting_you: { label: 'Review plan', cls: 'sp-pill--low' },
+  ready_to_send: { label: 'Send to HOD', cls: 'sp-pill--teal' },
+  awaiting_hod: { label: 'With HOD', cls: 'sp-pill--off' },
+};
 
-function pickTotal(payload, list) {
-  if (typeof payload?.total === 'number') return payload.total;
-  if (typeof payload?.count === 'number') return payload.count;
-  return list.length;
+/** Same precision as Analytics and Reports: one decimal at most ("20.9%"). */
+function pct(v) {
+  return v == null || v === '' ? '—' : formatPct(v);
+}
+
+function shortDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+/** Live "Needs your attention" rows for the hero side panel; a row at 0 is hidden. */
+function AttentionList({ items, loading }) {
+  const live = items.filter((i) => i.count > 0);
+  if (loading) return <p className="ad-attn-note">Checking your college…</p>;
+  if (!live.length) {
+    return <p className="ad-attn-note">Nothing needs you right now. New reviews, invites and students who need help show here.</p>;
+  }
+  return (
+    <ul className="ad-attn">
+      {live.map((i) => (
+        <li key={i.id}>
+          <Link href={i.href}>
+            <b>{countLabel(i.count)}</b>
+            <span>{i.label(i.count)}</span>
+            <Icon name="chev" size={16} />
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export default function AdminDashboardPage() {
   const { user, tenantId } = useAuth();
 
   // Auth state hydrates from the store before React can reconcile the
-  // server-rendered HTML, so the very first client render already differs
-  // from the server's (which has no user yet) - a hydration mismatch, not a
-  // data bug. Rendering the same neutral fallback until after mount keeps
-  // the first paint identical on both sides; the real name swaps in right
-  // after, same as any other client-only personalization.
+  // server-rendered HTML; render the same neutral fallback until mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const college = mounted ? (user?.college_name || user?.tenant_name || 'your college') : 'your college';
 
-  const { data: studentData, loading: studentsLoading, error: studentsError } = useAsyncResource(async () => {
-    const res = await usersApi.getUsers({
-      page: 1,
-      limit: 8,
-      role: ROLES.STUDENT,
-      tenantId: tenantId || undefined,
-    });
-    return unwrap(res);
-  }, [tenantId]);
-
-  const { data: facultyData, loading: facultyLoading } = useAsyncResource(async () => {
-    const res = await usersApi.getUsers({
-      page: 1,
-      limit: 1,
-      role: ROLES.FACULTY,
-      tenantId: tenantId || undefined,
-    });
-    return unwrap(res);
-  }, [tenantId]);
-
-  // Live college overview (last 30 days): departments, watch time, review queue.
+  // Live college overview (last 30 days). Totals, departments, bands, at-risk and review queue.
   const { data: overview, loading: overviewLoading, error: overviewError } = useAsyncResource(
     () => analyticsApi.college({ range: 'last_30_days' }),
     [tenantId],
   );
+  // Departments without an HOD use the same rule as Academic structure (departmentHod).
+  const { data: deptData } = useAsyncResource(
+    () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
+    [tenantId],
+  );
+  const { data: collegeStaff } = useAsyncResource(() => loadCollegeStaff(tenantId), [tenantId]);
+
   const totals = overview?.totals;
   const queue = overview?.review_queue;
-  const activeDepts = (overview?.departments || [])
-    .filter((d) => d.students || d.watch_minutes || d.qa || d.interviews)
-    .sort((a, b) => (b.watch_minutes - a.watch_minutes) || (b.qa - a.qa));
+  // Loading until the overview arrives or fails (covers the first render before the request starts).
+  const first = !overview && !overviewError;
 
-  const students = useMemo(() => {
-    if (Array.isArray(studentData)) return studentData;
-    return asList(studentData?.users || studentData, []);
-  }, [studentData]);
+  const noHod = useMemo(() => {
+    if (!deptData || !Array.isArray(collegeStaff)) return null;
+    return asList(deptData, []).filter((d) => !hodCanReview(departmentHod(d, collegeStaff))).length;
+  }, [deptData, collegeStaff]);
 
-  const studentTotal = pickTotal(studentData, students);
-  const facultyTotal = pickTotal(
-    facultyData,
-    Array.isArray(facultyData) ? facultyData : asList(facultyData?.users || facultyData, []),
-  );
+  const finals = (overview?.interview_cohort || []).filter((r) => r.final_year);
+  const finalsReady = finals.filter((r) => r.status === 'ready').length;
 
-  const loadingPeople = studentsLoading || facultyLoading;
+  const deptBars = useMemo(() => (overview?.departments || [])
+    .filter((d) => d.students)
+    .map((d) => ({
+      key: d.department_id,
+      label: d.department,
+      value: d.completion ?? 0,
+      sub: `${countLabel(d.students)} student${d.students === 1 ? '' : 's'}`,
+      href: `/admin/analytics?tab=departments&department=${encodeURIComponent(d.department_id)}`,
+    }))
+    .sort((a, b) => b.value - a.value), [overview]);
+
+  const bands = overview?.score_bands;
+  const atRisk = overview?.at_risk || [];
+
+  const attention = [
+    { id: 'review', count: queue?.awaiting_you || 0, href: '/admin/content', label: (n) => `chapter plan${n === 1 ? '' : 's'} waiting for your review` },
+    { id: 'send', count: queue?.ready_to_send || 0, href: '/admin/content', label: (n) => `chapter${n === 1 ? '' : 's'} ready to send to the HOD` },
+    { id: 'hod', count: noHod || 0, href: '/admin/structure/departments?hod=without', label: (n) => `department${n === 1 ? '' : 's'} without an HOD` },
+    { id: 'pending', count: totals?.pending_students || 0, href: '/admin/students?tab=pending', label: (n) => `student invite${n === 1 ? '' : 's'} not yet activated` },
+    { id: 'risk', count: atRisk.length, href: '/admin/analytics?tab=students&risk=1', label: (n) => `student${n === 1 ? '' : 's'} who may need help` },
+  ];
 
   return (
     <div className="animate-fade-in sp pm-page ad-page ad-dash">
@@ -96,49 +126,46 @@ export default function AdminDashboardPage() {
         secondaryLabel="Upload a chapter"
         primaryHref="/admin/students"
         primaryLabel="Add students"
-        sideTitle="Getting started"
-        sideItems={[
-          {
-            id: 'structure',
-            title: 'Academic structure',
-            body: 'Set up departments and HODs before you add students or upload chapters.',
-            tone: 'info',
-          },
-          {
-            id: 'content',
-            title: 'Upload and content',
-            body: 'Chapter videos wait for HOD approval before students can see them.',
-            tone: 'warning',
-          },
-        ]}
-      />
+        sideTitle="Needs your attention"
+      >
+        <AttentionList items={attention} loading={first || noHod == null} />
+      </PortalHero>
 
       <KpiRow
-        label="College summary"
+        label="College summary, last 30 days"
         items={[
           {
             icon: 'users',
-            label: 'Students',
-            value: loadingPeople ? null : countLabel(studentTotal),
-            sub: 'In your college directory',
+            label: 'Active students',
+            value: first ? null : (totals ? countLabel(totals.students) : '—'),
+            sub: !totals ? (first ? 'Loading…' : 'Last 30 days') : totals.pending_students ? `${countLabel(totals.pending_students)} invite${totals.pending_students === 1 ? '' : 's'} to activate` : 'Everyone invited has activated',
           },
           {
-            icon: 'user',
-            label: 'Faculty & HOD',
-            value: loadingPeople ? null : countLabel(totals ? totals.faculty : facultyTotal),
-            sub: 'Active staff accounts',
+            icon: 'bookOpen',
+            label: 'Chapter completion',
+            value: first ? null : pct(totals?.completion),
+            sub: totals ? `${countLabel(totals.chapters_completed)} of ${countLabel(totals.chapters_available)} chapters` : (first ? 'Loading…' : 'Last 30 days'),
           },
           {
-            icon: 'tree',
-            label: 'Departments',
-            value: overviewLoading && !overview ? null : (totals ? countLabel(totals.departments) : '—'),
-            sub: 'Active in your college',
+            icon: 'target',
+            // Quiz average (as on Analytics); the mock interview average sits on the sub-line.
+            label: 'Quiz average',
+            value: first ? null : pct(totals?.quiz_avg),
+            sub: totals ? (
+              <span className="ad-kpi-band">
+                {totals.quiz_avg != null ? <BandPill score={totals.quiz_avg} /> : null}
+                {[
+                  totals.pass_rate != null ? `${pct(totals.pass_rate)} pass` : 'No quizzes yet',
+                  totals.interview_avg != null ? `Mock ${pct(totals.interview_avg)}` : null,
+                ].filter(Boolean).join(' · ')}
+              </span>
+            ) : (first ? 'Loading…' : 'Chapter quizzes, last 30 days'),
           },
           {
-            icon: 'clock',
-            label: 'Watch time',
-            value: overviewLoading && !overview ? null : (totals ? minutesLabel(totals.watch_minutes) : '—'),
-            sub: totals?.completion != null ? `Last 30 days · ${totals.completion}% chapters completed` : 'Last 30 days',
+            icon: 'mic',
+            label: 'Interview ready',
+            value: first ? null : (overview ? `${countLabel(finalsReady)} of ${countLabel(finals.length)}` : '—'),
+            sub: !overview ? (first ? 'Loading…' : 'Final-year students') : finals.length ? 'Final-year students' : 'No final-year students yet',
           },
         ]}
       />
@@ -149,7 +176,46 @@ export default function AdminDashboardPage() {
         </SectionState>
       ) : null}
 
-      <div className="pm-grid-2">
+      <div className="dv-grid">
+        <Panel
+          title="Completion by department"
+          sub="Chapters completed by students, last 30 days"
+          action={(
+            <Link className="sp-link" href="/admin/analytics?tab=departments">
+              Analytics <Icon name="arrow" size={14} />
+            </Link>
+          )}
+        >
+          {first ? <p className="dv-empty">Loading…</p> : (
+            <BarList
+              label="Completion by department"
+              items={deptBars}
+              max={100}
+              suffix="%"
+              empty="No students placed in a department yet."
+            />
+          )}
+        </Panel>
+        <Panel
+          title="Students by quiz score"
+          sub={totals?.pass_rate != null ? `Each student's quiz average · ${pct(totals.pass_rate)} of quiz attempts passed` : "Each student's quiz average"}
+        >
+          {first ? <p className="dv-empty">Loading…</p> : (
+            <DonutChart
+              centerLabel="Students"
+              parts={bands ? [
+                { key: 'strong', label: 'Strong (80+)', value: bands.strong },
+                { key: 'ok', label: 'On track (60–79)', value: bands.ok },
+                { key: 'focus', label: 'Needs focus (<60)', value: bands.focus },
+                { key: 'none', label: 'No attempts yet', value: bands.none },
+              ] : []}
+              empty="No students yet."
+            />
+          )}
+        </Panel>
+      </div>
+
+      <div className="dv-grid">
         <Panel
           title="Content review queue"
           sub={queue
@@ -168,11 +234,9 @@ export default function AdminDashboardPage() {
                   <span className="sp-row-ic" aria-hidden="true"><Icon name="doc" size={16} /></span>
                   <div>
                     <b>{j.chapter_title}</b>
-                    <small>{[j.department, j.since ? new Date(j.since).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : null].filter(Boolean).join(' · ')}</small>
+                    <small>{[j.department, shortDate(j.since)].filter(Boolean).join(' · ')}</small>
                   </div>
-                  <span className={`sp-pill ${j.stage === 'awaiting_you' ? 'sp-pill--low' : j.stage === 'ready_to_send' ? 'sp-pill--teal' : ''}`}>
-                    {j.stage === 'awaiting_you' ? 'Review plan' : j.stage === 'ready_to_send' ? 'Send to HOD' : 'With HOD'}
-                  </span>
+                  <span className={`sp-pill ${STAGE[j.stage]?.cls || ''}`}>{STAGE[j.stage]?.label || 'In review'}</span>
                 </li>
               ))}
             </ul>
@@ -180,111 +244,47 @@ export default function AdminDashboardPage() {
             <div className="ad-empty">
               <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
               <div>
-                <b>{overviewLoading && !overview ? 'Loading…' : 'Nothing waiting'}</b>
+                <b>{first ? 'Loading…' : 'Nothing waiting'}</b>
                 <small>Uploaded chapters show here until they are published to students.</small>
               </div>
             </div>
           )}
         </Panel>
         <Panel
-          title="Department activity"
-          sub="Watch time, Q&A and interviews by department, last 30 days"
+          title="Students who need attention"
+          sub="Low scores or no activity, last 30 days"
           action={(
-            <Link className="sp-link" href="/admin/analytics">
-              Analytics <Icon name="arrow" size={14} />
+            <Link className="sp-link" href="/admin/analytics?tab=students">
+              All students <Icon name="arrow" size={14} />
             </Link>
           )}
         >
-          {activeDepts.length ? (
-            <ul className="ad-queue">
-              {activeDepts.slice(0, 5).map((d) => (
-                <li key={d.department_id}>
-                  <span className="sp-row-ic" aria-hidden="true"><Icon name="tree" size={16} /></span>
+          {atRisk.length ? (
+            <ul className="ad-queue ad-attn-risk">
+              {atRisk.slice(0, 5).map((s) => (
+                <li key={s.id}>
+                  <Mono name={s.student || '?'} size="sm" />
                   <div>
-                    <b>{d.department}</b>
-                    <small>
-                      {`${countLabel(d.students)} student${d.students === 1 ? '' : 's'} · ${minutesLabel(d.watch_minutes)} watched · ${countLabel(d.qa)} Q&A · ${countLabel(d.interviews)} interview${d.interviews === 1 ? '' : 's'}`}
-                    </small>
+                    <b>{s.student}</b>
+                    <small>{s.department || 'No department'}</small>
                   </div>
-                  {d.avg_score != null ? <span className="sp-pill sp-pill--teal">{Math.round(d.avg_score)}% avg</span> : null}
+                  <span className="ad-reasons">
+                    {(s.reasons || []).slice(0, 2).map((r) => <span key={r} className="sp-pill sp-pill--low">{r}</span>)}
+                  </span>
                 </li>
               ))}
             </ul>
           ) : (
             <div className="ad-empty">
-              <span className="ad-empty-ic" aria-hidden="true"><Icon name="chart" size={20} /></span>
+              <span className="ad-empty-ic" aria-hidden="true"><Icon name="users" size={20} /></span>
               <div>
-                <b>{overviewLoading && !overview ? 'Loading…' : 'No activity in the last 30 days'}</b>
-                <small>Watch time, tutor questions and interviews show here as students learn.</small>
+                <b>{first ? 'Loading…' : 'No one flagged'}</b>
+                <small>Students with low scores or no activity in the last 30 days appear here.</small>
               </div>
             </div>
           )}
         </Panel>
       </div>
-
-      <Panel
-        title="Recently added students"
-        sub="The latest accounts in your college"
-        bodyClassName={null}
-        action={(
-          <Link className="sp-link" href="/admin/students">
-            Manage students <Icon name="arrow" size={14} />
-          </Link>
-        )}
-      >
-        {studentsError ? (
-          <div className="sp-panel-b">
-            <SectionState tone="err" title="Could not load students">
-              {studentsError?.message || 'Please try again.'}
-            </SectionState>
-          </div>
-        ) : null}
-        {studentsLoading && !students.length ? (
-          <div className="sp-panel-b"><SectionState title="Loading students…" /></div>
-        ) : null}
-        {!studentsLoading && !studentsError && !students.length ? (
-          <div className="sp-panel-b">
-            <SectionState title="No students yet">
-              Students you add from the Students page appear here.
-            </SectionState>
-          </div>
-        ) : null}
-        {students.length ? (
-          <div className="sp-table-wrap">
-            <table className="sp-table un-table ad-stack">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Department</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((row) => {
-                  const name = row.name || [row.first_name, row.last_name].filter(Boolean).join(' ') || '—';
-                  return (
-                    <tr key={row.id}>
-                      <td>
-                        <div className="pm-person">
-                          <span className="pm-av" aria-hidden="true">{initials(name, 'S')}</span>
-                          <div>
-                            <b>{name}</b>
-                            <small>{row.email}</small>
-                          </div>
-                        </div>
-                      </td>
-                      <td data-label="Department">{row.department_name || row.department || '—'}</td>
-                      <td data-label="Status">
-                        <StatusPill active on={userStatusLabel(row)} tone={TONE[statusVariant(row)]} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </Panel>
     </div>
   );
 }

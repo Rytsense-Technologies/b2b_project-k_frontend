@@ -68,7 +68,7 @@ function yearWithinDurationRefine(data, ctx) {
   ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Current year cannot exceed program duration',
+      message: 'Current year cannot exceed programme duration',
       path: ['year_of_study'],
     });
   }

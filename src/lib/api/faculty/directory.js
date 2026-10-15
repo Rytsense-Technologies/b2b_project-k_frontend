@@ -6,9 +6,17 @@ export const facultyDirectoryApi = {
   /** Role, department, assigned subjects, read-only flag, HOD capabilities. */
   me: async () => unwrap(await api.get('/faculty/me')),
   overview: async () => unwrap(await api.get('/faculty/overview')),
-  students: async ({ q = '', status = '', page = 1, pageSize = 25 } = {}) => {
+  students: async ({ q = '', status = '', programId = '', semesterId = '', yearOfStudy = '', page = 1, pageSize = 25 } = {}) => {
     const res = await api.get(
-      `/faculty/students?${buildParams({ q, status: status || undefined, page, page_size: pageSize })}`,
+      `/faculty/students?${buildParams({
+        q,
+        status: status || undefined,
+        program_id: programId || undefined,
+        semester_id: semesterId || undefined,
+        year_of_study: yearOfStudy || undefined,
+        page,
+        page_size: pageSize,
+      })}`,
     );
     return unwrap(res);
   },

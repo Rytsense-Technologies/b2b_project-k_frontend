@@ -5,6 +5,7 @@ import {
   normalizeEmail,
   normalizePhone,
   normalizeSearch,
+  formatIndianPhone,
   trimValue,
 } from './normalize';
 
@@ -114,14 +115,17 @@ export const FIELD_RULES = {
     inputMode: 'tel',
     autoComplete: 'tel',
     type: 'tel',
+    // Shown as "+91 89397 37644"; normalizePhone removes the spaces before saving.
     filter: (incoming) => {
       const next = String(incoming ?? '');
-      if (next === '' || next === '+' || next === '+9') return '+91';
+      if (next.trim() === '' || next === '+' || next === '+9') return '+91';
       if (!next.startsWith('+')) {
-        const digits = next.replace(/\D/g, '').replace(/^91/, '');
-        return `+91${digits}`.slice(0, 16);
+        const digits = next.replace(/\D/g, '').replace(/^91(?=\d{10})/, '');
+        return formatIndianPhone(`+91${digits}`);
       }
-      return `+${next.replace(/\D/g, '')}`.slice(0, 16);
+      const digits = next.replace(/\D/g, '');
+      if (digits.startsWith('91')) return formatIndianPhone(`+${digits}`);
+      return `+${digits}`.slice(0, 16);
     },
   },
   password: {

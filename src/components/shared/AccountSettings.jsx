@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useTabParam } from '@/hooks/useUrlState';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
@@ -17,10 +18,12 @@ import {
 } from '@/components/shared/module-ui';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
+import { titleCase } from '@/lib/student/learning';
 import {
   settingsProfileSchema,
   settingsPasswordSchema,
   FIELD_RULES,
+  formatIndianPhone,
 } from '@/lib/validation';
 
 const TABS = [
@@ -50,12 +53,16 @@ export default function AccountSettings() {
   const [pwSaving, setPwSaving] = useState(false);
   const [roleLabel, setRoleLabel] = useState('—');
   const [access, setAccess] = useState('—');
-  const [tab, setTab] = useState('profile');
+  // Tab in ?tab= so Back returns to the previous tab and links can open Security directly.
+  const [tab, setTab] = useTabParam(['profile', 'security'], 'profile');
+  // What the server has; the card and side panel show this, not the unsaved draft.
+  const [saved, setSaved] = useState({ first_name: '', last_name: '', email: '', phone: '' });
 
   const {
     control,
     handleSubmit,
     reset,
+    formState: { isDirty },
   } = useForm({
     resolver: zodResolver(settingsProfileSchema),
     defaultValues: {
@@ -68,8 +75,9 @@ export default function AccountSettings() {
     mode: 'onBlur',
   });
 
-  const [firstName, lastName, email] = useWatch({ control, name: ['first_name', 'last_name', 'email'] });
-  const fullName = [firstName, lastName].filter(Boolean).join(' ');
+  // Stored as typed; shown title-cased like the sidebar.
+  const fullName = titleCase([saved.first_name, saved.last_name].filter(Boolean).join(' '));
+  const { email } = saved;
 
   const {
     register: registerPw,
@@ -100,13 +108,14 @@ export default function AccountSettings() {
       setAccess(String(role || '').toLowerCase() === 'superadmin'
         ? 'All institutions'
         : [data?.tenant_name, data?.department_name || data?.department].filter(Boolean).join(' · ') || '—');
-      reset({
+      const profile = {
         first_name: data?.first_name ?? '',
         last_name: data?.last_name ?? '',
         email: data?.email ?? '',
-        phone: data?.phone_number ?? data?.phone ?? data?.mobile ?? '',
-        role: label,
-      });
+        phone: formatIndianPhone(data?.phone_number ?? data?.phone ?? data?.mobile ?? ''),
+      };
+      setSaved(profile);
+      reset({ ...profile, role: label });
     } catch (err) {
       setLoadError(apiErrorMessage(err, 'Could not load your profile.'));
       setRoleLabel('—');
@@ -136,10 +145,10 @@ export default function AccountSettings() {
         last_name: values.last_name,
         phone_number: values.phone,
       }));
-      toast.success('Settings saved');
+      toast.success('Your changes are saved.');
       await loadProfile();
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to save settings'));
+      toast.error(apiErrorMessage(err, 'Could not save your changes. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -149,11 +158,11 @@ export default function AccountSettings() {
     setPwSaving(true);
     try {
       await fetchData(() => settingsApi.changePassword(values));
-      toast.success('Password updated. Other sessions were signed out.');
+      toast.success("Password updated. You've been signed out on your other devices.");
       setPwOpen(false);
       resetPw({ current_password: '', new_password: '', confirm_password: '' });
     } catch (err) {
-      const message = apiErrorMessage(err, 'Failed to change password');
+      const message = apiErrorMessage(err, 'Could not change your password. Please try again.');
       // Show a wrong current password on the field itself, not only in a toast.
       if (/current password/i.test(message)) setPwError('current_password', { type: 'server', message });
       toast.error(message);
@@ -212,7 +221,7 @@ export default function AccountSettings() {
               <fieldset disabled={Boolean(loadError) || loading} className="sa-fieldset">
                 <div className="sa-account-sec">
                   <h3>Personal details</h3>
-                  <p>Your name and phone number. Email and role are managed by Quirri.</p>
+                  <p>Your name and phone number. Your email and role are managed by your administrator.</p>
                 </div>
                 <div className="grid2">
                   <QuirriRHFField
@@ -233,7 +242,7 @@ export default function AccountSettings() {
                   name="email"
                   fieldType="email"
                   label="Email address"
-                  hint="Email change needs a separate re-verification flow — not available yet."
+                  hint="Contact your administrator to change your email."
                   disabled
                   full
                 />
@@ -243,12 +252,16 @@ export default function AccountSettings() {
                     name="phone"
                     fieldType="phone"
                     label="Phone number"
+                    hint="Indian mobile number. +91 is added for you."
+                    placeholder="+91 98765 43210"
                   />
                   <QuirriField
                     label="Role"
-                    hint="Assigned by an administrator. Cannot be changed here."
+                    htmlFor="settings-role"
+                    hint="Managed by your administrator."
                   >
                     <input
+                      id="settings-role"
                       value={roleLabel}
                       disabled
                       className="sa-locked"
@@ -266,7 +279,7 @@ export default function AccountSettings() {
                 >
                   <Icon name="key" size={16} /> Change password
                 </button>
-                <button className="sd-btn sd-btn--amber" type="submit" disabled={saving || loading || Boolean(loadError)}>
+                <button className="sd-btn sd-btn--amber" type="submit" disabled={!isDirty || saving || loading || Boolean(loadError)}>
                   <Icon name="tick" size={16} />
                   {saving ? 'Saving…' : 'Save changes'}
                 </button>
@@ -279,7 +292,7 @@ export default function AccountSettings() {
             <div className="sa-account-b">
               <div className="sa-account-sec">
                 <h3>Sign-in and security</h3>
-                <p>Keep your account safe. Changing your password signs you out everywhere else.</p>
+                <p>Keep your account safe with a strong password you do not use anywhere else.</p>
               </div>
               <div className="sa-sec-row">
                 <span className="sp-row-ic"><Icon name="key" size={18} /></span>
@@ -313,13 +326,14 @@ export default function AccountSettings() {
             items={[
               { label: 'Role', value: roleLabel },
               { label: 'Access', value: access },
-              { label: 'Email', value: email, full: true },
+              { label: 'Email', value: email || '—', full: true },
+              { label: 'Phone', value: saved.phone && saved.phone !== '+91' ? saved.phone : 'Not added', full: true },
             ]}
           />
           <ul className="sa-side-list">
             <li><Icon name="tick" size={16} /> Name and phone number are yours to edit.</li>
-            <li><Icon name="lock" size={16} /> Role and institution are not self-editable.</li>
-            <li><Icon name="shield" size={16} /> A password change signs out your other sessions.</li>
+            <li><Icon name="lock" size={16} /> Your email, role and institution are managed by your administrator.</li>
+            <li><Icon name="shield" size={16} /> Changing your password signs you out on your other devices.</li>
           </ul>
         </Panel>
       </div>
@@ -328,7 +342,7 @@ export default function AccountSettings() {
         open={pwOpen}
         onClose={() => setPwOpen(false)}
         title="Change password"
-        crumb="Requires your current password. The server revokes other active sessions for this account."
+        crumb="Enter your current password, then choose a new one. You'll be signed out on your other devices."
         footer={(
           <>
             <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setPwOpen(false)}>Cancel</button>

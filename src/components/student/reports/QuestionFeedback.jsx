@@ -1,7 +1,8 @@
 'use client';
 
 import { Icon } from '@/components/student/ui';
-import { scoreBandKey, turnScore100 } from '@/lib/student/interviewReport';
+import { turnScore100 } from '@/lib/student/interviewReport';
+import { bandFor } from '@/components/shared/data-viz';
 
 function csvCell(v) {
   const s = v == null ? '' : String(v);
@@ -27,7 +28,7 @@ function downloadCsv(turns, fileBase) {
 
 function ScoreCell({ score }) {
   const s = turnScore100(score);
-  return <span className={`srp-qscore srp-tone--${scoreBandKey(s)}`}>{s == null ? '—' : `${s}/100`}</span>;
+  return <span className={`srp-qscore srp-tone--${bandFor(s)}`}>{s == null ? '—' : `${s}/100`}</span>;
 }
 
 export default function QuestionFeedback({ turns, fileBase = 'interview-feedback' }) {
@@ -41,7 +42,7 @@ export default function QuestionFeedback({ turns, fileBase = 'interview-feedback
         </div>
         {list.length ? (
           <button type="button" className="sd-btn sd-btn--outline sd-btn--sm" onClick={() => downloadCsv(list, fileBase)}>
-            <Icon name="download" size={16} /> Download for Excel
+            <Icon name="download" size={16} /> Download CSV
           </button>
         ) : null}
       </div>

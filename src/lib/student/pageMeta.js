@@ -13,8 +13,8 @@ export const PAGE_META = {
     subtitle: 'How you rank against classmates in your cohort.',
   },
   '/student/interviews': {
-    title: 'Start Interview',
-    subtitle: 'Set your role, mode, and difficulty—then start your AI mock interview.',
+    title: 'Interviews',
+    subtitle: 'Practise with AI mock and full interviews, see what is assigned to you and your history.',
   },
   '/student/reports': {
     title: 'My reports',

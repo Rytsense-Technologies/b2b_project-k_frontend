@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
-  FilterBar,
+  HeadChip,
   Icon,
-  KpiRow,
-  ModuleBanner,
+  ModuleHead,
   ModulePage,
   Pager,
   Panel,
@@ -15,20 +14,44 @@ import {
   SegTabs,
   countLabel,
 } from '@/components/shared/module-ui';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { notificationsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { useUrlState } from '@/hooks/useUrlState';
 
 const PAGE_SIZE = 25;
-const STATUS_FILTERS = [
-  { value: '', label: 'All' },
-  { value: 'sent', label: 'Delivered' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'log_only', label: 'Log-only' },
-];
 const TONE = { sent: 'sp-pill--good', failed: 'sp-pill--err', log_only: 'sp-pill--off' };
 const CHANNEL = { email: 'Email', whatsapp: 'WhatsApp' };
+/** Events a college can receive (backend notification_service.EVENTS; GET /notifications/deliveries?event=). */
+const EVENT_OPTIONS = [
+  { value: 'account_activation', label: 'Account activation invite' },
+  { value: 'password_reset', label: 'Password reset link' },
+  { value: 'content_ready_for_review', label: 'Content ready for review' },
+  { value: 'changes_requested', label: 'Changes requested' },
+  { value: 'content_published', label: 'Chapter published' },
+  { value: 'assessment_available', label: 'Assessment available' },
+  { value: 'pipeline_completed', label: 'Video pipeline finished' },
+  { value: 'interview_assignment', label: 'Interview assignment' },
+  { value: 'interview_completed', label: 'Interview completed' },
+  { value: 'interview_result', label: 'Interview result available' },
+];
+const CHANNEL_OPTIONS = [
+  { value: 'email', label: 'Email' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+];
+const RANGE_OPTIONS = [
+  { value: '7', label: 'Last 7 days' },
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' },
+];
+/** Empty state per status filter (no search). */
+const EMPTY_BY_STATUS = {
+  sent: ['No delivered messages in this range', 'Invites and alerts appear here once they reach the person.'],
+  failed: ['No failed messages', 'Every message in this range was delivered or recorded.'],
+  log_only: ['No log-only messages', 'Messages are recorded here only while email sending is switched off.'],
+};
 
 function when(iso) {
   const d = new Date(iso || '');
@@ -41,20 +64,64 @@ function when(iso) {
  * invites, content / assessment alerts, interview results) and their delivery
  * status. The server only returns this college's rows.
  */
-export default function AdminNotificationsPage() {
-  const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+function NotificationsLog() {
+  const [url, setUrl] = useUrlState({ q: '', status: '', event: '', channel: '', days: '90', page: '1' });
+  const [searchInput, setSearchInput] = useState(url.q);
   const [busy, setBusy] = useState('');
-  useEffect(() => { setPage(1); }, [status, search]);
+  const page = Math.max(1, Number(url.page) || 1);
+  const days = RANGE_OPTIONS.some((o) => o.value === url.days) ? url.days : '90';
+
+  useEffect(() => { setSearchInput(url.q); }, [url.q]);
+  useEffect(() => {
+    if (searchInput === url.q) return undefined;
+    const t = setTimeout(() => setUrl({ q: searchInput.trim(), page: '1' }), 300);
+    return () => clearTimeout(t);
+  }, [searchInput, url.q, setUrl]);
 
   const { data, loading, error, reload } = useAsyncResource(
-    () => fetchData(() => notificationsApi.listDeliveries({ status, q: search, page, page_size: PAGE_SIZE, days: 90 })),
-    [status, search, page],
+    () => fetchData(() => notificationsApi.listDeliveries({
+      status: url.status,
+      event: url.event,
+      channel: url.channel,
+      q: url.q,
+      page,
+      page_size: PAGE_SIZE,
+      days: Number(days),
+    })),
+    [url.status, url.event, url.channel, url.q, page, days],
   );
   const rows = useMemo(() => asList(data, []), [data]);
+  // `summary` covers the whole range only (the API ignores event / channel / search for it), so the
+  // Retry action uses it. The status tab counts follow every filter: with a narrowing filter set we
+  // ask for the total of each status (page_size 1) with the same filters.
   const summary = data?.summary || { sent: 0, failed: 0, log_only: 0 };
   const first = loading && !data;
+  const narrowed = Boolean(url.event || url.channel || url.q);
+  const { data: filteredCounts } = useAsyncResource(async () => {
+    if (!narrowed) return null;
+    const one = (status) => fetchData(() => notificationsApi.listDeliveries({
+      status, event: url.event, channel: url.channel, q: url.q, page: 1, page_size: 1, days: Number(days),
+    })).then((r) => (typeof r?.total === 'number' ? r.total : 0));
+    const [sent, failed, logOnly] = await Promise.all([one('sent'), one('failed'), one('log_only')]);
+    return { sent, failed, log_only: logOnly, key: [url.event, url.channel, url.q, days].join('|') };
+  }, [narrowed, url.event, url.channel, url.q, days]);
+  const countsKey = [url.event, url.channel, url.q, days].join('|');
+  const tabCounts = narrowed
+    ? (filteredCounts && filteredCounts.key === countsKey ? filteredCounts : null)
+    : (data ? summary : null);
+  const sum = tabCounts ? (tabCounts.sent || 0) + (tabCounts.failed || 0) + (tabCounts.log_only || 0) : null;
+  const statusTabs = [
+    { value: '', label: 'All', count: sum == null ? null : countLabel(sum) },
+    { value: 'sent', label: 'Delivered', count: tabCounts ? countLabel(tabCounts.sent || 0) : null },
+    { value: 'failed', label: 'Failed', count: tabCounts ? countLabel(tabCounts.failed || 0) : null },
+    { value: 'log_only', label: 'Log-only', count: tabCounts ? countLabel(tabCounts.log_only || 0) : null },
+  ];
+  const filtered = Boolean(url.q || url.status || url.event || url.channel);
+  const clearFilters = () => {
+    setSearchInput('');
+    setUrl({ q: '', status: '', event: '', channel: '', page: '1' });
+  };
+  const rangeLabel = RANGE_OPTIONS.find((o) => o.value === days)?.label || 'Last 90 days';
 
   const retry = async () => {
     setBusy('retry');
@@ -85,26 +152,19 @@ export default function AdminNotificationsPage() {
 
   return (
     <ModulePage className="ad-page">
-      <ModuleBanner
-        icon="bell"
-        eyebrow="Account"
-        title="Notifications"
-        lede="Activation invites and alerts Quirri sent to students and staff in your college, with their delivery status. Last 90 days."
-        actions={(
-          <button type="button" className="sd-btn sd-btn--amber" onClick={retry} disabled={busy === 'retry' || !summary.failed}>
-            <Icon name="refresh" size={16} />
-            {busy === 'retry' ? 'Retrying…' : summary.failed ? `Retry ${countLabel(summary.failed)} failed` : 'Retry failed emails'}
-          </button>
+      <ModuleHead
+        chips={(
+          <>
+            <HeadChip icon="building">Your college</HeadChip>
+            <HeadChip icon="clock" tone="grey">{rangeLabel}</HeadChip>
+          </>
         )}
-      />
-
-      <KpiRow
-        label="Delivery summary"
-        items={[
-          { icon: 'tick', label: 'Delivered', value: first ? null : countLabel(summary.sent), sub: 'Accepted by the email service' },
-          { icon: 'alert', label: 'Failed', value: first ? null : countLabel(summary.failed), sub: summary.failed ? 'Retry, or resend the invite' : 'Nothing to retry' },
-          { icon: 'clock', label: 'Log-only', value: first ? null : countLabel(summary.log_only), sub: 'Recorded; email not connected yet' },
-        ]}
+        actions={summary.failed ? (
+          <button type="button" className="sd-btn sd-btn--amber" onClick={retry} disabled={busy === 'retry'}>
+            <Icon name="refresh" size={16} />
+            {busy === 'retry' ? 'Retrying…' : `Retry ${countLabel(summary.failed)} failed`}
+          </button>
+        ) : null}
       />
 
       {data && summary.log_only && !summary.sent ? (
@@ -113,11 +173,6 @@ export default function AdminNotificationsPage() {
           connects it; until then share activation links another way or resend once it is live.
         </SectionState>
       ) : null}
-
-      <FilterBar label="Filter deliveries">
-        <SearchBox placeholder="Search email address or subject…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <SegTabs label="Delivery status" options={STATUS_FILTERS} value={status} onChange={setStatus} />
-      </FilterBar>
 
       {error ? (
         <SectionState
@@ -131,16 +186,53 @@ export default function AdminNotificationsPage() {
 
       <Panel
         title="Deliveries"
-        sub="Newest first"
-        action={<span className="sp-pill sp-pill--teal">{countLabel(data?.total ?? 0)} messages</span>}
+        sub={data ? `${countLabel(data?.total ?? 0)} message${data?.total === 1 ? '' : 's'} · newest first` : 'Newest first'}
         bodyClassName={null}
+        toolbar={(
+          <>
+            <SearchBox placeholder="Search email address or subject…" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+            <QuirriSelect
+              ariaLabel="Filter by event"
+              value={url.event}
+              onChange={(e) => setUrl({ event: e.target.value, page: '1' })}
+              placeholder="All events"
+              options={EVENT_OPTIONS}
+            />
+            <QuirriSelect
+              ariaLabel="Filter by channel"
+              value={url.channel}
+              onChange={(e) => setUrl({ channel: e.target.value, page: '1' })}
+              placeholder="All channels"
+              options={CHANNEL_OPTIONS}
+            />
+            <QuirriSelect
+              ariaLabel="Date range"
+              value={days}
+              onChange={(e) => setUrl({ days: e.target.value || '90', page: '1' })}
+              options={RANGE_OPTIONS}
+            />
+            <SegTabs label="Delivery status" options={statusTabs} value={url.status} onChange={(v) => setUrl({ status: v, page: '1' })} />
+            {filtered ? (
+              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear</button>
+            ) : null}
+          </>
+        )}
       >
         {first ? <div className="sp-panel-b"><SectionState title="Loading deliveries…" /></div> : null}
         {data && !rows.length ? (
           <div className="sp-panel-b">
-            <SectionState title={status || search ? 'No messages match these filters' : 'No messages yet'}>
-              Invites appear here when you add students or staff.
-            </SectionState>
+            {url.q || url.event || url.channel ? (
+              <SectionState
+                title="No messages match these filters"
+                action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear filters</button>}
+              >
+                Try another email address, event or channel, or a longer date range.
+              </SectionState>
+            ) : EMPTY_BY_STATUS[url.status] ? (
+              <SectionState title={EMPTY_BY_STATUS[url.status][0]}>{EMPTY_BY_STATUS[url.status][1]}</SectionState>
+            ) : (
+              <SectionState title="No messages in this range">Invites appear here when you add students or staff.</SectionState>
+            )}
           </div>
         ) : null}
         {rows.length ? (
@@ -157,36 +249,51 @@ export default function AdminNotificationsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <b>{r.event_label}</b>
-                      {r.subject ? <small className="ad-cell-sub">{r.subject}</small> : null}
-                    </td>
-                    <td data-label="Recipient" className="ad-break">{r.recipient}</td>
-                    <td data-label="Channel">{CHANNEL[r.channel] || r.channel}</td>
-                    <td data-label="Status">
-                      <span className={`sp-pill ${TONE[r.status_key] || ''}`}><i className="un-dot" aria-hidden="true" />{r.status}</span>
-                      {r.error ? <small className="ad-cell-sub sa-err-text">{r.error}</small> : null}
-                    </td>
-                    <td data-label="Time" className="sa-muted">{when(r.updated_at || r.created_at)}</td>
-                    <td>
-                      {r.event === 'account_activation' && r.channel === 'email' && r.status_key !== 'sent' ? (
-                        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => resend(r)} disabled={Boolean(busy)}>
-                          <Icon name="send" size={14} /> {busy === r.id ? 'Sending…' : 'Resend invite'}
-                        </button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((r) => {
+                  // The subject often repeats the event name ("Assessment available: X"); show only what is new.
+                  const label = r.event_label || '';
+                  const subject = r.subject && r.subject !== label
+                    ? (label && r.subject.startsWith(label) ? r.subject.slice(label.length).replace(/^[\s:–—-]+/, '') : r.subject)
+                    : '';
+                  return (
+                    <tr key={r.id}>
+                      <td>
+                        <b>{label || r.subject || 'Message'}</b>
+                        {subject ? <small className="ad-cell-sub">{subject}</small> : null}
+                      </td>
+                      <td data-label="Recipient" className="ad-break">{r.recipient}</td>
+                      <td data-label="Channel">{CHANNEL[r.channel] || r.channel}</td>
+                      <td data-label="Status">
+                        <span className={`sp-pill ${TONE[r.status_key] || ''}`}><i className="un-dot" aria-hidden="true" />{r.status}</span>
+                        {r.error ? <small className="ad-cell-sub sa-err-text">{r.error}</small> : null}
+                      </td>
+                      <td data-label="Time" className="sa-muted">{when(r.updated_at || r.created_at)}</td>
+                      <td>
+                        {r.event === 'account_activation' && r.channel === 'email' && r.status_key !== 'sent' ? (
+                          <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => resend(r)} disabled={Boolean(busy)}>
+                            <Icon name="send" size={14} /> {busy === r.id ? 'Sending…' : 'Resend invite'}
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         ) : null}
         {rows.length ? (
-          <Pager page={page} pageSize={PAGE_SIZE} total={data?.total ?? rows.length} shown={rows.length} onPage={setPage} noun="messages" />
+          <Pager page={page} pageSize={PAGE_SIZE} total={data?.total ?? rows.length} shown={rows.length} onPage={(p) => setUrl({ page: String(p) }, { push: true })} noun="messages" />
         ) : null}
       </Panel>
     </ModulePage>
+  );
+}
+
+export default function AdminNotificationsPage() {
+  return (
+    <Suspense fallback={<SectionState title="Loading notifications…" />}>
+      <NotificationsLog />
+    </Suspense>
   );
 }

@@ -1,27 +1,14 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { ModuleTabs } from '@/components/shared/module-ui';
 
 const TABS = [
-  { href: '/admin/structure/departments', label: 'Departments' },
-  { href: '/admin/structure/programmes', label: 'Programmes & subjects' },
+  { href: '/admin/structure/departments', label: 'Departments', icon: 'tree' },
+  { href: '/admin/structure/programmes', label: 'Programmes & subjects', icon: 'layers' },
 ];
 
-/** College Admin › Academic structure: switch between the department list
- *  and the programme › semester › subject › chapter workspace. */
+/** College Admin › Academic structure: route tabs between the department list
+ *  and the programme › semester › subject › chapter workspace (recipe v2). */
 export default function StructureTabs() {
-  const pathname = usePathname() || '';
-  return (
-    <nav className="tabs ad-subnav" aria-label="Academic structure">
-      {TABS.map((t) => {
-        const on = pathname === t.href || pathname.startsWith(`${t.href}/`);
-        return (
-          <Link key={t.href} href={t.href} className={`tab${on ? ' active' : ''}`} aria-current={on ? 'page' : undefined}>
-            {t.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  return <ModuleTabs tabs={TABS} label="Academic structure" />;
 }

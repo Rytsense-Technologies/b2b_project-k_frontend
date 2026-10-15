@@ -71,17 +71,28 @@ export function apiErrorMessage(err, fallback = 'Something went wrong') {
       .join('; ') || fallback;
   }
   const raw = err?.response?.data;
-  if (typeof raw === 'string' && raw.trim() && raw.trim() !== 'Internal Server Error') {
+  if (
+    typeof raw === 'string' && raw.trim() && raw.trim().length < 300
+    && raw.trim() !== 'Internal Server Error' && !raw.trim().startsWith('<')
+  ) {
     return raw.trim();
   }
-  // Next.js rewrite to a down FastAPI often returns plain "Internal Server Error"
-  if (err?.response?.status === 500 && (!raw || raw === 'Internal Server Error')) {
-    return 'The API server returned an error. Check that the backend is running on :8000.';
+  if (err?.code === 'ERR_NETWORK' || err?.message === 'Network Error' || (err?.request && !err?.response)) {
+    return "Can't connect right now. Check your internet connection and try again.";
   }
-  if (err?.code === 'ERR_NETWORK' || err?.message === 'Network Error') {
-    return 'Cannot reach the API. Check that the backend is running on :8000.';
+  if (err?.code === 'ECONNABORTED') {
+    return 'This is taking longer than expected. Please try again.';
   }
-  if (err?.message && err.message !== 'Network Error') return err.message;
+  const status = err?.response?.status;
+  if (status >= 500) return 'Something went wrong on our side. Please try again in a moment.';
+  if (status === 401) return 'Your session has ended. Please sign in again.';
+  if (status === 403) return "You don't have access to do this.";
+  if (status === 404) return fallback !== 'Something went wrong' ? fallback : "We couldn't find that. It may have been removed.";
+  if (status === 429) return 'Too many attempts. Please wait a minute and try again.';
+  // Axios' own messages ("Request failed with status code …") are not for people.
+  if (err?.message && !/status code|network error|timeout of/i.test(err.message) && !err?.isAxiosError) {
+    return err.message;
+  }
   return fallback;
 }
 

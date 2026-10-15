@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import { ConfirmNote, Icon, countLabel } from '@/components/shared/module-ui';
+import { ConfirmNote, Icon, Panel, countLabel } from '@/components/shared/module-ui';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { apiErrorMessage, unwrap } from '@/lib/api/superadmin/http';
 
@@ -97,13 +97,16 @@ function downloadCsv(name, lines) {
  * College Admin bulk student import (SOW §6.3): CSV of up to 100 students ->
  * server check (nothing written) -> create the rows that passed. Every created
  * student gets the same activation invite as "Add student".
+ * inline: render as a page panel (Students › Bulk import tab) instead of a modal.
  */
-export default function StudentBulkImport({ open, onClose, onImported, sampleDepartment }) {
+export default function StudentBulkImport({ open, onClose, onImported, sampleDepartment, inline = false }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [fileName, setFileName] = useState('');
   const [rows, setRows] = useState([]);
   const [fileError, setFileError] = useState('');
+  // Server or network trouble is not the file's fault - say so in the heading.
+  const [checkFailed, setCheckFailed] = useState(false);
   const [result, setResult] = useState(null); // dry run or final response
   const [busy, setBusy] = useState(false);
 
@@ -111,6 +114,7 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
     setFileName('');
     setRows([]);
     setFileError('');
+    setCheckFailed(false);
     setResult(null);
     if (inputRef.current) inputRef.current.value = '';
   };
@@ -118,7 +122,7 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
   const close = () => {
     if (busy) return;
     reset();
-    onClose();
+    onClose?.();
   };
 
   const check = async (parsed) => {
@@ -127,6 +131,7 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
       const res = unwrap(await usersApi.bulkImportStudents(parsed, { dryRun: true }));
       setResult(res);
     } catch (err) {
+      setCheckFailed(!err?.response || err.response.status >= 500);
       setFileError(apiErrorMessage(err, 'Could not check the file. Try again.'));
     } finally {
       setBusy(false);
@@ -196,9 +201,15 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
 
   const footer = (
     <>
-      <button type="button" className="sd-btn sd-btn--ghost" onClick={close} disabled={busy}>
-        {done ? 'Close' : 'Cancel'}
-      </button>
+      {inline ? (
+        <button type="button" className="sd-btn sd-btn--ghost" onClick={reset} disabled={busy || (!fileName && !result)}>
+          Clear
+        </button>
+      ) : (
+        <button type="button" className="sd-btn sd-btn--ghost" onClick={close} disabled={busy}>
+          {done ? 'Close' : 'Cancel'}
+        </button>
+      )}
       <div className="right">
         {result && invalid ? (
           <button type="button" className="sd-btn sd-btn--ghost" onClick={errorRows} disabled={busy}>
@@ -219,8 +230,7 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
     </>
   );
 
-  return (
-    <QuirriModal open={open} onClose={close} title="Bulk import students" crumb={`CSV · up to ${MAX_IMPORT_ROWS} students at a time`} wide footer={footer}>
+  const body = (
       <div className="un-form ad-import">
         {!done ? (
           <div className="ad-import-steps">
@@ -262,7 +272,7 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
         ) : null}
 
         {fileError ? (
-          <ConfirmNote danger title="This file can't be imported">{fileError}</ConfirmNote>
+          <ConfirmNote danger title={checkFailed ? "Couldn't check this file right now" : "This file can't be imported"}>{fileError}</ConfirmNote>
         ) : null}
 
         {result ? (
@@ -278,7 +288,14 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
               <div className="ad-import-sum" aria-live="polite">
                 <span className="sp-pill sp-pill--good"><i className="un-dot" aria-hidden="true" />{countLabel(valid)} ready</span>
                 {invalid ? <span className="sp-pill sp-pill--err"><i className="un-dot" aria-hidden="true" />{countLabel(invalid)} to fix</span> : null}
-                {result.seats_left != null ? <span className="sp-pill">{countLabel(result.seats_left)} seats left</span> : null}
+                {/* Seat info only when the college's student cap is close (≤ 50 left or fewer than this file adds). */}
+                {result.seats_left != null && (result.seats_left <= 50 || result.seats_left < valid) ? (
+                  <span className="sp-pill">
+                    {result.seats_left > 0
+                      ? `You can add ${countLabel(result.seats_left)} more student${result.seats_left === 1 ? '' : 's'}`
+                      : 'Your college has reached its student limit'}
+                  </span>
+                ) : null}
                 {invalid && valid ? <small className="ad-muted">Rows marked “Fix” are skipped; the rest can be added now.</small> : null}
               </div>
             )}
@@ -323,6 +340,24 @@ export default function StudentBulkImport({ open, onClose, onImported, sampleDep
           </>
         ) : null}
       </div>
+  );
+
+  if (inline) {
+    return (
+      <Panel
+        title="Import students from CSV"
+        sub={`Up to ${MAX_IMPORT_ROWS} students at a time · each one gets an activation link`}
+        className="ad-import-panel"
+      >
+        {body}
+        <div className="ad-import-foot">{footer}</div>
+      </Panel>
+    );
+  }
+
+  return (
+    <QuirriModal open={open} onClose={close} title="Bulk import students" crumb={`CSV · up to ${MAX_IMPORT_ROWS} students at a time`} wide footer={footer}>
+      {body}
     </QuirriModal>
   );
 }

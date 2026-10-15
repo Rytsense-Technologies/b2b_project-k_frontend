@@ -2,6 +2,7 @@
 
 import RolePortalSidebar from '@/components/shared/RolePortalSidebar';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
+import { useAuth } from '@/hooks/useAuth';
 
 const NAV = [
   {
@@ -71,7 +72,7 @@ const NAV = [
   { group: 'Insights' },
   {
     href: '/faculty/analytics',
-    label: 'Department analytics',
+    label: 'Analytics',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
@@ -111,13 +112,20 @@ const ICON = {
 /** HOD gets Staff + Reports; everyone gets Notifications + Settings. */
 function buildNav(isHod) {
   const out = [];
+  const interviews = NAV.find((item) => item.href === '/faculty/interviews');
   NAV.forEach((item) => {
-    out.push(item);
+    // Faculty only read interview assignments: they sit under Insights as "Interviews".
+    if (!isHod && item === interviews) return;
+    // HOD sees the whole department; Faculty see their own subjects.
+    out.push(isHod && item.href === '/faculty/analytics' ? { ...item, label: 'Department analytics' } : item);
     if (isHod && item.href === '/faculty/students') {
       out.push({ href: '/faculty/staff', label: 'Department staff', icon: ICON.staff });
     }
     if (isHod && item.href === '/faculty/analytics') {
       out.push({ href: '/faculty/reports', label: 'Reports', icon: ICON.reports });
+    }
+    if (!isHod && item.href === '/faculty/analytics') {
+      out.push({ ...interviews, label: 'Interviews' });
     }
   });
   out.push({ group: 'Account' });
@@ -128,10 +136,15 @@ function buildNav(isHod) {
 
 export default function FacultySidebar() {
   const { scope } = useFacultyScope();
-  const roleLabel = scope ? (scope.is_hod ? 'Head of department' : 'Faculty') : 'HOD / Faculty';
+  const { role } = useAuth();
+  // Only /faculty/me knows HOD vs Faculty: an HOD's session role can still read "faculty".
+  // Until scope loads, show no links rather than the wrong menu (a definite 'hod' role is safe).
+  const known = Boolean(scope) || role === 'hod';
+  const isHod = scope ? Boolean(scope.is_hod) : role === 'hod';
+  const roleLabel = known ? (isHod ? 'Head of department' : 'Faculty') : 'HOD / Faculty';
   return (
     <RolePortalSidebar
-      nav={buildNav(Boolean(scope?.is_hod))}
+      nav={known ? buildNav(isHod) : []}
       ariaLabel="HOD / Faculty"
       tenantTitle="Your department"
       tenantSubtitle={roleLabel}

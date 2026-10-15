@@ -1,7 +1,8 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+// Pages read the URL (useSearchParams); Next needs a Suspense boundary for the production build.
+import { Suspense, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setRoleDataOnly } from '@/store/slices/authSlice';
 import { selectSidebarOpen } from '@/store/slices/uiSlice';
@@ -12,6 +13,11 @@ import { PAGE_META } from '@/lib/student/pageMeta';
 import StudentSidebar from '@/components/student/StudentSidebar';
 import '@/styles/student-portal.css';
 
+/**
+ * Redesign (14 Oct 2026): every student page keeps the shell top bar (spec X5). Interviews is now a
+ * tabbed module (Start · Assigned · History), so its title must hold for a locked student too.
+ * TODO(main session): move into lib/student/pageMeta.js.
+ */
 export default function StudentLayout({ children }) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
@@ -54,7 +60,7 @@ export default function StudentLayout({ children }) {
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}
           </div>
         </div>
-        <div className="content">{children}</div>
+        <main className="content" id="main-content"><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
       </div>
     </div>
   );

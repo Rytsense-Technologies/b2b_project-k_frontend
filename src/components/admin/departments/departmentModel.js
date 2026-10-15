@@ -48,18 +48,28 @@ async function listUsers(role, tenantId) {
   return asList(body?.items || body?.users || body, []);
 }
 
-/** Active faculty + HOD accounts in this college, for the HOD picker. */
-export async function loadHodOptions(tenantId) {
+/** Faculty + HOD accounts in this college (first 100 per role). */
+export async function loadCollegeStaff(tenantId) {
   if (!tenantId) return [];
-  const [faculty, hods] = await Promise.all([
-    listUsers(ROLES.FACULTY, tenantId),
+  const [hods, faculty] = await Promise.all([
     listUsers(ROLES.HOD, tenantId),
+    listUsers(ROLES.FACULTY, tenantId),
   ]);
   const byId = new Map();
-  [...faculty, ...hods].forEach((u) => {
-    if (u?.id && u.is_active !== false) byId.set(u.id, u);
-  });
-  return [...byId.values()].map((u) => ({ value: u.id, label: personLabel(u) }));
+  [...hods, ...faculty].forEach((u) => { if (u?.id && !byId.has(u.id)) byId.set(u.id, u); });
+  return [...byId.values()];
+}
+
+/**
+ * HOD picker options: active faculty / HOD accounts placed in THIS department only
+ * (the server rejects an HOD from another department). A new department has none yet.
+ */
+export async function loadHodOptions(tenantId, dept) {
+  if (!tenantId || !dept?.id) return [];
+  const staff = await loadCollegeStaff(tenantId);
+  return staff
+    .filter((u) => u.is_active !== false && inDepartment(u, dept))
+    .map((u) => ({ value: u.id, label: personLabel(u) }));
 }
 
 /** Does this user belong to the department? Backend may send id or name. */
@@ -69,6 +79,40 @@ export function inDepartment(user, dept) {
   const name = (user.department_name || user.department || '').trim().toLowerCase();
   return Boolean(name) && name === String(dept.name || '').trim().toLowerCase();
 }
+
+/**
+ * Who heads a department — the one rule the list, the record header, the HOD panel
+ * and the People tab all use.
+ *   assigned  — set as the department's head and placed in it.
+ *   role      — not set as head, but an HOD account placed in this department
+ *               (they already review its chapters).
+ *   elsewhere — set as head but placed in another department, so they can't review here.
+ *   none      — nobody.
+ * `staff` = faculty + HOD accounts of the college (loadCollegeStaff).
+ */
+export function departmentHod(dept, staff = []) {
+  if (!dept) return { state: 'none', user: null, name: null };
+  const list = Array.isArray(staff) ? staff : [];
+  if (dept.hod_user_id) {
+    const user = list.find((u) => String(u.id) === String(dept.hod_user_id)) || null;
+    const name = dept.hod_name || fullName(user) || user?.email || 'Assigned';
+    if (user && !inDepartment(user, dept)) {
+      return {
+        state: 'elsewhere',
+        user,
+        name,
+        otherDepartment: user.department_name || user.department || null,
+      };
+    }
+    return { state: 'assigned', user, name };
+  }
+  const roleHod = list.find((u) => u?.role === ROLES.HOD && u.is_active !== false && inDepartment(u, dept));
+  if (roleHod) return { state: 'role', user: roleHod, name: fullName(roleHod) || roleHod.email };
+  return { state: 'none', user: null, name: null };
+}
+
+/** True when someone can review this department's chapters as its HOD. */
+export const hodCanReview = (hod) => hod?.state === 'assigned' || hod?.state === 'role';
 
 /**
  * Staff and students for one department. The users API has no department filter, so we
@@ -85,8 +129,11 @@ export async function loadDepartmentPeople(tenantId, dept) {
   [...hods, ...faculty].forEach((u) => {
     if (inDepartment(u, dept) && u?.id) staffMap.set(u.id, u);
   });
+  const collegeStaff = new Map();
+  [...hods, ...faculty].forEach((u) => { if (u?.id && !collegeStaff.has(u.id)) collegeStaff.set(u.id, u); });
   return {
     staff: [...staffMap.values()],
+    collegeStaff: [...collegeStaff.values()],
     students: students.filter((u) => inDepartment(u, dept)),
     capped: faculty.length >= 100 || hods.length >= 100 || students.length >= 100,
   };

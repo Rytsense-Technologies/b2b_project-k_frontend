@@ -28,6 +28,7 @@ export {
   collapseSpaces,
   normalizeEmail,
   normalizePhone,
+  formatIndianPhone,
   normalizeCode,
   normalizeSearch,
 } from './normalize';

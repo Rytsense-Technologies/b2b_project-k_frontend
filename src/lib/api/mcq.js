@@ -34,6 +34,27 @@ export const mcqApi = {
   },
 
   /**
+   * GET /mcq/my-attempts — every quiz the signed-in student submitted, with its chapter job_id.
+   * One call instead of get(jobId) per chapter. Returns [{ job_id, percentage, correct_count, total_questions, submitted_at }].
+   */
+  myAttempts() {
+    return api.get('/mcq/my-attempts').then((res) => res?.data?.items || []);
+  },
+
+  /**
+   * Staff view that treats "no question set yet" (404) as `null` instead of an error.
+   * Note: the browser still logs the 404 response in the network console; only the
+   * backend can avoid that (e.g. by returning the set state on the jobs list).
+   */
+  getOrNull(jobId) {
+    return api
+      .get(`/mcq/jobs/${encodeURIComponent(jobId)}`, {
+        validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+      })
+      .then((res) => (res?.status === 404 ? null : res?.data));
+  },
+
+  /**
    * POST /mcq/jobs/{job_id}/submit — student only, one attempt.
    * Body: { answers: [{ question_id, selected_options: ['A'|…] }] }
    */
@@ -158,6 +179,30 @@ export function optionEntries(question) {
   return keys
     .filter((k) => map[k] != null && String(map[k]).trim() !== '')
     .map((k) => ({ key: k, label: String(map[k]) }));
+}
+
+/**
+ * Question-set state for a chapter, from a staff MCQ document (or null when none exists).
+ * 'none' | 'generating' | 'failed' | 'awaiting' | 'approved'
+ */
+export function mcqSetState(doc) {
+  if (!doc) return 'none';
+  const s = String(doc.status || '').toLowerCase();
+  if (s === 'generating' || s === 'pending') return 'generating';
+  if (s === 'failed') return 'failed';
+  if (doc.approved_at) return 'approved';
+  return 'awaiting';
+}
+
+/** Human label for a question type: "true_false" → "True / False". */
+export function questionTypeLabel(type) {
+  const t = String(type || '').toLowerCase();
+  if (!t) return '';
+  if (t === 'true_false' || t === 'truefalse' || t === 'boolean') return 'True / False';
+  if (t === 'single' || t === 'single_choice' || t === 'mcq') return 'Single answer';
+  if (t === 'multiple' || t === 'multiple_choice' || t === 'multi') return 'Multiple answers';
+  const text = t.replace(/_/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export function isMultiSelect(question) {

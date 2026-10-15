@@ -1,7 +1,9 @@
 /**
  * Voice Q&A — `/voice_qna` (not under `/api/v1`).
  * Start uses the platform login cookie.
- * History uses the `user_token` returned by start (Bearer only).
+ * History (list / get / delete) uses the platform session cookie first; when the
+ * backend still answers 401 there (older builds accepted only the per-call
+ * `user_token`), it falls back to that Bearer token if this browser has one.
  */
 import { getApiOrigin } from '@/lib/apiConfig';
 
@@ -91,7 +93,7 @@ async function refreshPlatformSession() {
   }
 }
 
-async function request(path, { method = 'GET', search, auth = 'cookie', retried = false } = {}) {
+async function request(path, { method = 'GET', search, auth = 'cookie', retried = false, refresh = true } = {}) {
   const params = new URLSearchParams();
   if (search) {
     Object.entries(search).forEach(([key, value]) => {
@@ -126,7 +128,7 @@ async function request(path, { method = 'GET', search, auth = 'cookie', retried 
     console.error('[voice_qna]', url, err.data.detail);
     throw err;
   }
-  if (res.status === 401 && auth === 'cookie' && !retried) {
+  if (res.status === 401 && auth === 'cookie' && refresh && !retried) {
     if (await refreshPlatformSession()) {
       return request(path, { method, search, auth, retried: true });
     }
@@ -139,6 +141,22 @@ async function request(path, { method = 'GET', search, auth = 'cookie', retried 
     throw err;
   }
   return data;
+}
+
+/**
+ * History calls: platform session cookie first (no refresh / logout on 401 —
+ * a 401 here can simply mean the backend does not accept the cookie yet),
+ * then the stored Bearer `user_token` as a fallback.
+ */
+async function sessionRequest(path, opts = {}) {
+  try {
+    return await request(path, { ...opts, auth: 'cookie', refresh: false });
+  } catch (err) {
+    if ((err?.status === 401 || err?.status === 403) && readVoiceQnaToken()) {
+      return request(path, { ...opts, auth: 'bearer' });
+    }
+    throw err;
+  }
 }
 
 export const voiceQnaApi = {
@@ -164,17 +182,14 @@ export const voiceQnaApi = {
   },
 
   list() {
-    return request('/conversations', { auth: 'bearer' });
+    return sessionRequest('/conversations');
   },
 
   get(conversationId) {
-    return request(`/conversations/${encodeURIComponent(conversationId)}`, { auth: 'bearer' });
+    return sessionRequest(`/conversations/${encodeURIComponent(conversationId)}`);
   },
 
   remove(conversationId) {
-    return request(`/conversations/${encodeURIComponent(conversationId)}`, {
-      method: 'DELETE',
-      auth: 'bearer',
-    });
+    return sessionRequest(`/conversations/${encodeURIComponent(conversationId)}`, { method: 'DELETE' });
   },
 };
