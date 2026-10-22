@@ -10,7 +10,7 @@
 .pm-chips > span{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:var(--radius-full);background:rgba(255,255,255,.12);color:#fff}
 .pm-chips > span.is-on{background:#fff;color:var(--teal-500);font-weight:500}
 .pm-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:var(--radius-full);background:var(--teal-50);color:var(--teal-500);font-size:12px;line-height:18px;font-weight:500}
-.sp-tab[aria-selected="true"] .pm-count{background:rgba(255,255,255,.2);color:#fff}
+.sp-tab[aria-selected="true"] .pm-count{background:var(--neutral-0);color:var(--select-on)}
 .pm-kpis--3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .pm-kpis--2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pm-filter .toolbar{gap:16px}

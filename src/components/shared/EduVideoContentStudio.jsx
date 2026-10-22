@@ -27,7 +27,7 @@ import {
   ConfirmNote,
   countLabel,
 } from '@/components/shared/module-ui';
-import { Distribution } from '@/components/shared/data-viz';
+import { ModernDonut } from '@/components/shared/data-viz';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { academicsApi } from '@/lib/api/superadmin/academics';
@@ -121,7 +121,7 @@ function shortDate(value) {
   const d = new Date(value || '');
   return Number.isNaN(d.getTime())
     ? '—'
-    : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 function computeStage(job) {
@@ -143,15 +143,17 @@ const STAGE_LABEL = {
   stalled: 'Stalled',
 };
 
+// One colour per stage, shared with the "Where chapters are" donut (modern-cards-plan):
+// Generating grey · Ready to send blue · With HOD orange · Published green · Failed red.
 function statusBadge(job) {
   const stage = computeStage(job);
   switch (stage) {
     case 'failed':
       return { label: 'Failed', tone: 'err', progress: null, error: job?.error || null, filterKey: 'failed' };
     case 'completed':
-      return { label: STAGE_LABEL.completed, tone: 'good', progress: null, error: null, filterKey: 'completed' };
+      return { label: STAGE_LABEL.completed, tone: 'info', progress: null, error: null, filterKey: 'completed' };
     case 'awaiting_approval':
-      return { label: STAGE_LABEL.awaiting_approval, tone: 'low', progress: null, error: null, filterKey: 'awaiting_approval' };
+      return { label: STAGE_LABEL.awaiting_approval, tone: 'amber', progress: null, error: null, filterKey: 'awaiting_approval' };
     case 'published':
       return { label: 'Published', tone: 'good', progress: null, error: null, filterKey: 'published' };
     case 'stalled':
@@ -164,7 +166,7 @@ function statusBadge(job) {
     default:
       return {
         label: job?.status === JOB_STATUS.RENDERING ? 'Rendering' : 'Generating',
-        tone: 'teal', progress: computeJobProgress(job), error: null, filterKey: 'generating',
+        tone: 'off', progress: computeJobProgress(job), error: null, filterKey: 'generating',
       };
   }
 }
@@ -194,7 +196,8 @@ function RowMenu({ label, items }) {
     document.addEventListener('keydown', onKey);
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
-    menuRef.current?.querySelector('button:not(:disabled)')?.focus();
+    // preventScroll: focusing must not scroll the page, or the scroll listener closes the menu (390px bug).
+    menuRef.current?.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
     return () => {
       document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
@@ -922,18 +925,25 @@ function ContentStudio({ platformScope = false }) {
 
       <TabPanel value={listTab} current={tab} idBase="cs">
         {platformScope ? (
-          <Panel title="Where chapters are" sub={filterCollegeName ? `${filterCollegeName} · every uploaded chapter` : 'Every uploaded chapter on the platform'}>
+          <Panel
+            title="Where chapters are"
+            sub={filterCollegeName ? `${filterCollegeName} · every uploaded chapter` : 'Every uploaded chapter on the platform'}
+            action={jobsReady ? (
+              <div className="mdc-chip"><small>Total chapters</small><b>{(jobs.length || 0).toLocaleString('en-IN')}</b></div>
+            ) : null}
+          >
             {jobsReady ? (
-              <Distribution
-                label="Chapters by stage"
+              <ModernDonut
+                title="Chapters by stage"
+                unit="Chapters"
                 empty="No chapters uploaded yet."
                 parts={[
-                  // Stage is status, not category data: colours follow the row pills (failed = error red).
-                  { label: STAGE_LABEL.generating, value: stageCounts.generating || 0, color: 'var(--teal-300)' },
-                  { label: STAGE_LABEL.completed, value: stageCounts.completed || 0, color: 'var(--cat-1)' },
-                  { label: STAGE_LABEL.awaiting_approval, value: stageCounts.awaiting_approval || 0, color: 'var(--accent)' },
-                  { label: STAGE_LABEL.published, value: stageCounts.published || 0, color: 'var(--cat-2)' },
-                  { label: STAGE_LABEL.failed, value: (stageCounts.failed || 0) + (stageCounts.stalled || 0), color: 'var(--color-error)' },
+                  // Stage is status, not category data: grey while generating, red for failed (modern-cards-plan).
+                  { key: 'generating', label: STAGE_LABEL.generating, value: stageCounts.generating || 0, tone: 'neutral' },
+                  { key: 'completed', label: STAGE_LABEL.completed, value: stageCounts.completed || 0, tone: 'info' },
+                  { key: 'awaiting_approval', label: STAGE_LABEL.awaiting_approval, value: stageCounts.awaiting_approval || 0, tone: 'warn' },
+                  { key: 'published', label: STAGE_LABEL.published, value: stageCounts.published || 0, tone: 'good' },
+                  { key: 'failed', label: STAGE_LABEL.failed, value: (stageCounts.failed || 0) + (stageCounts.stalled || 0), tone: 'bad' },
                 ]}
               />
             ) : <p className="dv-empty">Loading…</p>}
@@ -1322,8 +1332,8 @@ function ContentStudio({ platformScope = false }) {
                       <td data-label="Received">
                         {item.changes_requested_at
                           ? new Date(item.changes_requested_at).toLocaleString('en-IN', {
-                            day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
-                          })
+                            day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
+                          }).replace('Sept', 'Sep')
                           : '—'}
                       </td>
                       <td>

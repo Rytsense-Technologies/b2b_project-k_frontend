@@ -20,10 +20,6 @@ export const PAGE_META = {
     title: 'Students',
     subtitle: 'Students within your scope, with learning and assessment activity.',
   },
-  '/faculty/interviews': {
-    title: 'Interview assignments',
-    subtitle: 'Assign AI mock interviews to cohorts in your department.',
-  },
   '/faculty/staff': {
     title: 'Department staff',
     subtitle: 'Faculty in your department and the subjects each one teaches.',
@@ -51,7 +47,6 @@ const GATED = 'Available to your head of department.';
 /** Role-neutral wording while GET /faculty/me is loading (no HOD-only phrasing flashes for Faculty). */
 const NEUTRAL = {
   '/faculty/dashboard': { title: 'Dashboard', subtitle: 'Review queues and activity in your scope.' },
-  '/faculty/interviews': { title: 'Interviews', subtitle: 'Mock interview assignments and results.' },
   '/faculty/staff': { title: 'Department staff', subtitle: '' },
   '/faculty/reports': { title: 'Reports', subtitle: '' },
   '/faculty/analytics': { title: 'Analytics', subtitle: 'Completion, quiz scores and tutor questions.' },
@@ -69,11 +64,6 @@ export function facultyPageMeta(route, scope) {
   switch (route) {
     case '/faculty/dashboard':
       return { ...base, subtitle: limited ? 'Review queues and activity for the subjects you teach.' : base.subtitle };
-    case '/faculty/interviews':
-      return scope.can_assign_interviews ? base : {
-        ...base,
-        subtitle: 'Mock interviews your HOD assigned, and how your students are doing.',
-      };
     case '/faculty/analytics':
       return {
         title: 'Analytics',

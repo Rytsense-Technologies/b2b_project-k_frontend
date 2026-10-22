@@ -14,7 +14,6 @@ import {
   Icon,
   ModulePage,
   ModuleHead,
-  HeadChip,
   TabNav,
   TabPanel,
   KpiRow,
@@ -33,7 +32,7 @@ import {
   initials,
   countLabel,
 } from '@/components/shared/module-ui';
-import { BarList, dataColor } from '@/components/shared/data-viz';
+import { MetricList, dataColor } from '@/components/shared/data-viz';
 import { analyticsApi } from '@/lib/api/analytics';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { usersApi } from '@/lib/api/superadmin/users';
@@ -51,7 +50,7 @@ const STAFF_ROLE_OPTIONS = [
   { value: ROLES.HOD, label: 'HOD' },
 ];
 
-const TONE = { red: 'err', amber: 'low', green: 'good' };
+const TONE = { red: 'err', amber: 'low', green: 'good', off: 'off' };
 
 const STATUS_FILTERS = [
   { value: '', label: 'All' },
@@ -77,12 +76,10 @@ function dateLabel(value) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function lastActive(user) {
+/** Drawer tile: date only, so the large stat value does not wrap. */
+function lastActiveDate(user) {
   const value = user?.last_login_at || user?.last_active || user?.last_login;
-  if (!value) return 'Never';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return 'Never';
-  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  return value ? dateLabel(value) : 'Never';
 }
 
 function scopeLabel(value) {
@@ -274,20 +271,16 @@ function CreateFacultyModal({ open, tenantId, departmentOptions, onClose, onSave
 
 /* ---------------------------------------------------------------- page */
 const TABS = ['staff', 'coverage'];
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10; // quirri-b2c-student-ui: lists page at 10
 const STAFF_ROLES = `${ROLES.HOD},${ROLES.FACULTY}`;
 
 function SubjectChips({ names }) {
   if (!names?.length) return <span className="ad-muted">None yet</span>;
+  // Plain text, not pills (clean pass, 20 Oct 2026): "Data Structures, Networks +2 more".
   return (
-    <span className="ad-subj-chips">
-      {names.slice(0, 2).map((n) => (
-        <span key={n} className="ad-subj-chip">
-          <i style={{ background: dataColor(n) }} aria-hidden="true" />
-          {n}
-        </span>
-      ))}
-      {names.length > 2 ? <small>+{names.length - 2} more</small> : null}
+    <span className="ad-subj-text">
+      {names.slice(0, 2).join(', ')}
+      {names.length > 2 ? <small> +{names.length - 2} more</small> : null}
     </span>
   );
 }
@@ -497,7 +490,6 @@ function StaffWorkspace() {
   return (
     <ModulePage className="ad-page">
       <ModuleHead
-        chips={<HeadChip icon="building">Your college</HeadChip>}
         actions={(
           <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
             <Icon name="plus" size={16} /> Add staff
@@ -632,12 +624,12 @@ function StaffWorkspace() {
                           </button>
                         </td>
                         <td data-label="Role"><RolePill user={user} /></td>
-                        <td data-label="Department">{user.department_name || user.department || '—'}</td>
+                        <td data-label="Department" className="ad-nowrap">{user.department_name || user.department || '—'}</td>
                         <td data-label="Subjects"><SubjectChips names={subjectMap[user.id]} /></td>
                         <td data-label="Status">
                           <StatusPill active on={userStatusLabel(user)} tone={TONE[statusVariant(user)]} />
                         </td>
-                        <td data-label="Last active">{lastActive(user)}</td>
+                        <td data-label="Last active" className="ad-nowrap">{lastActiveDate(user)}</td>
                         <td><RowActions user={user} /></td>
                       </tr>
                     );
@@ -659,9 +651,8 @@ function StaffWorkspace() {
         <div className="dv-grid ad-cover-grid">
           <Panel title="Subjects with a teacher" sub="Share of each department's subjects that have at least one staff member">
             {coverage ? (
-              <BarList
+              <MetricList
                 label="Subjects with a teacher by department"
-                max={100}
                 suffix="%"
                 items={coverage.depts.map((d) => ({
                   key: String(d.id),
@@ -715,14 +706,11 @@ function StaffWorkspace() {
         title={drawerUser ? fullName(drawerUser) : ''}
         mono={drawerUser ? fullName(drawerUser) : null}
         pills={drawerUser ? (
-          <>
-            <span className="sp-pill sp-pill--glass">{roleLabel(drawerUser)}</span>
-            <StatusPill active on={userStatusLabel(drawerUser)} tone={TONE[statusVariant(drawerUser)]} />
-          </>
+          <StatusPill active on={userStatusLabel(drawerUser)} tone={TONE[statusVariant(drawerUser)]} />
         ) : null}
         stats={drawerUser ? [
-          { label: 'Role', value: roleLabel(drawerUser) },
-          { label: 'Last active', value: lastActive(drawerUser) },
+          { label: 'Subjects', value: countLabel(subjectMap[drawerUser.id]?.length || 0) },
+          { label: 'Last active', value: lastActiveDate(drawerUser) },
         ] : null}
         footer={drawerUser ? (
           <>

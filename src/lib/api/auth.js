@@ -69,6 +69,18 @@ export const authApi = {
 
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
 
+  /** POST /auth/activate - first password from the invite e-mail link; signs the user in. */
+  activate: async (token, password) => {
+    const res = await api.post('/auth/activate', { token, password, confirm_password: password });
+    const session = normalizeLoginSession(res.data ?? {});
+    if (session?.role) {
+      setSessionCookie();
+      setRoleCookie(session.role);
+      setTenantCookie(session.tenant_id ?? null);
+    }
+    return session;
+  },
+
   resetPassword: (token, password) => api.post('/auth/reset-password', {
     token,
     new_password: password,

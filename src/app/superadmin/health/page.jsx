@@ -3,8 +3,6 @@
 import { Suspense, useMemo, useState } from 'react';
 import {
   ModulePage,
-  ModuleHead,
-  HeadChip,
   TabNav,
   TabPanel,
   KpiRow,
@@ -12,8 +10,9 @@ import {
   SegTabs,
   Icon,
   SectionState,
+  Pager,
 } from '@/components/shared/module-ui';
-import { BarList } from '@/components/shared/data-viz';
+import { MetricListCard, ModernDonut } from '@/components/shared/data-viz';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { healthApi } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
@@ -24,6 +23,7 @@ import { formatCount } from '@/lib/superadmin/format';
 import {
   UPTIME_OK, UPTIME_BAD, serviceTone, toNumber, groupNumbers, overallHealth,
 } from '@/lib/superadmin/health';
+import { withoutInterview } from '@/lib/product/interviewOff';
 
 const METRIC_ICONS = ['activity', 'clock', 'layers', 'alert'];
 const METRIC_PLACEHOLDERS = ['Uptime · 30d', 'API p95 latency', 'Jobs in queue', 'Failed jobs · 24h'];
@@ -33,6 +33,8 @@ const TABS = [
   { value: 'overview', label: 'Overview' },
   { value: 'errors', label: 'Errors' },
 ];
+
+const ERR_PAGE_SIZE = 10;
 
 /** GET /health/errors accepts days 1–30. */
 const RANGES = [
@@ -47,7 +49,7 @@ function formatWhen(iso) {
   if (Number.isNaN(d.getTime())) return iso || '—';
   return d.toLocaleString('en-IN', {
     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
-  });
+  }).replace('Sept', 'Sep');
 }
 
 /** 406000 ms -> "6 min 46 s"; 950 -> "950 ms". */
@@ -99,8 +101,9 @@ function ErrorRow({ row, open, onToggle }) {
 
 function HealthView() {
   const [tab] = useTabParam(TABS.map((t) => t.value), 'overview');
-  const [url, setUrl] = useUrlState({ service: '', days: '7' });
+  const [url, setUrl] = useUrlState({ service: '', days: '7', page: '1' });
   const days = RANGES.some((r) => r.value === url.days) ? url.days : '7';
+  const errPage = Math.max(1, Number.parseInt(url.page, 10) || 1);
   const [openError, setOpenError] = useState(null);
 
   const { data: statusData, loading: statusLoading, error: statusError, reload: reloadStatus } = useAsyncResource(
@@ -116,14 +119,18 @@ function HealthView() {
 
   const unavailable = !statusLoading && statusData == null && !statusError;
   const health = overallHealth(statusData);
-  const services = asList(statusData?.services, []);
+  const services = withoutInterview(asList(statusData?.services, []), (svc) => `${svc.name || ''} ${svc.service || ''}`);
   const latency = asList(statusData?.pipeline_latency, []);
-  const errorsByService = asList(statusData?.errors_by_service, []);
-  const errors = asList(errorsData, []);
+  const errorsByService = withoutInterview(asList(statusData?.errors_by_service, []), (e) => e.service);
+  const errors = withoutInterview(asList(errorsData, []), (row) => `${row.service || ''} ${row.path || ''} ${row.error || ''}`);
+  // Skill: lists show 10 rows with "Showing X–Y of Z" + Previous / Next under them.
+  const errPageCount = Math.max(1, Math.ceil(errors.length / ERR_PAGE_SIZE));
+  const errPageNow = Math.min(errPage, errPageCount);
+  const errRows = errors.slice((errPageNow - 1) * ERR_PAGE_SIZE, errPageNow * ERR_PAGE_SIZE);
   const errors24h = toNumber(statusData?.errors_24h);
 
   const kpis = useMemo(() => {
-    const raw = asList(statusData?.metrics, []);
+    const raw = withoutInterview(asList(statusData?.metrics, []), (m) => m.title || m.k);
     if (!raw.length) {
       return METRIC_PLACEHOLDERS.map((k, i) => ({
         icon: METRIC_ICONS[i], label: k, value: null, sub: statusLoading ? 'Loading…' : 'Not reported yet',
@@ -176,14 +183,13 @@ function HealthView() {
   const errorsInWindow = days === '1'
     ? errors24h
     : (errorsData ? errors.reduce((a, r) => a + (Number(r.count) || 0), 0) : null);
-  const tabs = TABS.map((t) => (t.value === 'errors' && errorsInWindow ? { ...t, count: formatCount(errorsInWindow) } : t));
   const rangeLabel = RANGES.find((r) => r.value === days)?.label;
+  // The badge follows the Errors tab window (default 7 days); the overview donut is always the last 24 hours — label both.
+  const tabs = TABS.map((t) => (t.value === 'errors' && errorsInWindow ? { ...t, label: `Errors · ${rangeLabel}`, count: formatCount(errorsInWindow) } : t));
 
   return (
     <ModulePage className="sa-page">
-      <ModuleHead
-        chips={<HeadChip icon="refresh" tone="grey">Live · {ago}</HeadChip>}
-      />
+      <p className="sa-live">Live · updated {ago}</p>
 
       {services.length ? (
         <section className={`sa-strip is-${health.level}`} role="status">
@@ -257,30 +263,38 @@ function HealthView() {
             )}
           </Panel>
 
-          <Panel
-            title="Errors by service · 24h"
-            sub={errors24h != null ? `${formatCount(errors24h)} server errors logged in the last 24 hours.` : 'Server errors logged in the last 24 hours.'}
-          >
-            {statusLoading && !statusData ? <p className="dv-empty">Loading…</p> : (
-              <BarList
-                label="Errors by service"
-                items={serviceBars}
-                empty="No server errors in the last 24 hours."
+          {/* Errors donut + stage timings stack beside the tall Services list so neither card is half-empty. */}
+          <div className="sa-col-stack">
+            <Panel
+              title="Errors by service · 24h"
+              sub={errors24h != null ? `${formatCount(errors24h)} server errors logged in the last 24 hours.` : 'Server errors logged in the last 24 hours.'}
+              className="mdc-card"
+              action={errors24h != null ? <div className="mdc-chip"><small>Total errors · 24h</small><b>{formatCount(errors24h)}</b></div> : null}
+            >
+              {statusLoading && !statusData ? <p className="dv-empty">Loading…</p> : (
+                <ModernDonut
+                  title="Errors by service"
+                  unit="Errors"
+                  parts={serviceBars}
+                  empty="No server errors in the last 24 hours."
+                />
+              )}
+            </Panel>
+
+            {statusLoading && !statusData ? (
+              <Panel title="Video pipeline stages" sub="p95 time per stage of chapter video generation, last 7 days."><p className="dv-empty">Loading…</p></Panel>
+            ) : (
+              <MetricListCard
+                title="Video pipeline stages"
+                sub="p95 time per stage of chapter video generation, last 7 days."
+                items={stageBars}
+                format={formatMs}
+                colorBy="single"
+                empty="No chapters generated this week. Stage timings appear after the next one."
               />
             )}
-          </Panel>
+          </div>
         </div>
-
-        <Panel title="Video pipeline stages" sub="p95 time per stage of chapter video generation, last 7 days." className="sa-wide-bars">
-          {statusLoading && !statusData ? <p className="dv-empty">Loading…</p> : (
-            <BarList
-              label="Video pipeline stages"
-              items={stageBars}
-              format={formatMs}
-              empty="No chapters generated this week. Stage timings appear after the next one."
-            />
-          )}
-        </Panel>
       </TabPanel>
 
       <TabPanel value="errors" current={tab} idBase="health">
@@ -294,13 +308,13 @@ function HealthView() {
                 <QuirriSelect
                   ariaLabel="Filter by service"
                   value={url.service}
-                  onChange={(e) => setUrl({ service: e.target.value })}
+                  onChange={(e) => setUrl({ service: e.target.value, page: '1' })}
                   options={serviceOptions}
                 />
               </div>
-              <SegTabs label="Time range" options={RANGES} value={days} onChange={(v) => setUrl({ days: v })} />
+              <SegTabs label="Time range" options={RANGES} value={days} onChange={(v) => setUrl({ days: v, page: '1' })} />
               {url.service || days !== '7' ? (
-                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setUrl({ service: '', days: '7' })}>
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setUrl({ service: '', days: '7', page: '1' })}>
                   Clear
                 </button>
               ) : null}
@@ -325,7 +339,7 @@ function HealthView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {errors.map((row) => {
+                  {errRows.map((row) => {
                     const key = row.id || `${row.time}-${row.error}`;
                     const open = openError === key;
                     return <ErrorRow key={key} row={row} open={open} onToggle={() => setOpenError(open ? null : key)} />;
@@ -339,6 +353,14 @@ function HealthView() {
             </p>
           ) : null}
         </Panel>
+        <Pager
+          page={errPageNow}
+          pageSize={ERR_PAGE_SIZE}
+          total={errors.length}
+          shown={errRows.length}
+          onPage={(p) => { setOpenError(null); setUrl({ page: String(p) }, { push: true }); }}
+          noun="errors"
+        />
       </TabPanel>
     </ModulePage>
   );

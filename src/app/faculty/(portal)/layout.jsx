@@ -44,7 +44,7 @@ export default function FacultyLayout({ children }) {
   const matchedRoute = Object.keys(PAGE_META)
     .filter((k) => pathname?.startsWith(k))
     .sort((a, b) => b.length - a.length)[0];
-  const meta = matchedRoute ? facultyPageMeta(matchedRoute, scope) : { title: 'Page not found', subtitle: '' };
+  const meta = matchedRoute ? facultyPageMeta(matchedRoute, scope) : { title: 'Page not found', subtitle: 'This address does not match a page in your portal.' };
 
   return (
     <div className={`app q-app-shell ${mobileNavShellClass(navOpen)}`}>

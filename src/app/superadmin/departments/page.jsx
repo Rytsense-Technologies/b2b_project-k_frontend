@@ -39,7 +39,7 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { collegeOptionLabel } from '@/lib/superadmin/format';
 import { departmentCreateSchema, departmentUpdateSchema } from '@/lib/validation';
 import { ROLES } from '@/lib/permissions';
-import { BarList, Distribution, dataColor } from '@/components/shared/data-viz';
+import { MetricList, ModernDonut, dataColor } from '@/components/shared/data-viz';
 import { useUrlState } from '@/hooks/useUrlState';
 import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
@@ -52,7 +52,7 @@ const EMPTY_FORM = {
   hod_user_id: '',
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 function isActiveDept(dept) {
   return dept?.is_active !== false;
@@ -62,7 +62,7 @@ function formatDate(value) {
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 function personLabel(user) {
@@ -527,8 +527,8 @@ function DepartmentsView() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
   const hodParts = [
-    { label: 'HOD assigned', value: activeAll.length - withoutHod, color: 'var(--cat-2)' },
-    { label: 'No HOD', value: withoutHod, color: 'var(--highlight)' },
+    { key: 'assigned', label: 'HOD assigned', value: activeAll.length - withoutHod, tone: 'good' },
+    { key: 'none', label: 'No HOD', value: withoutHod, tone: 'warn' },
   ];
 
   return (
@@ -554,10 +554,15 @@ function DepartmentsView() {
       {activeAll.length > 1 ? (
         <div className="dv-grid">
           <Panel title="Students by department" sub={collegeName ? `Departments of ${collegeName}` : 'Largest departments across the platform'}>
-            <BarList label="Students by department" items={studentBars} />
+            <MetricList label="Students by department" items={studentBars} />
           </Panel>
-          <Panel title="HOD coverage" sub="Active departments with and without a head of department.">
-            <Distribution label="HOD coverage" parts={hodParts} />
+          <Panel
+            title="HOD coverage"
+            sub="Active departments with and without a head of department."
+            className="mdc-card"
+            action={<div className="mdc-chip"><small>Total departments</small><b>{countLabel(activeAll.length)}</b></div>}
+          >
+            <ModernDonut title="HOD coverage" unit="Departments" parts={hodParts} />
             {withoutHod ? (
               <button type="button" className="sp-link sa-link-btn sa-gap-top" onClick={() => setUrl({ hod: 'none', status: 'true', page: '1' })}>
                 Show departments without an HOD <Icon name="arrow" size={14} />
@@ -568,7 +573,7 @@ function DepartmentsView() {
       ) : null}
 
       <Panel
-        title="All departments"
+        title={url.status === 'true' ? 'Active departments' : url.status === 'false' ? 'Inactive departments' : 'All departments'}
         sub={data ? `${countLabel(shownCount)} ${shownCount === 1 ? 'department' : 'departments'}${filtersOn ? ' match these filters' : ''}${noHod && total > pageRows.length ? ' on this page' : ''}` : null}
         bodyClassName={null}
         toolbar={(

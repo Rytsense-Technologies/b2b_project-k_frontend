@@ -8,7 +8,7 @@ import { Icon, SectionState } from '@/components/student/ui';
 import { mcqApi, mcqErrorMessage, optionEntries, isMultiSelect } from '@/lib/api/mcq';
 import { mcqSubmitSchema } from '@/lib/validation';
 import { formatDateTime } from '@/lib/student/learning';
-import { BandPill, Distribution, bandFor } from '@/components/shared/data-viz';
+import { BandPill, ModernDonut, bandFor } from '@/components/shared/data-viz';
 
 /**
  * Student chapter assessment for one edu_video job (owner mock-ups, Oct 2026):
@@ -69,7 +69,7 @@ export default function McqStudentQuiz({
     [view],
   );
   // The chapter title (from the URL / chapter list) — the MCQ set's own title is often the source filename.
-  const title = chapterTitle || view?.title || 'Chapter quiz';
+  const title = chapterTitle || view?.title || 'Chapter assessment';
   const classroomHref = context.classroomHref || '/student/subjects';
   const tutorHref = context.tutorHref || '/student/subjects';
 
@@ -542,19 +542,22 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
         <div className="sl-score-cell"><b>{result.correct_count} / {result.total_questions}</b><small>Correct</small></div>
         <div className="sl-score-cell sl-score-cell--dist">
           <BandPill score={pctValue} />
-          <Distribution
-            label="Answers"
+          <ModernDonut
+            compact
+            size={112}
+            title="Answers"
+            unit={(result.total_questions || rows.length) === 1 ? 'Question' : 'Questions'}
             total={result.total_questions || rows.length}
             parts={[
-              { label: 'Correct', value: right.length, color: 'var(--band-strong)' },
-              { label: 'Incorrect', value: incorrect, color: 'var(--band-focus)' },
-              { label: 'Unanswered', value: unanswered, color: 'var(--band-none)' },
+              { label: 'Correct', value: right.length, tone: 'strong' },
+              { label: 'Incorrect', value: incorrect, tone: 'focus' },
+              { label: 'Unanswered', value: unanswered, tone: 'neutral' },
             ]}
           />
           <small>Result</small>
         </div>
         <div className="sl-score-cell sl-score-cell--wide">
-          <b className="sl-score-when">{submitted ? `Submitted ${submitted}` : 'Submitted'}</b>
+          <b className="sl-score-when">{submitted || '—'}</b>
           <span>One attempt only. This score is final.</span>
           <small>Submitted</small>
         </div>
@@ -595,7 +598,16 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
                       <td data-label="Your answer">{(r.selected_options || []).join(', ') || '—'}</td>
                       <td data-label="Correct answer">{(r.correct_options || []).join(', ') || '—'}</td>
                       <td data-label="">
-                        <button type="button" className="sl-linkbtn sl-linkbtn--sm" onClick={() => go({ view: 'review', filter: 'all' })}>
+                        <button
+                          type="button"
+                          className="sl-linkbtn sl-linkbtn--sm"
+                          aria-label={`Review question ${r.n}`}
+                          onClick={() => {
+                            go({ view: 'review', filter: 'all' });
+                            // Open the review at this question, not at the top of the list.
+                            setTimeout(() => document.getElementById(`sl-rq-${r.n}`)?.scrollIntoView({ block: 'start' }), 80);
+                          }}
+                        >
                           Review <Icon name="arrow" size={16} />
                         </button>
                       </td>
@@ -636,7 +648,7 @@ function QuizResults({ title, result, questions, context, nav, onNav, crumbs, cl
                 ))}
               </ul>
             ) : (
-              <SectionState title="Nothing to revise here">Move on to your next chapter, or practise a mock interview.</SectionState>
+              <SectionState title="Nothing to revise here">Move on to your next chapter.</SectionState>
             )}
           </section>
           <aside className="sl-card sl-next" aria-labelledby="sl-plan-h">

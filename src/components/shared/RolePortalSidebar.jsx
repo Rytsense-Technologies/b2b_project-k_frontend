@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { clearCredentials } from '@/store/slices/authSlice';
-import { resetSession } from '@/store/slices/interviewSlice';
 import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
 import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/lib/api/auth';
@@ -39,12 +38,26 @@ export default function RolePortalSidebar({
   tenantSubtitle = '',
   fallbackInitials = 'U',
   loginPath = '/auth/login',
+  /** Account menu items on the user row (quirri-b2c-student-ui: avatar row opens a menu). */
+  menuLinks = [],
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const sidebarOpen = useAppSelector(selectSidebarOpen);
   const { user } = useAuth();
+
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDown = (e) => { if (!menuRef.current?.contains(e.target)) setMenuOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [menuOpen]);
   const { show: showTip, hide: hideTip, TipLayer } = useQuirriTip();
 
   const [sessionUIReady, setSessionUIReady] = useState(false);
@@ -76,7 +89,6 @@ export default function RolePortalSidebar({
     clearTokens();
     clearFacultyScopeCache();
     dispatch(clearCredentials());
-    dispatch(resetSession());
     queryClient.clear();
     toast.success('Logged out successfully');
     router.push(loginPath);
@@ -158,10 +170,29 @@ export default function RolePortalSidebar({
       <div className="side-foot">
         <div
           className="who"
+          ref={menuRef}
           {...(!sidebarOpen
             ? tipHandlers(`${displayName} · ${displayEmail || ariaLabel}`, 'right')
             : {})}
         >
+          {menuLinks.length ? (
+            <button
+              type="button"
+              className="who-trigger"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-label="Account menu"
+              onClick={() => setMenuOpen((v) => !v)}
+            />
+          ) : null}
+          {menuOpen ? (
+            <div className="who-menu" role="menu">
+              {menuLinks.map((it) => (
+                <Link key={it.href} href={it.href} role="menuitem" onClick={() => setMenuOpen(false)}>{it.label}</Link>
+              ))}
+              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); handleLogout(); }}>Log out</button>
+            </div>
+          ) : null}
           <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
           <div className="who-meta">
             {pending ? (

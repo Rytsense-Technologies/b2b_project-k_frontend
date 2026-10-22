@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Icon,
@@ -9,13 +9,20 @@ import {
   Panel,
   SectionState,
   SegTabs,
+  TabNav,
+  TabPanel,
   countLabel,
 } from '@/components/shared/module-ui';
 import { myNotificationsApi } from '@/lib/api/faculty/directory';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { useTabParam } from '@/hooks/useUrlState';
+import { useFacultyScope } from '@/hooks/useFacultyScope';
+import NotificationRules from '@/components/shared/NotificationRules';
 
 const PAGE_SIZE = 25;
+const KINDS = ['all', 'review', 'other'];
+const SECTIONS = ['messages', 'rules'];
 const REVIEW_EVENT = 'content_ready_for_review';
 const CHANNEL = { email: 'Email', whatsapp: 'WhatsApp' };
 const FILTERS = [
@@ -47,10 +54,16 @@ function timeOf(iso) {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: TZ }).toLowerCase();
 }
 
-/** Messages Quirri sent this HOD / Faculty member (review alerts and more), grouped by day. */
-export default function FacultyNotificationsPage() {
+/**
+ * Messages Quirri sent this HOD / Faculty member (review alerts and more), grouped by day,
+ * plus the email switches: HOD = their department's rules, Faculty = their own preferences.
+ */
+function FacultyNotificationsView() {
+  const { scope } = useFacultyScope();
+  const isHod = Boolean(scope?.is_hod) || String(scope?.role || '').toLowerCase() === 'hod';
+  const [section, setSection] = useTabParam(SECTIONS, 'messages');
   const [page, setPage] = useState(1);
-  const [kind, setKind] = useState('all');
+  const [kind, setKind] = useTabParam(KINDS, 'all', 'show');
   const { data, loading, error, reload } = useAsyncResource(
     () => myNotificationsApi.list({ page, pageSize: PAGE_SIZE, days: 90 }),
     [page],
@@ -58,6 +71,8 @@ export default function FacultyNotificationsPage() {
   const rows = useMemo(() => asList(data, []), [data]);
   const first = loading && !data;
   const shown = rows.filter((r) => kind === 'all' || (kind === 'review') === (r.event === REVIEW_EVENT));
+  const reviewCount = rows.filter((r) => r.event === REVIEW_EVENT).length;
+  const kindCount = { all: rows.length, review: reviewCount, other: rows.length - reviewCount };
 
   const groups = useMemo(() => {
     const out = [];
@@ -70,9 +85,20 @@ export default function FacultyNotificationsPage() {
     return out;
   }, [shown]);
 
+  const sections = [
+    { value: 'messages', label: 'Messages' },
+    { value: 'rules', label: isHod ? 'Rules' : 'My notifications' },
+  ];
+
   return (
     <ModulePage className="fa-page">
-            {error ? (
+      <TabNav label="Notification sections" idBase="fa-notif" value={section} onChange={setSection} tabs={sections} />
+      <TabPanel value="rules" current={section} idBase="fa-notif">
+        {/* The server picks the scope (HOD = department, Faculty = personal); /faculty/me only decides "Send test". */}
+        <NotificationRules canTest={isHod} />
+      </TabPanel>
+      <TabPanel value="messages" current={section} idBase="fa-notif">
+      {error ? (
         <SectionState
           tone="err"
           title="Could not load notifications"
@@ -85,7 +111,14 @@ export default function FacultyNotificationsPage() {
         title="Messages"
         sub={data ? `${countLabel(data.total ?? rows.length)} in the last 90 days · newest first` : 'Newest first'}
         bodyClassName={null}
-        toolbar={rows.length ? <SegTabs label="Show" options={FILTERS} value={kind} onChange={setKind} /> : null}
+        action={rows.length ? (
+          <SegTabs
+            label="Show"
+            value={kind}
+            onChange={setKind}
+            options={FILTERS.map((f) => ({ ...f, count: countLabel(kindCount[f.value]) }))}
+          />
+        ) : null}
       >
         {first ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
         {data && !rows.length ? (
@@ -95,7 +128,13 @@ export default function FacultyNotificationsPage() {
         ) : null}
         {rows.length && !shown.length ? (
           <div className="sp-panel-b">
-            <SectionState title="Nothing of this kind on this page">Switch to All, or go to the next page.</SectionState>
+            {(data?.total ?? rows.length) > PAGE_SIZE ? (
+              <SectionState title={kind === 'review' ? 'No review alerts on this page' : 'No other messages on this page'}>Try the next page, or switch to All.</SectionState>
+            ) : (
+              <SectionState title={kind === 'review' ? 'No review alerts' : 'No other messages'}>
+                {kind === 'review' ? 'Nothing was sent for your review in the last 90 days.' : 'Only review alerts arrived in the last 90 days.'}
+              </SectionState>
+            )}
           </div>
         ) : null}
         {groups.map((g) => (
@@ -114,7 +153,7 @@ export default function FacultyNotificationsPage() {
                       {r.subject ? <small>{r.subject}</small> : null}
                       <small className="fa-note-meta">
                         {[timeOf(r.created_at), CHANNEL[r.channel] || r.channel].filter(Boolean).join(' · ')}
-                        {r.status_key === 'failed' ? <span className="sp-pill sp-pill--off">Not delivered</span> : null}
+                        {r.status_key === 'failed' ? <span className="sp-pill sp-pill--off"><i className="un-dot" aria-hidden="true" />Not delivered</span> : null}
                       </small>
                     </div>
                     {review ? (
@@ -126,10 +165,19 @@ export default function FacultyNotificationsPage() {
             </ul>
           </section>
         ))}
-        {rows.length ? (
+        {rows.length && (shown.length || (data?.total ?? rows.length) > PAGE_SIZE) ? (
           <Pager page={page} pageSize={PAGE_SIZE} total={data?.total ?? rows.length} shown={rows.length} onPage={setPage} noun="messages" />
         ) : null}
       </Panel>
+      </TabPanel>
     </ModulePage>
+  );
+}
+
+export default function FacultyNotificationsPage() {
+  return (
+    <Suspense fallback={<SectionState title="Loading notifications…" />}>
+      <FacultyNotificationsView />
+    </Suspense>
   );
 }

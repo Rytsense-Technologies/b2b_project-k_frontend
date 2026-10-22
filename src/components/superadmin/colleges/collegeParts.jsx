@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { QuirriRHFField, QuirriSelect, IndiaLocationFields } from '@/components/superadmin/quirri-ui';
 import { Icon, SectionState } from '@/components/shared/module-ui';
+import ScoreRing from '@/components/shared/ScoreRing';
 import { collegesApi } from '@/lib/api/superadmin/modules';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { collegeCreateSchema, collegeUpdateSchema } from '@/lib/validation';
@@ -32,7 +33,7 @@ export const EMPTY_FORM = {
   admins: [{ name: '', email: '', mobile: '+91' }],
 };
 
-export const PAGE_SIZE = 25;
+export const PAGE_SIZE = 10;
 
 /** A college at or above this share of its seat cap is "near the cap". */
 export const NEAR_CAP_PCT = 90;
@@ -73,14 +74,24 @@ export function adminStatus(status) {
   return { cls: '', label: status || '—' };
 }
 
+/** Seat usage as a small ring (modern-cards-plan: single meters → ScoreRing). The % sits in the text so "<1%" reads exactly. */
 export function SeatBar({ students, cap, pct, compact = false }) {
+  const high = pct >= 90;
+  const pctLabel = cap ? `${pct === 0 && students > 0 ? '<1' : pct}%` : null;
   return (
-    <div className={`co-seat${compact ? ' is-compact' : ''}${pct >= 90 ? ' is-high' : ''}`}>
+    <div className={`co-seat co-seat--ring${compact ? ' is-compact' : ''}${high ? ' is-high' : ''}`}>
+      <ScoreRing
+        score={cap ? pct : null}
+        size={compact ? 'xs' : 'sm'}
+        suffix="%"
+        color={high ? 'var(--accent-text)' : 'var(--teal-700)'}
+        label={cap ? `Seat usage ${pctLabel}` : 'No seat cap set'}
+        className="co-seat-ring"
+      />
       <div className="co-seat-h">
         <span><b>{num(students)}</b> / {cap ? num(cap) : '—'} seats</span>
-        {cap ? <span className="co-seat-pct">{pct}%</span> : null}
+        {pctLabel ? <span className="co-seat-pct">{pctLabel} used</span> : null}
       </div>
-      <span className="co-seat-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   Icon,
+  ModuleHead,
   ModulePage,
   Panel,
   StatusPill,
@@ -98,22 +99,6 @@ function DepartmentRecord() {
       { label: 'Departments', href: DEPARTMENTS_PATH },
       { label: dept.name },
     ],
-    actions: active ? (
-      <>
-        <button type="button" className={`sd-btn ${hasHod ? 'sd-btn--teal' : 'sd-btn--outline'}`} onClick={() => setDrawer('edit')}>
-          <Icon name="edit" size={16} /> Edit department
-        </button>
-        {!hasHod ? (
-          <button type="button" className="sd-btn sd-btn--amber" onClick={() => setDrawer('hod')}>
-            <Icon name="userPlus" size={16} /> Assign HOD
-          </button>
-        ) : null}
-      </>
-    ) : (
-      <button type="button" className="sd-btn sd-btn--teal" onClick={() => status.request(dept)}>
-        <Icon name="refresh" size={16} /> Reactivate
-      </button>
-    ),
   } : {
     title: error ? 'Department' : 'Loading department…',
     subtitle: null,
@@ -122,7 +107,26 @@ function DepartmentRecord() {
       { label: 'Departments', href: DEPARTMENTS_PATH },
       { label: 'Department' },
     ],
-  }, [dept, error, active, hasHod, peopleLoading]);
+  }, [dept, error]);
+
+  // Page actions go through ModuleHead: title row on desktop, an in-flow row below 1024px
+  // (top-bar-only actions are hidden on phones). One orange primary.
+  const headActions = !dept ? null : active ? (
+    <>
+      <button type="button" className={`sd-btn ${hasHod ? 'sd-btn--amber' : 'sd-btn--outline'}`} onClick={() => setDrawer('edit')}>
+        <Icon name="edit" size={16} /> Edit department
+      </button>
+      {!hasHod ? (
+        <button type="button" className="sd-btn sd-btn--amber" onClick={() => setDrawer('hod')}>
+          <Icon name="userPlus" size={16} /> Assign HOD
+        </button>
+      ) : null}
+    </>
+  ) : (
+    <button type="button" className="sd-btn sd-btn--amber" onClick={() => status.request(dept)}>
+      <Icon name="refresh" size={16} /> Reactivate
+    </button>
+  );
 
   if (error) {
     const code = httpStatus(error);
@@ -174,7 +178,8 @@ function DepartmentRecord() {
   const studentCount = dept.student_count ?? (peopleLoading ? null : students.length);
 
   return (
-    <ModulePage className="ad-page pm-slice">
+    <ModulePage className="ad-page ad-dept pm-slice">
+      <ModuleHead actions={headActions} />
       {url.created ? (
         <Callout
           title={`${dept.name} is ready`}
@@ -236,8 +241,8 @@ function DepartmentRecord() {
                 <div><dt>Code</dt><dd>{dept.code || '—'}</dd></div>
                 <div><dt>College</dt><dd>{dept.college_name || 'Your college'}</dd></div>
                 <div><dt>Status</dt><dd>{active ? 'Active' : 'Inactive'}</dd></div>
-                <div><dt>Added on</dt><dd>{dateLabel(dept.created_at) || '—'}</dd></div>
-                <div><dt>Last updated</dt><dd>{dateLabel(dept.updated_at) || '—'}</dd></div>
+                {/* "Added on" sits in the summary strip above; only show a real update date here. */}
+                {dateLabel(dept.updated_at) ? <div><dt>Last updated</dt><dd>{dateLabel(dept.updated_at)}</dd></div> : null}
               </dl>
             </Panel>
 

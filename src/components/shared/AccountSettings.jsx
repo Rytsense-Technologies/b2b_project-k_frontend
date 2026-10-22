@@ -44,8 +44,10 @@ function formatRoleLabel(role) {
 /**
  * Self-service account page (profile + password) shared by every portal.
  * Role and institution are shown read-only; `/auth/me` is the source.
+ * `extraTabs` = [{ id, label, render: () => node }] adds portal-specific tabs after Security
+ * (Student: Notifications).
  */
-export default function AccountSettings() {
+export default function AccountSettings({ extraTabs = [] }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -54,7 +56,9 @@ export default function AccountSettings() {
   const [roleLabel, setRoleLabel] = useState('—');
   const [access, setAccess] = useState('—');
   // Tab in ?tab= so Back returns to the previous tab and links can open Security directly.
-  const [tab, setTab] = useTabParam(['profile', 'security'], 'profile');
+  const tabs = [...TABS, ...extraTabs];
+  const [tab, setTab] = useTabParam(tabs.map((t) => t.id), 'profile');
+  const extra = extraTabs.find((t) => t.id === tab);
   // What the server has; the card and side panel show this, not the unsaved draft.
   const [saved, setSaved] = useState({ first_name: '', last_name: '', email: '', phone: '' });
 
@@ -62,6 +66,7 @@ export default function AccountSettings() {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { isDirty },
   } = useForm({
     resolver: zodResolver(settingsProfileSchema),
@@ -74,6 +79,10 @@ export default function AccountSettings() {
     },
     mode: 'onBlur',
   });
+
+  // Save stays off while a required name is empty (last name counts once the account has one).
+  const [wFirst, wLast] = watch(['first_name', 'last_name']);
+  const missingName = !String(wFirst || '').trim() || (Boolean(String(saved.last_name || '').trim()) && !String(wLast || '').trim());
 
   // Stored as typed; shown title-cased like the sidebar.
   const fullName = titleCase([saved.first_name, saved.last_name].filter(Boolean).join(' '));
@@ -137,7 +146,7 @@ export default function AccountSettings() {
   }, []);
 
   const onSave = handleSubmit(async (values) => {
-    if (loadError) return;
+    if (loadError || missingName) return;
     setSaving(true);
     try {
       await fetchData(() => settingsApi.update({
@@ -185,7 +194,7 @@ export default function AccountSettings() {
   return (
     <ModulePage className="sa-page sa-settings">
       <div className="tabs" role="tablist" aria-label="Settings sections">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
@@ -213,7 +222,9 @@ export default function AccountSettings() {
         </SectionState>
       ) : null}
 
-      <div className="pm-settings">
+      {extra ? extra.render() : null}
+
+      <div className="pm-settings" style={extra ? { display: 'none' } : undefined}>
         {tab === 'profile' ? (
           <section className="sp-panel sa-account">
             {accountHead}
@@ -279,7 +290,7 @@ export default function AccountSettings() {
                 >
                   <Icon name="key" size={16} /> Change password
                 </button>
-                <button className="sd-btn sd-btn--amber" type="submit" disabled={!isDirty || saving || loading || Boolean(loadError)}>
+                <button className="sd-btn sd-btn--amber" type="submit" disabled={!isDirty || missingName || saving || loading || Boolean(loadError)}>
                   <Icon name="tick" size={16} />
                   {saving ? 'Saving…' : 'Save changes'}
                 </button>
@@ -321,6 +332,8 @@ export default function AccountSettings() {
           </section>
         )}
 
+        {/* Students: role / email / phone already show in the header and the form — no repeat card. */}
+        {roleLabel === 'Student' ? null : (
         <Panel title="About your account" sub="What you can and cannot change here.">
           <InfoList
             items={[
@@ -336,6 +349,7 @@ export default function AccountSettings() {
             <li><Icon name="shield" size={16} /> Changing your password signs you out on your other devices.</li>
           </ul>
         </Panel>
+        )}
       </div>
 
       <QuirriModal

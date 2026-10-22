@@ -83,13 +83,4 @@ export {
   settingsPasswordSchema,
 } from './schemas/settings';
 
-export {
-  interviewSetupSchema,
-  INTERVIEW_MODE_VALUES,
-  INTERVIEW_DIFFICULTY_VALUES,
-  INTERVIEW_EXPERIENCE_VALUES,
-} from './schemas/interview';
-
-export { interviewAssignmentSchema } from './schemas/interviewAssignment';
-
 export { mcqSubmitSchema } from './schemas/mcq';

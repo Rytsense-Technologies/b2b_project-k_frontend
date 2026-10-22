@@ -7,7 +7,6 @@ import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { clearCredentials } from '@/store/slices/authSlice';
-import { resetSession } from '@/store/slices/interviewSlice';
 import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
 import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/lib/api/auth';
@@ -81,17 +80,6 @@ const NAV = [
         <circle cx="9" cy="8" r="3" />
         <path d="M3 19c0-3.2 2.7-5 6-5s6 1.8 6 5" />
         <path d="M17 7l2 2 3-3.2" />
-      </svg>
-    ),
-  },
-  { group: 'Placement' },
-  {
-    href: '/admin/interviews',
-    label: 'Interview assignments',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z" />
-        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
       </svg>
     ),
   },
@@ -185,7 +173,6 @@ export default function CollegeAdminSidebar() {
     }
     clearTokens();
     dispatch(clearCredentials());
-    dispatch(resetSession());
     queryClient.clear();
     toast.success('Logged out successfully');
     router.push('/auth/login');

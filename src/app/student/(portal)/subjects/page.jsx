@@ -5,16 +5,14 @@ import Link from 'next/link';
 import VoiceQnaPanel from '@/components/student/VoiceQnaPanel';
 import RefreshingVideo from '@/components/shared/RefreshingVideo';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import QuirriSelect from '@/components/superadmin/QuirriSelect';
+import ScoreRing from '@/components/shared/ScoreRing';
 import { Icon, SectionState } from '@/components/student/ui';
-import { SearchBox, SegTabs } from '@/components/shared/module-ui';
-import { BandPill, bandFor } from '@/components/shared/data-viz';
-import { subjectColor, subjectTileStyle } from '@/components/student/subjectColor';
+import { bandFor } from '@/components/shared/data-viz';
 import { eduVideoApi } from '@/lib/api/admin/eduVideo';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { useUrlSearch, useUrlState } from '@/hooks/useUrlState';
+import { useUrlState } from '@/hooks/useUrlState';
 import { loadQuizStates } from '@/components/student/quizStates';
 import {
   SUBJECTS_PATH,
@@ -30,8 +28,10 @@ import '@/styles/student-learning.css';
 
 /**
  * Student · My subjects (owner mock-ups, Oct 2026)
- *   list      → subject overview: summary strip, recommended next step, chapters table
- *               (?s=<subject> picks the subject when there are several), "How learning works" modal
+ *   list      → Level 1 (no ?s=): summary strip + subject cards grid (ring, 3 stats, Next hint, one action)
+ *               Level 2 (?s=<subject>): header card, "Up next" card, chapter rows (status + one action),
+ *               search/status toolbar only for long lists (q, f, p); "How learning works" modal
+ *               (redesign: docs/agent/redesign/student-subjects-redesign.md)
  *   classroom → player, chapter info, chapter list, lecture status, AI tutor card
  *   tutor     → VoiceQnaPanel (voice session, history, transcript)
  * Watch-progress rules are unchanged: no seeking past the furthest point watched,
@@ -50,11 +50,8 @@ function useQuizStatuses(videos) {
   return { quizzes: data || {}, ready: data != null };
 }
 
-function WatchChip({ value }) {
-  if (value >= 100) return <span className="sl-chip sl-chip--good"><Icon name="tick" size={12} /> Watched</span>;
-  if (value > 0) return <span className="sl-chip">{value}% watched</span>;
-  return <span className="sl-chip">Not started</span>;
-}
+const pad2 = (n) => String(n).padStart(2, '0');
+const BAND_TEXT = { strong: 'Strong', ok: 'On track', focus: 'Needs focus' };
 
 /* ================================================================== list */
 const HOW_STEPS = [
@@ -63,58 +60,70 @@ const HOW_STEPS = [
   { icon: 'chat', title: 'Review with your tutor', body: 'Ask by voice, in English or Tamil, and get explanations grounded in the chapter.' },
 ];
 
-function lectureStatus(w) {
-  if (w >= 100) return <span className="sl-chip sl-chip--good"><Icon name="tick" size={12} /> Watched</span>;
-  if (w > 0) return <span className="sl-chip sl-chip--mid">{w}% watched</span>;
-  return <span className="sl-chip">Not started</span>;
-}
+const subjectHref = (key) => `${SUBJECTS_PATH}?s=${encodeURIComponent(key)}`;
 
-function assessmentStatus(q, w) {
-  if (q?.state === 'done') return <span className="sl-ov-score"><b>{pct(q.percentage)}</b><BandPill score={q.percentage} /></span>;
-  if (q?.state === 'open') return <span className="sl-chip sl-chip--mid">Ready to take</span>;
-  if (q?.state === 'watch_required' || w < 100) return <span className="sl-ov-quiet"><Icon name="lock" size={14} /> Locked</span>;
-  if (q?.state === 'unavailable') return <span className="sl-ov-quiet"><Icon name="clock" size={14} /> Not published yet</span>;
-  return <span className="sl-ov-quiet">—</span>;
-}
-
-/** Primary + secondary action for one chapter row. Never orange (the banner owns the one orange action). */
-function rowActions(c, subjectKey, q, w) {
-  const watch = { label: w >= 100 ? 'Rewatch' : w > 0 ? 'Resume' : 'Watch', icon: 'playCircle', href: classroomHref(subjectKey, c.job_id) };
-  const tutor = { label: 'Ask tutor', icon: 'chat', href: classroomHref(subjectKey, c.job_id, 'tutor') };
-  if (q?.state === 'done') return [{ label: 'Review answers', icon: 'doc', href: assessmentHref(c, subjectKey, { view: 'review' }) }, watch];
-  if (q?.state === 'open') return [{ label: 'Take assessment', icon: 'clip', href: assessmentHref(c, subjectKey) }, watch];
-  return [watch, tutor];
-}
-
-/** The one next action for this subject, in priority order. */
-function recommend(chapters, subjectKey, watchByJob, quizzes) {
+/** The one next action for a subject, in priority order (Up next card + subject card hint). */
+function recommend(chapters, subjectKeyValue, watchByJob, quizzes) {
   const w = (c) => watchByJob[c.job_id] ?? 0;
   const q = (c) => quizzes[c.job_id];
   const name = (c) => c.chapter_title || 'this chapter';
   const resuming = chapters.find((c) => w(c) > 0 && w(c) < 100);
   if (resuming) {
-    return { icon: 'playCircle', title: `Finish ${name(resuming)}`, body: `You’re ${w(resuming)}% through. Finish the lecture to unlock its assessment.`, cta: { label: 'Resume lecture', href: classroomHref(subjectKey, resuming.job_id) } };
+    return {
+      kind: 'resume', icon: 'playCircle',
+      title: `Finish ${name(resuming)}`,
+      short: `Finish ${name(resuming)} · ${w(resuming)}% watched`,
+      body: `You’re ${w(resuming)}% through — watch to 100% to unlock its assessment.`,
+      cta: { label: 'Resume lecture', href: classroomHref(subjectKeyValue, resuming.job_id) },
+    };
   }
   const ready = chapters.find((c) => q(c)?.state === 'open');
   if (ready) {
-    return { icon: 'clip', title: `Take the ${name(ready)} assessment`, body: 'You’ve finished the lecture. One attempt, scored by Quirri — ask your tutor first if anything is unclear.', cta: { label: 'Take assessment', href: assessmentHref(ready, subjectKey) } };
+    return {
+      kind: 'assess', icon: 'clip',
+      title: `Take the ${name(ready)} assessment`,
+      short: `Take the ${name(ready)} assessment`,
+      body: 'You’ve watched the lecture, so the assessment is open — one attempt.',
+      cta: { label: 'Take assessment', href: assessmentHref(ready, subjectKeyValue) },
+    };
   }
   const low = chapters
     .filter((c) => q(c)?.state === 'done' && bandFor(q(c).percentage) !== 'strong')
     .sort((a, b) => Number(q(a).percentage) - Number(q(b).percentage))[0];
   if (low) {
-    return { icon: 'bookOpen', title: `Review your ${name(low)} assessment`, body: 'Go through the explanations for the questions you missed, then ask your tutor about anything unclear.', cta: { label: 'Review answers', href: assessmentHref(low, subjectKey, { view: 'review' }) } };
+    return {
+      kind: 'review', icon: 'bookOpen',
+      title: `Review your ${name(low)} results`,
+      short: `Review your ${name(low)} results`,
+      body: `You scored ${pct(q(low).percentage)} — go through the explanations for the questions you missed.`,
+      cta: { label: 'Review results', href: assessmentHref(low, subjectKeyValue, { view: 'review' }) },
+    };
   }
   const fresh = chapters.find((c) => w(c) === 0);
   if (fresh) {
-    return { icon: 'playCircle', title: `Start ${name(fresh)}`, body: 'Your next lecture is ready. Watch it to 100% to unlock its assessment.', cta: { label: 'Start lecture', href: classroomHref(subjectKey, fresh.job_id) } };
+    return {
+      kind: 'start', icon: 'playCircle',
+      title: `Start ${name(fresh)}`,
+      short: `Start ${name(fresh)}`,
+      body: 'Your next lecture is ready — watch it to 100% to unlock its assessment.',
+      cta: { label: 'Start lecture', href: classroomHref(subjectKeyValue, fresh.job_id) },
+    };
   }
-  return { icon: 'chat', title: 'You’re up to date', body: 'Every published chapter is watched and assessed. Revise any chapter with your AI tutor.', cta: { label: 'Ask AI tutor', href: classroomHref(subjectKey, null, 'tutor') } };
+  return { kind: 'done', icon: 'chat', title: 'You’re up to date', short: 'You’re up to date — revise with your AI tutor', body: '', cta: null };
 }
 
-/** Chapter filter for the overview table (spec §2). */
+/** Lectures watched, assessments done and average score for one subject (or every subject). */
+function progressOf(chapters, watchByJob, quizzes) {
+  const total = chapters.length;
+  const watched = chapters.filter((c) => (watchByJob[c.job_id] ?? 0) >= 100).length;
+  const done = chapters.map((c) => quizzes[c.job_id]).filter((q) => q?.state === 'done');
+  const avg = done.length ? done.reduce((a, q) => a + Number(q.percentage || 0), 0) / done.length : null;
+  return { total, watched, done: done.length, avg, watchedPct: total ? Math.round((watched / total) * 100) : null };
+}
+
+/** Chapter filter for the chapter list (spec §2). */
 const CHAPTER_FILTERS = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'All statuses' },
   { value: 'new', label: 'Not started' },
   { value: 'progress', label: 'In progress' },
   { value: 'watched', label: 'Watched' },
@@ -135,98 +144,266 @@ function chapterMatches(filter, w, q) {
   return filter === 'all' || chapterStatus(w, q) === filter;
 }
 
-/** Subject switcher: colour dot, code, name and a watched mini bar; a select at 390 / more than 6 subjects. */
-function SubjectSwitcher({ subjects, current, watchByJob, onPick }) {
-  const many = subjects.length > 6;
-  const groups = [];
-  subjects.forEach((s) => {
-    const label = s.semester || (s.linked ? 'Subjects' : 'Not linked to a subject');
-    let g = groups.find((x) => x.label === label);
-    if (!g) { g = { label, items: [] }; groups.push(g); }
-    g.items.push(s);
-  });
-  const showGroups = groups.length > 1;
-  const options = subjects.map((s) => ({
-    value: s.key,
-    label: [s.semester, s.code, s.name].filter(Boolean).join(' · '),
-  }));
+/** Status chip (text + dot) and the one action for a chapter row — same vocabulary as the filter. */
+function chapterView(c, subjectKeyValue, w, q, ready) {
+  const open = classroomHref(subjectKeyValue, c.job_id);
+  const status = chapterStatus(w, q);
+  if (status === 'done') {
+    const band = bandFor(q.percentage);
+    return { chip: `Completed · ${pct(q.percentage)}`, dot: `sl-dot--${band}`, note: BAND_TEXT[band] || null, action: { label: 'View result', href: assessmentHref(c, subjectKeyValue) } };
+  }
+  if (status === 'ready') return { chip: 'Assessment ready', dot: '', note: 'Lecture watched', action: { label: 'Take assessment', href: assessmentHref(c, subjectKeyValue) } };
+  if (status === 'watched') {
+    const note = !ready ? 'Checking assessment…' : q?.state === 'unavailable' ? 'Assessment not published yet' : null;
+    return { chip: 'Watched', dot: '', note, action: { label: 'Rewatch', href: open } };
+  }
+  if (status === 'progress') return { chip: `In progress · ${w}%`, dot: 'sl-dot--mid', note: 'Watch 100% to unlock assessment', lock: true, action: { label: 'Resume', href: open } };
+  return { chip: 'Not started', dot: 'sl-dot--off', note: 'Watch 100% to unlock assessment', lock: true, action: { label: 'Watch', href: open } };
+}
+
+const PAGE_SIZE = 10;
+const TOOLBAR_MIN = 6;
+
+function SubjectTile({ subject }) {
+  return <span className="sl-ov-tile" aria-hidden="true">{subject.code || <Icon name="book" size={20} />}</span>;
+}
+
+function subjectMetaLine(subject) {
+  return subject.linked ? [subject.program, subject.semester].filter(Boolean).join(' · ') : '';
+}
+
+/** "Programme · Semester · 2 chapters" — the count never wraps on its own. */
+function SubjectMeta({ subject, published = false }) {
+  const meta = subjectMetaLine(subject);
+  const n = subject.chapters.length;
   return (
-    <div className={`sl-ov-switch${many ? ' is-many' : ''}`}>
-      <div className="sl-ov-switch-select">
-        <QuirriSelect ariaLabel="Choose a subject" value={current?.key || ''} options={options} onChange={(e) => onPick(e.target.value)} />
-      </div>
-      {!many ? (
-        <div className="sl-ov-switch-pills" role="group" aria-label="Choose a subject">
-          {groups.map((g) => (
-            <div key={g.label} className="sl-ov-group">
-              {showGroups ? <span className="sl-ov-group-l">{g.label}</span> : null}
-              <div className="sl-ov-group-items">
-                {g.items.map((s) => {
-                  const w = s.chapters.filter((c) => (watchByJob[c.job_id] ?? 0) >= 100).length;
-                  const on = s.key === current?.key;
-                  const pctW = s.chapters.length ? Math.round((w / s.chapters.length) * 100) : 0;
-                  const color = subjectColor(s.key);
-                  return (
-                    <button key={s.key} type="button" className={`sl-ov-pill${on ? ' is-on' : ''}`} aria-pressed={on} onClick={() => onPick(s.key)}>
-                      <i className="sl-ov-dot" style={{ background: color }} aria-hidden="true" />
-                      <span className="sl-ov-pill-t">
-                        <b>{s.code ? <span className="sl-ov-pill-code">{s.code}</span> : null}{s.name}</b>
-                        <span className="sl-ov-mini">
-                          <span aria-hidden="true"><i style={{ width: `${pctW}%`, background: color }} /></span>
-                          <small>{w}/{s.chapters.length}</small>
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
+    <>
+      {meta ? <>{meta} · </> : null}
+      <span className="sl-nowrap">{n} {published ? 'published ' : ''}chapter{n === 1 ? '' : 's'}</span>
+    </>
+  );
+}
+
+/** Same chip (text + dot) on the subject page and in the classroom chapter list. */
+function ChapterChip({ v }) {
+  return <span className="sl-st"><i className={`sb-dot ${v.dot}`.trim()} aria-hidden="true" /> {v.chip}</span>;
+}
+
+/** Ring + three small stats; shared by the subject card and the subject header card. */
+function SubjectProgress({ p, ready, className = '' }) {
+  return (
+    <div className={`sl-prog ${className}`.trim()}>
+      <ScoreRing score={p.watchedPct} size="md" color="var(--sb-teal,#14606e)" suffix="%" label={`Lectures watched: ${p.watched} of ${p.total}`} />
+      <dl className="sl-mini">
+        <div><dt>Lectures</dt><dd>{p.watched}/{p.total}</dd></div>
+        <div><dt>Assessments</dt><dd>{ready ? `${p.done}/${p.total}` : '—'}</dd></div>
+        <div><dt>Average</dt><dd>{ready ? pct(p.avg) : '—'}</dd></div>
+      </dl>
     </div>
   );
 }
 
-function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, error, reload, deptName, url, setUrl }) {
-  const [howOpen, setHowOpen] = useState(false);
-  const subject = subjects.find((s) => s.key === url.s) || subjects[0] || null;
-  const chapters = subject?.chapters || [];
-  const watched = chapters.filter((c) => (watchByJob[c.job_id] ?? 0) >= 100).length;
-  const done = chapters.map((c) => quizzes[c.job_id]).filter((q) => q?.state === 'done');
-  const available = chapters.map((c) => quizzes[c.job_id]).filter((q) => q?.state === 'done' || q?.state === 'open').length;
-  const avg = done.length ? done.reduce((a, q) => a + Number(q.percentage || 0), 0) / done.length : null;
-  const next = subject && quizzesReady ? recommend(chapters, subject.key, watchByJob, quizzes) : null;
-  const watchPct = chapters.length ? Math.round((watched / chapters.length) * 100) : 0;
-  const color = subject ? subjectColor(subject.key) : null;
+/** Level 1 card: whole card opens the subject (stretched title link); the button is the primary. */
+function SubjectCard({ subject, watchByJob, quizzes, ready }) {
+  const p = progressOf(subject.chapters, watchByJob, quizzes);
+  const next = ready ? recommend(subject.chapters, subject.key, watchByJob, quizzes) : null;
+  const go = next?.cta ? { label: next.cta.label, href: next.cta.href, primary: true } : { label: 'Open subject', href: subjectHref(subject.key), primary: false };
+  return (
+    <article className="sl-card sl-scard" aria-labelledby={`sl-sc-${subject.key}`}>
+      <div className="sl-scard-h">
+        <SubjectTile subject={subject} />
+        <div className="sl-scard-t">
+          <h3 id={`sl-sc-${subject.key}`}><Link className="sl-scard-link" href={subjectHref(subject.key)}>{subject.name}</Link></h3>
+          <p><SubjectMeta subject={subject} /></p>
+        </div>
+      </div>
+      <SubjectProgress p={p} ready={ready} className="sl-prog--card" />
+      <p className="sl-scard-next"><b>Next:</b> {next ? next.short : 'Checking your progress…'}</p>
+      <Link
+        className={`sd-btn ${go.primary ? 'sd-btn--amber' : 'sd-btn--outline'} sl-scard-cta`}
+        href={go.href}
+        aria-label={`${go.label}: ${subject.name}`}
+      >
+        {go.label} <Icon name="arrow" size={18} />
+      </Link>
+    </article>
+  );
+}
 
-  // Local box, URL written debounced — typing never loses characters (S1).
-  const [q, setQ] = useUrlSearch(url.q, (v) => setUrl({ q: v }));
-  const term = q.trim().toLowerCase();
+function ChapterRow({ c, n, subjectKeyValue, w, q, ready }) {
+  const v = chapterView(c, subjectKeyValue, w, q, ready);
+  const title = c.chapter_title || 'Untitled chapter';
+  return (
+    <li className="sl-crow">
+      <span className="sl-crow-n" aria-hidden="true">{pad2(n)}</span>
+      <div className="sl-crow-main">
+        <Link className="sl-crow-link" href={classroomHref(subjectKeyValue, c.job_id)}>{title}</Link>
+        <span className="sl-crow-meta">
+          <span>{formatDuration(c.video_duration_seconds) || 'Video lecture'}</span>
+          <span aria-hidden="true">·</span>
+          <span>Published {formatDate(c.published_at) || '—'}</span>
+        </span>
+      </div>
+      <div className="sl-crow-status">
+        <span className="sl-crow-chip"><ChapterChip v={v} /></span>
+        {v.note ? <small>{v.lock ? <Icon name="lock" size={13} /> : null}{v.note}</small> : null}
+      </div>
+      <div className="sl-crow-act">
+        <Link className="sd-btn sd-btn--outline" href={v.action.href} aria-label={`${v.action.label}: ${title}`}>{v.action.label}</Link>
+      </div>
+      {w > 0 && w < 100 ? <span className="sl-crow-bar" aria-hidden="true"><i style={{ width: `${w}%` }} /></span> : null}
+    </li>
+  );
+}
+
+/** Level 2 — /student/subjects?s=<key>: header card, Up next, chapters. */
+function SubjectPage({ subject, watchByJob, quizzes, ready, url, setUrl, onHow }) {
+  const chapters = subject.chapters;
+  const p = progressOf(chapters, watchByJob, quizzes);
+  const next = ready ? recommend(chapters, subject.key, watchByJob, quizzes) : null;
+
+  // Search applies on Enter; the status select applies on change. Drafts mirror the URL on Back / Forward.
+  const [draftQ, setDraftQ] = useState(url.q || '');
+  useEffect(() => { setDraftQ(url.q || ''); }, [url.q]);
+  const apply = (e) => { e.preventDefault(); setUrl({ q: draftQ.trim(), p: '1' }); };
+  const clear = () => {
+    setDraftQ('');
+    setUrl({ q: '', f: 'all', p: '1' });
+    requestAnimationFrame(() => document.getElementById('sl-ov-ch-h')?.focus());
+  };
+
+  const term = (url.q || '').trim().toLowerCase();
   const counts = Object.fromEntries(CHAPTER_FILTERS.map((f) => [f.value, chapters.filter((c) => chapterMatches(f.value, watchByJob[c.job_id] ?? 0, quizzes[c.job_id])).length]));
   const shown = chapters
     .map((c, i) => ({ c, n: i + 1 }))
     .filter(({ c }) => chapterMatches(url.f, watchByJob[c.job_id] ?? 0, quizzes[c.job_id]))
     .filter(({ c }) => !term || String(c.chapter_title || '').toLowerCase().includes(term));
   const filtered = url.f !== 'all' || Boolean(term);
+  // Toolbar only for long lists — or when a filter arrived in the URL, so it can always be cleared.
+  const toolbar = chapters.length > TOOLBAR_MIN || filtered;
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const page = Math.min(pages, Math.max(1, Number(url.p) || 1));
+  const from = (page - 1) * PAGE_SIZE;
+  const pageRows = shown.slice(from, from + PAGE_SIZE);
+  const goPage = (n) => setUrl({ p: String(n) });
+
+  return (
+    <>
+      <Link className="sl-back" href={SUBJECTS_PATH}><Icon name="back" size={18} /> All subjects</Link>
+
+      <section className="sl-card sl-shead" aria-labelledby="sl-shead-h">
+        <div className="sl-shead-main">
+          <div className="sl-ov-title">
+            <SubjectTile subject={subject} />
+            <div>
+              <h2 id="sl-shead-h">{subject.name}</h2>
+              <p><SubjectMeta subject={subject} published /></p>
+            </div>
+          </div>
+          <SubjectProgress p={p} ready={ready} className="sl-prog--head" />
+        </div>
+        <div className="sl-shead-actions">
+          <Link className="sl-linkbtn" href={classroomHref(subject.key, null, 'tutor')}><Icon name="mic" size={18} /> Ask AI tutor</Link>
+          <button type="button" className="sl-linkbtn" onClick={onHow}><Icon name="info" size={18} /> How learning works</button>
+        </div>
+      </section>
+
+      {next?.cta ? (
+        <section className="sl-card sl-upnext" aria-labelledby="sl-upnext-h">
+          <span className="sl-upnext-ic" aria-hidden="true"><Icon name={next.icon} size={22} /></span>
+          <div className="sl-upnext-body">
+            <span className="sl-over">Up next</span>
+            <h3 id="sl-upnext-h">{next.title}</h3>
+            <p>{next.body}</p>
+          </div>
+          <Link className="sd-btn sd-btn--amber" href={next.cta.href}>{next.cta.label} <Icon name="arrow" size={18} /></Link>
+        </section>
+      ) : null}
+
+      <section className="sl-ov-chapters" aria-labelledby="sl-ov-ch-h">
+        <div className="sl-sec-h">
+          <h2 id="sl-ov-ch-h" tabIndex={-1}>Chapters <span className="sl-sec-n">· {chapters.length}</span></h2>
+          <span className="sl-sec-sub">{subject.linked ? 'In course order' : 'Newest first'}</span>
+        </div>
+
+        {toolbar ? (
+          <form className="sl-tb" role="search" aria-label="Filter chapters" onSubmit={apply}>
+            <label className="sl-tb-search">
+              <span className="sr-only">Search chapters</span>
+              <Icon name="search" size={18} />
+              <input type="search" placeholder="Search chapters" value={draftQ} onChange={(e) => setDraftQ(e.target.value)} />
+            </label>
+            <label className="sl-tb-filter">
+              <span className="sr-only">Chapter status</span>
+              <select value={url.f || 'all'} onChange={(e) => setUrl({ f: e.target.value, p: '1' })}>
+                {CHAPTER_FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label} ({counts[f.value]})</option>)}
+              </select>
+            </label>
+            <button type="submit" className="sr-only" tabIndex={-1}>Search</button>
+            {filtered && pageRows.length ? <button type="button" className="sl-linkbtn" onClick={clear}>Clear filters</button> : null}
+          </form>
+        ) : null}
+
+        {pageRows.length ? (
+          <ul className="sl-crows">
+            {pageRows.map(({ c, n }) => (
+              <ChapterRow key={c.job_id} c={c} n={n} subjectKeyValue={subject.key} w={watchByJob[c.job_id] ?? 0} q={quizzes[c.job_id]} ready={ready} />
+            ))}
+          </ul>
+        ) : (
+          <div className="sl-card sl-empty">
+            <span className="sl-empty-ic" aria-hidden="true"><Icon name={filtered ? 'search' : 'book'} size={24} /></span>
+            <b>{filtered ? 'No chapters match your filters' : 'No chapters published yet'}</b>
+            {filtered ? <button type="button" className="sl-linkbtn" onClick={clear}>Clear filters</button> : <p>Chapters appear here once your faculty publishes them.</p>}
+          </div>
+        )}
+
+        {shown.length > PAGE_SIZE ? (
+          <div className="sb-pager">
+            <span className="sb-pager__info">Showing {from + 1}–{Math.min(from + PAGE_SIZE, shown.length)} of {shown.length}</span>
+            <div className="sb-pager__nav">
+              <button type="button" onClick={() => goPage(page - 1)} disabled={page <= 1}>Previous</button>
+              <span>{page} / {pages}</span>
+              <button type="button" onClick={() => goPage(page + 1)} disabled={page >= pages}>Next</button>
+            </div>
+          </div>
+        ) : null}
+      </section>
+    </>
+  );
+}
+
+/** Level 1 — /student/subjects: summary strip + subject cards. Level 2 when ?s= names a subject. */
+function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, error, reload, deptName, url, setUrl }) {
+  const [howOpen, setHowOpen] = useState(false);
+  const subject = url.s ? subjects.find((s) => s.key === url.s) || null : null;
+  const all = useMemo(() => subjects.flatMap((s) => s.chapters), [subjects]);
+  const sum = progressOf(all, watchByJob, quizzes);
 
   return (
     <div className="sl sl-ov animate-fade-in">
-      {subjects.length > 1 ? (
-        <SubjectSwitcher subjects={subjects} current={subject} watchByJob={watchByJob} onPick={(key) => setUrl({ s: key, f: 'all', q: '' }, { push: true })} />
-      ) : null}
-
       {error ? (
-        <SectionState
-          tone="err"
-          title="Could not load your subjects"
-          action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}><Icon name="refresh" size={16} /> Try again</button>}
-        >
-          {apiErrorMessage(error, 'Please try again.')}
-        </SectionState>
+        <section className="sl-card">
+          <SectionState
+            tone="err"
+            title="Could not load your subjects"
+            action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}><Icon name="refresh" size={16} /> Try again</button>}
+          >
+            {apiErrorMessage(error, 'Please try again.')}
+          </SectionState>
+        </section>
       ) : null}
 
-      {loading ? <SectionState title="Loading your published lectures…" /> : null}
+      {loading ? (
+        <div className="sl-ov-loading" role="status" aria-label="Loading your published lectures">
+          <span className="sb-skel" style={{ height: 88 }} />
+          <div className="sl-sgrid">
+            <span className="sb-skel" style={{ height: 300 }} />
+            <span className="sb-skel" style={{ height: 300 }} />
+            <span className="sb-skel" style={{ height: 300 }} />
+          </div>
+        </div>
+      ) : null}
 
       {!loading && !error && !subjects.length ? (
         <section className="sl-card sl-empty">
@@ -238,125 +415,38 @@ function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, err
       ) : null}
 
       {subject ? (
-        <>
-          <header className="sl-ov-head">
-            <div className="sl-ov-title">
-              <span className="sl-ov-tile" style={subjectTileStyle(subject.key)} aria-hidden="true">{subject.code || <Icon name="book" size={20} />}</span>
-              <div>
-                <h2>{subject.name}</h2>
-                <p>
-                  {[subject.program, subject.semester].filter(Boolean).join(' · ')}
-                  {subject.program || subject.semester ? <span aria-hidden="true"> · </span> : null}
-                  {chapters.length} published chapter{chapters.length === 1 ? '' : 's'}
-                </p>
-              </div>
-            </div>
-            <div className="sl-ov-head-cta">
-              <Link className="sd-btn sd-btn--outline" href={classroomHref(subject.key, null, 'tutor')}><Icon name="mic" size={18} /> Ask AI tutor</Link>
-              <button type="button" className="sl-linkbtn" onClick={() => setHowOpen(true)}><Icon name="info" size={18} /> How learning works</button>
-            </div>
-          </header>
+        <SubjectPage
+          subject={subject}
+          watchByJob={watchByJob}
+          quizzes={quizzes}
+          ready={quizzesReady}
+          url={url}
+          setUrl={setUrl}
+          onHow={() => setHowOpen(true)}
+        />
+      ) : null}
 
-          <section className="sl-card sl-ov-stats" aria-label={`${subject.name} summary`}>
-            <div className="sl-ov-stat">
-              <span className="sl-ov-ic" style={subjectTileStyle(subject.key)} aria-hidden="true"><Icon name="playCircle" size={22} /></span>
-              <div>
-                <span>Lectures watched</span>
-                <b>{watched}/{chapters.length}</b>
-                <span className="sl-ov-meter" aria-hidden="true"><i style={{ width: `${watchPct}%`, background: color }} /></span>
-              </div>
-            </div>
-            <div className="sl-ov-stat">
-              <span className="sl-ov-ic" aria-hidden="true"><Icon name="clip" size={22} /></span>
-              <div>
-                <span>Assessments completed</span>
-                <b>{quizzesReady ? <>{done.length}<small>/{available}</small></> : '—'}</b>
-                <small>{available ? 'One attempt each' : 'Unlock after each lecture'}</small>
-              </div>
-            </div>
-            <div className="sl-ov-stat">
-              <span className="sl-ov-ic" aria-hidden="true"><Icon name="bars" size={22} /></span>
-              <div>
-                <span>Assessment average</span>
-                <b className="sl-ov-avg">{quizzesReady ? pct(avg) : '—'}{quizzesReady && avg != null ? <BandPill score={avg} /> : null}</b>
-                <small>{done.length ? `Based on ${done.length} completed assessment${done.length === 1 ? '' : 's'}` : 'After your first assessment'}</small>
-              </div>
-            </div>
+      {!subject && subjects.length ? (
+        <>
+          <section className="sl-card sl-sum" aria-label="Your learning summary">
+            <div><b>{subjects.length}</b><span>Subject{subjects.length === 1 ? '' : 's'}</span></div>
+            <div><b>{sum.watched}/{sum.total}</b><span>Lectures watched</span></div>
+            <div><b>{quizzesReady ? `${sum.done}/${sum.total}` : '—'}</b><span>Assessments done</span></div>
+            <div><b>{quizzesReady ? pct(sum.avg) : '—'}</b><span>Average score</span></div>
           </section>
 
-          {next ? (
-            <section className="sl-card sl-ov-next" aria-labelledby="sl-ov-next-h">
-              <span className="sl-ov-next-ic" aria-hidden="true"><Icon name={next.icon} size={22} /></span>
-              <div className="sl-ov-next-body">
-                <span className="sl-ov-over">Recommended next step</span>
-                <h3 id="sl-ov-next-h">{next.title}</h3>
-                <p>{next.body}</p>
-              </div>
-              <Link className="sd-btn sd-btn--amber" href={next.cta.href}>{next.cta.label} <Icon name="arrow" size={18} /></Link>
-            </section>
-          ) : null}
-
-          <section className="sl-card sl-ov-chapters" aria-labelledby="sl-ov-ch-h">
-            <div className="sl-ov-section-h">
-              <h3 id="sl-ov-ch-h">Chapters</h3>
-              <p>Watch, assess and review each chapter. {subject?.linked ? 'In course order.' : 'Newest first.'}</p>
+          <section className="sl-ov-subjects" aria-labelledby="sl-subj-h">
+            <div className="sl-sec-h">
+              <h2 id="sl-subj-h">Your subjects <span className="sl-sec-n">· {subjects.length}</span></h2>
+              <button type="button" className="sl-linkbtn" onClick={() => setHowOpen(true)}><Icon name="info" size={18} /> How learning works</button>
             </div>
-            <div className="sl-ov-tools" role="search">
-              <SegTabs
-                label="Chapter status"
-                value={url.f}
-                onChange={(v) => setUrl({ f: v })}
-                options={CHAPTER_FILTERS.map((f) => ({ ...f, count: counts[f.value] }))}
-              />
-              <SearchBox placeholder="Search chapters" value={q} onChange={(e) => setQ(e.target.value)} />
-              {filtered ? <button type="button" className="sl-linkbtn" onClick={() => { setQ(''); setUrl({ f: 'all', q: '' }); }}>Clear</button> : null}
-            </div>
-            {shown.length ? (
-              <div className="sl-table-wrap">
-                <table className="sl-table sl-ov-table">
-                  <thead>
-                    <tr>
-                      {subject.linked ? <th className="sl-n">#</th> : null}
-                      <th>Chapter</th>
-                      <th className="sl-num">Duration</th>
-                      <th>Published</th>
-                      <th>Lecture</th>
-                      <th>Assessment</th>
-                      <th><span className="sr-only">Actions</span></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shown.map(({ c, n }) => {
-                      const w = watchByJob[c.job_id] ?? 0;
-                      const q = quizzes[c.job_id];
-                      const [primary, secondary] = rowActions(c, subject.key, q, w);
-                      return (
-                        <tr key={c.job_id}>
-                          {subject.linked ? <td data-label="#" className="sl-n">{n}</td> : null}
-                          <td data-label="Chapter"><Link className="sl-ov-chname" href={classroomHref(subject.key, c.job_id)}>{c.chapter_title || 'Untitled chapter'}</Link></td>
-                          <td data-label="Duration" className="sl-num sl-nowrap">{formatDuration(c.video_duration_seconds) || '—'}</td>
-                          <td data-label="Published" className="sl-nowrap">{formatDate(c.published_at) || '—'}</td>
-                          <td data-label="Lecture">{lectureStatus(w)}</td>
-                          <td data-label="Assessment">{quizzesReady ? assessmentStatus(q, w) : <span className="sl-ov-quiet">Checking…</span>}</td>
-                          <td data-label="Actions">
-                            <span className="sl-ov-acts">
-                              <Link className="sd-btn sd-btn--outline sd-btn--sm" href={primary.href}><Icon name={primary.icon} size={16} /> {primary.label}</Link>
-                              <Link className="sl-linkbtn sl-linkbtn--sm" href={secondary.href}><Icon name={secondary.icon} size={16} /> {secondary.label}</Link>
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="sl-ov-none">No chapters match these filters.</p>
-            )}
-            <p className="sl-ov-note">
-              <Icon name="info" size={18} />
-              <span>Assessments unlock after you watch 100% of a lecture, once your faculty publishes the questions. <button type="button" className="sl-ov-inlinelink" onClick={() => setHowOpen(true)}>How learning works</button></span>
-            </p>
+            <ul className={`sl-sgrid sl-sgrid--n${Math.min(subjects.length, 3)}`}>
+              {subjects.map((s) => (
+                <li key={s.key}>
+                  <SubjectCard subject={s} watchByJob={watchByJob} quizzes={quizzes} ready={quizzesReady} />
+                </li>
+              ))}
+            </ul>
           </section>
         </>
       ) : null}
@@ -366,7 +456,7 @@ function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, err
         onClose={() => setHowOpen(false)}
         title="How learning works"
         crumb="Three steps for every chapter"
-        footer={<div className="right"><button type="button" className="sd-btn sd-btn--teal" onClick={() => setHowOpen(false)}>Got it</button></div>}
+        footer={<div className="right"><button type="button" className="sd-btn sd-btn--amber" onClick={() => setHowOpen(false)}>Got it</button></div>}
       >
         <ol className="sl-ov-how">
           {HOW_STEPS.map((st, i) => (
@@ -391,11 +481,11 @@ function LectureStatus({ job, subjectKeyValue, watchPercent, quiz, onPlay }) {
           <span className="sl-status-ic is-good" aria-hidden="true"><Icon name="tick" size={22} /></span>
           <div>
             <h3 id="sl-st-h">Assessment completed</h3>
-            <p className="sl-status-score">You scored <b>{pct(quiz.percentage)}</b> <BandPill score={quiz.percentage} />{quiz.total ? <span> {quiz.correct}/{quiz.total} correct</span> : null}</p>
+            <p className="sl-status-score">You scored <b>{pct(quiz.percentage)}</b>{BAND_TEXT[bandFor(quiz.percentage)] ? <span>· {BAND_TEXT[bandFor(quiz.percentage)]}</span> : null}{quiz.total ? <span>· {quiz.correct}/{quiz.total} correct</span> : null}</p>
             <p>One attempt only. Review your answers to learn from it.</p>
           </div>
         </div>
-        <Link className="sd-btn sd-btn--teal sd-btn--block" href={assessmentHref(job, subjectKeyValue)}>
+        <Link className="sd-btn sd-btn--amber sd-btn--block" href={assessmentHref(job, subjectKeyValue)}>
           <Icon name="clip" size={18} /> View results
         </Link>
         <button type="button" className="sl-linkbtn" onClick={onPlay}>
@@ -439,8 +529,8 @@ function LectureStatus({ job, subjectKeyValue, watchPercent, quiz, onPlay }) {
           <p>Watch to 100% to unlock the assessment.</p>
         </div>
       </div>
-      {/* Teal, not orange: the play disc on the stage is this view's one orange action (S18). */}
-      <button type="button" className="sd-btn sd-btn--teal sd-btn--block" onClick={onPlay}>
+      {/* White secondary: the play disc on the stage is this view's one orange action (S18). */}
+      <button type="button" className="sd-btn sd-btn--outline sd-btn--block" onClick={onPlay}>
         <Icon name="playFill" size={18} /> {watchPercent > 0 ? 'Resume lecture' : 'Watch lecture'}
       </button>
       <span className="sd-btn sd-btn--block" aria-disabled="true">
@@ -450,7 +540,7 @@ function LectureStatus({ job, subjectKeyValue, watchPercent, quiz, onPlay }) {
   );
 }
 
-function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes, deptName }) {
+function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes }) {
   const chapters = subject.chapters;
   const activeJob = chapters.find((c) => c.job_id === url.chapter) || chapters[0] || null;
   const activeIndex = activeJob ? chapters.findIndex((c) => c.job_id === activeJob.job_id) : -1;
@@ -544,28 +634,24 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes,
   const duration = formatDuration(activeJob?.video_duration_seconds);
 
   return (
-    <div className="sl animate-fade-in" style={{ '--subject': subjectColor(subject.key) }}>
+    <div className="sl animate-fade-in">
       <nav className="sl-crumbs" aria-label="Breadcrumb">
         <ol>
           <li><Link href={SUBJECTS_PATH}>My subjects</Link></li>
-          <li><Link href={`${SUBJECTS_PATH}?s=${encodeURIComponent(subject.key)}`}><i className="sl-crumb-dot" aria-hidden="true" />{subject.name}</Link></li>
+          <li><Link href={`${SUBJECTS_PATH}?s=${encodeURIComponent(subject.key)}`}>{subject.name}</Link></li>
           <li aria-current="page">{tab === 'tutor' ? 'AI tutor' : 'Classroom'}</li>
         </ol>
       </nav>
 
-      <header className="sl-head">
-        {subject.code ? <span className="sl-code" style={subjectTileStyle(subject.key)} aria-hidden="true">{subject.code}</span> : null}
+      <header className="sl-card sl-head">
+        <SubjectTile subject={subject} />
         <div>
-          <span className="sl-over">{subject.linked ? 'Subject' : 'Not linked to a subject'}</span>
           <h2>{subject.name}</h2>
-          <div className="sl-head-meta">
-            <span className="sl-pill"><Icon name="video" size={14} /> {chapters.length} chapter{chapters.length === 1 ? '' : 's'}</span>
-            {deptName ? <span className="sl-pill">{deptName}</span> : null}
-          </div>
+          <p className="sl-head-meta"><SubjectMeta subject={subject} published /></p>
         </div>
       </header>
 
-      <div className="sl-tabs" role="tablist" aria-label="Subject sections">
+      <div className="sb-tabs sl-tabs" role="tablist" aria-label="Subject sections">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -575,11 +661,11 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes,
             aria-selected={tab === t.id}
             aria-controls={`sl-panel-${t.id}`}
             tabIndex={tab === t.id ? 0 : -1}
-            className="sl-tab"
+            className="sb-tab sl-tab"
             onClick={() => setUrl({ tab: t.id }, { push: true })}
             onKeyDown={onTabKey}
           >
-            <Icon name={t.icon} size={18} /> {t.label}
+            {t.label}
           </button>
         ))}
       </div>
@@ -642,9 +728,6 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes,
                     {duration ? <span><Icon name="clock" size={16} /> {duration}</span> : null}
                   </div>
                 </div>
-                <a className="sd-btn sd-btn--outline" href={eduVideoApi.getDownloadUrl(activeJob.job_id)} target="_blank" rel="noopener noreferrer">
-                  <Icon name="download" size={18} /> Download lecture
-                </a>
               </section>
             ) : null}
           </div>
@@ -666,14 +749,15 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes,
                         aria-current={selected ? 'true' : undefined}
                         onClick={() => setUrl({ chapter: c.job_id }, { push: true })}
                       >
-                        <span className={`sl-chapter-n${(watchByJob[c.job_id] ?? 0) >= 100 ? ' is-done' : ''}`} aria-hidden={subject.linked ? undefined : 'true'}>
-                          {(watchByJob[c.job_id] ?? 0) >= 100 && !selected ? <Icon name="tick" size={16} /> : subject.linked ? i + 1 : <Icon name="playCircle" size={16} />}
-                        </span>
+                        <span className="sl-chapter-n">{pad2(i + 1)}</span>
                         <span className="sl-chapter-t">
                           <b>{c.chapter_title || 'Untitled chapter'}</b>
-                          <small><Icon name="playCircle" size={14} /> {formatDuration(c.video_duration_seconds) || 'Video lecture'}</small>
+                          <small>
+                            <ChapterChip v={chapterView(c, subject.key, watchByJob[c.job_id] ?? 0, quizzes[c.job_id], true)} />
+                            <span aria-hidden="true">·</span>
+                            {formatDuration(c.video_duration_seconds) || 'Video lecture'}
+                          </small>
                         </span>
-                        <WatchChip value={watchByJob[c.job_id] ?? 0} />
                       </button>
                     </li>
                   );
@@ -722,7 +806,7 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes,
 
 /* ================================================================== page */
 function SubjectsInner() {
-  const [url, setUrl] = useUrlState({ subject: '', chapter: '', tab: 'classroom', s: '', f: 'all', q: '' });
+  const [url, setUrl] = useUrlState({ subject: '', chapter: '', tab: 'classroom', s: '', f: 'all', q: '', p: '1' });
   const [watchByJob, setWatchByJob] = useState({});
 
   const { data: meData } = useAsyncResource(() => fetchData(() => settingsApi.get()), []);
@@ -777,7 +861,6 @@ function SubjectsInner() {
         watchByJob={watchByJob}
         setWatchByJob={setWatchByJob}
         quizzes={quizzes}
-        deptName={deptName}
       />
     );
   }

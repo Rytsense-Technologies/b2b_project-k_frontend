@@ -13,7 +13,7 @@ import {
   countLabel,
   initials,
 } from '@/components/shared/module-ui';
-import { FacultyScopeChip, SubjectTag, useSubjectColor } from '@/components/faculty/facultyKit';
+import { scopeChip, SubjectTag, useSubjectColor } from '@/components/faculty/facultyKit';
 import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { userStatusLabel } from '@/lib/admin/userStatus';
@@ -39,10 +39,7 @@ function StaffList({ scope }) {
 
   return (
     <ModulePage className="fa-page">
-      <ModuleHead
-        lede="Your College Admin adds staff and assigns subjects."
-        chips={<FacultyScopeChip scope={scope} />}
-      />
+      <ModuleHead chips={scopeChip(scope)} />
 
       {error && !data ? null : (
       <KpiRow
@@ -78,7 +75,7 @@ function StaffList({ scope }) {
       {error && !data ? null : (
       <Panel
         title="Staff"
-        sub={data ? `${countLabel(shown.length)} shown` : null}
+        sub={data ? `${countLabel(shown.length)} shown · your College Admin adds staff and assigns subjects` : 'Your College Admin adds staff and assigns subjects.'}
         bodyClassName={null}
         toolbar={<SearchBox placeholder="Search name, email or subject…" value={search} onChange={(e) => setSearch(e.target.value)} />}
       >
@@ -137,12 +134,11 @@ export default function FacultyStaffPage() {
   if (!scope.can_see_staff) {
     return (
       <ModulePage className="fa-page">
-        <SectionState
-          title="Available to your head of department"
-          action={<Link className="sd-btn sd-btn--teal sd-btn--sm" href="/faculty/dashboard"><Icon name="back" size={16} /> Back to dashboard</Link>}
-        >
-          Your subjects and students are under Subjects and Students.
-        </SectionState>
+        <section className="fa-missing" aria-labelledby="fa-staff-locked">
+          <b id="fa-staff-locked">This page is for your head of department</b>
+          <p>Your subjects and students are under Subjects and Students.</p>
+          <Link href="/faculty/dashboard"><Icon name="back" size={16} /> Back to dashboard</Link>
+        </section>
       </ModulePage>
     );
   }

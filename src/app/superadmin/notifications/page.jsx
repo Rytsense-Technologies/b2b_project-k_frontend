@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 import {
   ModulePage,
   ModuleHead,
-  HeadChip,
   TabNav,
   TabPanel,
   KpiRow,
@@ -17,20 +16,24 @@ import {
   SectionState,
   countLabel,
 } from '@/components/shared/module-ui';
-import { BarList, Distribution } from '@/components/shared/data-viz';
+import { MetricListCard, ModernDonut } from '@/components/shared/data-viz';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
-import { notificationsApi } from '@/lib/api/superadmin/modules';
+import NotificationRules from '@/components/shared/NotificationRules';
+import { notificationsApi, collegesApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
 import { useUrlState, useTabParam } from '@/hooks/useUrlState';
 import { useDebouncedUrlSearch, pageParam } from '@/lib/superadmin/listState';
+import { formatIndianPhone } from '@/lib/superadmin/format';
+import { withoutInterview } from '@/lib/product/interviewOff';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 /** POST /notifications/deliveries/retry-failed resends failures of the last 7 days only. */
 const RETRY_DAYS = 7;
 
 const TABS = [
+  { value: 'rules', label: 'Rules' },
   { value: 'deliveries', label: 'Deliveries' },
   { value: 'events', label: 'Events' },
 ];
@@ -40,6 +43,7 @@ const STATUS_FILTERS = [
   { value: 'sent', label: 'Delivered' },
   { value: 'failed', label: 'Failed' },
   { value: 'log_only', label: 'Log-only' },
+  { value: 'skipped', label: 'Skipped' },
 ];
 
 const RANGES = [
@@ -61,6 +65,8 @@ const STATE_TONE = {
   failed: 'sp-pill--err',
   log_only: 'sp-pill--off',
   'Log-only': 'sp-pill--off',
+  skipped: 'sp-pill--off',
+  Skipped: 'sp-pill--off',
   'Not configured': 'sp-pill--off',
 };
 
@@ -71,7 +77,7 @@ function formatWhen(iso) {
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleString('en-IN', {
     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
-  });
+  }).replace('Sept', 'Sep');
 }
 
 function Pill({ tone, children }) {
@@ -83,9 +89,54 @@ function Pill({ tone, children }) {
   );
 }
 
+/**
+ * Rules tab: Quirri-wide (platform) switches, or — with a college picked — that college's
+ * tenant switches, exactly as its College Admin sees them. The college sits in ?college=.
+ */
+function RulesTab({ collegeId, onCollege }) {
+  const { data: collegesData, error: collegesError } = useAsyncResource(
+    () => fetchData(() => collegesApi.list({ page: 1, page_size: 100 })),
+    [],
+  );
+  const colleges = useMemo(
+    () => asList(collegesData, []).slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))),
+    [collegesData],
+  );
+  const options = [
+    { value: '', label: 'All of Quirri (platform)' },
+    ...colleges.map((c) => ({ value: String(c.id), label: c.is_active === false ? `${c.name} (inactive)` : c.name })),
+  ];
+  const college = collegeId ? colleges.find((c) => String(c.id) === String(collegeId)) : null;
+  return (
+    <>
+      <div className="nr-scopebar">
+        <div className="nr-scopebar-field">
+          <QuirriSelect
+            id="nr-scope-college"
+            label="Rules for"
+            ariaLabel="Show rules for"
+            value={collegeId}
+            onChange={(e) => onCollege(e.target.value)}
+            options={options}
+            disabled={!collegesData && !collegesError}
+          />
+        </div>
+      </div>
+      <NotificationRules
+        scope={collegeId ? 'tenant' : 'platform'}
+        scopeId={collegeId || undefined}
+        canTest
+        intro={collegeId
+          ? `What ${college?.name || 'this college'} receives. Anything you turn off here is off for the whole college.`
+          : 'Turning an email off here stops it for every college on Quirri.'}
+      />
+    </>
+  );
+}
+
 function NotificationsView() {
-  const [tab] = useTabParam(TABS.map((t) => t.value), 'deliveries');
-  const [url, setUrl] = useUrlState({ q: '', status: '', event: '', channel: '', days: '30', page: '1' });
+  const [tab] = useTabParam(TABS.map((t) => t.value), 'rules');
+  const [url, setUrl] = useUrlState({ q: '', status: '', event: '', channel: '', days: '30', page: '1', college: '' });
   const days = RANGES.some((r) => r.value === url.days) ? url.days : '30';
   const page = pageParam(url.page);
   const [search, setSearch] = useDebouncedUrlSearch(url.q, (q) => setUrl({ q, page: '1' }));
@@ -115,10 +166,16 @@ function NotificationsView() {
   const reloadAll = (opts) => Promise.all([reloadEvents(opts), reloadDeliveries(opts), reloadRetryable(opts)]);
   const ago = useTimeAgo(useLiveRefresh(() => reloadAll({ silent: true })));
 
-  const events = useMemo(() => asList(eventsData, []), [eventsData]);
-  const deliveries = useMemo(() => asList(deliveriesData, []), [deliveriesData]);
+  const events = useMemo(
+    () => withoutInterview(asList(eventsData, []), (e) => `${e.id || ''} ${e.event || ''} ${e.name || ''}`),
+    [eventsData],
+  );
+  const deliveries = useMemo(
+    () => withoutInterview(asList(deliveriesData, []), (row) => `${row.event || ''} ${row.event_label || ''}`),
+    [deliveriesData],
+  );
   const provider = eventsData?.provider || {};
-  const summary = deliveriesData?.summary || { sent: 0, failed: 0, log_only: 0 };
+  const summary = deliveriesData?.summary || { sent: 0, failed: 0, log_only: 0, skipped: 0 };
   const unavailable = !eventsLoading && eventsData == null && !eventsError;
   const emailReady = Boolean(provider.email_ready);
   const filtersOn = Boolean(url.q || url.status || url.event || url.channel || days !== '30');
@@ -155,20 +212,19 @@ function NotificationsView() {
 
   return (
     <ModulePage className="sa-page">
-      <ModuleHead
-        chips={(
+      {/* One muted line instead of three header chips: channel set-up and freshness. */}
+      <p className="sa-live">
+        {eventsData ? (
           <>
-            {eventsData ? (
-              <>
-                <HeadChip icon="mail" tone={emailReady ? 'teal' : 'grey'}>
-                  Email · {emailReady ? (provider.email || 'Connected') : 'recorded only, not sent yet'}
-                </HeadChip>
-                <HeadChip tone="grey">WhatsApp · {provider.whatsapp || 'Not configured'}</HeadChip>
-              </>
-            ) : null}
-            <HeadChip icon="refresh" tone="grey">Live · {ago}</HeadChip>
+            Email {emailReady ? `· ${provider.email || 'connected'}` : 'is recorded only, not sent yet'}
+            {' · '}WhatsApp {provider.whatsapp ? `· ${provider.whatsapp}` : 'is not configured'}
+            {' · '}
           </>
-        )}
+        ) : null}
+        Live · updated {ago}
+        {provider.test_redirect ? <> · <b>Test mode: e-mails go to the QA inbox</b></> : null}
+      </p>
+      <ModuleHead
         actions={retryable ? (
           <button type="button" className="sd-btn sd-btn--amber" onClick={handleRetry} disabled={retrying}>
             <Icon name="refresh" size={16} />
@@ -197,29 +253,37 @@ function NotificationsView() {
       <TabNav
         tabs={tabs}
         value={tab}
-        onChange={(v) => setUrl({ tab: v === 'deliveries' ? null : v }, { push: true })}
+        onChange={(v) => setUrl({ tab: v === 'rules' ? null : v }, { push: true })}
         label="Notification sections"
         idBase="notif"
       />
+
+      <TabPanel value="rules" current={tab} idBase="notif">
+        <RulesTab collegeId={url.college} onCollege={(id) => setUrl({ college: id })} />
+      </TabPanel>
 
       <TabPanel value="deliveries" current={tab} idBase="notif">
         <div className="sa-split">
           <KpiRow
             label="Deliveries summary"
             items={[
-              { icon: 'tick', label: `Delivered · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.sent) : null, sub: emailReady ? 'Accepted by Amazon SES' : 'Email not connected yet' },
+              { icon: 'tick', label: `Delivered · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.sent) : null, sub: emailReady ? `Accepted by ${provider.email || 'the mail provider'}` : 'Email not connected yet' },
               { icon: 'alert', label: `Failed · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.failed) : null, tone: summary.failed ? 'focus' : undefined, sub: retryable ? `${countLabel(retryable)} can be retried (last ${RETRY_DAYS} days)` : 'Nothing to retry' },
-              { icon: 'clock', label: `Log-only · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.log_only) : null, sub: 'Recorded, not sent' },
+              // Skipped (turned off by a rule) rides on this tile; the mix panel and the Skipped filter show it too.
+              { icon: 'clock', label: `Log-only · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.log_only) : null, sub: summary.skipped ? `Recorded, not sent · ${countLabel(summary.skipped)} skipped by rules` : 'Recorded, not sent' },
             ]}
           />
-          <Panel title="Delivery mix" sub={`Every message in the last ${rangeLabel}`}>
+          <Panel title="Delivery mix" sub={`Every message in the last ${rangeLabel}`} className="mdc-card mdc-card--compact">
             {deliveriesData ? (
-              <Distribution
-                label="Delivery mix"
+              <ModernDonut
+                compact
+                title="Delivery mix"
+                unit="Messages"
                 parts={[
-                  { label: 'Delivered', value: summary.sent, color: 'var(--cat-2)' },
-                  { label: 'Failed', value: summary.failed, color: 'var(--highlight)' },
-                  { label: 'Log-only', value: summary.log_only, color: 'var(--cat-5)' },
+                  { key: 'sent', label: 'Delivered', value: summary.sent, color: '#54B058' },
+                  { key: 'failed', label: 'Failed', value: summary.failed, tone: 'warn' },
+                  { key: 'log_only', label: 'Log-only', value: summary.log_only, tone: 'cyan' },
+                  { key: 'skipped', label: 'Skipped', value: summary.skipped || 0, tone: 'purple' },
                 ]}
                 empty="No messages in this range."
               />
@@ -289,7 +353,7 @@ function NotificationsView() {
                       </td>
                       <td data-label="Recipient">
                         <span className="sa-inst">
-                          <span>{row.recipient}</span>
+                          <span>{String(row.recipient || '').includes('@') ? row.recipient : (formatIndianPhone(row.recipient) || row.recipient)}</span>
                           {row.institution ? <small>{row.institution}</small> : null}
                         </span>
                       </td>
@@ -297,8 +361,9 @@ function NotificationsView() {
                       <td data-label="Status">
                         <span className="sa-inst">
                           <Pill tone={STATE_TONE[row.status_key]}>{row.status}</Pill>
-                          {row.error ? <small className="sa-err-text">{row.error}</small> : null}
+                          {row.error ? <small className={row.status_key === 'skipped' ? undefined : 'sa-err-text'}>{row.error}</small> : null}
                           {row.attempts > 1 ? <small>{row.attempts} attempts</small> : null}
+                          {row.test_redirect ? <small>Test mode · sent to the QA inbox</small> : null}
                         </span>
                       </td>
                       <td data-label="Time" className="sa-muted sa-nowrap">{formatWhen(row.updated_at || row.created_at)}</td>
@@ -326,9 +391,7 @@ function NotificationsView() {
 
       <TabPanel value="events" current={tab} idBase="notif">
         {eventBars.length ? (
-          <Panel title="Messages per event · 30 days" sub="Sent and log-only messages for each event.">
-            <BarList label="Messages per event" items={eventBars} />
-          </Panel>
+          <MetricListCard title="Messages per event · 30 days" sub="Sent and log-only messages for each event." items={eventBars} className="sa-metric-cols" />
         ) : null}
 
         <Panel

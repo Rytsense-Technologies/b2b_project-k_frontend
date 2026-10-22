@@ -21,7 +21,7 @@ const ROLE = { college_admin: 'College Admin', hod: 'HOD', faculty: 'Faculty', s
 function when(iso) {
   const d = new Date(iso || '');
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }).replace('Sept', 'Sep');
 }
 
 /**

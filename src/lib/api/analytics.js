@@ -4,7 +4,7 @@ import { unwrap } from '@/lib/api/superadmin/http';
 /** Live: /api/v1/analytics/* */
 export const analyticsApi = {
   /** College Admin overview: totals, departments, subjects, students, at-risk,
-   *  score spread, Q&A demand, interview cohort, review queue. */
+   *  score spread, Q&A demand, review queue. */
   college: async ({ range = '', department = '' } = {}) => {
     const params = new URLSearchParams();
     if (range) params.set('range', range);

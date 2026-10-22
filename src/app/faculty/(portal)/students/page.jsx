@@ -19,7 +19,8 @@ import {
   countLabel,
   initials,
 } from '@/components/shared/module-ui';
-import { BANDS, BandPill, Distribution, RankList, ScoreMeter, bandFor } from '@/components/shared/data-viz';
+import { BANDS, BandPill, MetricList, ModernDonutCard, bandFor } from '@/components/shared/data-viz';
+import ScoreRing from '@/components/shared/ScoreRing';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { minutesLabel } from '@/components/admin/insights';
 import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
@@ -31,9 +32,9 @@ import { userStatusLabel } from '@/lib/admin/userStatus';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
-import { FacultyScopeChip, ReadOnlyNote, dayLabel, pct } from '@/components/faculty/facultyKit';
+import { scopeChip, ReadOnlyNote, dayLabel, pct } from '@/components/faculty/facultyKit';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
   { value: 'pending_activation', label: 'Pending activation' },
@@ -60,7 +61,10 @@ function Score({ value }) {
 
 function StudentDrawer({ id, onClose, subjectLimited = false }) {
   const { data, loading, error } = useAsyncResource(
-    () => (id ? facultyDirectoryApi.student(id) : Promise.resolve(null)),
+    // A malformed ?student= (old or hand-edited link) is "not found" without a request.
+    () => (!id ? Promise.resolve(null)
+      : /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? facultyDirectoryApi.student(id)
+        : Promise.reject(Object.assign(new Error('Not found'), { response: { status: 404 } }))),
     [id],
   );
   const [downloading, setDownloading] = useState(null);
@@ -80,7 +84,7 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
       open={Boolean(id)}
       onClose={onClose}
       eyebrow="Student"
-      title={data?.name || (loading ? 'Loading…' : 'Student')}
+      title={data?.name || (loading ? 'Loading…' : error ? 'Student not found' : 'Student')}
       mono={data?.name || null}
       pills={data ? (
         <>
@@ -91,16 +95,22 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
       stats={m ? [
         { label: 'Completion', value: pct(m.completion) },
         { label: 'Quiz average', value: pct(m.quiz_avg) },
-        { label: 'Interview average', value: pct(m.interview_avg) },
+        { label: 'Quiz pass rate', value: pct(data.pass_rate) },
       ] : null}
     >
-      {error ? <SectionState tone="err" title="Could not load this student">{apiErrorMessage(error, 'Try again.')}</SectionState> : null}
+      {error ? (
+        <SectionState tone="err" title="Could not load this student">
+          {[404, 422].includes(error?.response?.status)
+            ? 'This student is not in your scope or no longer exists. Close this panel and pick a student from the list.'
+            : apiErrorMessage(error, 'Try again.')}
+        </SectionState>
+      ) : null}
       {data ? (
         <>
           <DrawerSection title="Placement">
             <InfoList
               items={[
-                { label: 'Programme', value: data.program_name || 'Not set' },
+                { label: 'Programme', value: data.program_name || 'Not placed yet' },
                 { label: 'Semester', value: data.semester_name || 'Not set' },
                 { label: 'Year', value: yearLabel(data) },
                 { label: 'Last active', value: dayLabel(data.last_login_at) || 'Never' },
@@ -113,7 +123,7 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
                 { label: 'Chapters completed', value: `${countLabel(m.chapters_completed)} of ${countLabel(m.chapters_available)}` },
                 { label: 'Watch time', value: minutesLabel(m.watch_minutes) },
                 { label: 'Tutor questions', value: countLabel(m.qa) },
-                { label: 'Quiz pass rate', value: pct(data.pass_rate) },
+                { label: 'Quizzes taken', value: countLabel(data.quizzes.length) },
               ]}
             />
           </DrawerSection>
@@ -124,7 +134,7 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
                   <li key={`${q.chapter}-${q.at}-${i}`}>
                     <div><b>{q.chapter || 'Chapter quiz'}</b><small>{`${q.correct}/${q.total} correct${dayLabel(q.at) ? ` · ${dayLabel(q.at)}` : ''}`}</small></div>
                     <span className="fa-mini-actions">
-                      <ScoreMeter value={q.score} label={q.chapter || 'Quiz score'} />
+                      <ScoreRing score={q.score} size="sm" suffix="%" label={`${q.chapter || 'Quiz score'} ${q.score ?? 'no data'}${q.score != null ? '%' : ''}`} />
                       {q.can_download ? (
                         <IconButton
                           icon="download"
@@ -138,19 +148,6 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
                 ))}
               </ul>
             ) : <p className="ad-muted">{subjectLimited ? 'No quizzes taken in your subjects yet.' : 'No quizzes taken yet.'}</p>}
-          </DrawerSection>
-          <DrawerSection title={`Mock interviews (${countLabel(data.interviews.length)})`}>
-            {data.work_on ? <p className="ad-muted">Work on: <b>{data.work_on}</b></p> : null}
-            {data.interviews.length ? (
-              <ul className="fa-mini-list">
-                {data.interviews.map((r) => (
-                  <li key={r.session_id}>
-                    <div><b>{r.position || 'Mock interview'}</b><small>{[dayLabel(r.at), r.work_on ? `Work on ${r.work_on}` : null].filter(Boolean).join(' · ')}</small></div>
-                    <Score value={r.score} />
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="ad-muted">No mock interviews yet.</p>}
           </DrawerSection>
         </>
       ) : null}
@@ -227,10 +224,7 @@ export default function FacultyStudentsPage() {
 
   return (
     <ModulePage className="fa-page">
-      <ModuleHead
-        lede="Open a student for their full learning, quiz and interview record."
-        chips={<FacultyScopeChip scope={scope} />}
-      />
+      <ModuleHead chips={scopeChip(scope)} />
 
       <ReadOnlyNote scope={scope} what="students" />
 
@@ -260,7 +254,7 @@ export default function FacultyStudentsPage() {
         ) : null}
         <Panel
           title={!scope ? 'Students' : limited ? 'Your students' : 'Department students'}
-          sub={!data ? null : limited && data.summary?.unplaced ? `Includes ${countLabel(data.summary.unplaced)} not yet placed in a programme.` : `${countLabel(total)} student${total === 1 ? '' : 's'}`}
+          sub={!data ? null : limited && data.summary?.unplaced ? `Includes ${countLabel(data.summary.unplaced)} not yet placed in a programme.` : `${countLabel(total)} student${total === 1 ? '' : 's'} · open a row for the full learning and quiz record`}
           bodyClassName={null}
           toolbar={(
             <>
@@ -330,7 +324,7 @@ export default function FacultyStudentsPage() {
                       <th>Programme</th>
                       <th>Completion</th>
                       <th>Quiz average</th>
-                      <th>Interview average</th>
+                      <th>Tutor questions</th>
                       <th>Last active</th>
                     </tr>
                   </thead>
@@ -356,13 +350,11 @@ export default function FacultyStudentsPage() {
                             <small>{[s.semester_name, yearLabel(s)].filter(Boolean).join(' · ')}</small>
                           </span>
                         </td>
-                        <td data-label="Completion"><ScoreMeter value={s.completion} label="Completion" /></td>
+                        <td data-label="Completion"><ScoreRing score={s.completion} size="sm" suffix="%" label={`Completion ${s.completion != null ? `${Math.round(s.completion)}%` : 'no data'}`} /></td>
                         <td data-label="Quiz average">
                           <span className="ad-cell-2"><Score value={s.quiz_avg} /><small>{`${countLabel(s.attempt_count)} quiz${s.attempt_count === 1 ? '' : 'zes'}`}</small></span>
                         </td>
-                        <td data-label="Interview average">
-                          <span className="ad-cell-2"><Score value={s.interview_avg} /><small>{`${countLabel(s.interviews)} mock${s.interviews === 1 ? '' : 's'}`}</small></span>
-                        </td>
+                        <td data-label="Tutor questions">{countLabel(s.qa ?? 0)}</td>
                         <td data-label="Last active" className="sa-muted">{dayLabel(s.last_login_at) || 'Never'}</td>
                       </tr>
                     ))}
@@ -388,27 +380,37 @@ export default function FacultyStudentsPage() {
           items={[
             { icon: 'users', label: 'Students', value: aFirst ? null : countLabel(a?.totals?.students ?? 0), sub: !scope ? 'In your scope' : limited ? 'In your subjects' : 'In your department' },
             { icon: 'book', label: 'Avg completion', value: aFirst ? null : pct(a?.totals?.completion), sub: 'To date' },
-            { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: `Mock interviews: ${aFirst ? '—' : pct(a?.totals?.interview_avg)}` },
+            { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: 'Chapter quizzes, to date' },
             { icon: 'check', label: 'Quiz pass rate', value: aFirst ? null : pct(a?.totals?.pass_rate), sub: 'Of all quiz attempts' },
           ]}
         />
-        <div className="dv-grid">
+        <div className="dv-grid fa-grid-top">
           <Panel title="Top students" sub="By chapter quiz average, last 30 days.">
             {aFirst ? <SectionState title="Loading…" /> : (
-              <RankList
+              <MetricList
                 label="Top students by quiz average"
                 suffix="%"
+                colorBy="band"
                 format={(v) => Math.round(v)}
                 empty="No quiz scores yet. Rankings appear once students take chapter quizzes."
-                rows={ranked.map((s) => ({ key: s.id, name: s.student, sub: s.email, value: s.quiz_avg }))}
+                items={ranked.map((s, i) => ({ key: s.id, label: `${i + 1}. ${s.student}`, sub: s.email, value: s.quiz_avg }))}
               />
             )}
           </Panel>
-          <Panel title="Quiz score bands" sub="Each student's chapter quiz average.">
-            {aFirst ? <SectionState title="Loading…" /> : (
-              <Distribution label="Students by score band" parts={bandParts} empty="No students in scope yet." />
-            )}
-          </Panel>
+          {aFirst ? (
+            <Panel title="Quiz score bands" sub="Each student's chapter quiz average.">
+              <SectionState title="Loading…" />
+            </Panel>
+          ) : (
+            <ModernDonutCard
+              title="Quiz score bands"
+              sub="Each student's chapter quiz average."
+              totalLabel="Total students"
+              unit="Students"
+              parts={bandParts}
+              empty="No students in scope yet."
+            />
+          )}
         </div>
         </>
         )}
@@ -442,9 +444,9 @@ export default function FacultyStudentsPage() {
                       </span>
                     </span>
                     <dl className="fa-risk-nums">
-                      <div><dt>Completion</dt><dd><ScoreMeter value={s.completion} label="Completion" /></dd></div>
+                      <div><dt>Completion</dt><dd><ScoreRing score={s.completion} size="sm" suffix="%" label={`Completion ${s.completion != null ? `${Math.round(s.completion)}%` : 'no data'}`} /></dd></div>
                       <div><dt>Quiz average</dt><dd><Score value={s.quiz_avg} /></dd></div>
-                      <div><dt>Interview average</dt><dd><Score value={s.interview_avg} /></dd></div>
+                      <div><dt>Tutor questions</dt><dd>{countLabel(s.qa ?? 0)}</dd></div>
                     </dl>
                   </button>
                 </li>

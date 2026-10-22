@@ -2,35 +2,19 @@
 export const PAGE_META = {
   '/student/home': {
     title: 'Dashboard',
-    subtitle: 'Pick up where you left off — lectures, tutor, quizzes and interviews.',
+    subtitle: 'Track your learning and improve every day.',
   },
   '/student/subjects': {
     title: 'My subjects',
-    subtitle: 'Video lectures, assessments and your AI tutor.',
+    subtitle: 'Watch lectures, take chapter assessments and ask your AI tutor.',
   },
   '/student/leaderboard': {
     title: 'Leaderboard',
-    subtitle: 'How you rank against classmates in your cohort.',
-  },
-  '/student/interviews': {
-    title: 'Interviews',
-    subtitle: 'Practise with AI mock and full interviews, see what is assigned to you and your history.',
-  },
-  '/student/reports': {
-    title: 'My reports',
-    subtitle: 'Review your interview reports and see how you have grown.',
-  },
-  '/student/reports/view': {
-    title: 'Interview report',
-    subtitle: 'Your score, feedback on each answer and what to practise next.',
-  },
-  '/student/interviews/live': {
-    title: 'Live interview',
-    subtitle: 'Stay present — speak clearly and take a breath between answers.',
+    subtitle: 'See where you rank among classmates on chapter assessments.',
   },
   '/student/assessment': {
     title: 'Assessment',
-    subtitle: 'Chapter quiz — one attempt, scored by Quirri.',
+    subtitle: 'Chapter assessment — one attempt, scored by Quirri.',
   },
 
   '/student/progress': {

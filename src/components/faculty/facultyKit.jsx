@@ -14,14 +14,19 @@ import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
 
 /** Scope chip: HOD = whole department · Faculty = their subjects · no subjects = view only. */
 export function FacultyScopeChip({ scope }) {
-  if (!scope) return <HeadChip icon="clock" tone="grey">Loading your scope…</HeadChip>;
+  // HOD: the department is already in the sidebar header, so the page header stays clean (no chip).
+  if (!scope || scope.is_hod) return null;
   const dept = scope.department_name || 'Your department';
-  if (scope.is_hod) return <HeadChip icon="layers">{`${dept} · whole department`}</HeadChip>;
   if (scope.read_only) return <HeadChip icon="lock" tone="grey">{`${dept} · view only`}</HeadChip>;
   const subs = scope.subjects || [];
   const firstSub = subs[0];
   const label = firstSub ? [firstSub.name, firstSub.code].filter(Boolean).join(' · ') : dept;
   return <HeadChip icon="book">{subs.length > 1 ? `${label} +${subs.length - 1}` : label}</HeadChip>;
+}
+
+/** chips={scopeChip(scope)} — null for HOD / loading so ModuleHead renders no empty chip row. */
+export function scopeChip(scope) {
+  return scope && !scope.is_hod ? <FacultyScopeChip scope={scope} /> : null;
 }
 
 /** Full notice only for the read-only state (Faculty with no subjects yet). */

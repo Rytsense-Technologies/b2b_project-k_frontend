@@ -27,7 +27,7 @@ import {
   initials,
   countLabel,
 } from '@/components/shared/module-ui';
-import { Distribution } from '@/components/shared/data-viz';
+import { ModernDonutCard } from '@/components/shared/data-viz';
 import RowMenu from '@/components/superadmin/RowMenu';
 import { useUrlState, useTabParam } from '@/hooks/useUrlState';
 import { useDebouncedUrlSearch, pageParam } from '@/lib/superadmin/listState';
@@ -59,7 +59,7 @@ const STATUS_FILTERS = [
   { value: 'inactive', label: 'Deactivated' },
 ];
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const EMPTY_USER = {
   first_name: '',
@@ -100,12 +100,13 @@ function userStatusLabel(user) {
 }
 
 /** Role is a category, so it may use the categorical set (redesign spec, superadmin.md §6). */
+// Same series colours as before (cat-4, 1, 5, 2, 6), as tones / hex so the SVG donut can paint them.
 const ROLE_COLOR = {
-  [ROLES.SUPERADMIN]: 'var(--cat-4)',
-  [ROLES.COLLEGE_ADMIN]: 'var(--cat-1)',
-  [ROLES.HOD]: 'var(--cat-5)',
-  [ROLES.FACULTY]: 'var(--cat-2)',
-  [ROLES.STUDENT]: 'var(--cat-6)',
+  [ROLES.SUPERADMIN]: { tone: 'purple' },
+  [ROLES.COLLEGE_ADMIN]: { tone: 'info' },
+  [ROLES.HOD]: { tone: 'cyan' },
+  [ROLES.FACULTY]: { color: '#54B058' },
+  [ROLES.STUDENT]: { tone: 'teal' },
 };
 const ROLE_CLASS = {
   [ROLES.SUPERADMIN]: 'c4',
@@ -809,14 +810,15 @@ function UsersView() {
   }));
 
   const roleParts = CREATE_ROLES.map((r) => ({
+    key: r.value,
     label: r.label,
     value: counts?.roles[r.value] || 0,
-    color: ROLE_COLOR[r.value],
+    ...ROLE_COLOR[r.value],
   }));
   const statusParts = [
-    { label: 'Active', value: counts?.active || 0, color: 'var(--cat-2)' },
-    { label: 'Pending activation', value: counts?.pending || 0, color: 'var(--highlight)' },
-    { label: 'Deactivated', value: counts?.deactivated || 0, color: 'var(--neutral-200)' },
+    { key: 'active', label: 'Active', value: counts?.active || 0, tone: 'good' },
+    { key: 'pending', label: 'Pending activation', value: counts?.pending || 0, tone: 'warn' },
+    { key: 'deactivated', label: 'Deactivated', value: counts?.deactivated || 0, tone: 'neutral' },
   ];
   const tabTitle = TABS.find((t) => t.value === tab)?.label || 'Users';
 
@@ -836,12 +838,25 @@ function UsersView() {
       <TabPanel value={tab} current={tab} idBase="users">
         {tab === 'all' ? (
           <div className="dv-grid">
-            <Panel title="Users by role" sub={`${countScope}, every status.`}>
-              {counts ? <Distribution label="Users by role" parts={roleParts} /> : <p className="dv-empty">Loading…</p>}
-            </Panel>
-            <Panel title="Account status" sub={`${countScope}, every role.`}>
-              {counts ? <Distribution label="Account status" parts={statusParts} /> : <p className="dv-empty">Loading…</p>}
-            </Panel>
+            {counts ? (
+              <ModernDonutCard title="Users by role" sub={`${countScope}, every status.`} totalLabel="Total users" unit="Users" parts={roleParts} />
+            ) : (
+              <Panel title="Users by role" sub={`${countScope}, every status.`}><p className="dv-empty">Loading…</p></Panel>
+            )}
+            {counts ? (
+              <ModernDonutCard
+                title="Account status"
+                sub={`${countScope}, every role.`}
+                totalLabel="Total users"
+                unit="Users"
+                parts={statusParts}
+                note={counts.pending
+                  ? { text: `${countLabel(counts.pending)} ${counts.pending === 1 ? 'invite' : 'invites'} not accepted yet.`, link: { href: '/superadmin/users?tab=pending', label: 'View pending' } }
+                  : null}
+              />
+            ) : (
+              <Panel title="Account status" sub={`${countScope}, every role.`}><p className="dv-empty">Loading…</p></Panel>
+            )}
           </div>
         ) : null}
 
@@ -882,7 +897,7 @@ function UsersView() {
                       ariaLabel="Filter by department"
                       value={url.department}
                       onChange={(e) => setUrl({ department: e.target.value, page: '1' })}
-                      placeholder="Department"
+                      placeholder="All departments"
                       disabled={!url.institution || !departments.length}
                       options={departments.map((d) => ({ value: String(d.id), label: d.code ? `${d.name} (${d.code})` : d.name }))}
                     />

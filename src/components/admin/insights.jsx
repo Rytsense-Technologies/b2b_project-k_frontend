@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { formatMinutes } from '@/lib/superadmin/format';
+import ScoreRing from '@/components/shared/ScoreRing';
+import { formatMinutes, formatPct } from '@/lib/superadmin/format';
 
 /** Shared bits of the College Admin dashboard + analytics screens. */
 
@@ -33,14 +34,16 @@ export function minutesLabel(mins) {
   return formatMinutes(Number(mins) || 0);
 }
 
-/** Completion bar (Progress green, or a subject / department series colour) with its number. */
+/** Completion ring (Progress green, or a subject / department series colour) with its number
+ *  (one decimal at most, same as the KPI tiles and Reports: "33.3%"). The ring's own
+ *  rounded label is hidden (.an-meter) so the cell shows the exact figure once. */
 export function Meter({ value, color }) {
   if (value == null) return <span className="sa-muted">—</span>;
   const v = Math.min(100, Math.max(0, Number(value) || 0));
   return (
-    <div className="sa-progress">
-      <div className="bar green"><i style={color ? { width: `${v}%`, background: color } : { width: `${v}%` }} /></div>
-      <small>{Math.round(v)}%</small>
-    </div>
+    <span className="an-meter">
+      <ScoreRing score={v} size={22} strokeWidth={4} tone="progress" color={color} label={`Completion ${formatPct(v)}`} />
+      <small>{formatPct(v)}</small>
+    </span>
   );
 }

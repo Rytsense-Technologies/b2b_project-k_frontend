@@ -54,6 +54,9 @@ const RefreshingVideo = forwardRef(function RefreshingVideo({ src, onError, onLo
       onError={handleError}
       onLoadedMetadata={handleLoadedMetadata}
       {...props}
+      // Videos are watch-only (owner, 16 Oct 2026): no download in the player menu or right-click.
+      controlsList="nodownload"
+      onContextMenu={(e) => e.preventDefault()}
     />
   );
 });

@@ -26,7 +26,10 @@ export const facultyDirectoryApi = {
   staff: async () => unwrap(await api.get('/faculty/staff')),
 };
 
-/** Messages Quirri sent to the signed-in person (any role). */
+/**
+ * Inbox: messages Quirri sent to the signed-in person (GET /notifications/mine).
+ * Personal email switches are /notifications/rules, not /mine and not /preferences.
+ */
 export const myNotificationsApi = {
   list: async ({ page = 1, pageSize = 25, days = 30 } = {}) =>
     unwrap(await api.get(`/notifications/mine?${buildParams({ page, page_size: pageSize, days })}`)),

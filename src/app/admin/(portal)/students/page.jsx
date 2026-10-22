@@ -16,7 +16,6 @@ import {
   Icon,
   ModulePage,
   ModuleHead,
-  HeadChip,
   TabNav,
   TabPanel,
   SegTabs,
@@ -34,7 +33,7 @@ import {
   initials,
   countLabel,
 } from '@/components/shared/module-ui';
-import { BarList, Distribution } from '@/components/shared/data-viz';
+import { ModernDonut } from '@/components/shared/data-viz';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
@@ -47,7 +46,7 @@ import { isDeactivated, isPending, statusVariant, userStatusLabel } from '@/lib/
 import { studentDepartmentChangeSchema, tenantStudentCreateSchema } from '@/lib/validation';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
-const TONE = { red: 'err', amber: 'low', green: 'good' };
+const TONE = { red: 'err', amber: 'low', green: 'good', off: 'off' };
 
 // Pending invites have their own tab; the directory filters by Active / Deactivated.
 const STATUS_FILTERS = [
@@ -293,7 +292,7 @@ function ChangeDepartmentModal({ open, user, departmentOptions, onClose, onSaved
       <form onSubmit={onSave} noValidate className="un-form">
         {currentId ? (
           <ConfirmNote danger title="They start again in the new department.">
-            {`Lecture progress, chapter assessments, and tutor chats from ${currentName || 'the previous department'} are removed. Interview history stays.`}
+            {`Lecture progress, chapter assessments, and tutor chats from ${currentName || 'the previous department'} are removed.`}
           </ConfirmNote>
         ) : null}
         <Controller
@@ -412,9 +411,10 @@ function PromoteYearModal({ open, onClose, onDone }) {
 
 /* ---------------------------------------------------------------- page */
 const TABS = ['all', 'pending', 'import'];
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10; // quirri-b2c-student-ui: lists page at 10
 const YEAR_OPTIONS = [1, 2, 3, 4, 5].map((y) => ({ value: String(y), label: `Year ${y}` }));
-const STATUS_HEX = { active: 'var(--band-strong)', pending: 'var(--cat-1)', inactive: 'var(--band-none)' };
+// Raw hex: the donut ring is SVG (CSS variables do not resolve in its stroke attribute).
+const STATUS_HEX = { active: '#5CB414', pending: '#F5821F', inactive: '#BCC1C3' };
 
 function StudentsWorkspace() {
   const { tenantId } = useAuth();
@@ -511,10 +511,19 @@ function StudentsWorkspace() {
   const everyone = countData ? counts.active + counts.pending + counts.inactive : null;
   const firstLoad = loading && !data;
 
-  const deptBars = useMemo(() => departments
-    .map((d) => ({ key: String(d.id), label: d.name, value: Number(d.student_count) || 0 }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6), [departments]);
+  // Top 5 active departments + "Other departments" so the ring always adds up to every student placed.
+  const deptBars = useMemo(() => {
+    const rows = departments
+      .map((d) => ({ key: String(d.id), label: d.name, value: Number(d.student_count) || 0 }))
+      .sort((a, b) => b.value - a.value);
+    if (rows.length <= 6) return rows;
+    const rest = rows.slice(5).reduce((a, r) => a + r.value, 0);
+    return [...rows.slice(0, 5), { key: 'other', label: `Other departments (${rows.length - 5})`, value: rest, tone: 'neutral' }];
+  }, [departments]);
+  const placed = deptBars.reduce((a, r) => a + r.value, 0);
+  // department student_count includes every account state; students in an inactive department
+  // (or not placed in one yet) are in the Account status total but not here - say so.
+  const unplaced = everyone != null && deptData ? Math.max(0, everyone - placed) : 0;
 
   const changeTab = (v) => {
     setTab(v);
@@ -615,7 +624,6 @@ function StudentsWorkspace() {
       window.requestAnimationFrame(() => document.querySelector('.pm-panel-tools input')?.focus());
     }
   };
-  const deptName = departmentOptions.find((o) => o.value === url.dept)?.label;
 
   const toolbar = (
     <>
@@ -717,12 +725,6 @@ function StudentsWorkspace() {
   return (
     <ModulePage className="ad-page">
       <ModuleHead
-        chips={(
-          <>
-            <HeadChip icon="building">Your college</HeadChip>
-            {deptName && tab !== 'import' ? <HeadChip icon="tree" tone="grey">{deptName}</HeadChip> : null}
-          </>
-        )}
         actions={tab !== 'import' ? (
           <>
             <button type="button" className="sd-btn sd-btn--outline" onClick={() => setPromoteOpen(true)}>
@@ -749,14 +751,25 @@ function StudentsWorkspace() {
 
       <TabPanel value="all" current={tab} idBase="students-tab">
         <div className="dv-grid ad-viz-row">
-          <Panel title="Account status" sub="Every student in your college">
+          <Panel
+            title="Account status"
+            sub="Every student in your college"
+            className="mdc-card"
+            action={countData ? (
+              <div className="mdc-chip">
+                <small>Total students</small>
+                <b>{countLabel((counts.active || 0) + (counts.pending || 0) + (counts.inactive || 0))}</b>
+              </div>
+            ) : null}
+          >
             {countData ? (
-              <Distribution
-                label="Account status"
+              <ModernDonut
+                title="Account status"
+                unit="Students"
                 parts={[
-                  { label: 'Active', value: counts.active, color: STATUS_HEX.active },
-                  { label: 'Pending invite', value: counts.pending, color: STATUS_HEX.pending },
-                  { label: 'Deactivated', value: counts.inactive, color: STATUS_HEX.inactive },
+                  { key: 'active', label: 'Active', value: counts.active, color: STATUS_HEX.active },
+                  { key: 'pending', label: 'Pending invite', value: counts.pending, color: STATUS_HEX.pending },
+                  { key: 'inactive', label: 'Deactivated', value: counts.inactive, color: STATUS_HEX.inactive },
                 ]}
                 empty="No students yet."
               />
@@ -765,16 +778,21 @@ function StudentsWorkspace() {
           <Panel
             title="Students by department"
             sub="Placed in each active department"
-            action={(
-              <Link className="sp-link" href="/admin/structure/departments">
-                Departments <Icon name="arrow" size={14} />
-              </Link>
-            )}
+            className="mdc-card"
+            action={deptData ? (
+              <div className="mdc-chip">
+                <small>Total placed</small>
+                <b>{countLabel(placed)}</b>
+              </div>
+            ) : null}
           >
             {deptData ? (
-              <BarList
-                label="Students by department"
-                items={deptBars}
+              <ModernDonut
+                title="Students by department"
+                unit="Students"
+                parts={deptBars}
+                link={{ href: '/admin/structure/departments', label: 'View departments' }}
+                note={unplaced ? `${countLabel(unplaced)} of ${countLabel(everyone)} student${everyone === 1 ? '' : 's'} ${unplaced === 1 ? 'is' : 'are'} in an inactive department or not placed in one yet, so ${unplaced === 1 ? 'is' : 'are'} not counted here.` : undefined}
                 empty="No departments yet. Create one under Academic structure."
               />
             ) : <p className="dv-empty">Loading…</p>}
@@ -913,10 +931,7 @@ function StudentsWorkspace() {
         title={drawerUser ? fullName(drawerUser) : ''}
         mono={drawerUser ? fullName(drawerUser) : null}
         pills={drawerUser ? (
-          <>
-            <span className="sp-pill sp-pill--glass">{drawerUser.email}</span>
-            <StatusPill active on={userStatusLabel(drawerUser)} tone={TONE[statusVariant(drawerUser)]} />
-          </>
+          <StatusPill active on={userStatusLabel(drawerUser)} tone={TONE[statusVariant(drawerUser)]} />
         ) : null}
         stats={drawerUser ? [
           { label: 'Year of study', value: drawerUser.year_of_study ? countLabel(drawerUser.year_of_study) : '—' },

@@ -1,12 +1,12 @@
-/* Analytics, reports and interview workspaces (shared by College Admin, HOD, Faculty). Owner: shared-analytics writer, redesign 14 Oct 2026. */
+/* Analytics and reports workspaces (shared by College Admin, HOD, Faculty). Owner: shared-analytics writer, redesign 14 Oct 2026. */
 
 /* ---------- Light in-panel filters (search icon + compact selects), same as the content / MCQ modules ---------- */
-:is(.an-page,.rp-page,.ia-page) .pm-panel-tools .search{flex:1 1 240px;min-width:200px;position:relative}
-:is(.an-page,.rp-page,.ia-page) .pm-panel-tools .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--teal-500);pointer-events:none}
-:is(.an-page,.rp-page,.ia-page) .pm-panel-tools .search input{width:100%;padding-left:42px;min-height:44px;background:#fff;border:1px solid var(--neutral-300);border-radius:var(--radius-control);font:inherit;font-size:14px}
-:is(.an-page,.rp-page,.ia-page) .pm-panel-tools .search input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
-:is(.an-page,.rp-page,.ia-page) .pm-panel-tools .quirri-dd{flex:0 1 200px;min-width:168px;width:auto}
-:is(.an-page,.rp-page,.ia-page) .pm-panel-tools .un-seg{flex:0 0 auto}
+:is(.an-page,.rp-page) .pm-panel-tools .search{flex:1 1 240px;min-width:200px;position:relative}
+:is(.an-page,.rp-page) .pm-panel-tools .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--teal-500);pointer-events:none}
+:is(.an-page,.rp-page) .pm-panel-tools .search input{width:100%;padding-left:42px;min-height:44px;background:#fff;border:1px solid var(--neutral-300);border-radius:var(--radius-control);font:inherit;font-size:14px}
+:is(.an-page,.rp-page) .pm-panel-tools .search input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
+:is(.an-page,.rp-page) .pm-panel-tools .quirri-dd{flex:0 1 200px;min-width:168px;width:auto}
+:is(.an-page,.rp-page) .pm-panel-tools .un-seg{flex:0 0 auto}
 
 /* ---------- Analytics (InsightsView) ---------- */
 .an-filters{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
@@ -25,7 +25,6 @@
 .an-risk-who{display:flex;align-items:center;gap:12px;min-width:0}
 .an-risk-who > div{min-width:0}
 .an-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-500);font-size:12px;line-height:18px;font-weight:500}
-.an-note{margin:16px 0 0;font-size:13px;line-height:20px;color:var(--ink-2)}
 .an-click tbody tr{cursor:pointer}
 .an-click tbody tr:hover td{background:var(--teal-50)}
 .an-click tbody tr:focus-visible{outline:2px solid var(--teal-500);outline-offset:-2px}
@@ -37,19 +36,21 @@
 .an-facts b{font-size:20px;line-height:28px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
 .an-facts > .an-fact--pill{flex-direction:row;flex-wrap:wrap;align-items:center;column-gap:10px}
 .an-facts > .an-fact--pill small{flex-basis:100%}
-.an-facts .dv-meter{width:100%}
+/* Table completion cell: small ring + exact figure (modern-cards-plan.md: single meters -> ring) */
+.an-meter{display:inline-flex;align-items:center;gap:8px;vertical-align:middle;white-space:nowrap;font-variant-numeric:tabular-nums}
+.an-meter > [role="img"] > span{display:none}
+/* Odd third panel in a two-column grid spans the row (no hole) */
+.an-page .dv-grid > .an-span{grid-column:1/-1}
+/* Overview: short metric lists beside taller cards keep their own height */
+.an-page .dv-grid.an-grid-start{align-items:start}
+.an-meter small{font-size:13px;line-height:20px;color:var(--ink)}
 
 /* ---------- Reports (ReportsWorkspace) ---------- */
 .rp-export{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:none}
 .rp-panel .sp-panel-h{flex-wrap:wrap}
 .rp-table td b{font-weight:500}
 
-/* ---------- Interviews (InterviewAssignmentsWorkspace) ---------- */
-.ia-progress{display:flex;flex-direction:column;gap:4px;min-width:160px}
-.ia-progress small{font-size:12px;line-height:18px;color:var(--muted-2)}
-.ia-actions{text-align:right;white-space:nowrap}
-
-/* Wide analytics tables (9 columns) fit their panel at 1440: tighter cells, shorter meters */
+/* Wide analytics tables (up to 8 columns) fit their panel at 1440: tighter cells, shorter meters */
 @media (min-width:769px){
   .an-page .sp-table th,.an-page .sp-table td{padding-left:14px;padding-right:14px}
   .an-page .sp-table th:first-child,.an-page .sp-table td:first-child{padding-left:24px}
@@ -57,9 +58,9 @@
 }
 
 @media (max-width:768px){
-  :is(.an-page,.rp-page,.ia-page) .pm-panel-tools .search,
-  :is(.an-page,.rp-page,.ia-page) .pm-panel-tools .quirri-dd{flex:1 1 100%;min-width:0}
-  :is(.an-page,.rp-page,.ia-page) .pm-panel-tools .un-seg{flex:1 1 100%;max-width:100%}
+  :is(.an-page,.rp-page) .pm-panel-tools .search,
+  :is(.an-page,.rp-page) .pm-panel-tools .quirri-dd{flex:1 1 100%;min-width:0}
+  :is(.an-page,.rp-page) .pm-panel-tools .un-seg{flex:1 1 100%;max-width:100%}
   .an-filters{width:100%}
   .an-filters > *{flex:1 1 150px}
   .an-filters .quirri-dd{width:100%}
@@ -68,9 +69,7 @@
   .an-facts b{font-size:18px;line-height:26px}
   .rp-export{width:100%}
   .rp-export .sd-btn{flex:1 1 0;justify-content:center}
-  .ia-progress{min-width:0;align-items:flex-end}
-  .ia-actions{text-align:left}
-  .ad-stack td[data-label] .an-score,.ad-stack td[data-label] .sa-progress{justify-content:flex-end}
+  .ad-stack td[data-label] .an-score,.ad-stack td[data-label] .an-meter,.ad-stack td[data-label] .sa-progress{justify-content:flex-end}
   .ad-stack td[data-label] .an-avg{align-items:flex-end}
   .ad-stack td[data-label] .sa-progress{min-width:0;flex:0 1 200px}
   .an-page .ad-stack td:first-child{min-width:0}
@@ -78,3 +77,8 @@
   .rp-table td{overflow-wrap:anywhere}
   .rp-table td[data-label]{text-align:right}
 }
+
+/* b2c skill: reasons are text + 6px dot (no tinted pills); header count is a plain teal number */
+.an-reason{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--accent-text,#b45309)}
+.an-reason .un-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.an-count{font-size:14px;font-weight:600;color:var(--sb-teal,#14606e);font-variant-numeric:tabular-nums}

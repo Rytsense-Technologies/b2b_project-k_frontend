@@ -59,16 +59,6 @@ const NAV = [
       </svg>
     ),
   },
-  {
-    href: '/faculty/interviews',
-    label: 'Interview assignments',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z" />
-        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-      </svg>
-    ),
-  },
   { group: 'Insights' },
   {
     href: '/faculty/analytics',
@@ -112,10 +102,7 @@ const ICON = {
 /** HOD gets Staff + Reports; everyone gets Notifications + Settings. */
 function buildNav(isHod) {
   const out = [];
-  const interviews = NAV.find((item) => item.href === '/faculty/interviews');
   NAV.forEach((item) => {
-    // Faculty only read interview assignments: they sit under Insights as "Interviews".
-    if (!isHod && item === interviews) return;
     // HOD sees the whole department; Faculty see their own subjects.
     out.push(isHod && item.href === '/faculty/analytics' ? { ...item, label: 'Department analytics' } : item);
     if (isHod && item.href === '/faculty/students') {
@@ -123,9 +110,6 @@ function buildNav(isHod) {
     }
     if (isHod && item.href === '/faculty/analytics') {
       out.push({ href: '/faculty/reports', label: 'Reports', icon: ICON.reports });
-    }
-    if (!isHod && item.href === '/faculty/analytics') {
-      out.push({ ...interviews, label: 'Interviews' });
     }
   });
   out.push({ group: 'Account' });

@@ -18,7 +18,7 @@ export function formatDateTime(value, fallback = '—') {
   if (!value) return fallback;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return fallback;
-  const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
   const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
   return `${date}, ${time}`;
 }
@@ -59,7 +59,8 @@ export function formatDate(value, fallback = '—') {
   if (!value) return fallback;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return fallback;
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  // en-IN spells September "Sept"; the design system uses three-letter months.
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 /** 48.5 -> "48.5%" (en-IN, one decimal at most). */

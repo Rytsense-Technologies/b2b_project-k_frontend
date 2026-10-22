@@ -5,14 +5,13 @@ import Link from 'next/link';
 import {
   ModulePage,
   ModuleHead,
-  HeadChip,
   Panel,
   Kpi,
   SegTabs,
   Icon,
   SectionState,
 } from '@/components/shared/module-ui';
-import { BarList, RankList, DonutChart, BandPill } from '@/components/shared/data-viz';
+import { MetricList, ModernDonut, BandPill } from '@/components/shared/data-viz';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import {
   dashboardApi, collegesApi, healthApi, notificationsApi, fetchData,
@@ -24,6 +23,7 @@ import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
 import { useUrlState } from '@/hooks/useUrlState';
 import { formatCount, formatMinutes, formatPct } from '@/lib/superadmin/format';
 import { overallHealth, toNumber } from '@/lib/superadmin/health';
+import { isInterviewOff } from '@/lib/product/interviewOff';
 
 /** The five ranges GET /dashboard accepts (reports.py RANGES). */
 const RANGES = [
@@ -140,7 +140,11 @@ function DashboardView() {
 
   const metrics = useMemo(() => {
     const byTitle = {};
-    asList(data?.metrics, []).forEach((m) => { byTitle[String(m.title || '').toLowerCase()] = m; });
+    asList(data?.metrics, []).forEach((m) => {
+      const title = String(m.title || '');
+      if (isInterviewOff(title)) return;
+      byTitle[title.toLowerCase()] = m;
+    });
     return byTitle;
   }, [data]);
   const activity = useMemo(() => asList(data?.institution_activity, []), [data]);
@@ -152,28 +156,35 @@ function DashboardView() {
   const mix = activity.reduce((acc, r) => ({
     qa: acc.qa + (Number(r.qa) || 0),
     assessments: acc.assessments + (Number(r.assessments) || 0),
-    interviews: acc.interviews + (Number(r.interviews) || 0),
-  }), { qa: 0, assessments: 0, interviews: 0 });
+  }), { qa: 0, assessments: 0 });
 
   const m = (key) => metrics[key] || null;
-  const avgScore = pct(m('avg assessment score')?.value);
+  // Quiz-only score: each college's quiz_avg weighted by its assessments when the rows carry it;
+  // the API's platform figure otherwise. The sub line is built here so it only counts assessments.
+  const quizRows = activity.filter((r) => 'quiz_avg' in r && r.quiz_avg != null && Number(r.assessments) > 0);
+  const quizWeight = quizRows.reduce((a, r) => a + Number(r.assessments), 0);
+  const scoreValue = activity.some((r) => 'quiz_avg' in r)
+    ? (quizWeight ? `${Math.round((quizRows.reduce((a, r) => a + Number(r.quiz_avg) * Number(r.assessments), 0) / quizWeight) * 10) / 10}%` : '—')
+    : m('avg assessment score')?.value;
+  const avgScore = pct(scoreValue);
+  const scoreSub = data ? (mix.assessments ? plural(mix.assessments, 'assessment', 'assessments') : 'No scored attempts yet') : null;
   const kpis = [
     { icon: 'building', label: 'Institutions', value: m('institutions') ? formatCount(m('institutions').value) : null, sub: m('institutions')?.trend },
-    { icon: 'users', label: 'Active students', value: m('active students') ? formatCount(m('active students').value) : null, sub: 'Active student accounts' },
+    // Watch time rides on the students tile so the row stays at four tiles (spec: max 4 per row).
+    { icon: 'users', label: 'Active students', value: m('active students') ? formatCount(m('active students').value) : null, sub: data ? `${formatMinutes(watchMinutes)} watched · ${rangeLabel.toLowerCase()}` : null },
     { icon: 'tick', label: 'Completion rate', value: m('completion rate')?.value, sub: m('completion rate')?.trend },
     {
       icon: 'chart',
       label: 'Avg assessment score',
-      value: m('avg assessment score')?.value,
-      sub: avgScore != null ? <><BandPill score={avgScore} /> {m('avg assessment score')?.trend}</> : m('avg assessment score')?.trend,
+      value: data ? scoreValue : null,
+      sub: avgScore != null ? <><BandPill score={avgScore} /> {scoreSub}</> : scoreSub,
     },
-    { icon: 'clock', label: 'Watch time', value: data ? formatMinutes(watchMinutes) : null, sub: `Across ${plural(activity.length, 'active college', 'active colleges')}` },
   ];
 
   const comparison = useMemo(() => {
     const pick = {
       completion: (r) => r.completion,
-      score: (r) => r.avg_score,
+      score: (r) => ('quiz_avg' in r ? r.quiz_avg : r.avg_score),
       watch: (r) => r.watch_minutes,
       qa: (r) => r.qa,
     }[metric];
@@ -194,11 +205,6 @@ function DashboardView() {
   return (
     <ModulePage className="sa-page sa-dash">
       <ModuleHead
-        chips={(
-          <>
-            <HeadChip icon="refresh" tone="grey">Live · {ago}</HeadChip>
-          </>
-        )}
         actions={(
           <div className="sa-range">
             <QuirriSelect
@@ -211,7 +217,9 @@ function DashboardView() {
         )}
       />
 
-      <section className="sd-kpis sa-kpis--5" aria-label="Platform summary">
+      <p className="sa-live" title="Refreshes every minute">Live · updated {ago}</p>
+
+      <section className="sd-kpis" aria-label="Platform summary">
         {kpis.map((k) => (
           <Kpi key={k.label} icon={k.icon} label={k.label} value={firstLoad ? null : (k.value ?? '—')} sub={firstLoad ? 'Loading…' : k.sub} />
         ))}
@@ -251,11 +259,10 @@ function DashboardView() {
           className="sa-compare"
         >
           {firstLoad ? <p className="dv-empty">Loading institutions…</p> : (
-            <BarList
+            <MetricList
               label="Institution comparison"
               items={comparison}
               colorBy={isBand ? 'band' : 'series'}
-              max={isBand ? 100 : undefined}
               format={metric === 'watch' ? formatMinutes : isBand ? formatPct : undefined}
               empty="No active colleges yet. Colleges appear here once they are onboarded."
             />
@@ -267,7 +274,7 @@ function DashboardView() {
           </div>
         </Panel>
 
-        <Panel title="Attention needed" sub="Things to act on, with a link to where they are fixed.">
+        <Panel title="Attention needed" sub="What to act on, and where to fix it.">
           {attentionItems.length ? <AttentionList items={attentionItems.slice(0, 6)} /> : (
             <p className="sa-attn-none">
               {attentionLoading && !attention
@@ -286,22 +293,27 @@ function DashboardView() {
       <div className="dv-grid">
         <Panel title="Top Q&A queries" sub={`Most-asked questions to the AI tutor · ${rangeLabel.toLowerCase()}`}>
           {firstLoad ? <p className="dv-empty">Loading questions…</p> : (
-            <RankList
+            <MetricList
               label="Top Q&A queries"
-              rows={topics.map((t, i) => ({ key: `${i}-${t.topic}`, name: t.topic, sub: t.chapter || null, value: Number(t.count) || 0 }))}
-              showBand={false}
+              items={topics.map((t, i) => ({ key: `${i}-${t.topic}`, label: t.topic, sub: t.chapter || null, value: Number(t.count) || 0 }))}
+              colorBy="single"
               empty="No questions asked in this range."
             />
           )}
         </Panel>
-        <Panel title="Activity mix" sub={`Q&A turns, assessments and interviews · ${rangeLabel.toLowerCase()}`}>
+        <Panel
+          title="Activity mix"
+          sub={`Q&A turns and assessments · ${rangeLabel.toLowerCase()}`}
+          className="mdc-card"
+          action={firstLoad ? null : <div className="mdc-chip"><small>Total activities</small><b>{formatCount(mix.qa + mix.assessments)}</b></div>}
+        >
           {firstLoad ? <p className="dv-empty">Loading activity…</p> : (
-            <DonutChart
-              centerLabel="Activities"
+            <ModernDonut
+              title="Activity mix"
+              unit="Activities"
               parts={[
-                { label: 'Q&A', value: mix.qa },
-                { label: 'Assessments', value: mix.assessments },
-                { label: 'Interviews', value: mix.interviews },
+                { key: 'qa', label: 'Q&A', value: mix.qa, tone: 'info' },
+                { key: 'assessments', label: 'Assessments', value: mix.assessments, tone: 'good' },
               ]}
               empty="No learning activity in this range."
             />
@@ -313,7 +325,6 @@ function DashboardView() {
         <Panel
           title="Content pipeline"
           sub="Chapters being turned into lectures and assessments right now."
-          action={<Link className="sp-link" href="/superadmin/content">Upload &amp; content <Icon name="arrow" size={14} /></Link>}
           bodyClassName={null}
         >
           <div className="sp-table-wrap">
@@ -348,6 +359,9 @@ function DashboardView() {
                 })}
               </tbody>
             </table>
+          </div>
+          <div className="sa-panel-foot sa-panel-foot--pad">
+            <Link className="sp-link" href="/superadmin/content">Open Upload &amp; content <Icon name="arrow" size={14} /></Link>
           </div>
         </Panel>
       ) : null}

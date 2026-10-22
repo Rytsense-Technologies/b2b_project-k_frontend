@@ -1,7 +1,7 @@
 'use client';
 
 import McqReviewWorkspace from '@/components/shared/McqReviewWorkspace';
-import { FacultyScopeChip, ReadOnlyNote, useSubjectColor } from '@/components/faculty/facultyKit';
+import { scopeChip, ReadOnlyNote, useSubjectColor } from '@/components/faculty/facultyKit';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
 
 /**
@@ -13,7 +13,7 @@ export default function FacultyMcqPage() {
   const colorFor = useSubjectColor();
   return (
     <McqReviewWorkspace
-      chips={<FacultyScopeChip scope={scope} />}
+      chips={scopeChip(scope)}
       notice={<ReadOnlyNote scope={scope} what="question sets" />}
       colorFor={colorFor}
     />

@@ -1,25 +1,28 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import QuirriSelect from '@/components/superadmin/QuirriSelect';
 import { Icon, SectionState } from '@/components/student/ui';
-import { BANDS, BandPill, Distribution, bandFor } from '@/components/shared/data-viz';
+import { BANDS, BandPill, ModernDonut, bandFor } from '@/components/shared/data-viz';
 import { leaderboardApi } from '@/lib/api/leaderboard';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { useUrlSearch, useUrlState } from '@/hooks/useUrlState';
+import { useUrlState } from '@/hooks/useUrlState';
 import '@/styles/student-leaderboard.css';
 
 /*
  * Student leaderboard (SOW §6.4.4): cohort ranking on correct MCQ scores,
- * refreshed live (every minute and whenever the tab regains focus) so a new
+ * refreshed live (every 15 s and whenever the tab regains focus) so a new
  * submission shows up without a reload. Students always see their own
  * position, even outside the top list.
+ * Layout — quirri-b2c-student-ui skill (15 Oct 2026): your-position white card ·
+ * teal filter bar (applies on Search / Enter, Clear resets) · meta line + stat cluster ·
+ * score bands card · stacked white rows · pager (10 per page). No teal hero (filters exist).
  */
 const REFRESH_MS = 15000;
 const LIMIT = 100;
+const PAGE_SIZE = 10;
 
 /** Podium only when it adds something: three or more ranked students. */
 const PODIUM_MIN = 3;
@@ -37,7 +40,7 @@ function formatDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
 }
 
 function timeAgo(ts) {
@@ -58,24 +61,14 @@ function classAvgNote(me, classAvg) {
   return `You’re ${pts} point${pts === 1 ? '' : 's'} ${diff > 0 ? 'above' : 'below'} average`;
 }
 
-function ScoreCell({ score }) {
-  const t = bandFor(score);
-  return (
-    <span className="slb-scorecell">
-      <span className={`slb-bar is-${t}`} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, score || 0))}%` }} /></span>
-      <b className={`slb-tone--${t}`}>{score != null ? `${score}%` : '—'}</b>
-    </span>
-  );
-}
-
 const rankTier = (rank) => (rank === 1 ? 'r1' : rank === 2 ? 'r2' : rank === 3 ? 'r3' : 'rn');
 
-function Hero({ me, participants, scopeLabel, filtered, onHowItWorks }) {
+function Position({ me, participants, scopeLabel, filtered, classAvg, onHowItWorks }) {
   if (!me) {
     return (
-      <section className="slb-hero" aria-label="Your position">
+      <section className="slb-card slb-pos" aria-label="Your position">
         <div className="slb-rank"><small>Rank</small><b>—</b></div>
-        <div>
+        <div className="slb-pos-copy">
           <h2>You&apos;re not ranked yet</h2>
           <p>
             {filtered
@@ -83,51 +76,79 @@ function Hero({ me, participants, scopeLabel, filtered, onHowItWorks }) {
               : `Submit a chapter assessment to appear on the ${scopeLabel} leaderboard.`}
           </p>
         </div>
-        <div className="slb-hero-cta">
-          <Link className="sd-btn sd-btn--amber" href="/student/subjects"><Icon name="play" size={16} /> Take a chapter assessment</Link>
-          <button type="button" className="sd-btn sd-btn--glass sd-btn--sm" onClick={onHowItWorks}><Icon name="info" size={14} /> How ranking works</button>
+        <div className="slb-pos-cta">
+          <Link className="slb-btn slb-btn--primary" href="/student/subjects"><Icon name="play" size={16} /> Take a chapter assessment</Link>
+          <button type="button" className="slb-btn" onClick={onHowItWorks}><Icon name="info" size={16} /> How ranking works</button>
         </div>
       </section>
     );
   }
   const top = me.rank === 1;
-  const tier = rankTier(me.rank);
   const message = top
     ? `You’re at the top of ${scopeLabel}. Keep it up!`
     : me.gap_to_next != null
       ? `${me.gap_to_next} percentage point${me.gap_to_next === 1 ? '' : 's'} behind rank #${me.next_rank}. One strong assessment can close it.`
       : 'Keep taking assessments to move up.';
+  const ahead = Math.max(0, participants - me.rank);
   return (
-    <section className="slb-hero" aria-label="Your position">
-      <div className={`slb-rank is-${tier}`} role="img" aria-label={`Your rank: ${me.rank} of ${participants}`}>
+    <section className="slb-card slb-pos" aria-label="Your position">
+      <div className={`slb-rank is-${rankTier(me.rank)}`} role="img" aria-label={`Your rank: ${me.rank} of ${participants}`}>
         <small>Rank</small><b>#{me.rank}</b>
       </div>
-      <div>
+      <div className="slb-pos-copy">
         <h2>You’re #{me.rank} of {participants} in {scopeLabel}</h2>
-        <p>{message}</p>
-        <div className="slb-hero-stats">
-          <span className="slb-chip"><Icon name="trend" size={14} /> {top ? <b>Top of the class</b> : <>Ahead of <b>{Math.max(0, participants - me.rank)}</b> classmate{participants - me.rank === 1 ? '' : 's'}</>}</span>
-          {me.percentile != null && participants > 1 ? (
-            <span className="slb-chip"><Icon name="chart" size={14} /> At or above <b>{me.percentile}%</b> of your class</span>
+        <p>{message} <span className="slb-muted">{classAvgNote(me, classAvg)}.</span></p>
+        <div className="sb-stats slb-pos-stats" aria-label="Your numbers">
+          <div className="sb-stat"><b>{me.avg_score}%</b><span>Average</span></div>
+          <i className="sb-rule" aria-hidden="true" />
+          <div className="sb-stat"><b>{me.correct}/{me.questions}</b><span>Correct</span></div>
+          <i className="sb-rule" aria-hidden="true" />
+          <div className="sb-stat"><b>{me.attempt_count}</b><span>Assessment{me.attempt_count === 1 ? '' : 's'}</span></div>
+          {/* Rank #1 is already the headline; only show "behind" when it adds something. */}
+          {!top ? (
+            <>
+              <i className="sb-rule" aria-hidden="true" />
+              <div className="sb-stat"><b>{ahead}</b><span>{`Classmate${ahead === 1 ? '' : 's'} behind`}</span></div>
+            </>
           ) : null}
-          <span className="slb-chip"><Icon name="target" size={14} /> Average <b>{me.avg_score}%</b></span>
-          <span className="slb-chip"><Icon name="check" size={14} /> <b>{me.correct}/{me.questions}</b> correct</span>
-          <span className="slb-chip"><Icon name="doc" size={14} /> <b>{me.attempt_count}</b> assessment{me.attempt_count === 1 ? '' : 's'}</span>
+          {me.percentile != null && participants > 1 ? (
+            <>
+              <i className="sb-rule" aria-hidden="true" />
+              <div className="sb-stat"><b>{me.percentile}%</b><span>At or above</span></div>
+            </>
+          ) : null}
         </div>
       </div>
-      <div className="slb-hero-cta">
+      <div className="slb-pos-cta">
         {/* Already ranked: more lectures + their assessments move you up. */}
-        <Link className="sd-btn sd-btn--amber" href="/student/subjects"><Icon name="bookOpen" size={16} /> Continue learning</Link>
-        <button type="button" className="sd-btn sd-btn--glass sd-btn--sm" onClick={onHowItWorks}><Icon name="info" size={14} /> How ranking works</button>
+        <Link className="slb-btn slb-btn--primary" href="/student/subjects"><Icon name="bookOpen" size={16} /> Continue learning</Link>
+        <button type="button" className="slb-btn" onClick={onHowItWorks}><Icon name="info" size={16} /> How ranking works</button>
       </div>
     </section>
   );
 }
 
+function RankRow({ r }) {
+  return (
+    <li className={`sb-row slb-row${r.is_me ? ' is-me' : ''}`} aria-current={r.is_me ? 'true' : undefined}>
+      <span className={`slb-rankcell is-${rankTier(r.rank)}`}>{r.rank}</span>
+      <span className="slb-row-main">
+        <span className="sb-row__title">{titleCase(r.name)}{r.is_me ? <span className="slb-you">You</span> : null}</span>
+        <span className="sb-row__sub">
+          {r.correct}/{r.questions} correct · {r.attempt_count} assessment{r.attempt_count === 1 ? '' : 's'} · Last {formatDate(r.last_submitted_at)}
+        </span>
+      </span>
+      <span className="slb-row-band"><BandPill score={r.avg_score} /></span>
+      <span className="sb-row__score">{r.avg_score != null ? `${r.avg_score}%` : '—'}</span>
+    </li>
+  );
+}
+
 function LeaderboardInner() {
-  const [url, setUrl] = useUrlState({ job: '', q: '' });
-  // Local box, URL written debounced — typing never loses characters (S1).
-  const [q, setQ] = useUrlSearch(url.q, (v) => setUrl({ q: v }));
+  const [url, setUrl] = useUrlState({ job: '', q: '', p: '1' });
+  // Draft filters: applied only on Search / Enter (skill "Teal filter bar").
+  const [draft, setDraft] = useState({ q: url.q, job: url.job });
+  useEffect(() => { setDraft({ q: url.q, job: url.job }); }, [url.q, url.job]);
   const [howOpen, setHowOpen] = useState(false);
   const [fetchedAt, setFetchedAt] = useState(0);
   const [, setTick] = useState(0);
@@ -175,29 +196,50 @@ function LeaderboardInner() {
   const assessments = Array.isArray(data?.assessments) ? data.assessments : [];
   const selected = assessments.find((a) => a.job_id === url.job);
 
-  const search = q.trim().toLowerCase();
+  const search = url.q.trim().toLowerCase();
   const filtered = Boolean(url.job || search);
-  // The Clear button unmounts once filters are gone — keep focus in the search box (N8).
-  const clearFilters = () => { setQ(''); setUrl({ job: '', q: '' }); searchRef.current?.focus(); };
+  const apply = (e) => {
+    e?.preventDefault?.();
+    setUrl({ q: draft.q.trim(), job: draft.job, p: '1' });
+  };
+  const clearFilters = () => {
+    setDraft({ q: '', job: '' });
+    setUrl({ job: '', q: '', p: '1' });
+    searchRef.current?.focus();
+  };
   const rows = search ? items.filter((r) => r.name.toLowerCase().includes(search)) : items;
   const meInList = items.some((r) => r.is_me);
-  const podium = !search && items.length >= PODIUM_MIN ? items.slice(0, 3) : [];
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const page = Math.min(pages, Math.max(1, Number(url.p) || 1));
+  const pageRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const podium = !search && page === 1 && items.length >= PODIUM_MIN ? items.slice(0, 3) : [];
   const bandParts = useMemo(() => {
     const counts = { strong: 0, ok: 0, focus: 0 };
     items.forEach((r) => { const b = bandFor(r.avg_score); if (counts[b] != null) counts[b] += 1; });
     return BANDS.map((b) => ({ key: b.key, label: b.label, value: counts[b.key] }));
   }, [items]);
   const participation = cohort ? Math.round((participants / cohort) * 100) : null;
-
-  const options = [{ value: '', label: 'All assessments' }, ...assessments.map((a) => ({ value: a.job_id, label: a.title || 'Chapter assessment' }))];
+  const cohortStats = [
+    { key: 'ranked', value: `${participants}${cohort ? `/${cohort}` : ''}`, label: participation != null ? `${participation}% ranked` : 'Ranked' },
+    { key: 'avg', value: data?.class_avg != null ? `${data.class_avg}%` : '—', label: 'Class average' },
+    { key: 'top', value: data?.top_score != null ? `${data.top_score}%` : '—', label: 'Top score' },
+    { key: 'latest', value: formatDate(data?.updated_at), label: 'Latest submission' },
+  ];
 
   if (loading && !data) {
-    return <div className="slb"><SectionState title="Loading leaderboard…">Fetching your class rankings.</SectionState></div>;
+    return (
+      <div className="slb" aria-busy="true">
+        <div className="sb-skel" style={{ height: 150 }} aria-hidden="true" />
+        <div className="sb-skel" style={{ height: 82 }} aria-hidden="true" />
+        {[0, 1, 2].map((i) => <div key={i} className="sb-skel" style={{ height: 86 }} aria-hidden="true" />)}
+        <span className="sr-only">Loading leaderboard…</span>
+      </div>
+    );
   }
   if (error && !data) {
     return (
       <div className="slb">
-        <SectionState tone="err" title="Could not load the leaderboard" action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}><Icon name="refresh" size={14} /> Try again</button>}>
+        <SectionState tone="err" title="Could not load the leaderboard" action={<button type="button" className="text-link slb-linkbtn" onClick={() => reload().catch(() => {})}>Try again</button>}>
           {apiErrorMessage(error, 'Please try again in a moment.')}
         </SectionState>
       </div>
@@ -206,64 +248,71 @@ function LeaderboardInner() {
 
   return (
     <div className="slb animate-fade-in">
-      <Hero me={me} participants={participants} scopeLabel={scopeLabel} filtered={Boolean(url.job)} onHowItWorks={() => setHowOpen(true)} />
+      <Position me={me} participants={participants} scopeLabel={scopeLabel} filtered={Boolean(url.job)} classAvg={data?.class_avg} onHowItWorks={() => setHowOpen(true)} />
 
-      <section className="slb-kpis" aria-label="Cohort summary">
-        <div className="slb-card slb-kpi">
-          <div className="slb-kpi-h"><Icon name="users" size={16} /> Participating</div>
-          <b>{participants}{cohort ? ` / ${cohort}` : ''}</b>
-          <div className="slb-meter" aria-hidden="true"><i style={{ width: `${participation ?? 0}%` }} /></div>
-          <small>{participation != null ? `${participation}% of ${scopeLabel} ranked` : 'Students with a submitted assessment'}</small>
-        </div>
-        <div className="slb-card slb-kpi">
-          <div className="slb-kpi-h"><Icon name="chart" size={16} /> Class average</div>
-          <b className="slb-kpi-v">{data?.class_avg != null ? `${data.class_avg}%` : '—'}{data?.class_avg != null ? <BandPill score={data.class_avg} /> : null}</b>
-          <small>{classAvgNote(me, data?.class_avg)}</small>
-        </div>
-        <div className="slb-card slb-kpi">
-          <div className="slb-kpi-h"><Icon name="trophy" size={16} /> Top score</div>
-          <b className={data?.top_score != null ? `slb-tone--${bandFor(data.top_score)}` : ''}>{data?.top_score != null ? `${data.top_score}%` : '—'}</b>
-          <small>{items[0] ? titleCase(items[0].name) : 'No scores yet'}</small>
-        </div>
-        <div className="slb-card slb-kpi">
-          <div className="slb-kpi-h"><Icon name="clock" size={16} /> Latest submission</div>
-          <b>{formatDate(data?.updated_at)}</b>
-          <small>{selected ? `Most recent attempt · ${selected.title}` : 'Most recent attempt in your class'}</small>
-        </div>
-      </section>
-
-      <div className="slb-filter" role="search" aria-label="Filter leaderboard">
-        <QuirriSelect ariaLabel="Assessment" value={url.job} options={options} onChange={(e) => setUrl({ job: e.target.value })} disabled={!assessments.length} />
-        <label className="slb-search">
+      <form className="sb-filterbar" role="search" aria-label="Filter leaderboard" onSubmit={apply}>
+        <label className="sb-search slb-search">
           <Icon name="search" size={18} />
-          <input ref={searchRef} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search classmates…" aria-label="Search classmates" />
+          <input ref={searchRef} type="search" value={draft.q} onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))} placeholder="Search classmates" aria-label="Search classmates" />
         </label>
-        <div className="slb-live" aria-live="polite">
-          {filtered ? <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear</button> : null}
-          <span><i aria-hidden="true" /> Auto-refreshing · board checked {timeAgo(fetchedAt)}</span>
-          <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})} aria-label="Refresh leaderboard">
-            <Icon name="refresh" size={14} /> Refresh
-          </button>
+        <select className="sb-select slb-select" aria-label="Assessment" value={draft.job} onChange={(e) => setDraft((d) => ({ ...d, job: e.target.value }))} disabled={!assessments.length}>
+          <option value="">All assessments</option>
+          {assessments.map((a) => <option key={a.job_id} value={a.job_id}>{a.title || 'Chapter assessment'}</option>)}
+        </select>
+        <div className="sb-actions">
+          <button type="button" className="sb-btn sb-btn--clear" onClick={clearFilters}>Clear</button>
+          <button type="submit" className="sb-btn sb-btn--go">Search</button>
         </div>
+      </form>
+
+      <div className="sb-meta slb-meta">
+        <span className="slb-live" aria-live="polite">
+          <i aria-hidden="true" /> Auto-refreshing · checked {timeAgo(fetchedAt)}
+          <button type="button" className="text-link slb-linkbtn" onClick={() => reload().catch(() => {})} aria-label="Refresh leaderboard">Refresh</button>
+        </span>
+        {/* With rankings, the cohort figures sit in a card beside the score-bands donut (below). */}
+        {!items.length ? (
+          <div className="sb-stats" aria-label="Cohort summary">
+            {cohortStats.map((st, i) => (
+              <Fragment key={st.key}>
+                {i ? <i className="sb-rule" aria-hidden="true" /> : null}
+                <div className="sb-stat"><b>{st.value}</b><span>{st.label}</span></div>
+              </Fragment>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {items.length ? (
-        <section className="slb-card slb-dist" aria-labelledby="slb-dist-h">
-          <div className="slb-dist-h">
-            <h3 id="slb-dist-h">Class score bands</h3>
-            <p>{selected ? `Average score on ${selected.title}` : 'Average score across submitted assessments'} · {participants} student{participants === 1 ? '' : 's'}</p>
-          </div>
-          <Distribution parts={bandParts} label="Class score bands" />
-        </section>
+        <div className="slb-top">
+          <section className="slb-card slb-dist" aria-labelledby="slb-dist-h">
+            <div className="slb-dist-h">
+              <h3 id="slb-dist-h">Class score bands</h3>
+              <p>{selected ? `Average score on ${selected.title}` : 'Average score across submitted assessments'} · {participants} student{participants === 1 ? '' : 's'}</p>
+            </div>
+            <ModernDonut parts={bandParts} unit={participants === 1 ? 'Student' : 'Students'} title="Class score bands" empty="No scores yet." />
+          </section>
+          <section className="slb-card slb-dist slb-cohort" aria-labelledby="slb-cohort-h">
+            <div className="slb-dist-h">
+              <h3 id="slb-cohort-h">Cohort summary</h3>
+              <p>Rankings for {scopeLabel}</p>
+            </div>
+            <dl className="slb-cohort-list" aria-label="Cohort summary">
+              {cohortStats.map((st) => (
+                <div key={st.key}><dt>{st.label}</dt><dd>{st.value}</dd></div>
+              ))}
+            </dl>
+          </section>
+        </div>
       ) : null}
 
       {!items.length ? (
-        <SectionState
-          title={url.job ? 'No one has submitted this assessment yet' : 'No rankings yet'}
-          action={url.job ? <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setUrl({ job: '' })}>Show all assessments</button> : null}
-        >
-          {data?.note || `Rankings for ${scopeLabel} appear as soon as classmates submit chapter assessments.`}
-        </SectionState>
+        <div className="slb-card">
+          <p className="sb-empty">
+            {url.job ? 'No one has submitted this assessment yet.' : (data?.note || `No rankings yet. Rankings for ${scopeLabel} appear as soon as classmates submit chapter assessments.`)}
+            {url.job ? <button type="button" className="text-link" onClick={clearFilters}>Show all assessments</button> : null}
+          </p>
+        </div>
       ) : (
         <>
           {podium.length ? (
@@ -276,82 +325,40 @@ function LeaderboardInner() {
                     <b>{titleCase(p.name)}{p.is_me ? <span className="slb-you">You</span> : null}</b>
                     <span>{p.correct}/{p.questions} correct · {p.attempt_count} assessment{p.attempt_count === 1 ? '' : 's'}</span>
                   </div>
-                  <strong className={`slb-tone--${bandFor(p.avg_score)}`}>{p.avg_score}%</strong>
+                  <strong>{p.avg_score}%</strong>
                 </article>
               ))}
             </section>
           ) : null}
 
-          <section className="slb-card slb-table-card" aria-labelledby="slb-table-h">
-            <div className="slb-table-h">
-              <div>
-                <h3 id="slb-table-h">{selected ? selected.title : 'All students'}</h3>
-                <p>{search ? `${rows.length} match${rows.length === 1 ? '' : 'es'} for “${q.trim()}”` : `${participants} ranked student${participants === 1 ? '' : 's'} in ${scopeLabel}`}</p>
-              </div>
+          <section className="slb-list" aria-labelledby="slb-list-h">
+            <div className="slb-list-h">
+              <h3 id="slb-list-h">{selected ? selected.title : 'All students'}</h3>
+              <p>{search ? `${rows.length} match${rows.length === 1 ? '' : 'es'} for “${url.q.trim()}”` : `${participants} ranked student${participants === 1 ? '' : 's'} in ${scopeLabel}`}</p>
             </div>
-
             {!rows.length ? (
-              <div style={{ padding: 24 }}><SectionState title="No classmates match your search">Try another name.</SectionState></div>
+              <div className="slb-card">
+                <p className="sb-empty">No classmates match your search.<button type="button" className="text-link" onClick={clearFilters}>Clear filters</button></p>
+              </div>
             ) : (
               <>
-                <div className="slb-table-wrap">
-                  <table className="slb-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Rank</th>
-                        <th scope="col">Student</th>
-                        <th scope="col" className="num">Average score</th>
-                        <th scope="col" className="num">Correct</th>
-                        <th scope="col" className="num">Assessments</th>
-                        <th scope="col" className="num">Last submitted</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((r) => (
-                        <tr key={r.user_id} className={r.is_me ? 'is-me' : ''} aria-current={r.is_me ? 'true' : undefined}>
-                          <td><span className={`slb-rankcell is-${rankTier(r.rank)}`}>{r.rank}</span></td>
-                          <td>
-                            <span className="slb-student">
-                              <span className={`slb-av${r.is_me ? ' is-me' : ''}`} aria-hidden="true">{initials(r.name)}</span>
-                              <span><b>{titleCase(r.name)}</b>{r.is_me ? <span className="slb-you">You</span> : null}</span>
-                            </span>
-                          </td>
-                          <td className="num"><ScoreCell score={r.avg_score} /></td>
-                          <td className="num">{r.correct}/{r.questions}</td>
-                          <td className="num">{r.attempt_count}</td>
-                          <td className="num slb-muted">{formatDate(r.last_submitted_at)}</td>
-                        </tr>
-                      ))}
-                      {!search && me && !meInList ? (
-                        <>
-                          <tr className="is-sep"><td colSpan={6}>…</td></tr>
-                          <tr className="is-me" aria-current="true">
-                            <td><span className={`slb-rankcell is-${rankTier(me.rank)}`}>{me.rank}</span></td>
-                            <td><span className="slb-student"><span className="slb-av is-me" aria-hidden="true">{initials(me.name)}</span><span><b>{titleCase(me.name)}</b><span className="slb-you">You</span></span></span></td>
-                            <td className="num"><ScoreCell score={me.avg_score} /></td>
-                            <td className="num">{me.correct}/{me.questions}</td>
-                            <td className="num">{me.attempt_count}</td>
-                            <td className="num slb-muted">{formatDate(me.last_submitted_at)}</td>
-                          </tr>
-                        </>
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
-
-                <ol className="slb-cards" aria-label="Rankings">
-                  {[...rows, ...(!search && me && !meInList ? [me] : [])].map((r) => (
-                    <li key={r.user_id} className={r.is_me ? 'is-me' : ''}>
-                      <span className={`slb-rankcell is-${rankTier(r.rank)}`}>{r.rank}</span>
-                      <span className={`slb-av${r.is_me ? ' is-me' : ''}`} aria-hidden="true">{initials(r.name)}</span>
-                      <span>
-                        <b>{titleCase(r.name)}</b>{r.is_me ? <span className="slb-you">You</span> : null}
-                        <small>{r.correct}/{r.questions} correct · {r.attempt_count} assessment{r.attempt_count === 1 ? '' : 's'}</small>
-                      </span>
-                      <b className={`slb-tone--${bandFor(r.avg_score)}`}>{r.avg_score}%</b>
-                    </li>
-                  ))}
+                <ol className="sb-rows slb-rows" aria-label="Rankings">
+                  {pageRows.map((r) => <RankRow key={r.user_id} r={r} />)}
+                  {!search && me && !meInList ? (
+                    <>
+                      <li className="slb-sep" aria-hidden="true">Your position</li>
+                      <RankRow r={{ ...me, is_me: true }} />
+                    </>
+                  ) : null}
                 </ol>
+                <nav className="sb-pager" aria-label="Rankings pages">
+                  <span className="sb-pager__info">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(rows.length, page * PAGE_SIZE)} of {rows.length}</span>
+                  <span className="sb-pager__nav">
+                    <button type="button" disabled={page <= 1} onClick={() => setUrl({ p: String(page - 1) })}>Previous</button>
+                    <span>{page} / {pages}</span>
+                    <button type="button" disabled={page >= pages} onClick={() => setUrl({ p: String(page + 1) })}>Next</button>
+                  </span>
+                </nav>
               </>
             )}
           </section>
@@ -363,8 +370,8 @@ function LeaderboardInner() {
           <li><Icon name="target" size={18} /><span><b>Correct scores decide your rank.</b> Your rank is your average score across the chapter assessments you have submitted.</span></li>
           <li><Icon name="check" size={18} /><span><b>Ties</b> are broken by total correct answers, then by who reached the score first. Students with exactly the same result share a rank.</span></li>
           <li><Icon name="users" size={18} /><span><b>Your cohort</b> is the students of {scopeLabel}. Only submitted assessments count.</span></li>
-          <li><Icon name="refresh" size={18} /><span><b>Live updates.</b> The board refreshes on its own every minute and as soon as you come back to this tab, so a new submission shows up right away.</span></li>
-          <li><Icon name="layers" size={18} /><span><b>Per assessment.</b> Pick an assessment above to see the ranking for that chapter only.</span></li>
+          <li><Icon name="refresh" size={18} /><span><b>Live updates.</b> The board refreshes on its own every few seconds and as soon as you come back to this tab, so a new submission shows up right away.</span></li>
+          <li><Icon name="layers" size={18} /><span><b>Per assessment.</b> Pick an assessment in the filter bar and press Search to see the ranking for that chapter only.</span></li>
         </ul>
       </QuirriModal>
     </div>
@@ -373,7 +380,7 @@ function LeaderboardInner() {
 
 export default function StudentLeaderboardPage() {
   return (
-    <Suspense fallback={<div className="slb"><SectionState title="Loading leaderboard…" /></div>}>
+    <Suspense fallback={<div className="slb"><div className="sb-skel" style={{ height: 150 }} aria-hidden="true" /></div>}>
       <LeaderboardInner />
     </Suspense>
   );

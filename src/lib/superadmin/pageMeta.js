@@ -1,5 +1,10 @@
 /** Page titles/subtitles (sentence case — docs/agent/design-system.md §5). */
 export const PAGE_META = {
+  // Detail routes first: the lookup takes the first prefix that matches.
+  '/superadmin/colleges/': {
+    title: 'College',
+    subtitle: 'Details, departments, admins and learning for one college.',
+  },
   '/superadmin/dashboard': {
     title: 'Dashboard',
     subtitle: 'Platform-wide adoption, learning activity, and system health.',
@@ -38,7 +43,7 @@ export const PAGE_META = {
   },
   '/superadmin/notifications': {
     title: 'Notifications',
-    subtitle: 'Activation, content, assignment, interview and pipeline events, and their deliveries.',
+    subtitle: 'Activation, content, assignment and pipeline events, and their deliveries.',
   },
   '/superadmin/settings': {
     title: 'Settings',

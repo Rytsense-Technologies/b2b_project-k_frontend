@@ -7,7 +7,7 @@ import { SearchBox, QuirriSelect } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage, ModuleHead, KpiRow, Panel, SegTabs, StatusPill, IconButton, Mono, Pager, Icon, SectionState,
 } from '@/components/shared/module-ui';
-import { BarList, Distribution } from '@/components/shared/data-viz';
+import { MetricList, ModernDonut } from '@/components/shared/data-viz';
 import {
   EMPTY_FORM, PAGE_SIZE, NEAR_CAP_PCT, num, collegeStats, SeatBar,
   CollegeFormModal, StatusConfirm, CollegeDrawer,
@@ -22,6 +22,13 @@ import {
 } from '@/lib/superadmin/listState';
 import { INDIA_COUNTRY } from '@/lib/india';
 import { ROLES } from '@/lib/permissions';
+
+/** 2 of 6,700 -> "<1%" (a used seat never reads as 0%). */
+function seatPctLabel(students, cap) {
+  if (!cap) return '0%';
+  const p = Math.round((students / cap) * 100);
+  return p === 0 && students > 0 ? '<1%' : `${p}%`;
+}
 
 function CollegesView() {
   const [url, setUrl] = useUrlState({ q: '', status: 'true', university: '', near: '', page: '1' });
@@ -213,6 +220,14 @@ function CollegesView() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
   const anyNearCap = allColleges.some((c) => c.is_active !== false && collegeStats(c).pct >= NEAR_CAP_PCT);
+  const activeCount = allColleges.filter((c) => c.is_active !== false).length;
+  // "Show them" keeps the current filters and turns on Near seat cap (same as the toolbar chip).
+  const nearCapHref = `/superadmin/colleges?${new URLSearchParams(
+    Object.entries({ q: url.q, status: url.status, university: url.university, near: '1', page: '1' }).filter(([, v]) => v),
+  ).toString()}`;
+  const seatNote = anyNearCap
+    ? { text: `Some colleges are at ${NEAR_CAP_PCT}% of their seat cap or more.`, link: { href: nearCapHref, label: 'Show them' } }
+    : `${num(Math.max(0, seat.cap - seat.students))} seats free across ${num(activeCount)} active ${activeCount === 1 ? 'college' : 'colleges'}.`;
 
   return (
     <ModulePage className="sa-page">
@@ -237,7 +252,7 @@ function CollegesView() {
             icon: 'users',
             label: 'Seats used',
             value: totals ? `${num(seat.students)} / ${num(seat.cap)}` : null,
-            sub: totals ? `${seat.cap ? Math.round((seat.students / seat.cap) * 100) : 0}% of seat caps · ${scope}` : null,
+            sub: totals ? `${seatPctLabel(seat.students, seat.cap)} of seat caps · ${scope}` : null,
           },
           {
             icon: 'mail',
@@ -253,29 +268,30 @@ function CollegesView() {
       {studentBars.length > 1 ? (
         <div className="dv-grid">
           <Panel title="Students by college" sub="Active colleges, most students first. Open one for its page.">
-            <BarList label="Students by college" items={studentBars} />
+            <MetricList label="Students by college" items={studentBars} />
           </Panel>
-          <Panel title="Seat usage" sub={`Students enrolled against seat caps · ${scope}`}>
-            <Distribution
-              label="Seat usage"
+          <Panel
+            title="Seat usage"
+            sub={`Students enrolled against seat caps · ${scope}`}
+            className="mdc-card"
+            action={seat.cap ? <div className="mdc-chip"><small>Total seats</small><b>{num(seat.cap)}</b></div> : null}
+          >
+            <ModernDonut
+              title="Seat usage"
+              unit="Seats"
               parts={[
-                { label: 'Seats used', value: seat.students, color: 'var(--cat-1)' },
-                { label: 'Seats free', value: Math.max(0, seat.cap - seat.students), color: 'var(--neutral-200)' },
+                { key: 'used', label: 'Seats used', value: seat.students, tone: 'info' },
+                { key: 'free', label: 'Seats free', value: Math.max(0, seat.cap - seat.students), tone: 'neutral' },
               ]}
+              note={seat.cap ? seatNote : null}
               empty="No seat caps set yet."
             />
-            {anyNearCap ? (
-              <p className="co-warn sa-gap-top">
-                <Icon name="info" size={14} /> Some colleges are at {NEAR_CAP_PCT}% of their seat cap or more.
-                <button type="button" className="sp-link sa-link-btn" onClick={() => setUrl({ near: '1', page: '1' })}>Show them</button>
-              </p>
-            ) : null}
           </Panel>
         </div>
       ) : null}
 
       <Panel
-        title="All colleges"
+        title={url.status === 'true' ? 'Active colleges' : url.status === 'false' ? 'Inactive colleges' : 'All colleges'}
         sub={data ? `${num(shownCount)} ${shownCount === 1 ? 'college' : 'colleges'}${filtersOn ? ' match these filters' : ''}${nearCap && total > pageRows.length ? ' on this page' : ''}` : null}
         bodyClassName={null}
         toolbar={(

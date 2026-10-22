@@ -25,8 +25,7 @@ export const ROLE_PERMISSIONS = {
     'students.read', 'qna.read', 'reports.read',
   ],
   student: [
-    'interview.start', 'reports.read',
-    'profile.write',   'content.read', 'jobs.read',
+    'profile.write', 'content.read', 'jobs.read',
   ],
 };
 

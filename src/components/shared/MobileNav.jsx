@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 /**
- * Phone navigation for portal shells (≤860px the sidebar is off-canvas).
+ * Phone navigation for portal shells (≤1023px the sidebar is off-canvas, quirri-b2c-student-ui).
  * Wrap the shell with `className={mobileNavShellClass(navOpen)}`, put
  * <MobileNavButton> first in the topbar and <MobileNavScrim> next to the
  * sidebar. Closes on route change, Escape and a tap outside.

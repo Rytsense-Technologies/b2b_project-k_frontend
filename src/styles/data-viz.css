@@ -15,41 +15,10 @@
 
 .dv-empty{margin:0;padding:12px 0;color:var(--muted);font-size:13px}
 
-/* ---------- Legend ---------- */
-.dv-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;padding:0;list-style:none;font-size:12px;color:var(--ink-2)}
-.dv-legend li{display:inline-flex;align-items:center;gap:6px;min-width:0}
-.dv-legend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
-.dv-legend b{font-weight:500;color:var(--ink);margin-left:2px}
-.dv-legend--col{flex-direction:column;gap:8px}
-.dv-legend--col li{justify-content:flex-start}
-
-/* ---------- Bar list ---------- */
-.dv-bars{display:grid;gap:14px;margin:0;padding:0;list-style:none}
-.dv-bar-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;min-width:0}
-.dv-bar-l{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;color:var(--ink)}
-.dv-bar-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.dv-bar-name a{color:inherit;text-decoration:none}
-.dv-bar-name a:hover{color:var(--teal-500);text-decoration:underline}
-.dv-bar-l small{color:var(--muted);font-size:12px;white-space:nowrap}
-.dv-bar-v{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+/* ---------- Dot + progress track (inline markup in pages; not a chart) ---------- */
 .dv-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .dv-track{display:block;height:8px;border-radius:999px;background:var(--neutral-100,#EEF0F0);overflow:hidden}
 .dv-track > span{display:block;height:100%;border-radius:inherit;transition:width .4s ease}
-
-/* ---------- Rank list ---------- */
-.dv-rank{display:grid;gap:8px;margin:0;padding:0;list-style:none}
-.dv-rank li{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-card);background:var(--surface-tint)}
-.dv-rank-n{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;font-size:13px;font-weight:700;color:#fff;background:var(--teal-500)}
-.dv-rank-n--r1{background:var(--rank-1)}
-.dv-rank-n--r2{background:var(--rank-2)}
-.dv-rank-n--r3{background:var(--rank-3)}
-.dv-rank-n--rn{background:var(--teal-50);color:var(--teal-500)}
-.dv-rank-who{display:grid;min-width:0}
-.dv-rank-who b{font-size:14px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dv-rank-who b a{color:inherit;text-decoration:none}
-.dv-rank-who b a:hover{color:var(--teal-500);text-decoration:underline}
-.dv-rank-who small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dv-rank-v{font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ---------- Score band pill ---------- */
 .dv-band{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--radius-control);font-size:12px;font-weight:500;white-space:nowrap}
@@ -58,10 +27,6 @@
 .dv-band--focus{background:var(--band-focus-soft);color:var(--band-focus-text)}
 .dv-band--none{background:var(--band-none-soft);color:var(--band-none-text)}
 
-/* ---------- Distribution ---------- */
-.dv-dist-bar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--neutral-100,#EEF0F0);gap:2px}
-.dv-dist-bar > span{display:block;height:100%;min-width:4px}
-
 /* ---------- Charts ---------- */
 .dv-chart{position:relative;width:100%;min-width:0}
 .dv-chart .recharts-surface{overflow:visible}
@@ -69,18 +34,9 @@
 .dv-tip b{font-weight:500}
 .dv-tip span{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.86)}
 .dv-tip i{width:8px;height:8px;border-radius:2px}
-.dv-donut{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
-.dv-donut-c{position:relative;flex:0 0 auto}
-.dv-donut-t{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
-.dv-donut-t b{font-size:22px;font-weight:700;color:var(--ink);line-height:1.1}
-.dv-donut-t small{font-size:12px;color:var(--muted)}
-.dv-donut .dv-legend{margin:0;flex:1 1 140px}
-
-/* ---------- Meter ---------- */
-.dv-meter{display:inline-flex;align-items:center;gap:8px;min-width:120px}
-.dv-meter .dv-track{flex:1 1 auto;height:6px}
-.dv-meter b{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
-
+.dv-slegend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;padding:0;list-style:none;font-size:13px;color:var(--ink-2,var(--ink))}
+.dv-slegend li{display:inline-flex;align-items:center;gap:6px}
+.dv-slegend i{width:10px;height:10px;border-radius:50%;flex:none}
 /* ---------- KPI tiles: a little colour (categorical icon tiles, cycled; overrides the teal/orange alternation) ---------- */
 .sd-kpis > :nth-child(6n+1) .sd-kpi-h .sd-i{background:var(--cat-1-soft);color:var(--cat-1);stroke:var(--cat-1)}
 .sd-kpis > :nth-child(6n+2) .sd-kpi-h .sd-i{background:var(--cat-2-soft);color:var(--cat-2-text);stroke:var(--cat-2-text)}
@@ -106,10 +62,6 @@
 @media (max-width:768px){
   .dv-grid,.dv-grid--3{grid-template-columns:minmax(0,1fr)}
   .dv-grid > .dv-span-2{grid-column:auto}
-  .dv-rank li{grid-template-columns:28px minmax(0,1fr) auto;gap:10px}
-  .dv-rank li .dv-band{display:none}
-  .dv-rank-n{width:28px;height:28px;font-size:12px}
-  .dv-donut{justify-content:center}
 }
 
 /* ---------- Route tabs (ModuleTabs) ---------- */
@@ -117,7 +69,7 @@
 .pm-route-tabs::-webkit-scrollbar{display:none}
 .pm-route-tabs a.tab{display:inline-flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap}
 .pm-route-tabs a.tab .sd-i{color:currentColor}
-.pm-route-tabs a.tab.active{color:var(--teal-500)}
+.pm-route-tabs a.tab.active{color:var(--select-on)}
 
 /* ---------- Module head (recipe v2) ---------- */
 .pm-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;min-width:0}
@@ -175,15 +127,14 @@
   .sd-btn--sm,
   .sp-tab,
   .tabs .tab,
-  .pm-panel-tools .quirri-dd__trigger,
-  .dv-legend + .sd-btn{min-height:44px}
+  .pm-panel-tools .quirri-dd__trigger{min-height:44px}
   .sd-btn--sm{padding-left:14px;padding-right:14px}
 }
 
 /* Touch targets, round 2 (HOD verifier H7): icon buttons, inline links, sidebar items */
 @media (pointer:coarse), (max-width:768px){
   .un-icon-btn,.modal-x,.un-drawer-x,.q-menu-btn,.mobile-nav-btn{min-width:44px;min-height:44px}
-  .sp-link,.dv-bar-name a,.dv-rank-who b a{display:inline-flex;align-items:center;min-height:44px}
+  .sp-link{display:inline-flex;align-items:center;min-height:44px}
   .nav a{min-height:44px}
 }
 
@@ -214,7 +165,7 @@
 @media (max-width:768px){ .as-page .pm-panel-tools .quirri-dd,.as-filters .quirri-dd{flex:1 1 100%;min-width:0;max-width:none} }
 
 /* Phone top bar: title block stays left-aligned and full width (drawer-shell rule centred short titles) */
-@media (max-width:860px){
+@media (max-width:1023px){
   .q-drawer-shell .topbar > div:not(.pm-topbar-actions){flex:1 1 auto}
 }
 @media (max-width:760px){
@@ -228,4 +179,93 @@
   .sa-chip-toggle,.fa-toggle,.fa-row-btn,.fa-subj-toggle{min-height:44px !important}
   .sl-linkbtn,.sp-link{display:inline-flex;align-items:center}
   .q-nav-btn,.side-foot .logout,.un-icon-btn{min-width:44px !important}
+}
+
+/* ==========================================================================
+   Modern cards (owner reference, 21 Oct 2026 — docs/agent/redesign/modern-cards-plan.md)
+   .mdc = donut + legend (inside a panel body) · .mdc-card = full card (sp-panel chrome)
+   Each legend row sets --mdc-c (slice colour); pills tint it at ~12%.
+   ========================================================================== */
+.mdc{display:grid;gap:var(--qs-head-gap,20px);min-width:0;container-type:inline-size}
+.mdc-body{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:32px;min-width:0}
+.mdc:not(.mdc--compact) .mdc-body{grid-template-columns:auto minmax(0,520px);justify-content:start;column-gap:48px}
+.mdc-ring{position:relative;flex:none;justify-self:center}
+.mdc-ring svg{display:block;width:100%;height:100%}
+.mdc-ring circle{transition:none}
+.mdc-ring-t{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;gap:2px}
+.mdc-ring-t b{font-size:30px;line-height:34px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.mdc-ring-t small{font-size:13px;line-height:18px;color:var(--qs-muted,var(--muted))}
+
+/* Legend rows: dot · label · count · tinted % pill */
+.mdc-legend{display:grid;gap:10px;margin:0;padding:0;list-style:none;min-width:0}
+.mdc-legend li{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;align-items:center;gap:12px;min-height:48px;padding:10px 14px;border:1px solid var(--line,#e3e7ee);border-radius:var(--radius-card,6px);background:#fff;min-width:0}
+.mdc-dot{width:10px;height:10px;border-radius:50%;background:var(--mdc-c);flex:none}
+.mdc-label{min-width:0;font-size:14px;line-height:20px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mdc-label a{color:inherit;text-decoration:none}
+.mdc-label a:hover{color:var(--teal-500);text-decoration:underline}
+.mdc-count{font-size:15px;line-height:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;min-width:32px}
+.mdc-pill{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;
+  background:color-mix(in srgb,var(--mdc-c) 13%,#fff);color:color-mix(in srgb,var(--mdc-c) 72%,#000)}
+.mdc-empty{margin:0;font-size:14px;color:var(--qs-muted,var(--muted))}
+.mdc-empty--list{padding:12px 0}
+
+/* Metric rows: label + optional sub, value pill only */
+.mdc-metrics li{grid-template-columns:10px minmax(0,1fr) auto}
+.mdc-metrics .mdc-label{display:grid;gap:2px}
+.mdc-metrics .mdc-label-t,.mdc-metrics .mdc-label small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mdc-metrics .mdc-label small{font-size:13px;line-height:18px;color:var(--qs-muted,var(--muted))}
+.mdc-metrics .mdc-pill{min-width:60px}
+
+/* Head chip: "Total departments  4" */
+.mdc-chip{display:grid;justify-items:end;gap:2px;flex:none;padding:8px 14px;border-radius:var(--radius-card,6px);background:var(--neutral-50,#F8F8F9);box-shadow:inset 0 0 0 1px var(--line,#e3e7ee);text-align:right}
+.mdc-chip small{font-size:12px;line-height:16px;color:var(--qs-muted,var(--muted));white-space:nowrap}
+.mdc-chip b{font-size:20px;line-height:24px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* Info note strip + teal links */
+.mdc-note{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--radius-card,6px);background:var(--sb-wash,#e8f2f4);color:var(--teal-500,#0E5C6B)}
+.mdc-note-i{flex:none;margin-top:1px}
+.mdc-note p{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;flex:1 1 auto;min-width:0;font-size:14px;line-height:20px;color:var(--ink-2,var(--ink))}
+.mdc-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;line-height:20px;font-weight:600;color:var(--teal-500,#0E5C6B);text-decoration:none;white-space:nowrap}
+.mdc-link:hover{text-decoration:underline}
+.mdc-link:focus-visible{outline:2px solid var(--teal-500,#0E5C6B);outline-offset:2px;border-radius:2px}
+.mdc-foot{display:flex;justify-content:flex-end}
+
+/* Compact widget (dashboards): small ring beside a plain legend, "count (pct%)" */
+.mdc--compact{gap:12px}
+.mdc--compact .mdc-body{gap:24px}
+.mdc--compact .mdc-ring-t b{font-size:22px;line-height:26px}
+.mdc--compact .mdc-ring-t small{font-size:12px;line-height:16px}
+.mdc--compact .mdc-legend{gap:6px;max-width:360px}
+.mdc--compact .mdc-legend li{grid-template-columns:10px minmax(0,1fr) auto;min-height:32px;padding:4px 0;border:0;border-radius:0;background:none}
+.mdc--compact .mdc-count{font-size:14px}
+.mdc--compact .mdc-pct-txt{font-weight:400;color:var(--qs-muted,var(--muted))}
+
+/* Empty state keeps the grey ring and puts the message where the legend goes */
+.mdc--empty .mdc-ring-t b{color:var(--qs-muted,var(--muted))}
+
+/* Narrow cards (half-width at 1024–1280): smaller ring; very narrow cards and phones stack the ring on top */
+@container (max-width:560px){
+  .mdc:not(.mdc--compact) .mdc-ring{width:148px !important;height:148px !important}
+  .mdc:not(.mdc--compact) .mdc-body{column-gap:28px}
+  .mdc:not(.mdc--compact) .mdc-ring-t b{font-size:26px;line-height:30px}
+  .mdc:not(.mdc--compact) .mdc-ring-t small{font-size:12px;line-height:16px}
+}
+@container (max-width:420px){
+  .mdc .mdc-body,.mdc:not(.mdc--compact) .mdc-body{grid-template-columns:minmax(0,1fr);gap:20px}
+  .mdc--compact .mdc-legend{max-width:none}
+  .mdc--empty .mdc-body{justify-items:center;text-align:center}
+}
+@container (max-width:340px){
+  .mdc--compact .mdc-body{grid-template-columns:minmax(0,1fr);gap:16px}
+}
+@media (max-width:640px){
+  .mdc .mdc-body,.mdc:not(.mdc--compact) .mdc-body{grid-template-columns:minmax(0,1fr);gap:20px}
+  .mdc--compact .mdc-legend{max-width:none}
+  .mdc--empty .mdc-body{justify-items:center;text-align:center}
+  .mdc-legend li{padding:10px 12px;gap:10px}
+  .mdc-card .sp-panel-h{flex-wrap:wrap}
+  .mdc-chip{justify-items:start;text-align:left}
+}
+@media (pointer:coarse), (max-width:768px){
+  .mdc-link,.mdc-label a{min-height:44px;display:inline-flex;align-items:center}
 }

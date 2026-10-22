@@ -7,7 +7,6 @@ import {
   Icon,
   ModulePage,
   ModuleHead,
-  HeadChip,
   KpiRow,
   SegTabs,
   SearchBox,
@@ -128,7 +127,6 @@ function DepartmentsList() {
   return (
     <ModulePage className="ad-page pm-slice">
       <ModuleHead
-        chips={<HeadChip icon="building">Your college</HeadChip>}
         actions={(
           <button type="button" className="sd-btn sd-btn--amber" onClick={() => setCreateOpen(true)}>
             <Icon name="plus" size={16} /> New department
@@ -151,7 +149,7 @@ function DepartmentsList() {
             label: 'Without an HOD',
             value: firstLoad || !staffReady ? null : countLabel(withoutHod),
             tone: staffReady && withoutHod > 0 ? 'focus' : undefined,
-            sub: withoutHod > 0 ? 'No one reviews their chapters yet' : 'Every department has a reviewer',
+            sub: withoutHod > 0 ? 'No one reviews their chapters yet' : rows.length ? 'Every department has a reviewer' : 'No departments in this view',
           },
           { icon: 'users', label: 'Students placed', value: firstLoad ? null : countLabel(enrolled), sub: 'Across these departments' },
         ]}

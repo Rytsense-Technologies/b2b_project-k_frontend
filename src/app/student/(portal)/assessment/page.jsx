@@ -16,6 +16,8 @@ import '@/styles/student-learning.css';
  * Student chapter assessment: take → results → review (state in the URL:
  * ?job=…&title=…&subject=…&view=overview|review|study&filter=all|incorrect|correct).
  */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function AssessmentInner() {
   const [url, setUrl] = useUrlState({ job: '', job_id: '', title: '', subject: '', view: 'overview', filter: 'all' });
   const jobId = url.job || url.job_id;
@@ -37,7 +39,8 @@ function AssessmentInner() {
     tutorHref: subject ? classroomHref(subject, jobId, 'tutor') : SUBJECTS_PATH,
   };
 
-  if (!jobId) {
+  // A malformed link (?job=abc) would otherwise surface the API's raw "valid UUID" error.
+  if (!jobId || !UUID_RE.test(jobId)) {
     return (
       <div className="sl">
         <SectionState

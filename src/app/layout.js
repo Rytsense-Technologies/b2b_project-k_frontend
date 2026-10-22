@@ -13,6 +13,8 @@ import '../styles/portal-faculty.css';
 import '../styles/quirri-accents.css';
 import '../styles/data-viz.css';
 import '../styles/module-analytics.css';
+import '../styles/portal-b2c.css';
+import { dmSans } from '@/lib/student/fonts';
 import Providers from './Providers';
 
 /** Brand Guidelines v1.0 — Poppins only (300, 400, 500, 700). */
@@ -30,7 +32,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={portalFont.variable}>
+    <html lang="en" className={`${portalFont.variable} ${dmSans.variable}`}>
       <body className={portalFont.className}>
         <Providers>{children}</Providers>
       </body>

@@ -23,7 +23,7 @@ function load(force = false) {
 
 /**
  * HOD / Faculty scope from GET /faculty/me: { role, is_hod, department_name,
- * subjects, subject_limited, read_only, can_assign_interviews, ... }.
+ * subjects, subject_limited, read_only, ... }.
  * `scope` is null until loaded (and on the server), so first render matches.
  */
 export function useFacultyScope() {

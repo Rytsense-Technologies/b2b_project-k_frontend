@@ -1,10 +1,10 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Icon, SectionState } from '@/components/student/ui';
-import { HeadChip, ModuleHead, Panel, SegTabs, TabNav, TabPanel } from '@/components/shared/module-ui';
-import { BANDS, BandPill, BarList, Distribution, TrendChart, bandFor, dataColor } from '@/components/shared/data-viz';
+import { TabNav, TabPanel } from '@/components/shared/module-ui';
+import { BANDS, BandPill, MetricList, ModernDonut, TrendChart, bandFor, dataColor } from '@/components/shared/data-viz';
 import ScoreRing from '@/components/shared/ScoreRing';
 import { subjectColor, subjectTileStyle } from '@/components/student/subjectColor';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
@@ -12,36 +12,35 @@ import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { loadStudentHomeData } from '@/components/student/studentHome';
 import { assessmentHref, classroomHref, SUBJECTS_PATH } from '@/lib/student/learning';
+import '@/styles/student-dashboard.css';
 import '@/styles/student-progress.css';
 
 /**
- * My progress (redesign spec student.md §7, 14 Oct 2026) — four tabs in ?tab=:
- *   Overview     KPIs (watched ring · assessment average band · interviews) · completion by subject ·
- *                score trend · recommended next step (the one orange action)
- *   By subject   subject chips (subject colour) · chapter table with status filter · learning record
- *   Assessments  band distribution + history table
- *   Interviews   list, score trend, report links, assigned interviews
+ * My progress — three text tabs in ?tab= (quirri-b2c-student-ui skill, 15 Oct 2026):
+ *   Overview     stat cluster · completion by subject (skill rows) · score trend ·
+ *                recommended next step (the one orange action)
+ *   By subject   subject text tabs · subject card · teal filter bar + chapter rows + pager ·
+ *                learning record rows + pager
+ *   Assessments  band distribution · stat cluster · history rows + pager
+ * White cards on the grey canvas, stacked white rows instead of tables, no orange title rules.
  * Live student APIs only. While loading: skeletons — no CTAs or "nothing yet" copy.
  */
 
-const INTERVIEWS = '/student/interviews';
-/** Single-series trends: teal line, orange markers (design-system §2b Charts). */
-const TEAL = '#0E5C6B';
+const TEAL = '#14606e';
 const GREY_HEX = '#BCC1C3';
+const PAGE_SIZE = 10;
 /** Same hue as subjectColor(), as hex for the chart. */
 const subjectHex = (key) => (String(key || '').startsWith('subject:') ? dataColor(String(key).slice(8), { hex: true }) : GREY_HEX);
-const TAB_VALUES = ['overview', 'subject', 'assessments', 'interviews'];
+const TAB_VALUES = ['overview', 'subject', 'assessments'];
 
 const pct = (n) => (n != null && n !== '' && Number.isFinite(Number(n)) ? `${Math.round(Number(n))}%` : '—');
-/** Interview scores read "41/100"; quiz scores read "41%" (S11). */
-const outOf100 = (n) => (n != null && n !== '' && Number.isFinite(Number(n)) ? `${Math.round(Number(n))}/100` : '—');
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-const reportHref = (id) => `/student/reports/view?session=${encodeURIComponent(id)}`;
 const jobOf = (row) => ({ job_id: row.jobId, chapter_title: row.title });
 const toTime = (iso) => Date.parse(iso || '') || 0;
+const idx = (n) => String(n).padStart(2, '0');
 
 const CHAPTER_FILTERS = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'All statuses' },
   { value: 'new', label: 'Not started' },
   { value: 'progress', label: 'In progress' },
   { value: 'watched', label: 'Watched' },
@@ -107,15 +106,6 @@ function nextStep(m) {
       links: [{ label: 'Ask AI tutor', icon: 'chat', href: classroomHref(resume.subjectKey, resume.jobId, 'tutor') }],
     };
   }
-  if (rows.length && m?.canSelfInterview) {
-    return {
-      icon: 'mic',
-      title: 'Put it into practice',
-      body: 'Your lectures and assessments are up to date. A mock interview turns what you learned into answers.',
-      primary: { label: 'Start mock interview', icon: 'mic', href: INTERVIEWS },
-      links: latestRow ? [{ label: 'Review your last assessment', icon: 'doc', href: assessmentHref(jobOf(latestRow), latestRow.subjectKey, { view: 'review' }) }] : [],
-    };
-  }
   if (rows.length) {
     return {
       icon: 'tick',
@@ -137,73 +127,97 @@ function nextStep(m) {
 }
 
 /* ------------------------------------------------------------------ small parts */
-function WatchPill({ row }) {
-  if (row.watchComplete) return <span className="spg-pill spg-pill--good"><Icon name="tick" size={14} /> Watched</span>;
-  if (row.watchPercent > 0) return <span className="spg-pill spg-pill--teal">{row.watchPercent}% watched</span>;
-  return <span className="spg-pill">Not started</span>;
+function watchText(row) {
+  if (row.watchComplete) return 'Watched';
+  if (row.watchPercent > 0) return `${row.watchPercent}% watched`;
+  return 'Not started';
 }
 
-function Score({ score, interview = false }) {
+function Skeleton({ rows = 3, h = 76 }) {
   return (
-    <span className="spg-score">
-      <BandPill score={score} label={score == null ? 'Not scored' : undefined} />
-      <b>{score == null ? '—' : <>{Math.round(Number(score))}<small>{interview ? '/100' : '%'}</small></>}</b>
-    </span>
+    <div className="spg-skel" aria-hidden="true">
+      {Array.from({ length: rows }, (_, i) => <span key={i} className="sb-skel" style={{ height: h }} />)}
+    </div>
   );
 }
 
-/** Interview CTA — or, when interviews aren't open for this student, why not (S9). */
-function InterviewCta({ m, label }) {
-  if (!m) return null;
-  if (!m.canSelfInterview) {
-    return (
-      <p className="spg-lockhint">
-        <Icon name="lock" size={16} />
-        <span>{m.interviewLockReason || 'AI interviews open in your final year.'} <Link href={INTERVIEWS}>Why it’s locked</Link></span>
-      </p>
-    );
-  }
-  return <Link className="sd-btn sd-btn--outline" href={INTERVIEWS}><Icon name="mic" size={16} /> {label}</Link>;
+const Chev = () => (
+  <svg className="sb-row__chev" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+);
+
+function Card({ title, sub, action, children, className = '' }) {
+  return (
+    <section className={`spg-card ${className}`.trim()}>
+      {title ? (
+        <div className="spg-card-h">
+          <div>
+            <h3>{title}</h3>
+            {sub ? <p>{sub}</p> : null}
+          </div>
+          {action}
+        </div>
+      ) : null}
+      {children}
+    </section>
+  );
 }
 
-function Empty({ icon, title, children, action }) {
+function SecHead({ title, sub, action }) {
   return (
-    <div className="spg-empty">
-      <span className="spg-empty-ic" aria-hidden="true"><Icon name={icon} size={22} /></span>
-      <b>{title}</b>
-      {children ? <p>{children}</p> : null}
+    <div className="spg-sec-h">
+      <div>
+        <h3>{title}</h3>
+        {sub ? <p>{sub}</p> : null}
+      </div>
       {action}
     </div>
   );
 }
 
-function Skeleton({ rows = 3 }) {
-  return <div className="spg-skel" aria-hidden="true">{Array.from({ length: rows }, (_, i) => <span key={i} />)}</div>;
+function Pager({ page, total, onPage, label }) {
+  if (!total) return null;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  return (
+    <nav className="sb-pager" aria-label={label}>
+      <span className="sb-pager__info">Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(total, page * PAGE_SIZE)} of {total}</span>
+      <span className="sb-pager__nav">
+        <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}>Previous</button>
+        <span>{page} / {pages}</span>
+        <button type="button" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
+      </span>
+    </nav>
+  );
+}
+
+/** Clamp a 1-based page from the URL and slice the list. */
+function paged(list, raw) {
+  const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const page = Math.min(pages, Math.max(1, Number(raw) || 1));
+  return { page, items: list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) };
 }
 
 function chapterAction(row) {
-  if (row.quiz === 'done') return { cell: <Score score={row.score} />, action: { label: 'Review', href: assessmentHref(jobOf(row), row.subjectKey, { view: 'review' }) } };
-  if (row.quiz === 'open') return { cell: <span className="spg-muted-strong">Unlocked</span>, action: { label: 'Take', href: assessmentHref(jobOf(row), row.subjectKey) } };
+  if (row.quiz === 'done') return { cell: row.score != null ? `${row.score}%` : '—', scored: true, action: { label: 'Review', href: assessmentHref(jobOf(row), row.subjectKey, { view: 'review' }) } };
+  if (row.quiz === 'open') return { cell: 'Assessment unlocked', action: { label: 'Take', href: assessmentHref(jobOf(row), row.subjectKey) } };
   if (row.quiz === 'watch_required' || (row.quiz === 'unchecked' && !row.watchComplete)) {
-    return { cell: <span className="spg-muted"><Icon name="lock" size={14} /> Watch to unlock</span>, action: { label: row.watchPercent ? 'Resume' : 'Watch', href: classroomHref(row.subjectKey, row.jobId) } };
+    return { cell: 'Watch to unlock', locked: true, action: { label: row.watchPercent ? 'Resume' : 'Watch', href: classroomHref(row.subjectKey, row.jobId) } };
   }
-  return { cell: <span className="spg-muted">No assessment</span>, action: { label: 'Open', href: classroomHref(row.subjectKey, row.jobId) } };
+  return { cell: 'No assessment', action: { label: 'Open', href: classroomHref(row.subjectKey, row.jobId) } };
 }
 
 /* ------------------------------------------------------------------ page */
 function ProgressView() {
   const [tab, setTab] = useTabParam(TAB_VALUES, 'overview');
-  const [url, setUrl] = useUrlState({ subject: '', f: 'all' });
+  const [url, setUrl] = useUrlState({ subject: '', f: 'all', q: '', p: '1', rp: '1', ap: '1' });
+  const [draft, setDraft] = useState({ q: url.q, f: url.f });
+  useEffect(() => { setDraft({ q: url.q, f: url.f }); }, [url.q, url.f]);
   const { data: m, loading, error, reload } = useAsyncResource(loadStudentHomeData, []);
   const isLoading = loading && !m;
 
   const w = m?.watch;
   const a = m?.assessments;
-  const iv = m?.interviews;
   const rows = useMemo(() => m?.chapterRows || [], [m]);
   const subjects = m?.subjects || [];
-  const interviews = m?.interviewRows || [];
-  const openAssignments = (m?.assignments || []).filter((x) => x.status === 'Open');
   const step = m ? nextStep(m) : null;
 
   /* every completed assessment, newest first (chapterRows covers all looked-up chapters) */
@@ -212,6 +226,7 @@ function ProgressView() {
     [rows],
   );
   const bandParts = BANDS.map((b) => ({ key: b.key, label: b.label, value: done.filter((r) => bandFor(r.score) === b.key).length }));
+  const doneBest = done.length ? Math.max(...done.map((r) => r.score)) : null;
   /* Quiz trend: one line per subject (subject colours) when every subject has 2+ scores, else one teal line. */
   const trendSubjects = [...new Set((m?.trend || []).map((t) => t.subjectKey))];
   // Series keys stay plain (s0, s1…) — they become SVG gradient ids.
@@ -221,12 +236,12 @@ function ProgressView() {
   const quizSeries = perSubject
     ? trendSubjects.map((k, i) => ({ key: `s${i}`, name: (m?.trend || []).find((t) => t.subjectKey === k)?.subject || 'Subject', color: subjectHex(k) }))
     : [{ key: 'score', name: 'Score', color: TEAL }];
-  const ivTrend = interviews.filter((r) => r.score != null).slice(0, 10).reverse().map((r, i) => ({ label: r.date || `#${i + 1}`, score: r.score }));
 
   /* By subject */
   const subject = subjects.find((s) => s.key === url.subject) || subjects[0] || null;
   const subjectRows = subject ? rows.filter((r) => r.subjectKey === subject.key) : [];
-  const shownRows = subjectRows.filter((r) => rowMatches(url.f, r));
+  const search = url.q.trim().toLowerCase();
+  const shownRows = subjectRows.filter((r) => rowMatches(url.f, r) && (!search || r.title.toLowerCase().includes(search)));
   const counts = Object.fromEntries(CHAPTER_FILTERS.map((f) => [f.value, subjectRows.filter((r) => rowMatches(f.value, r)).length]));
   const record = useMemo(() => {
     const events = [];
@@ -237,26 +252,40 @@ function ProgressView() {
     return events.sort((x, y) => y.at - x.at);
   }, [subjectRows]);
 
+  const chapterPage = paged(shownRows, url.p);
+  const recordPage = paged(record, url.rp);
+  const donePage = paged(done, url.ap);
+
+  const filtered = Boolean(url.q || url.f !== 'all');
+  const applyFilters = (e) => {
+    e?.preventDefault?.();
+    setUrl({ q: draft.q.trim(), f: draft.f, p: '1' });
+  };
+  const clearFilters = () => {
+    setDraft({ q: '', f: 'all' });
+    setUrl({ q: '', f: 'all', p: '1' });
+  };
+  const pickSubject = (key) => {
+    setDraft({ q: '', f: 'all' });
+    setUrl({ subject: key, f: 'all', q: '', p: '1', rp: '1' });
+  };
+
   const tabs = [
     { value: 'overview', label: 'Overview' },
     { value: 'subject', label: 'By subject', count: m ? subjects.length : undefined },
     { value: 'assessments', label: 'Assessments', count: m ? done.length : undefined },
-    { value: 'interviews', label: 'Interviews', count: m && iv?.total != null ? iv.total : undefined },
   ];
 
   return (
     <div className={`spg animate-fade-in${isLoading ? ' is-loading' : ''}`} aria-busy={isLoading}>
-      {m?.deptName || m?.collegeName ? (
-        <ModuleHead chips={<HeadChip icon="building">{[m.deptName, m.collegeName].filter(Boolean).join(' · ')}</HeadChip>} />
-      ) : null}
-
+      {/* College · department is already in the sidebar header; no context line here (QA 20 Oct). */}
       <TabNav tabs={tabs} value={tab} onChange={setTab} label="Progress views" idBase="spg-tab" />
 
       {error && !m ? (
         <SectionState
           tone="err"
           title="Could not load your progress"
-          action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}><Icon name="refresh" size={16} /> Try again</button>}
+          action={<button type="button" className="text-link spg-linkbtn" onClick={() => reload().catch(() => {})}>Try again</button>}
         >
           {apiErrorMessage(error, 'Please try again in a moment.')}
         </SectionState>
@@ -265,68 +294,58 @@ function ProgressView() {
       {/* ================================================================ OVERVIEW */}
       <TabPanel value="overview" current={tab} idBase="spg-tab">
         <div className="spg-panel">
-          <section className="spg-kpis" aria-label="Progress summary">
+          <section className="spg-card spg-kpis" aria-label="Progress summary">
             <div className="spg-kpi">
-              <span className="spg-kpi-l">Chapters watched</span>
-              <div className="spg-kpi-row">
-                {w ? <ScoreRing score={w.percent} size={56} tone="progress" suffix="%" label={`${w.percent}% of chapters watched`} /> : <span className="spg-skel-ring" aria-hidden="true" />}
-                <b className="spg-kpi-v">{w ? `${w.finished}/${w.total}` : '—'}</b>
-              </div>
-              <span className="spg-kpi-s">{w ? (w.total ? 'Published chapters' : 'No chapters published yet') : ' '}</span>
+              <b>{w ? `${w.finished}/${w.total}` : '—'}</b>
+              <span>Lectures watched</span>
+              <small>{w ? (w.total ? `${w.percent}% of published chapters` : 'No chapters published yet') : ' '}</small>
             </div>
+            <i className="sb-rule" aria-hidden="true" />
             <div className="spg-kpi">
-              <span className="spg-kpi-l">Assessment average</span>
-              <div className="spg-kpi-row">
-                <b className="spg-kpi-v">{pct(a?.avg)}</b>
-                {a ? <BandPill score={a.avg} label={a.avg == null ? 'No scores yet' : undefined} /> : null}
-              </div>
-              <span className="spg-kpi-s">{a ? (a.done ? `Based on ${plural(a.done, 'assessment')}` : 'After your first assessment') : ' '}</span>
-            </div>
-            <div className="spg-kpi">
-              <span className="spg-kpi-l">Interviews done</span>
-              <div className="spg-kpi-row">
-                <b className="spg-kpi-v">{m ? (iv?.total ?? 0) : '—'}</b>
-                {iv?.avg != null ? <BandPill score={iv.avg} /> : null}
-              </div>
-              <span className="spg-kpi-s">{m ? (iv?.avg != null ? `Average ${outOf100(iv.avg)}` : openAssignments.length ? `${plural(openAssignments.length, 'interview')} assigned` : 'No completed interviews') : ' '}</span>
+              <b>{pct(a?.avg)}</b>
+              <span>Assessment average</span>
+              <small>{a ? (a.done ? <>Based on {plural(a.done, 'assessment')} · <BandPill score={a.avg} /></> : 'After your first assessment') : ' '}</small>
             </div>
           </section>
 
           <div className="spg-grid">
             <div className="spg-col">
-              <Panel title="Completion by subject" sub="Chapters watched in each subject">
-                {isLoading ? <Skeleton rows={2} /> : (
-                  <BarList
+              <Card title="Completion by subject" sub="Lectures watched in each subject">
+                {isLoading ? <Skeleton rows={2} h={52} /> : subjects.length ? (
+                  <MetricList
                     label="Completion by subject"
-                    max={100}
-                    suffix="%"
-                    empty="Your subjects appear once lectures are published for your department."
                     items={subjects.map((s) => ({
-                      key: s.key, label: s.name, value: s.completion ?? 0, sub: `${s.watchedCount}/${s.chapterCount}`, color: subjectColor(s.key), href: `${SUBJECTS_PATH}?s=${encodeURIComponent(s.key)}`,
+                      key: s.key,
+                      label: s.name,
+                      href: `${SUBJECTS_PATH}?s=${encodeURIComponent(s.key)}`,
+                      color: subjectColor(s.key),
+                      sub: `${s.watchedCount}/${s.chapterCount} watched`,
+                      value: s.completion ?? 0,
+                      display: `${s.completion ?? 0}%`,
                     }))}
                   />
-                )}
-              </Panel>
-              <Panel title="Assessment scores" sub="Your latest chapter assessments over time">
-                {isLoading ? <Skeleton rows={2} /> : quizTrend.length >= 2 ? (
+                ) : <p className="sb-empty">Your subjects appear once lectures are published for your department.</p>}
+              </Card>
+              <Card title="Assessment scores" sub="Your latest chapter assessments over time">
+                {isLoading ? <Skeleton rows={1} h={120} /> : quizTrend.length >= 2 ? (
                   <TrendChart data={quizTrend} series={quizSeries} height={200} suffix="%" />
                 ) : (
                   <p className="spg-note"><Icon name="info" size={18} /> {quizTrend.length ? 'One completed assessment. Two or more show a trend.' : 'No assessments yet. Finish a lecture to 100% to unlock its assessment.'}</p>
                 )}
-              </Panel>
+              </Card>
             </div>
 
-            <aside className="spg-next" aria-labelledby="spg-ns-h">
+            <aside className="spg-card spg-next" aria-labelledby="spg-ns-h">
               <div className="spg-next-tag">
-                <span className="spg-next-ic" aria-hidden="true"><Icon name={step?.icon || 'target'} size={22} /></span>
+                <span className="spg-circle" aria-hidden="true"><Icon name={step?.icon || 'target'} size={20} /></span>
                 <span>Recommended next step</span>
               </div>
               {step ? (
                 <>
                   <h2 id="spg-ns-h">{step.title}</h2>
                   <p>{step.body}</p>
-                  <Link className="sd-btn sd-btn--amber sd-btn--block" href={step.primary.href}>
-                    <Icon name={step.primary.icon} size={18} /> {step.primary.label}
+                  <Link className="spg-btn spg-btn--primary" href={step.primary.href}>
+                    <Icon name={step.primary.icon} size={16} /> {step.primary.label}
                   </Link>
                   {step.links.length ? (
                     <ul className="spg-next-links">
@@ -338,7 +357,7 @@ function ProgressView() {
                     </ul>
                   ) : null}
                 </>
-              ) : <Skeleton rows={3} />}
+              ) : <Skeleton rows={3} h={20} />}
             </aside>
           </div>
         </div>
@@ -348,101 +367,146 @@ function ProgressView() {
       <TabPanel value="subject" current={tab} idBase="spg-tab">
         <div className="spg-panel">
           {subjects.length > 1 ? (
-            <div className="spg-chips" role="group" aria-label="Subject">
+            <div
+              className="sb-tabs spg-subj-tabs"
+              role="tablist"
+              aria-label="Subject"
+              onKeyDown={(e) => {
+                if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                e.preventDefault();
+                const i = subjects.findIndex((s) => s.key === subject?.key);
+                const next = subjects[(i + (e.key === 'ArrowRight' ? 1 : subjects.length - 1)) % subjects.length];
+                pickSubject(next.key);
+                document.getElementById(`spg-subj-${next.key}`)?.focus();
+              }}
+            >
               {subjects.map((s) => (
-                <button key={s.key} type="button" className={`spg-chip${subject?.key === s.key ? ' is-on' : ''}`} aria-pressed={subject?.key === s.key} onClick={() => setUrl({ subject: s.key, f: 'all' })}>
-                  <i className="spg-dot" style={{ background: subjectColor(s.key) }} aria-hidden="true" />
-                  {s.name} <small>{s.watchedCount}/{s.chapterCount}</small>
+                <button
+                  key={s.key}
+                  id={`spg-subj-${s.key}`}
+                  type="button"
+                  role="tab"
+                  className="sb-tab"
+                  aria-selected={subject?.key === s.key}
+                  tabIndex={subject?.key === s.key ? 0 : -1}
+                  onClick={() => pickSubject(s.key)}
+                >
+                  {s.name} <small className="spg-tab-n">{s.watchedCount}/{s.chapterCount}</small>
                 </button>
               ))}
             </div>
           ) : null}
 
-          {isLoading ? <Panel><Skeleton rows={4} /></Panel> : subject ? (
+          {isLoading ? <Skeleton rows={4} /> : subject ? (
             <>
               <section className="spg-card spg-subj">
                 <div className="spg-subj-h">
-                  <span className="spg-ic" style={subjectTileStyle(subject.key)} aria-hidden="true"><Icon name="bookOpen" size={22} /></span>
+                  <span className="spg-circle spg-circle--lg" style={subjectTileStyle(subject.key)} aria-hidden="true"><Icon name="bookOpen" size={22} /></span>
                   <div>
                     <h2>{subject.name}</h2>
                     <p>{plural(subject.chapterCount, 'published chapter')}</p>
                   </div>
-                  <Link className="sd-btn sd-btn--outline spg-subj-open" href={`${SUBJECTS_PATH}?s=${encodeURIComponent(subject.key)}`}>Open subject <Icon name="arrow" size={14} /></Link>
+                  <Link className="spg-btn spg-subj-open" href={`${SUBJECTS_PATH}?s=${encodeURIComponent(subject.key)}`}>Open subject <Icon name="arrow" size={14} /></Link>
                 </div>
                 <div className="spg-metrics">
                   <div className="spg-metric">
-                    <span className="spg-kpi-l">Learning completion</span>
-                    <b className="spg-kpi-v">{pct(subject.completion)}</b>
-                    <span className="spg-meter" aria-hidden="true"><i style={{ width: `${subject.completion || 0}%`, background: subjectColor(subject.key) }} /></span>
-                    <span className="spg-kpi-s">{subject.watchedCount} of {plural(subject.chapterCount, 'chapter')} watched</span>
+                    <span>Learning completion</span>
+                    <div className="spg-metric-row">
+                      <ScoreRing score={subject.completion || 0} size="md" tone="progress" suffix="%" label={`Learning completion ${pct(subject.completion)}`} />
+                    </div>
+                    <small>{subject.watchedCount} of {plural(subject.chapterCount, 'chapter')} watched</small>
                   </div>
                   <div className="spg-metric">
-                    <span className="spg-kpi-l">Assessment average</span>
-                    <div className="spg-kpi-row">
-                      <b className="spg-kpi-v">{pct(subject.avgScore)}</b>
-                      <BandPill score={subject.avgScore} label={subject.avgScore == null ? 'No scores yet' : undefined} />
-                    </div>
-                    <span className="spg-kpi-s">{subject.quizDone ? plural(subject.quizDone, 'completed assessment') : 'No assessments completed yet'}</span>
+                    <span>Assessment average</span>
+                    <div className="spg-metric-row"><b>{pct(subject.avgScore)}</b>{subject.avgScore != null ? <BandPill score={subject.avgScore} /> : null}</div>
+                    <small>{subject.quizDone ? plural(subject.quizDone, 'completed assessment') : 'No assessments completed yet'}</small>
                   </div>
                 </div>
               </section>
 
-              <Panel
-                title="Chapter performance"
-                sub="Your progress for each published chapter"
-                toolbar={(
-                  <SegTabs label="Chapter status" value={url.f} onChange={(v) => setUrl({ f: v })} options={CHAPTER_FILTERS.map((f) => ({ ...f, count: counts[f.value] }))} />
-                )}
-                bodyClassName=""
-              >
+              <section className="spg-sec" aria-label="Chapter performance">
+                <SecHead title="Chapter performance" sub="Your progress for each published chapter. Click a row to open it." />
+                <form className="sb-filterbar" role="search" aria-label="Filter chapters" onSubmit={applyFilters}>
+                  <label className="sb-search">
+                    <Icon name="search" size={18} />
+                    <input type="search" value={draft.q} onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))} placeholder="Search chapters" aria-label="Search chapters" />
+                  </label>
+                  <select className="sb-select" aria-label="Chapter status" value={draft.f} onChange={(e) => setDraft((d) => ({ ...d, f: e.target.value }))}>
+                    {CHAPTER_FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label} ({counts[f.value]})</option>)}
+                  </select>
+                  <div className="sb-actions">
+                    <button type="button" className="sb-btn sb-btn--clear" onClick={clearFilters}>Clear</button>
+                    <button type="submit" className="sb-btn sb-btn--go">Search</button>
+                  </div>
+                </form>
                 {shownRows.length ? (
-                  <div className="spg-table-wrap">
-                    <table className="spg-table">
-                      <thead><tr><th>Chapter</th><th>Learning status</th><th>Assessment</th><th><span className="sr-only">Action</span></th></tr></thead>
-                      <tbody>
-                        {shownRows.map((r) => {
-                          const c = chapterAction(r);
-                          return (
-                            <tr key={r.jobId}>
-                              <td data-label="Chapter"><b>{r.title}</b>{r.duration ? <small>{r.duration} lecture</small> : null}</td>
-                              <td data-label="Learning status"><WatchPill row={r} /></td>
-                              <td data-label="Assessment">{c.cell}</td>
-                              <td data-label="Action" className="spg-act">
-                                <Link className="sd-btn sd-btn--sm sd-btn--outline" href={c.action.href}>{c.action.label} <Icon name="chev" size={14} /></Link>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <>
+                    <div className="sb-rows">
+                      {chapterPage.items.map((r, i) => {
+                        const c = chapterAction(r);
+                        return (
+                          <Link key={r.jobId} className="sb-row spg-row" href={c.action.href} aria-label={`${r.title}: ${watchText(r)}, ${c.cell}. ${c.action.label}`}>
+                            <span className="sb-row__idx">{idx((chapterPage.page - 1) * PAGE_SIZE + i + 1)}</span>
+                            <span className="spg-row-main">
+                              <span className="sb-row__title">{r.title}</span>
+                              <span className="sb-row__sub">
+                                <i className={`sb-dot${r.watchComplete ? '' : ' sb-dot--muted'}`} aria-hidden="true" />
+                                {[watchText(r), r.duration ? `${r.duration} lecture` : null].filter(Boolean).join(' · ')}
+                              </span>
+                            </span>
+                            <span className={c.scored ? 'sb-row__score' : `spg-row-state${c.locked ? ' is-locked' : ''}`}>
+                              {c.locked ? <Icon name="lock" size={14} /> : null}{c.cell}
+                            </span>
+                            <span className="spg-row-act">{c.action.label}</span>
+                            <Chev />
+                          </Link>
+                        );
+                      })}
+                    </div>
+                    <Pager page={chapterPage.page} total={shownRows.length} onPage={(n) => setUrl({ p: String(n) })} label="Chapter pages" />
+                  </>
+                ) : (
+                  <div className="spg-card">
+                    <p className="sb-empty">
+                      No chapters match your filters.
+                      {filtered ? <button type="button" className="text-link" onClick={clearFilters}>Clear filters</button> : null}
+                    </p>
                   </div>
-                ) : <p className="spg-none">No chapters match this filter.</p>}
-              </Panel>
+                )}
+              </section>
 
-              <Panel title="Learning record" sub="A chronological record of your learning activity" bodyClassName="">
+              <section className="spg-sec" aria-label="Learning record">
+                <SecHead title="Learning record" sub="A chronological record of your learning activity" />
                 {record.length ? (
-                  <div className="spg-table-wrap">
-                    <table className="spg-table">
-                      <thead><tr><th>Date</th><th>Activity</th><th>Result</th></tr></thead>
-                      <tbody>
-                        {record.map((e) => (
-                          <tr key={`${e.kind}-${e.row.jobId}`}>
-                            <td data-label="Date" className="spg-nowrap">{e.date || '—'}</td>
-                            <td data-label="Activity"><span className="spg-activity"><i className={`spg-dot spg-dot--${e.kind}`} aria-hidden="true" />{e.activity}</span></td>
-                            <td data-label="Result">
-                              {e.kind === 'assessment' ? <Score score={e.row.score} /> : (e.row.duration ? `Duration ${e.row.duration}` : '—')}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : <p className="spg-none">Nothing recorded yet.</p>}
-                <p className="spg-note spg-note--pad"><Icon name="info" size={18} /> Your score reflects the assessment. Watching a chapter does not measure mastery.</p>
-              </Panel>
+                  <>
+                    <div className="sb-rows">
+                      {recordPage.items.map((e) => (
+                        <Link
+                          key={`${e.kind}-${e.row.jobId}`}
+                          className="sb-row spg-row spg-row--record"
+                          href={e.kind === 'assessment' ? assessmentHref(jobOf(e.row), e.row.subjectKey, { view: 'review' }) : classroomHref(e.row.subjectKey, e.row.jobId)}
+                        >
+                          <span className="spg-row-date">{e.date || '—'}</span>
+                          <span className="spg-row-main">
+                            <span className="sb-row__title">{e.activity}</span>
+                            <span className="sb-row__sub">
+                              <i className={`sb-dot${e.kind === 'lecture' ? ' sb-dot--muted' : ''}`} aria-hidden="true" />
+                              {e.kind === 'assessment' ? 'Assessment' : `Lecture${e.row.duration ? ` · ${e.row.duration}` : ''}`}
+                            </span>
+                          </span>
+                          {e.kind === 'assessment' ? <span className="sb-row__score">{pct(e.row.score)}</span> : <span className="spg-row-state">Published</span>}
+                          <Chev />
+                        </Link>
+                      ))}
+                    </div>
+                    <Pager page={recordPage.page} total={record.length} onPage={(n) => setUrl({ rp: String(n) })} label="Learning record pages" />
+                  </>
+                ) : <div className="spg-card"><p className="sb-empty">Nothing recorded yet.</p></div>}
+                <p className="spg-note"><Icon name="info" size={18} /> Your score reflects the assessment. Watching a chapter does not measure mastery.</p>
+              </section>
             </>
           ) : (
-            <Panel><Empty icon="book" title="No subjects yet">Your subjects appear once lectures are published for your department.</Empty></Panel>
+            <div className="spg-card"><p className="sb-empty">No subjects yet. Your subjects appear once lectures are published for your department.</p></div>
           )}
         </div>
       </TabPanel>
@@ -450,91 +514,53 @@ function ProgressView() {
       {/* ================================================================ ASSESSMENTS */}
       <TabPanel value="assessments" current={tab} idBase="spg-tab">
         <div className="spg-panel">
-          <Panel title="Score bands" sub={m ? `${plural(done.length, 'completed assessment')}` : ' '}>
-            {isLoading ? <Skeleton rows={1} /> : <Distribution parts={bandParts} label="Assessment score bands" empty="No completed assessments yet." />}
-          </Panel>
-          <Panel title="Assessment history" sub="Newest first — review the answers for any chapter" bodyClassName="">
-            {isLoading ? <div className="spg-pad"><Skeleton rows={3} /></div> : done.length ? (
-              <div className="spg-table-wrap">
-                <table className="spg-table">
-                  <thead><tr><th>Date</th><th>Chapter</th><th>Score</th><th><span className="sr-only">Action</span></th></tr></thead>
-                  <tbody>
-                    {done.map((r) => (
-                      <tr key={r.jobId}>
-                        <td data-label="Date" className="spg-nowrap">{r.submitted || '—'}</td>
-                        <td data-label="Chapter">
-                          <b>{r.title}</b>
-                          <small><i className="spg-dot" style={{ background: subjectColor(r.subjectKey) }} aria-hidden="true" /> {r.subject}{r.correct ? ` · ${r.correct} correct` : ''}</small>
-                        </td>
-                        <td data-label="Score"><Score score={r.score} /></td>
-                        <td data-label="Action" className="spg-act">
-                          <Link className="spg-textlink" href={assessmentHref(jobOf(r), r.subjectKey, { view: 'review' })}>Review answers <Icon name="arrow" size={14} /></Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {/* Score bands beside the summary figures (2 columns on desktop, stacked on phone). */}
+          <div className="spg-assess-top">
+            <Card title="Score bands" sub={m ? plural(done.length, 'completed assessment') : ' '}>
+              {isLoading ? <Skeleton rows={1} h={40} /> : <ModernDonut parts={bandParts} total={done.length} unit={done.length === 1 ? 'Assessment' : 'Assessments'} title="Assessment score bands" empty="No completed assessments yet." />}
+            </Card>
+            <Card title="Assessment summary" sub="Each assessment allows one attempt." className="spg-assess-sum">
+              {isLoading ? <Skeleton rows={3} h={56} /> : (
+                <div className="spg-sum">
+                  <div className="spg-metric"><span>Total</span><b>{done.length}</b></div>
+                  <div className="spg-metric"><span>Average</span><div className="spg-metric-row spg-metric-row--flat"><b>{pct(a?.avg)}</b>{a?.avg != null && done.length ? <BandPill score={a.avg} /> : null}</div></div>
+                  <div className="spg-metric"><span>Highest</span><b>{pct(doneBest)}</b></div>
+                </div>
+              )}
+            </Card>
+          </div>
+          <section className="spg-sec" aria-label="Assessment history">
+            <SecHead title="Assessment history" sub="Newest first. Click a row to review the answers." />
+            {isLoading ? <Skeleton rows={3} /> : done.length ? (
+              <>
+                <div className="sb-rows">
+                  {donePage.items.map((r, i) => (
+                    <Link key={r.jobId} className="sb-row spg-row" href={assessmentHref(jobOf(r), r.subjectKey, { view: 'review' })} aria-label={`${r.title}, ${pct(r.score)}: review answers`}>
+                      <span className="sb-row__idx">{idx((donePage.page - 1) * PAGE_SIZE + i + 1)}</span>
+                      <span className="spg-row-main">
+                        <span className="sb-row__title">{r.title}</span>
+                        <span className="sb-row__sub">
+                          <i className="sb-dot" style={{ background: subjectColor(r.subjectKey) }} aria-hidden="true" />
+                          {[r.subject, r.correct ? `${r.correct} correct` : null, r.submitted].filter(Boolean).join(' · ')}
+                        </span>
+                      </span>
+                      <span className="sb-row__score">{pct(r.score)}</span>
+                      <span className="spg-row-act">Review</span>
+                      <Chev />
+                    </Link>
+                  ))}
+                </div>
+                <Pager page={donePage.page} total={done.length} onPage={(n) => setUrl({ ap: String(n) })} label="Assessment pages" />
+              </>
             ) : (
-              <Empty icon="clip" title="No assessments yet" action={<Link className="sd-btn sd-btn--outline sd-btn--sm" href={SUBJECTS_PATH}>Go to My subjects</Link>}>
-                Finish a lecture to 100% to unlock its assessment.
-              </Empty>
+              <div className="spg-card">
+                <p className="sb-empty">No assessments yet. Finish a lecture to 100% to unlock its assessment.<Link className="text-link" href={SUBJECTS_PATH}>Go to My subjects</Link></p>
+              </div>
             )}
-          </Panel>
+          </section>
         </div>
       </TabPanel>
 
-      {/* ================================================================ INTERVIEWS */}
-      <TabPanel value="interviews" current={tab} idBase="spg-tab">
-        <div className="spg-panel">
-          {isLoading ? <Panel><Skeleton rows={3} /></Panel> : (
-            <div className="spg-grid spg-grid--even">
-              <Panel title="Interview sessions" sub="Your completed and assigned interviews" action={interviews.length ? <Link className="sd-btn sd-btn--ghost sd-btn--sm" href="/student/reports">All reports <Icon name="chev" size={14} /></Link> : null}>
-                {openAssignments.length || interviews.length ? (
-                  <ul className="spg-ivlist">
-                    {openAssignments.map((x) => (
-                      <li key={`as-${x.id}`}>
-                        <span className="spg-ic spg-ic--sm" aria-hidden="true"><Icon name="clip" size={18} /></span>
-                        <div className="spg-ivlist-main">
-                          <b>{x.title}</b>
-                          <span>{['Assigned', x.mode, x.dueShort ? `Due ${x.dueShort}` : null].filter(Boolean).join(' · ')}</span>
-                        </div>
-                        <span className="spg-pill">Not started</span>
-                      </li>
-                    ))}
-                    {interviews.slice(0, 8).map((r) => (
-                      <li key={`iv-${r.id}`}>
-                        <Link className="spg-ivlink" href={reportHref(r.id)} aria-label={`${r.title}, ${outOf100(r.score)} — open report`}>
-                          <span className="spg-ic spg-ic--sm" aria-hidden="true"><Icon name="mic" size={18} /></span>
-                          <span className="spg-ivlist-main">
-                            <b>{r.title}</b>
-                            <span>{[r.mode === 'full' ? 'Full interview' : 'Mock interview', r.date].filter(Boolean).join(' · ')}</span>
-                          </span>
-                          <Score score={r.score} interview />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <Empty icon="mic" title="No completed interviews">Your interview reports appear here once you complete one.</Empty>
-                )}
-                <div className="spg-ivcta">
-                  {openAssignments.length ? (
-                    <Link className="sd-btn sd-btn--outline" href={INTERVIEWS}><Icon name="mic" size={16} /> Start assigned interview</Link>
-                  ) : <InterviewCta m={m} label="Start mock interview" />}
-                </div>
-              </Panel>
-              <Panel title="Score trend" sub="Interview scores out of 100">
-                {ivTrend.length >= 2 ? (
-                  <TrendChart data={ivTrend} series={[{ key: 'score', name: 'Score', color: TEAL }]} height={220} suffix="/100" />
-                ) : (
-                  <p className="spg-note"><Icon name="info" size={18} /> Two or more scored interviews show a trend.</p>
-                )}
-              </Panel>
-            </div>
-          )}
-        </div>
-      </TabPanel>
     </div>
   );
 }

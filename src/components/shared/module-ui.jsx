@@ -7,6 +7,7 @@
  * all loaded globally from src/app/layout.js.
  */
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useOverlay } from '@/components/superadmin/overlayStack';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,16 +38,31 @@ export function ModulePage({ className = '', children }) {
 export function ModuleHead({ lede, chips = null, actions = null }) {
   // Actions only: a compact, right-aligned row instead of a near-empty band.
   const solo = !lede && !chips;
+  // b2c skill: page actions sit on the title row ("Title ... [actions]"). On desktop the actions are
+  // mirrored into the portal top bar (non-student shells); below 1024px the in-flow row is used.
+  const [bar, setBar] = useState(null);
+  useEffect(() => {
+    if (!actions) return undefined;
+    const el = document.querySelector('.q-app-shell:not(.q-student) .topbar');
+    setBar(el || null);
+    return () => setBar(null);
+  }, [actions ? 1 : 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lifted = Boolean(bar && actions);
+  // Nothing to show (e.g. a scope chip that was dropped): no empty band eating a section gap.
+  if (!lede && !chips && !actions) return null;
   return (
-    <section className={`pm-head${solo ? ' pm-head--solo' : ''}`}>
-      {solo ? null : (
-        <div className="pm-head-copy">
-          {lede ? <p>{lede}</p> : null}
-          {chips ? <div className="pm-head-chips">{chips}</div> : null}
-        </div>
-      )}
-      {actions ? <div className="pm-head-actions">{actions}</div> : null}
-    </section>
+    <>
+      <section className={`pm-head${solo ? ' pm-head--solo' : ''}${lifted ? ' pm-head--lifted' : ''}`}>
+        {solo ? null : (
+          <div className="pm-head-copy">
+            {lede ? <p>{lede}</p> : null}
+            {chips ? <div className="pm-head-chips">{chips}</div> : null}
+          </div>
+        )}
+        {actions ? <div className="pm-head-actions">{actions}</div> : null}
+      </section>
+      {lifted ? createPortal(<div className="pm-head-actions pm-topbar-actions pm-topbar-actions--lifted">{actions}</div>, bar) : null}
+    </>
   );
 }
 
@@ -182,7 +198,7 @@ export function ViewToggle({ value, onChange }) {
 
 /** White panel with H4 head (title, sub, action) — Prep card. */
 export function Panel({ title, sub, action = null, toolbar = null, children, className = '', bodyClassName = 'sp-panel-b' }) {
-  return (
+  const panel = (
     <section className={`sp-panel ${className}`.trim()}>
       {title || action ? (
         <div className="sp-panel-h">
@@ -193,10 +209,16 @@ export function Panel({ title, sub, action = null, toolbar = null, children, cla
           {action}
         </div>
       ) : null}
-      {/* Filters that belong to this list sit inside its panel, not in a separate band. */}
-      {toolbar ? <div className="pm-panel-tools" role="search">{toolbar}</div> : null}
       {bodyClassName ? <div className={bodyClassName}>{children}</div> : children}
     </section>
+  );
+  if (!toolbar) return panel;
+  // quirri-b2c-student-ui (owner, 15 Oct 2026): the filter bar is a teal band ABOVE the list card, on the canvas.
+  return (
+    <div className="pm-panel-stack">
+      <div className="pm-panel-tools pm-filterbar" role="search">{toolbar}</div>
+      {panel}
+    </div>
   );
 }
 
@@ -329,7 +351,8 @@ export function Pager({ page, pageSize, total, shown, onPage, noun = 'items' }) 
   const from = total ? (page - 1) * pageSize + 1 : 0;
   const to = total ? Math.min(total, (page - 1) * pageSize + (shown ?? pageSize)) : 0;
   const pages = total ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  if (!total || pages <= 1) return null;
+  // b2c skill: pager shows for any total > 0 (hidden only at 0), with a page counter.
+  if (!total) return null;
   return (
     <div className="un-pager">
       <span>Showing {countLabel(from)}–{countLabel(to)} of {countLabel(total)} {noun}</span>
@@ -337,6 +360,7 @@ export function Pager({ page, pageSize, total, shown, onPage, noun = 'items' }) 
         <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>
           <Icon name="back" size={14} /> Previous
         </button>
+        <span className="pm-pager-n" aria-live="polite">{countLabel(Math.min(page, pages))} / {countLabel(pages)}</span>
         <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>
           Next <Icon name="chev" size={14} />
         </button>
@@ -448,7 +472,13 @@ function useActiveTabInView(ref, key) {
       const r = active.getBoundingClientRect();
       const box = el.getBoundingClientRect();
       if (r.left >= box.left && r.right <= box.right) return;
-      el.scrollLeft = Math.max(0, el.scrollLeft + (r.left - box.left) - (el.clientWidth - r.width) / 2);
+      // Snap to a tab's start edge so the first visible tab is never cut ("…pproval"), with the
+      // active tab fully in view.
+      const starts = [...el.querySelectorAll('.tab')].map((t) => t.getBoundingClientRect().left - box.left + el.scrollLeft);
+      const aStart = r.left - box.left + el.scrollLeft;
+      const need = aStart + r.width - el.clientWidth;
+      const snap = starts.find((x) => x >= need && x <= aStart);
+      el.scrollLeft = Math.max(0, snap ?? aStart);
     };
     reveal();
     // Tab counts and fonts arrive after the first paint and change the strip's width.

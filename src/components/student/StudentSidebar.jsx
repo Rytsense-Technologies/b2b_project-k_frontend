@@ -35,26 +35,6 @@ const NAV = [
     ),
   },
   {
-    href: '/student/interviews',
-    label: 'Interviews',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z" />
-        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-      </svg>
-    ),
-  },
-  {
-    href: '/student/reports',
-    label: 'Reports',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M4 4v16h16" />
-        <path d="M8 16v-4M12 16V8M16 16v-6" />
-      </svg>
-    ),
-  },
-  {
     href: '/student/progress',
     label: 'My progress',
     icon: (
@@ -84,6 +64,7 @@ export default function StudentSidebar() {
       tenantSubtitle="Student"
       fallbackInitials="ST"
       loginPath="/auth/login"
+      menuLinks={[{ href: '/student/settings', label: 'Profile' }, { href: '/student/settings?tab=security', label: 'Security' }]}
     />
   );
 }

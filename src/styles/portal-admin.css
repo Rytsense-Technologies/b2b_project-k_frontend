@@ -249,12 +249,8 @@
 .ad-queue .sp-pill{flex:none}
 
 /* Analytics */
-.ad-dist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-.ad-dist li{display:grid;grid-template-columns:72px 1fr 40px;align-items:center;gap:12px}
-.ad-dist-l{font-size:12px;line-height:18px;color:var(--muted-2);font-variant-numeric:tabular-nums}
-.ad-dist-bar{height:12px;border-radius:999px;background:var(--neutral-100);overflow:hidden}
-.ad-dist-bar i{display:block;height:100%;border-radius:999px;background:var(--teal-500);min-width:0}
-.ad-dist b{font-size:14px;line-height:22px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+/* Dashboard viz row: a short metric list beside the compact donut keeps its own height (no half-empty card) */
+.dv-grid.ad-grid-start{align-items:start}
 .ad-risk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .ad-risk>li{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
 .ad-risk>li:last-child{border-bottom:0}
@@ -271,7 +267,6 @@
 
 @media (max-width:860px){
   .ad-import-steps{flex-direction:column}
-  .ad-dist li{grid-template-columns:60px 1fr 32px}
 }
 
 /* Search box outside the teal filter bar (panel tools, subject picker) */
@@ -295,16 +290,17 @@
 .ad-page .sd-kpi-v.is-focus{color:var(--accent-text)}
 .ad-kpi-band{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
 
-/* Dashboard hero side: live "Needs your attention" rows (white on teal, no orange text). */
-.ad-attn{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+/* Dashboard "Needs your attention" rows inside the (globally white) hero side card. */
+.ad-attn{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .ad-attn li{display:block}
-.ad-attn a{display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 12px;border-radius:var(--radius-card);background:var(--on-brand-raised);color:#fff;text-decoration:none;transition:background-color .2s ease-out}
-.ad-attn a:hover{background:rgba(255,255,255,.14)}
-.ad-attn a:focus-visible{outline:2px solid #fff;outline-offset:2px}
-.ad-attn b{flex:none;min-width:28px;font-size:18px;line-height:26px;font-weight:500;font-variant-numeric:tabular-nums}
-.ad-attn span{flex:1;min-width:0;font-size:14px;line-height:20px}
-.ad-attn .sd-i{flex:none;opacity:.8}
-.ad-attn-note{margin:0;font-size:14px;line-height:22px;color:var(--teal-50)}
+.ad-attn li + li{border-top:1px solid var(--line)}
+.ad-attn a{display:flex;align-items:center;gap:12px;min-height:52px;padding:12px 4px;color:var(--sb-ink);text-decoration:none;border-radius:6px;transition:background-color .2s ease-out}
+.ad-attn a:hover{background:#fafafa}
+.ad-attn a:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+.ad-attn b{flex:none;min-width:28px;font-size:20px;line-height:28px;font-weight:600;color:var(--sb-teal);font-variant-numeric:tabular-nums}
+.ad-attn span{flex:1;min-width:0;font-size:15px;line-height:22px}
+.ad-attn .sd-i{flex:none;color:var(--sb-muted)}
+.ad-attn-note{margin:0;font-size:15px;line-height:23px;color:var(--sb-muted)}
 
 /* Students who need attention: reasons as pills on the right. */
 .ad-attn-risk .un-mono{flex:none}
@@ -312,7 +308,6 @@
 .ad-reasons .sp-pill{white-space:nowrap}
 
 /* Students › All: two small visuals above the directory. */
-.ad-viz-row .sp-panel-b{padding-top:12px}
 
 /* Staff: subject chips with a stable series dot. */
 .ad-subj-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
@@ -361,3 +356,78 @@
 .ad-promote-sum small{display:block;font-size:12px;line-height:18px;color:var(--ink-2)}
 .ad-promote-sum .is-focus b{color:var(--accent-text)}
 @media (max-width:640px){ .ad-promote-sum{grid-template-columns:minmax(0,1fr)} }
+
+/* ==========================================================================
+   quirri-b2c-student-ui deep audit (15 Oct 2026) — College Admin pages only.
+   Scoped to College Admin page roots (.ad-page / .ad-dash / .ad-dept / .ad-missing).
+   ========================================================================== */
+/* Dashboard hero: plain over-line (no orange pill); orange stays for the one primary. */
+.q-app-shell:not(.q-student) .ad-dash .banner-eyebrow{background:transparent;padding:0;border-radius:0;color:#cfe3e7;letter-spacing:.08em}
+@media (max-width:640px){
+  .q-app-shell:not(.q-student) .ad-dash .banner-cta{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;width:100%}
+  .q-app-shell:not(.q-student) .ad-dash .banner-cta .btn{width:100%;justify-content:center;min-height:44px}
+}
+/* Dashboard lists: status as text + 6px dot, not a rainbow of pills. */
+.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill{display:inline-flex;align-items:center;gap:6px;height:auto;padding:0;background:transparent;border:0;font-size:12px;line-height:18px;font-weight:500;color:var(--sb-ink)}
+.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:#94a3b8}
+.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill--teal::before{background:var(--sb-teal)}
+.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill--low::before{background:var(--sb-orange)}
+@media (max-width:640px){
+  .q-app-shell:not(.q-student) .ad-dash .ad-attn-risk li{flex-wrap:wrap}
+  .q-app-shell:not(.q-student) .ad-dash .ad-reasons{display:flex;flex-basis:100%;max-width:none;justify-content:flex-start;padding-left:44px}
+}
+
+/* Teal filter bar on phones: the status switch spans the bar like the selects. */
+@media (max-width:640px){
+  .q-app-shell:not(.q-student) .ad-page .pm-filterbar .sp-tabs{width:100%;flex:1 1 100%}
+  .q-app-shell:not(.q-student) .ad-page .pm-filterbar .sp-tab{flex:1 1 auto;justify-content:center}
+  .q-app-shell:not(.q-student) .ad-page .tabs .tab{padding-left:12px;padding-right:12px}
+}
+
+/* Department record: the top bar already carries the name, so the summary card keeps only the facts. */
+.q-app-shell:not(.q-student) .ad-dept .pm-record-id{display:none}
+.q-app-shell:not(.q-student) .ad-dept .pm-record-facts{border-top:0;padding-top:0}
+.q-app-shell:not(.q-student) .ad-page .ad-levels{border:0;border-radius:0}
+.q-app-shell:not(.q-student) .ad-page .ad-levels li{padding-left:0;padding-right:0}
+@media (max-width:760px){
+  .q-app-shell:not(.q-student) .ad-page .ad-levels li{flex-wrap:nowrap}
+  .q-app-shell:not(.q-student) .ad-page .ad-levels li > div{flex-basis:auto}
+  .q-app-shell:not(.q-student) .ad-page .ad-levels li .sp-pill{margin-left:0}
+}
+/* Danger zone = a normal white card; the red lives on the button. */
+.q-app-shell:not(.q-student) .ad-page .pm-danger{background:#fff;border:0;border-radius:6px;box-shadow:var(--sb-shadow)}
+@media (max-width:760px){
+  .q-app-shell:not(.q-student) .ad-page .pm-danger-actions,
+  .q-app-shell:not(.q-student) .ad-page .pm-danger-actions > .sd-btn,
+  .q-app-shell:not(.q-student) .ad-page .pm-danger > .sd-btn{width:100%;justify-content:center}
+  .q-app-shell:not(.q-student) .ad-page .pm-head-actions{width:100%}
+  .q-app-shell:not(.q-student) .ad-page .pm-head-actions > .sd-btn{flex:1 1 100%;justify-content:center;min-height:44px}
+}
+
+/* Unknown route: centred muted sentence + one teal text link, inside a white card. */
+.ad-missing{background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.25);padding:40px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.ad-missing h2{margin:0;font-size:18px;line-height:26px;font-weight:600;color:#102228}
+.ad-missing p{margin:0;max-width:48ch;font-size:14px;line-height:22px;color:#707a7e}
+.ad-missing-link{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-top:4px;color:#14606e;font-weight:600;text-decoration:none}
+.ad-missing-link:hover{text-decoration:underline}
+.ad-missing-link:focus-visible{outline:2px solid #14606e;outline-offset:2px;border-radius:6px}
+/* A disabled select in the teal bar ("Pick a programme first") must read as disabled. */
+.q-app-shell:not(.q-student) .ad-page .pm-filterbar .quirri-dd__trigger:disabled{opacity:.6;cursor:not-allowed}
+.q-app-shell:not(.q-student) .ad-page .pm-filterbar .quirri-dd__trigger:disabled .quirri-dd__value{color:var(--sb-muted)}
+
+/* QA clean pass (20 Oct 2026) — College Admin page fixes on top of the global tokens. */
+/* Table cells: "Not set" / "Not placed" and the status text read at the 15px cell size. */
+.q-app-shell:not(.q-student) .ad-page .sp-table td > .ad-muted{font-size:inherit;line-height:inherit}
+.q-app-shell:not(.q-student) .ad-page .sp-table td[data-label="Status"] .sp-pill{font-size:inherit;line-height:inherit}
+/* Content jobs table: every cell vertically centred in its row. */
+.q-app-shell:not(.q-student) .ad-page .ad-jobs td{vertical-align:middle}
+/* Card-head text links ("Analytics →", "All students →") stay beside the title on phones. */
+@media (max-width:640px){
+  .q-app-shell:not(.q-student) .ad-page .sp-panel-h:has(> .sp-link){flex-wrap:nowrap;gap:var(--qs-row-gap)}
+  .q-app-shell:not(.q-student) .ad-page .sp-panel-h:has(> .sp-link) > div{flex:1 1 auto;min-width:0}
+}
+
+/* Staff table (clean pass, 20 Oct 2026): subjects as plain text, short cells on one line */
+.ad-page .ad-subj-text{color:var(--ink);font-size:15px;line-height:22px}
+.ad-page .ad-subj-text small{color:var(--qs-muted,#64748b);font-size:13px}
+@media (min-width:761px){.ad-page td.ad-nowrap{white-space:nowrap}}

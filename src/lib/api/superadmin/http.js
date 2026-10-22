@@ -96,14 +96,18 @@ export function apiErrorMessage(err, fallback = 'Something went wrong') {
   return fallback;
 }
 
-/** EPIC shells: treat missing routes as unavailable, not a hard crash. */
+/**
+ * Missing route / not implemented / briefly down — not a crash.
+ * Interview routers are unmounted while INTERVIEWS_ENABLED=false (404 = feature off).
+ */
 export function isApiUnavailable(err) {
   const status = err?.response?.status;
   return status === 404 || status === 501 || status === 503;
 }
 
 /**
- * Like unwrap+request, but returns `null` when the epic API is not live yet.
+ * Like unwrap+request, but returns `null` when the epic API is not live yet
+ * (including interview paths that 404 while the module is off).
  * Real failures (auth, 500, network) still throw.
  */
 export async function fetchOptional(request) {

@@ -19,7 +19,7 @@ import {
   countLabel,
   initials,
 } from '@/components/shared/module-ui';
-import { BarList, Distribution, BandPill } from '@/components/shared/data-viz';
+import { MetricListCard, ModernDonut, ModernDonutCard, BandPill } from '@/components/shared/data-viz';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import {
   collegeStats, adminStatus, CollegeFormModal, StatusConfirm, EMPTY_FORM, NEAR_CAP_PCT,
@@ -114,19 +114,22 @@ function CollegeView() {
   };
 
   if (error && !college) {
+    const missing = error?.response?.status === 404;
     return (
       <ModulePage className="sa-page">
         <Link className="sp-link sa-back" href="/superadmin/colleges"><Icon name="back" size={14} /> All colleges</Link>
         <SectionState
           tone="err"
-          title={error?.response?.status === 404 ? 'College not found' : 'Could not load this college'}
-          action={(
+          title={missing ? 'College not found' : 'Could not load this college'}
+          action={missing ? (
+            <Link className="sd-btn sd-btn--ghost sd-btn--sm" href="/superadmin/colleges">Back to colleges</Link>
+          ) : (
             <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload().catch(() => {})}>
               <Icon name="refresh" size={16} /> Try again
             </button>
           )}
         >
-          {apiErrorMessage(error, 'Please try again.')}
+          {missing ? 'The link may be wrong, or the college was removed.' : apiErrorMessage(error, 'Please try again.')}
         </SectionState>
       </ModulePage>
     );
@@ -143,7 +146,9 @@ function CollegeView() {
 
   const pendingAdmins = admins.filter((a) => String(a.status).includes('pending')).length;
   const completion = learning?.completion;
-  const avgScore = learning?.avg_score;
+  // Quiz average (reports.py quiz_avg); avg_score only for an older payload without it.
+  const quizScore = (r) => (r && 'quiz_avg' in r ? r.quiz_avg : r?.avg_score);
+  const avgScore = quizScore(learning);
   const editDefaults = {
     ...EMPTY_FORM,
     name: college.name ?? '',
@@ -221,9 +226,9 @@ function CollegeView() {
           label="Learning summary"
           items={[
             { icon: 'tick', label: 'Completion', value: learning ? (completion == null ? '—' : `${completion}%`) : null, sub: learning ? <BandPill score={completion} /> : rangeLabel },
-            { icon: 'chart', label: 'Avg score', value: learning ? (avgScore == null ? '—' : `${avgScore}%`) : null, sub: learning ? <BandPill score={avgScore} /> : rangeLabel },
+            { icon: 'chart', label: 'Quiz average', value: learning ? (avgScore == null ? '—' : `${avgScore}%`) : null, sub: learning ? <BandPill score={avgScore} /> : rangeLabel },
             { icon: 'clock', label: 'Watch time', value: learning ? formatMinutes(learning.watch_minutes || 0) : null, sub: rangeLabel },
-            { icon: 'chat', label: 'Q&A turns', value: learning ? formatCount(learning.qa || 0) : null, sub: `${formatCount(learning?.assessments || 0)} ${Number(learning?.assessments) === 1 ? 'quiz' : 'quizzes'} · ${formatCount(learning?.interviews || 0)} ${Number(learning?.interviews) === 1 ? 'interview' : 'interviews'}` },
+            { icon: 'chat', label: 'Q&A turns', value: learning ? formatCount(learning.qa || 0) : null, sub: `${formatCount(learning?.assessments || 0)} ${Number(learning?.assessments) === 1 ? 'quiz' : 'quizzes'} taken` },
           ]}
         />
         <div className="dv-grid">
@@ -239,12 +244,18 @@ function CollegeView() {
               ]}
             />
           </Panel>
-          <Panel title="Seat usage" sub="Students enrolled against the seat cap.">
-            <Distribution
-              label="Seat usage"
+          <Panel
+            title="Seat usage"
+            sub="Students enrolled against the seat cap."
+            className="mdc-card"
+            action={s.cap ? <div className="mdc-chip"><small>Seat cap</small><b>{formatCount(s.cap)}</b></div> : null}
+          >
+            <ModernDonut
+              title="Seat usage"
+              unit="Seats"
               parts={[
-                { label: 'Seats used', value: s.students, color: s.pct >= NEAR_CAP_PCT ? 'var(--highlight)' : 'var(--cat-1)' },
-                { label: 'Seats free', value: Math.max(0, s.cap - s.students), color: 'var(--neutral-200)' },
+                { key: 'used', label: 'Seats used', value: s.students, tone: s.pct >= NEAR_CAP_PCT ? 'warn' : 'info' },
+                { key: 'free', label: 'Seats free', value: Math.max(0, s.cap - s.students), tone: 'neutral' },
               ]}
               empty="No seat cap set for this college."
             />
@@ -267,14 +278,18 @@ function CollegeView() {
 
       <TabPanel value="departments" current={tab} idBase="college">
         {studentsByDept.length > 1 ? (
-          <Panel title="Students by department" sub="Active departments, most students first.">
-            <BarList label="Students by department" items={studentsByDept} />
-          </Panel>
+          <ModernDonutCard
+            title="Students by department"
+            sub="Active departments, most students first."
+            totalLabel="Total students"
+            unit="Students"
+            parts={studentsByDept}
+            empty="No students enrolled yet."
+          />
         ) : null}
         <Panel
           title="Departments"
           sub={deptData ? `${countLabel(departments.length)} ${departments.length === 1 ? 'department' : 'departments'}` : null}
-          action={<Link className="sp-link" href={`/superadmin/departments?college=${id}`}>Manage departments <Icon name="arrow" size={14} /></Link>}
           bodyClassName={null}
         >
           {deptLoading && !deptData ? <p className="dv-empty sa-pad">Loading departments…</p> : null}
@@ -303,6 +318,10 @@ function CollegeView() {
               </table>
             </div>
           ) : null}
+          {/* Card-head links wrap under the subtitle on phones; the link sits in the card foot instead. */}
+          <div className="sa-panel-foot sa-panel-foot--pad">
+            <Link className="sp-link" href={`/superadmin/departments?college=${id}`}>Manage departments <Icon name="arrow" size={14} /></Link>
+          </div>
         </Panel>
       </TabPanel>
 
@@ -310,7 +329,6 @@ function CollegeView() {
         <Panel
           title="College administrators"
           sub="Each admin signs in with an activation link. Resend it if it has expired."
-          action={<Link className="sp-link" href={`/superadmin/users?tab=staff&role=college_admin&institution=${id}`}>Open in Platform users <Icon name="arrow" size={14} /></Link>}
           bodyClassName={null}
         >
           {admins.length ? (
@@ -341,24 +359,19 @@ function CollegeView() {
               })}
             </ul>
           ) : <p className="dv-empty sa-pad">No administrators on file.</p>}
+          <div className="sa-panel-foot sa-panel-foot--pad">
+            <Link className="sp-link" href={`/superadmin/users?tab=staff&role=college_admin&institution=${id}`}>Open in Platform users <Icon name="arrow" size={14} /></Link>
+          </div>
         </Panel>
       </TabPanel>
 
       <TabPanel value="learning" current={tab} idBase="college">
         {deptReportLoading && !deptReport ? <SectionState title="Loading learning data…" /> : (
           <div className="dv-grid">
-            <Panel title="Completion by department" sub={`Assigned chapters fully watched · ${rangeLabel.toLowerCase()}`}>
-              <BarList label="Completion by department" items={learningBars((r) => r.completion)} colorBy="band" max={100} format={formatPct} empty="No departments with published chapters yet." />
-            </Panel>
-            <Panel title="Avg score by department" sub={`Quizzes and interviews · ${rangeLabel.toLowerCase()}`}>
-              <BarList label="Avg score by department" items={learningBars((r) => r.avg_score)} colorBy="band" max={100} format={formatPct} empty="No scored attempts in this range." />
-            </Panel>
-            <Panel title="Q&A by department" sub={`Questions asked to the AI tutor · ${rangeLabel.toLowerCase()}`}>
-              <BarList label="Q&A by department" items={learningBars((r) => r.qa)} empty="No questions in this range." />
-            </Panel>
-            <Panel title="Watch time by department" sub={rangeLabel}>
-              <BarList label="Watch time by department" items={learningBars((r) => r.watch_minutes)} format={formatMinutes} empty="No watch time in this range." />
-            </Panel>
+            <MetricListCard title="Completion by department" sub={`Assigned chapters fully watched · ${rangeLabel.toLowerCase()}`} items={learningBars((r) => r.completion)} colorBy="band" format={formatPct} empty="No departments with published chapters yet." />
+            <MetricListCard title="Quiz average by department" sub={`Chapter quizzes · ${rangeLabel.toLowerCase()}`} items={learningBars(quizScore)} colorBy="band" format={formatPct} empty="No scored attempts in this range." />
+            <MetricListCard title="Q&A by department" sub={`Questions asked to the AI tutor · ${rangeLabel.toLowerCase()}`} items={learningBars((r) => r.qa)} empty="No questions in this range." />
+            <MetricListCard title="Watch time by department" sub={rangeLabel} items={learningBars((r) => r.watch_minutes)} format={formatMinutes} empty="No watch time in this range." />
           </div>
         )}
       </TabPanel>

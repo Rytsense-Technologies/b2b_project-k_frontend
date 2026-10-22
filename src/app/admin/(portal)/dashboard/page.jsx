@@ -11,7 +11,7 @@ import {
   SectionState,
   countLabel,
 } from '@/components/shared/module-ui';
-import { BandPill, BarList, DonutChart } from '@/components/shared/data-viz';
+import { BandPill, MetricList, ModernDonut } from '@/components/shared/data-viz';
 import { analyticsApi } from '@/lib/api/analytics';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList } from '@/lib/api/superadmin/http';
@@ -91,9 +91,6 @@ export default function AdminDashboardPage() {
     return asList(deptData, []).filter((d) => !hodCanReview(departmentHod(d, collegeStaff))).length;
   }, [deptData, collegeStaff]);
 
-  const finals = (overview?.interview_cohort || []).filter((r) => r.final_year);
-  const finalsReady = finals.filter((r) => r.status === 'ready').length;
-
   const deptBars = useMemo(() => (overview?.departments || [])
     .filter((d) => d.students)
     .map((d) => ({
@@ -148,24 +145,21 @@ export default function AdminDashboardPage() {
           },
           {
             icon: 'target',
-            // Quiz average (as on Analytics); the mock interview average sits on the sub-line.
+            // Quiz average (as on Analytics); the pass rate sits on the sub-line.
             label: 'Quiz average',
             value: first ? null : pct(totals?.quiz_avg),
             sub: totals ? (
               <span className="ad-kpi-band">
                 {totals.quiz_avg != null ? <BandPill score={totals.quiz_avg} /> : null}
-                {[
-                  totals.pass_rate != null ? `${pct(totals.pass_rate)} pass` : 'No quizzes yet',
-                  totals.interview_avg != null ? `Mock ${pct(totals.interview_avg)}` : null,
-                ].filter(Boolean).join(' · ')}
+                {totals.pass_rate != null ? `${pct(totals.pass_rate)} pass` : 'No quizzes yet'}
               </span>
             ) : (first ? 'Loading…' : 'Chapter quizzes, last 30 days'),
           },
           {
-            icon: 'mic',
-            label: 'Interview ready',
-            value: first ? null : (overview ? `${countLabel(finalsReady)} of ${countLabel(finals.length)}` : '—'),
-            sub: !overview ? (first ? 'Loading…' : 'Final-year students') : finals.length ? 'Final-year students' : 'No final-year students yet',
+            icon: 'chat',
+            label: 'Tutor questions',
+            value: first ? null : (totals ? countLabel(totals.qa) : '—'),
+            sub: !totals ? (first ? 'Loading…' : 'Last 30 days') : totals.qa ? 'Asked to the AI tutor, last 30 days' : 'No tutor questions yet',
           },
         ]}
       />
@@ -176,7 +170,7 @@ export default function AdminDashboardPage() {
         </SectionState>
       ) : null}
 
-      <div className="dv-grid">
+      <div className="dv-grid ad-grid-start">
         <Panel
           title="Completion by department"
           sub="Chapters completed by students, last 30 days"
@@ -187,10 +181,9 @@ export default function AdminDashboardPage() {
           )}
         >
           {first ? <p className="dv-empty">Loading…</p> : (
-            <BarList
+            <MetricList
               label="Completion by department"
               items={deptBars}
-              max={100}
               suffix="%"
               empty="No students placed in a department yet."
             />
@@ -201,8 +194,11 @@ export default function AdminDashboardPage() {
           sub={totals?.pass_rate != null ? `Each student's quiz average · ${pct(totals.pass_rate)} of quiz attempts passed` : "Each student's quiz average"}
         >
           {first ? <p className="dv-empty">Loading…</p> : (
-            <DonutChart
-              centerLabel="Students"
+            <ModernDonut
+              compact
+              unit="Students"
+              title="Students by quiz score"
+              link={{ href: '/admin/analytics?tab=students', label: 'View details' }}
               parts={bands ? [
                 { key: 'strong', label: 'Strong (80+)', value: bands.strong },
                 { key: 'ok', label: 'On track (60–79)', value: bands.ok },

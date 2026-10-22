@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
-  HeadChip,
   Icon,
   ModuleHead,
   ModulePage,
@@ -12,17 +11,24 @@ import {
   SearchBox,
   SectionState,
   SegTabs,
+  TabNav,
+  TabPanel,
   countLabel,
 } from '@/components/shared/module-ui';
+import NotificationRules from '@/components/shared/NotificationRules';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { notificationsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { useUrlState } from '@/hooks/useUrlState';
+import { useUrlState, useTabParam } from '@/hooks/useUrlState';
 
-const PAGE_SIZE = 25;
-const TONE = { sent: 'sp-pill--good', failed: 'sp-pill--err', log_only: 'sp-pill--off' };
+const PAGE_SIZE = 10; // quirri-b2c-student-ui: lists page at 10
+const TABS = [
+  { value: 'rules', label: 'Rules' },
+  { value: 'deliveries', label: 'Deliveries' },
+];
+const TONE = { sent: 'sp-pill--good', failed: 'sp-pill--err', log_only: 'sp-pill--off', skipped: 'sp-pill--off' };
 const CHANNEL = { email: 'Email', whatsapp: 'WhatsApp' };
 /** Events a college can receive (backend notification_service.EVENTS; GET /notifications/deliveries?event=). */
 const EVENT_OPTIONS = [
@@ -33,9 +39,6 @@ const EVENT_OPTIONS = [
   { value: 'content_published', label: 'Chapter published' },
   { value: 'assessment_available', label: 'Assessment available' },
   { value: 'pipeline_completed', label: 'Video pipeline finished' },
-  { value: 'interview_assignment', label: 'Interview assignment' },
-  { value: 'interview_completed', label: 'Interview completed' },
-  { value: 'interview_result', label: 'Interview result available' },
 ];
 const CHANNEL_OPTIONS = [
   { value: 'email', label: 'Email' },
@@ -51,6 +54,7 @@ const EMPTY_BY_STATUS = {
   sent: ['No delivered messages in this range', 'Invites and alerts appear here once they reach the person.'],
   failed: ['No failed messages', 'Every message in this range was delivered or recorded.'],
   log_only: ['No log-only messages', 'Messages are recorded here only while email sending is switched off.'],
+  skipped: ['No skipped messages', 'Messages appear here when a notification rule turned them off.'],
 };
 
 function when(iso) {
@@ -61,10 +65,11 @@ function when(iso) {
 
 /**
  * College Admin: messages Quirri sent to people in this college (activation
- * invites, content / assessment alerts, interview results) and their delivery
+ * invites, content / assessment alerts) and their delivery
  * status. The server only returns this college's rows.
  */
 function NotificationsLog() {
+  const [tab, setTab] = useTabParam(TABS.map((t) => t.value), 'rules');
   const [url, setUrl] = useUrlState({ q: '', status: '', event: '', channel: '', days: '90', page: '1' });
   const [searchInput, setSearchInput] = useState(url.q);
   const [busy, setBusy] = useState('');
@@ -94,7 +99,7 @@ function NotificationsLog() {
   // `summary` covers the whole range only (the API ignores event / channel / search for it), so the
   // Retry action uses it. The status tab counts follow every filter: with a narrowing filter set we
   // ask for the total of each status (page_size 1) with the same filters.
-  const summary = data?.summary || { sent: 0, failed: 0, log_only: 0 };
+  const summary = data?.summary || { sent: 0, failed: 0, log_only: 0, skipped: 0 };
   const first = loading && !data;
   const narrowed = Boolean(url.event || url.channel || url.q);
   const { data: filteredCounts } = useAsyncResource(async () => {
@@ -102,26 +107,26 @@ function NotificationsLog() {
     const one = (status) => fetchData(() => notificationsApi.listDeliveries({
       status, event: url.event, channel: url.channel, q: url.q, page: 1, page_size: 1, days: Number(days),
     })).then((r) => (typeof r?.total === 'number' ? r.total : 0));
-    const [sent, failed, logOnly] = await Promise.all([one('sent'), one('failed'), one('log_only')]);
-    return { sent, failed, log_only: logOnly, key: [url.event, url.channel, url.q, days].join('|') };
+    const [sent, failed, logOnly, skipped] = await Promise.all([one('sent'), one('failed'), one('log_only'), one('skipped')]);
+    return { sent, failed, log_only: logOnly, skipped, key: [url.event, url.channel, url.q, days].join('|') };
   }, [narrowed, url.event, url.channel, url.q, days]);
   const countsKey = [url.event, url.channel, url.q, days].join('|');
   const tabCounts = narrowed
     ? (filteredCounts && filteredCounts.key === countsKey ? filteredCounts : null)
     : (data ? summary : null);
-  const sum = tabCounts ? (tabCounts.sent || 0) + (tabCounts.failed || 0) + (tabCounts.log_only || 0) : null;
+  const sum = tabCounts ? (tabCounts.sent || 0) + (tabCounts.failed || 0) + (tabCounts.log_only || 0) + (tabCounts.skipped || 0) : null;
   const statusTabs = [
     { value: '', label: 'All', count: sum == null ? null : countLabel(sum) },
     { value: 'sent', label: 'Delivered', count: tabCounts ? countLabel(tabCounts.sent || 0) : null },
     { value: 'failed', label: 'Failed', count: tabCounts ? countLabel(tabCounts.failed || 0) : null },
     { value: 'log_only', label: 'Log-only', count: tabCounts ? countLabel(tabCounts.log_only || 0) : null },
+    { value: 'skipped', label: 'Skipped', count: tabCounts ? countLabel(tabCounts.skipped || 0) : null },
   ];
   const filtered = Boolean(url.q || url.status || url.event || url.channel);
   const clearFilters = () => {
     setSearchInput('');
     setUrl({ q: '', status: '', event: '', channel: '', page: '1' });
   };
-  const rangeLabel = RANGE_OPTIONS.find((o) => o.value === days)?.label || 'Last 90 days';
 
   const retry = async () => {
     setBusy('retry');
@@ -153,13 +158,7 @@ function NotificationsLog() {
   return (
     <ModulePage className="ad-page">
       <ModuleHead
-        chips={(
-          <>
-            <HeadChip icon="building">Your college</HeadChip>
-            <HeadChip icon="clock" tone="grey">{rangeLabel}</HeadChip>
-          </>
-        )}
-        actions={summary.failed ? (
+        actions={tab === 'deliveries' && summary.failed ? (
           <button type="button" className="sd-btn sd-btn--amber" onClick={retry} disabled={busy === 'retry'}>
             <Icon name="refresh" size={16} />
             {busy === 'retry' ? 'Retrying…' : `Retry ${countLabel(summary.failed)} failed`}
@@ -167,6 +166,13 @@ function NotificationsLog() {
         ) : null}
       />
 
+      <TabNav tabs={TABS} value={tab} onChange={setTab} label="Notification sections" idBase="ad-notif" />
+
+      <TabPanel value="rules" current={tab} idBase="ad-notif">
+        <NotificationRules canTest />
+      </TabPanel>
+
+      <TabPanel value="deliveries" current={tab} idBase="ad-notif">
       {data && summary.log_only && !summary.sent ? (
         <SectionState title="Emails are being recorded, not sent">
           Quirri&apos;s email service isn&apos;t connected yet, so invites are logged here instead of delivered. Your Super Admin
@@ -265,7 +271,8 @@ function NotificationsLog() {
                       <td data-label="Channel">{CHANNEL[r.channel] || r.channel}</td>
                       <td data-label="Status">
                         <span className={`sp-pill ${TONE[r.status_key] || ''}`}><i className="un-dot" aria-hidden="true" />{r.status}</span>
-                        {r.error ? <small className="ad-cell-sub sa-err-text">{r.error}</small> : null}
+                        {r.error ? <small className={`ad-cell-sub${r.status_key === 'skipped' ? '' : ' sa-err-text'}`}>{r.error}</small> : null}
+                        {r.test_redirect ? <small className="ad-cell-sub">Test mode · sent to the QA inbox</small> : null}
                       </td>
                       <td data-label="Time" className="sa-muted">{when(r.updated_at || r.created_at)}</td>
                       <td>
@@ -286,6 +293,7 @@ function NotificationsLog() {
           <Pager page={page} pageSize={PAGE_SIZE} total={data?.total ?? rows.length} shown={rows.length} onPage={(p) => setUrl({ page: String(p) }, { push: true })} noun="messages" />
         ) : null}
       </Panel>
+      </TabPanel>
     </ModulePage>
   );
 }

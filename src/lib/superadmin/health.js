@@ -4,6 +4,7 @@
  * only when every service is up and the error rate is normal.
  */
 import { formatCount } from './format';
+import { isInterviewOff } from '@/lib/product/interviewOff';
 
 /** Uptime below this needs a look; below UPTIME_BAD it is an outage. */
 export const UPTIME_OK = 99.5;
@@ -59,7 +60,9 @@ export function readHealthSignals(statusData) {
  * problems (for attention lists), each with a plain title and a link.
  */
 export function overallHealth(statusData) {
-  const services = list(statusData?.services);
+  const services = list(statusData?.services).filter(
+    (svc) => !isInterviewOff(`${svc.name || ''} ${svc.service || ''}`),
+  );
   const signals = readHealthSignals(statusData);
   const items = [];
   let level = 'green';

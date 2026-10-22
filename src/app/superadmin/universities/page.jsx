@@ -11,7 +11,7 @@ import { SearchBox, QuirriRHFField, IndiaLocationFields } from '@/components/sup
 import {
   ModulePage, ModuleHead, KpiRow, Panel, SegTabs, StatusPill, IconButton, Mono, Pager, Icon, SectionState,
 } from '@/components/shared/module-ui';
-import { BarList } from '@/components/shared/data-viz';
+import { MetricListCard } from '@/components/shared/data-viz';
 import { useUrlState } from '@/hooks/useUrlState';
 import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
@@ -36,7 +36,7 @@ const EMPTY_FORM = {
   address: '',
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 function initials(name = '') {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -529,17 +529,13 @@ function UniversitiesView() {
 
       {studentsBars.length > 1 ? (
         <div className="dv-grid">
-          <Panel title="Students by university" sub="Active universities, most students first.">
-            <BarList label="Students by university" items={studentsBars} />
-          </Panel>
-          <Panel title="Colleges by university" sub="Open one to see its colleges.">
-            <BarList label="Colleges by university" items={collegeBars} />
-          </Panel>
+          <MetricListCard title="Students by university" sub="Active universities, most students first." items={studentsBars} />
+          <MetricListCard title="Colleges by university" sub="Open one to see its colleges." items={collegeBars} />
         </div>
       ) : null}
 
       <Panel
-        title="All universities"
+        title={url.status === 'true' ? 'Active universities' : url.status === 'false' ? 'Inactive universities' : 'All universities'}
         sub={data ? `${countLabel(total)} ${total === 1 ? 'university' : 'universities'}${filtersOn ? ' match these filters' : ''}` : null}
         bodyClassName={null}
         toolbar={(

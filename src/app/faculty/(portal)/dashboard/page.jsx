@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import PortalHero from '@/components/shared/PortalHero';
 import { ModulePage, KpiRow, Panel, Icon, SectionState, countLabel, initials } from '@/components/shared/module-ui';
-import { BarList, Distribution } from '@/components/shared/data-viz';
+import { MetricList, ModernDonut } from '@/components/shared/data-viz';
 import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
 import { analyticsApi } from '@/lib/api/analytics';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
@@ -24,12 +24,6 @@ function greeting() {
   if (h < 17) return 'Good afternoon';
   return 'Good evening';
 }
-
-const READINESS = [
-  { key: 'not_started', label: 'Not started', color: 'var(--band-none)' },
-  { key: 'practising', label: 'Practising', color: 'var(--cat-1)' },
-  { key: 'ready', label: 'Ready', color: 'var(--progress)' },
-];
 
 /** HOD / Faculty home: what is waiting for review, who needs attention, how each subject is doing. */
 export default function FacultyDashboardPage() {
@@ -73,23 +67,22 @@ export default function FacultyDashboardPage() {
         : (scope.subjects || []).map((s) => [s.name, s.code].filter(Boolean).join(' · ')).join(', ');
 
   const sideRows = [
-    { label: 'Videos to review', value: data?.videos_awaiting },
-    { label: 'MCQ sets to approve', value: data?.mcq_to_approve },
-    { label: 'Chapters without questions', value: data?.mcq_not_generated },
+    { label: 'Videos to review', value: data?.videos_awaiting, href: '/faculty/videos' },
+    { label: 'MCQ sets to approve', value: data?.mcq_to_approve, href: '/faculty/mcq?tab=awaiting' },
+    { label: 'Chapters without questions', value: data?.mcq_not_generated, href: '/faculty/mcq?tab=none' },
   ];
 
   // Chapter pipeline across the subjects in scope.
   const subjItems = subjects.data?.items || [];
   const sum = (k) => subjItems.reduce((n, s) => n + (Number(s[k]) || 0), 0);
   const pipeline = [
-    { label: 'Published', value: sum('published'), color: 'var(--progress)' },
-    { label: 'In review', value: sum('in_review'), color: 'var(--cat-3)' },
-    { label: 'In progress', value: sum('in_progress'), color: 'var(--cat-1)' },
-    { label: 'No video yet', value: sum('no_content'), color: 'var(--band-none)' },
+    // Tones (not CSS vars) so the SVG donut gets real colours. In progress = neutral grey (like "Generating" on SA content); No video = lighter grey so the two read apart.
+    { key: 'published', label: 'Published', value: sum('published'), tone: 'good' },
+    { key: 'in_review', label: 'In review', value: sum('in_review'), tone: 'warn' },
+    { key: 'in_progress', label: 'In progress', value: sum('in_progress'), tone: 'neutral' },
+    { key: 'no_content', label: 'No video yet', value: sum('no_content'), color: '#DDE2E5' },
   ];
 
-  const cohort = a?.interview_cohort || [];
-  const readiness = READINESS.map((r) => ({ ...r, value: cohort.filter((c) => c.status === r.key).length }));
   const atRisk = a?.at_risk || [];
 
   return (
@@ -107,8 +100,10 @@ export default function FacultyDashboardPage() {
         <ul className="fa-hero-counts">
           {sideRows.map((r) => (
             <li key={r.label}>
-              <span>{r.label}</span>
-              <b>{data ? countLabel(r.value ?? 0) : '—'}</b>
+              <Link href={r.href}>
+                <span>{r.label}</span>
+                <b>{data ? countLabel(r.value ?? 0) : '—'}</b>
+              </Link>
             </li>
           ))}
         </ul>
@@ -130,7 +125,7 @@ export default function FacultyDashboardPage() {
         items={[
           { icon: 'users', label: 'Active students', value: first ? null : countLabel(data?.students ?? 0), sub: !scope ? 'In your scope' : isHod || readOnly ? 'In your department' : 'In your subjects' },
           { icon: 'book', label: 'Chapter completion', value: aFirst ? null : pct(a?.totals?.completion), sub: 'To date' },
-          { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: `Mock interviews: ${aFirst ? '—' : pct(a?.totals?.interview_avg)}` },
+          { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: aFirst ? 'Chapter quizzes' : a?.totals?.pass_rate != null ? `${pct(a.totals.pass_rate)} of attempts passed` : 'No quizzes yet' },
           { icon: 'alert', label: 'Need attention', value: aFirst ? null : countLabel(atRisk.length), sub: 'Low scores or no activity', tone: atRisk.length ? 'focus' : undefined },
         ]}
       />
@@ -138,7 +133,7 @@ export default function FacultyDashboardPage() {
 
       <div className="dv-grid">
         <Panel
-          title="Waiting for you"
+          title="Review queue"
           sub={readOnly ? 'View only: you can open these but not publish or approve yet.' : 'Videos sent for review and question sets to approve.'}
           action={data?.queue?.length ? (
             <span className="fa-panel-links">
@@ -228,13 +223,12 @@ export default function FacultyDashboardPage() {
         </Panel>
       </div>
 
-      <div className="dv-grid dv-grid--3">
-        <Panel title="Completion by subject" sub="Chapters finished by learners, to date.">
+      <div className="dv-grid fa-grid-top">
+        <Panel title="Completion by subject" sub="Share of each subject's published chapters its learners have finished, to date.">
           {aFailed ? errNote('Could not load completion', insights.error, insights.reload) : aFirst ? <SectionState title="Loading…" /> : (
-            <BarList
+            <MetricList
               label="Completion by subject"
               suffix="%"
-              max={100}
               empty="No subjects with published chapters yet."
               items={(a?.subjects || []).map((s) => ({
                 key: s.subject_id,
@@ -248,16 +242,7 @@ export default function FacultyDashboardPage() {
         </Panel>
         <Panel title="Chapter pipeline" sub="Every chapter in your scope, by video status.">
           {subjects.error && !subjects.data ? errNote('Could not load chapters', subjects.error, subjects.reload) : subjects.loading && !subjects.data ? <SectionState title="Loading…" /> : (
-            <Distribution label="Chapter pipeline" parts={pipeline} empty="No chapters in your subjects yet." />
-          )}
-        </Panel>
-        <Panel
-          title="Interview readiness"
-          sub="Final-year students and anyone who practised."
-          action={<Link className="sp-link fa-link-tap" href="/faculty/interviews">Open</Link>}
-        >
-          {aFailed ? errNote('Could not load readiness', insights.error, insights.reload) : aFirst ? <SectionState title="Loading…" /> : (
-            <Distribution label="Interview readiness" parts={readiness} empty="No mock interviews yet." />
+            <ModernDonut compact title="Chapter pipeline" unit="Chapters" parts={pipeline} empty="No chapters in your subjects yet." />
           )}
         </Panel>
       </div>

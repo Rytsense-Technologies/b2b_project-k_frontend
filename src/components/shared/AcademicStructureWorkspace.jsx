@@ -751,7 +751,7 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
   const filtering = Boolean(search || department || status !== 'active');
 
   const scopeChip = fixedCollege
-    ? <HeadChip icon="building">Your college</HeadChip>
+    ? null /* College Admin: "Your college" adds nothing */
     : <HeadChip icon="building">{collegeRow ? collegeRow.name : url.college === 'all' ? 'All colleges' : 'Loading…'}</HeadChip>;
 
   const withContent = Number(summary?.chapters_with_content) || 0;
@@ -785,7 +785,7 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
         ]}
       />
 
-      <section className="pm-panel-tools as-filters" role="search" aria-label="Structure filters">
+      <section className="pm-panel-tools pm-filterbar as-filters" role="search" aria-label="Structure filters">
         <SearchBox placeholder="Search programmes" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
         {fixedCollege ? null : (
           <>
@@ -952,7 +952,7 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
                       onClick={() => setModal({ type: 'toggle', target: { noun: 'semester', name: semester.name, active: semActive, kind: 'semester', id: semester.id } })}
                     />
                     {semActive && progActive ? (
-                      <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={() => setModal({ type: 'subject-new', semester })}>
+                      <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setModal({ type: 'subject-new', semester })}>
                         <Icon name="plus" size={14} /> Add subject
                       </button>
                     ) : null}

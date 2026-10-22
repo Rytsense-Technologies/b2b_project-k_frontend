@@ -28,7 +28,7 @@ import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import {
-  FacultyScopeChip, ReadOnlyNote, SubjectTag, ageLabel, useFacultySubjects, useSubjectColor,
+  scopeChip, ReadOnlyNote, SubjectTag, ageLabel, useFacultySubjects, useSubjectColor,
 } from '@/components/faculty/facultyKit';
 
 const POLL_ACTIVE_MS = 4000;
@@ -140,26 +140,43 @@ export default function FacultyVideosPage() {
   const filters = { subjectId: url.subject || undefined, q: url.q.trim() || undefined };
 
   // Server paging per tab (GET /edu_video/jobs?review_state=…&subject_id=…&q=…&page=…); to_review is oldest-sent first.
+  // Tag each response with its request so a tab switch never shows the previous tab's rows with this tab's actions.
+  const listKey = `${tab}|${url.subject}|${url.q}|${page}`;
   const list = useAsyncResource(
-    () => eduVideoApi.listJobs({ ...filters, reviewState: REVIEW_STATE[tab], page, pageSize: PAGE_SIZE }),
+    () => eduVideoApi.listJobs({ ...filters, reviewState: REVIEW_STATE[tab], page, pageSize: PAGE_SIZE })
+      .then((res) => ({ key: listKey, res })),
     [tab, url.subject, url.q, page],
   );
+  const listData = list.data?.key === listKey ? list.data.res : null;
   // Tab counts: one page_size=1 request per state (also gives "Review next").
   const counts = useAsyncResource(
     () => Promise.all(TABS.map((t) => eduVideoApi.listJobs({ ...filters, reviewState: REVIEW_STATE[t.value], page: 1, pageSize: 1 })))
       .then((res) => Object.fromEntries(TABS.map((t, i) => [t.value, res[i]]))),
     [url.subject, url.q],
   );
-  const rows = useMemo(() => asList(list.data, []), [list.data]);
-  const total = Number(list.data?.total) || 0;
+  const rows = useMemo(() => asList(listData, []), [listData]);
+  const total = Number(listData?.total) || 0;
   const reloadAll = (opts) => Promise.all([list.reload(opts), counts.reload(opts)]);
 
-  // Deep link (dashboard, subjects): /faculty/videos?job=<id> opens its preview.
+  // Deep link (dashboard, subjects, notifications): /faculty/videos?job=<id> opens its preview —
+  // only once the job is confirmed to have a finished video; otherwise say so instead of an empty player.
   const deepLinked = useRef(false);
   useEffect(() => {
     if (deepLinked.current || !url.job) return;
     deepLinked.current = true;
-    setPreviewJob({ job_id: url.job, chapter_title: rows.find((j) => j.job_id === url.job)?.chapter_title });
+    const id = url.job;
+    eduVideoApi.getStatus(id)
+      .then((st) => {
+        if (canPreview(st)) setPreviewJob({ job_id: id });
+        else {
+          toast.error('This chapter has no video to preview yet.');
+          setUrl({ job: '' });
+        }
+      })
+      .catch(() => {
+        toast.error('That chapter could not be found. It may have been removed.');
+        setUrl({ job: '' });
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url.job]);
 
@@ -232,7 +249,7 @@ export default function FacultyVideosPage() {
     [subjects.data],
   );
 
-  const ready = Boolean(list.data) && !list.error;
+  const ready = Boolean(listData) && !list.error;
   const filtering = Boolean(url.q || url.subject);
   const readOnly = Boolean(scope?.read_only);
   const nextUp = asList(counts.data?.review, [])[0] || null;
@@ -318,15 +335,6 @@ export default function FacultyVideosPage() {
             <>
               {previewBtn(job)}
               {historyBtn(job)}
-              <a
-                className="un-icon-btn"
-                href={eduVideoApi.getDownloadUrl(job.job_id)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Download ${job.chapter_title || 'video'}`}
-              >
-                <Icon name="download" size={16} />
-              </a>
             </>
           )}
         />
@@ -375,7 +383,7 @@ export default function FacultyVideosPage() {
   return (
     <ModulePage className="fa-page">
       <ModuleHead
-        chips={<FacultyScopeChip scope={scope} />}
+        chips={scopeChip(scope)}
         actions={nextUp ? (
           <button type="button" className="sd-btn sd-btn--amber" onClick={() => setPreviewJob(nextUp)}>
             <Icon name="play" size={16} /> {readOnly || nextUp.can_review === false ? 'Preview next' : 'Review next'}
@@ -475,7 +483,10 @@ export default function FacultyVideosPage() {
       <VideoPreviewModal
         open={Boolean(previewJob)}
         onClose={closePreview}
-        title={previewJob?.chapter_title || 'Video preview'}
+        title={previewJob?.chapter_title
+          || rows.find((j) => j.job_id === previewJob?.job_id)?.chapter_title
+          || asList(counts.data?.review, []).find((j) => j.job_id === previewJob?.job_id)?.chapter_title
+          || 'Video preview'}
         src={previewJob ? eduVideoApi.getDownloadUrl(previewJob.job_id) : null}
       />
       <EduVideoPlanEditor

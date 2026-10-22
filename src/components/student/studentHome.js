@@ -5,10 +5,7 @@
  * buildHomeModel, so both pages read the same numbers.
  */
 import { eduVideoApi } from '@/lib/api/admin/eduVideo';
-import { interviewApi } from '@/lib/api/interview';
-import { interviewAssignmentsApi } from '@/lib/api/interviewAssignments';
 import { leaderboardApi } from '@/lib/api/leaderboard';
-import { reportsApi } from '@/lib/api/reports';
 import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList } from '@/lib/api/superadmin/http';
 import { buildHomeModel } from '@/lib/student/dashboardModel';
@@ -18,13 +15,10 @@ import { subjectKey } from '@/lib/student/learning';
 const toTime = (iso) => Date.parse(iso || '') || 0;
 
 export async function loadStudentHomeData() {
-  const [meRes, videosRes, reportsRes, lbRes, assignRes, eligRes] = await Promise.allSettled([
+  const [meRes, videosRes, lbRes] = await Promise.allSettled([
     fetchData(() => settingsApi.get()),
     eduVideoApi.listStudentVideos({ pageSize: 100 }),
-    reportsApi.getLivekit({ page: 1, page_size: 20 }),
     leaderboardApi.get({ limit: 8 }),
-    interviewAssignmentsApi.list({}),
-    interviewApi.eligibility(),
   ]);
 
   // Retry the classroom list once — common race when the access token refreshes mid-flight.
@@ -36,14 +30,12 @@ export async function loadStudentHomeData() {
       videosSettled = { status: 'rejected', reason: err };
     }
   }
-  if (videosSettled.status === 'rejected' && reportsRes.status === 'rejected') throw videosSettled.reason;
+  // The lecture list is the core source; without it the page would only show empty sections.
+  if (videosSettled.status === 'rejected') throw videosSettled.reason;
 
   const me = meRes.status === 'fulfilled' ? (meRes.value?.user || meRes.value) : null;
   const videos = videosSettled.status === 'fulfilled' ? asList(videosSettled.value, []) : null;
-  const reports = reportsRes.status === 'fulfilled' ? reportsRes.value : null;
   const leaderboard = lbRes.status === 'fulfilled' ? lbRes.value : null;
-  const assignmentsPayload = assignRes.status === 'fulfilled' ? assignRes.value : null;
-  const eligibility = eligRes.status === 'fulfilled' ? eligRes.value : null;
   const chapters = (videos || [])
     .filter((j) => j?.job_id)
     .sort((a, b) => toTime(b.published_at) - toTime(a.published_at));
@@ -59,14 +51,9 @@ export async function loadStudentHomeData() {
     me,
     chapters: chaptersSeen,
     quizByJob,
-    reports,
     leaderboard,
-    assignmentsPayload,
-    eligibility,
     videosAvailable: videos !== null,
-    reportsAvailable: reports !== null,
     leaderboardAvailable: leaderboard !== null,
-    assignmentsAvailable: assignmentsPayload !== null,
   });
   // Same subject order as My subjects (semester, then name; "Other lectures" last), so the
   // default subject and the colours line up across Home, Subjects and Progress (S17).

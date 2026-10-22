@@ -11,7 +11,8 @@ import {
   SectionState,
   countLabel,
 } from '@/components/shared/module-ui';
-import { BandPill, Distribution, ScoreMeter } from '@/components/shared/data-viz';
+import { BandPill, ModernDonut } from '@/components/shared/data-viz';
+import ScoreRing from '@/components/shared/ScoreRing';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { analyticsApi } from '@/lib/api/analytics';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
@@ -19,7 +20,7 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
 import { useUrlState } from '@/hooks/useUrlState';
 import {
-  FacultyScopeChip, ReadOnlyNote, pct, useFacultySubjects, useSubjectColor,
+  scopeChip, ReadOnlyNote, pct, useFacultySubjects, useSubjectColor,
 } from '@/components/faculty/facultyKit';
 
 const STATUS = {
@@ -35,10 +36,11 @@ function Pill({ status }) {
 }
 
 const pipelineParts = (s) => [
-  { label: 'Published', value: s.published || 0, color: 'var(--progress)' },
-  { label: 'In review', value: s.in_review || 0, color: 'var(--cat-3)' },
-  { label: 'In progress', value: s.in_progress || 0, color: 'var(--cat-1)' },
-  { label: 'No video', value: s.no_content || 0, color: 'var(--band-none)' },
+  // Tones (not CSS vars) so the SVG donut gets real colours. In progress = neutral grey (like "Generating" on SA content); No video = lighter grey so the two read apart.
+  { key: 'published', label: 'Published', value: s.published || 0, tone: 'good' },
+  { key: 'in_review', label: 'In review', value: s.in_review || 0, tone: 'warn' },
+  { key: 'in_progress', label: 'In progress', value: s.in_progress || 0, tone: 'neutral' },
+  { key: 'no_content', label: 'No video', value: s.no_content || 0, color: '#DDE2E5' },
 ];
 
 /** Subjects in scope with each chapter's content status and learning numbers (analytics, joined by id). */
@@ -77,7 +79,7 @@ export default function FacultySubjectsPage() {
   return (
     <ModulePage className="fa-page">
       <ModuleHead
-        chips={<FacultyScopeChip scope={scope} />}
+        chips={scopeChip(scope)}
       />
 
       <ReadOnlyNote scope={scope} what="chapters" />
@@ -102,7 +104,7 @@ export default function FacultySubjectsPage() {
           shown.length !== items.length ? `${countLabel(shown.length)} shown` : null,
         ].filter(Boolean).join(' · ') : null}
         action={toReview ? (
-          <Link className="sp-pill sp-pill--low fa-pill-link" href="/faculty/videos">{`${countLabel(toReview)} awaiting review`}</Link>
+          <Link className="sp-link" href="/faculty/videos">{`${countLabel(toReview)} awaiting review`}</Link>
         ) : null}
         toolbar={items.length > 1 ? (
           <>
@@ -152,15 +154,15 @@ export default function FacultySubjectsPage() {
                   <dl className="fa-subj-stats">
                     <div><dt>Chapters</dt><dd>{countLabel(s.chapters.length)}</dd></div>
                     <div><dt>Learners</dt><dd>{insights.data ? countLabel(l?.learners ?? 0) : '—'}</dd></div>
-                    <div><dt>Completion</dt><dd>{l?.completion != null ? <ScoreMeter value={l.completion} label="Completion" /> : '—'}</dd></div>
+                    <div><dt>Completion</dt><dd>{l?.completion != null ? <ScoreRing score={l.completion} size="md" suffix="%" label={`Completion ${Math.round(l.completion)}%`} /> : '—'}</dd></div>
                     <div><dt>Avg quiz score</dt><dd>{l?.avg_score != null ? <span className="fa-score"><b>{pct(l.avg_score)}</b><BandPill score={l.avg_score} /></span> : '—'}</dd></div>
                   </dl>
-                  <Distribution label={`${s.name} chapter pipeline`} parts={pipelineParts(s)} empty="No chapters yet." />
+                  <ModernDonut compact title={`${s.name} chapter pipeline`} unit="Chapters" parts={pipelineParts(s)} empty="No chapters yet." className="fa-subj-pipe" />
                   {s.chapters.length ? (
                     <button type="button" className="fa-subj-toggle" aria-expanded={isOpen} onClick={() => toggle(s.id)} disabled={single}>
                       <span className={`sa-acad-caret${isOpen ? ' is-open' : ''}`} aria-hidden="true"><Icon name="chev" size={16} /></span>
                       {`${isOpen ? 'Chapters' : 'Show chapters'} (${countLabel(s.chapters.length)})`}
-                      {s.in_review ? <span className="sp-pill sp-pill--low">{`${countLabel(s.in_review)} to review`}</span> : null}
+                      {s.in_review ? <span className="sp-pill sp-pill--low"><i className="un-dot" aria-hidden="true" />{`${countLabel(s.in_review)} to review`}</span> : null}
                     </button>
                   ) : null}
                   {isOpen && s.chapters.length ? (

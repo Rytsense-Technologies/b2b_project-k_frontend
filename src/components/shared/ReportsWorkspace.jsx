@@ -22,20 +22,19 @@ import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/htt
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { BandPill } from '@/components/shared/data-viz';
 import { formatMinutes, formatPct } from '@/lib/superadmin/format';
+import { isInterviewOff } from '@/lib/product/interviewOff';
 
 const REPORT_TYPES = [
   { value: 'institution', label: 'Institution report' },
   { value: 'department', label: 'Department report' },
   { value: 'student', label: 'Student performance' },
   { value: 'qa', label: 'Q&A report' },
-  { value: 'interview', label: 'Interview report' },
 ];
 
 /** HOD: their own department only (the server forces it). */
 const DEPARTMENT_REPORT_TYPES = [
   { value: 'student', label: 'Student performance' },
   { value: 'qa', label: 'Q&A report' },
-  { value: 'interview', label: 'Interview report' },
   { value: 'department', label: 'Department summary' },
 ];
 
@@ -44,7 +43,6 @@ const COLLEGE_REPORT_TYPES = [
   { value: 'student', label: 'Student performance' },
   { value: 'department', label: 'Department report' },
   { value: 'qa', label: 'Q&A report' },
-  { value: 'interview', label: 'Interview report' },
   { value: 'institution', label: 'College summary' },
 ];
 
@@ -67,7 +65,7 @@ const FALLBACK_COLUMNS = [
 
 function formatDay(iso) {
   const d = new Date(iso || '');
-  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 /** Empty panel body: Teal 300 outline icon, title, one line. */
@@ -87,7 +85,7 @@ function PanelEmpty({ icon, title, children }) {
 function tabLabel(value, scope) {
   if (value === 'institution') return scope === 'platform' ? 'Institutions' : 'College summary';
   if (value === 'department') return scope === 'department' ? 'Department summary' : 'Departments';
-  return { student: 'Students', qa: 'Q&A', interview: 'Interviews' }[value] || value;
+  return { student: 'Students', qa: 'Q&A' }[value] || value;
 }
 
 /**
@@ -145,15 +143,12 @@ export default function ReportsWorkspace({ scope = 'platform', collegeName = '',
   const unavailable = !loading && data == null && !error;
   const rows = useMemo(() => asList(data?.rows || data, []), [data]);
   const apiColumns = data?.columns?.length ? data.columns : FALLBACK_COLUMNS;
-  // Quiz and mock interview averages apart when the rows carry them (reports.py metrics); the
-  // blended avg_score is kept only as a clearly labelled fallback. Exports keep the API columns.
-  const hasSplit = rows.some((r) => 'quiz_avg' in r || 'interview_avg' in r);
-  const allColumns = apiColumns.flatMap((c) => {
-    if (c.key !== 'avg_score') return [c];
-    return hasSplit
-      ? [{ key: 'quiz_avg', label: 'Quiz avg', kind: 'score' }, { key: 'interview_avg', label: 'Mock avg', kind: 'percent' }]
-      : [{ ...c, label: 'Overall avg' }];
-  });
+  // The quiz average when the rows carry it (reports.py metrics); the API's avg_score otherwise.
+  // Columns that are not about learning in Quirri (e.g. an older payload's interview counts) are left out.
+  const hasQuiz = rows.some((r) => 'quiz_avg' in r);
+  const allColumns = apiColumns
+    .filter((c) => !isInterviewOff(`${c.key} ${c.label || ''}`))
+    .map((c) => (c.key === 'avg_score' && hasQuiz ? { key: 'quiz_avg', label: 'Quiz avg', kind: 'score' } : c));
   // One college: its name in every row adds nothing on screen (exports keep it).
   const columns = isCollege && reportType !== 'institution'
     ? allColumns.filter((c) => c.key !== 'college')
@@ -283,7 +278,7 @@ export default function ReportsWorkspace({ scope = 'platform', collegeName = '',
   return (
     <ModulePage className="sa-page rp-page">
       <ModuleHead
-        chips={chips || <HeadChip icon={isCollege ? 'building' : 'layers'}>{scopeLabel}</HeadChip>}
+        chips={chips || (isCollege || isDept ? null : <HeadChip icon="layers">{scopeLabel}</HeadChip>)}
       />
 
       <TabNav

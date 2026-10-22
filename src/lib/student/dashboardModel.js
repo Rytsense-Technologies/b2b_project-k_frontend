@@ -3,10 +3,7 @@
  *   GET /auth/me
  *   GET /edu_video/student/videos          (+ watch_percent / watch_complete)
  *   GET /mcq/jobs/{job_id}                (done | open | watch_required)
- *   GET /reports/livekit                  (interview reports + KPI)
  *   GET /leaderboard                      (cohort rank)
- *   GET /interview-assignments            (active cohort assignments)
- *   GET /livekit-interview/eligibility    (can this student start an AI interview)
  * Missing sources leave their section empty — never mocked.
  */
 import { mcqApi } from '@/lib/api/mcq';
@@ -91,14 +88,9 @@ export function buildHomeModel({
   me,
   chapters,
   quizByJob,
-  reports,
   leaderboard,
-  assignmentsPayload,
-  eligibility = null,
   videosAvailable,
-  reportsAvailable,
   leaderboardAvailable,
-  assignmentsAvailable,
 }) {
   const deptName = me?.department_name || me?.department || null;
   const collegeName = me?.tenant_name || me?.college_name || null;
@@ -129,8 +121,8 @@ export function buildHomeModel({
       completion: s.chapters.length
         ? Math.round((watched / s.chapters.length) * 100)
         : null,
-      quizCompletion: available.length
-        ? Math.round((done.length / available.length) * 100)
+      quizCompletion: s.chapters.length
+        ? Math.round((done.length / s.chapters.length) * 100)
         : null,
     };
   });
@@ -245,36 +237,6 @@ export function buildHomeModel({
     };
   });
 
-  /* ---------- interviews ---------- */
-  const reportItems = asList(reports, []);
-  const kpi = reports?.kpi || {};
-  const interviewScores = reportItems.map((r) => Number(r.score)).filter(Number.isFinite);
-  const interviewAvg =
-    kpi.avg_score != null && Number(kpi.avg_score) > 0
-      ? Math.round(Number(kpi.avg_score) * 10) / 10
-      : avg(interviewScores);
-
-  const interviewRows = reportItems.map((r) => ({
-    id: r.session_id,
-    title: titleCase(r.title || r.position || 'Interview'),
-    mode: String(r.interview_type || '').toLowerCase() === 'full' ? 'full' : 'mock',
-    score: Number.isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null,
-    date: longDate(r.completed_date || r.started_at),
-  }));
-
-  /* ---------- assignments ---------- */
-  const assignmentItems = asList(assignmentsPayload, []);
-  const assignments = assignmentItems.slice(0, 5).map((a) => ({
-    id: a.id,
-    title: a.title || 'Interview assignment',
-    mode: String(a.mode || 'mock').toLowerCase() === 'full' ? 'Full' : 'Mock',
-    due: a.due_at ? longDate(a.due_at) : null,
-    dueShort: a.due_at ? shortDate(a.due_at) : null,
-    department: a.department_name || deptName || 'College',
-    status: a.status === 'closed' ? 'Closed' : 'Open',
-    href: '/student/interviews',
-  }));
-
   /* ---------- leaderboard ---------- */
   const lbItems = asList(leaderboard, []).map((row) => ({
     rank: row.rank,
@@ -319,17 +281,6 @@ export function buildHomeModel({
       href: classroomHref(subjectKey(locked[0].job), locked[0].job.job_id),
     });
   }
-  if (assignments[0]) {
-    focusItems.push({
-      id: `iv-${assignments[0].id}`,
-      tone: 'green',
-      title: `Practice interview · ${assignments[0].title}`,
-      detail: assignments[0].dueShort
-        ? `${assignments[0].mode} · due ${assignments[0].dueShort}`
-        : `${assignments[0].mode} · assigned by your department`,
-      href: '/student/interviews',
-    });
-  }
   if (!focusItems.length && chaptersTotal) {
     focusItems.push({
       id: 'tutor',
@@ -342,31 +293,23 @@ export function buildHomeModel({
 
   const aDone = done.length;
   const aAvailable = done.length + open.length;
-  const quizSemesterPct = aAvailable ? Math.round((aDone / aAvailable) * 100) : 0;
+  // One definition everywhere (subjects page, dashboard, progress): assessments done ÷ published chapters.
+  const quizSemesterPct = chaptersTotal ? Math.round((aDone / chaptersTotal) * 100) : 0;
 
   return {
     chapterRows,
-    interviewRows,
-    // Self-started AI interviews are for final-year students, or a cohort with an
-    // assignment (SOW §5.3) — GET /livekit-interview/eligibility decides.
-    // Unknown (endpoint failed) -> fall back to the profile flag; never hide by guess.
-    canSelfInterview: eligibility ? eligibility.eligible !== false : me?.is_final_year !== false,
-    interviewLockReason: eligibility && eligibility.eligible === false ? (eligibility.reason || null) : null,
     name: titleCase(me?.first_name || me?.name?.trim()?.split(/\s+/)[0] || ''),
     fullName: titleCase(me?.name || [me?.first_name, me?.last_name].filter(Boolean).join(' ') || ''),
     deptName,
     collegeName,
     videosAvailable,
-    reportsAvailable,
     leaderboardAvailable,
-    assignmentsAvailable,
     subjects,
     recentLectures,
     upNext,
     assessmentsReady,
     continueLearning,
     focusItems,
-    assignments,
     trend,
     chapterWatch,
     watch: {
@@ -377,17 +320,11 @@ export function buildHomeModel({
     assessments: {
       done: aDone,
       available: aAvailable,
+      total: chaptersTotal,
       locked: locked.length,
       avg: avg(done.map((x) => x.quiz.percentage)),
       best: done.length ? Math.max(...done.map((x) => Math.round(x.quiz.percentage || 0))) : null,
       semesterPct: quizSemesterPct,
-    },
-    interviews: {
-      total: reportsAvailable ? (kpi.total_reports ?? reportItems.length) : null,
-      avg: interviewAvg && interviewAvg > 0 ? interviewAvg : null,
-      highest: kpi.highest_score != null && Number(kpi.highest_score) > 0
-        ? Math.round(Number(kpi.highest_score))
-        : null,
     },
     leaderboard: {
       scope: leaderboard?.scope || null,

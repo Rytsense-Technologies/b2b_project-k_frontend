@@ -10,7 +10,7 @@ export const PAGE_META = {
   },
   '/admin/structure/departments': {
     title: 'Departments',
-    subtitle: 'The first level under your college. Each department has an HOD who reviews chapters before students see them.',
+    subtitle: 'Departments in your college and the HOD who reviews each one’s chapters.',
     // Breadcrumb trail above the title (Home is added by the layout). No href = not a page yet.
     crumbs: [{ label: 'Academic structure' }],
   },
@@ -39,13 +39,9 @@ export const PAGE_META = {
     title: 'Staff & HOD',
     subtitle: 'Add faculty and assign HODs who review and approve content.',
   },
-  '/admin/interviews': {
-    title: 'Interview assignments',
-    subtitle: 'Assign AI mock interviews to final-year cohorts.',
-  },
   '/admin/analytics': {
     title: 'Analytics',
-    subtitle: 'Completion, assessment performance, Q&A demand, interview readiness.',
+    subtitle: 'Completion, assessment performance, and Q&A demand.',
   },
   '/admin/reports': {
     title: 'Reports',

@@ -341,7 +341,8 @@ export default function VoiceQnaPanel({
           <div className="sl-voice-bar">
             <span className="sl-inline">
               <Icon name="bookOpen" size={18} />
-              Chapter {chapterTitle || '—'}{subjectName ? <span className="sl-muted"> / {subjectName}</span> : null}
+              {/* One text node so the subject wraps after the title on phones (not a second column). */}
+              <span>{chapterTitle || 'Choose a chapter'}{subjectName ? <span className="sl-muted"> · {subjectName}</span> : null}</span>
             </span>
             <span className={`sl-live${isLive ? ' is-live' : ''}${isConnecting ? ' is-connecting' : ''}`}>
               <i aria-hidden="true" /> {statusLabel}
