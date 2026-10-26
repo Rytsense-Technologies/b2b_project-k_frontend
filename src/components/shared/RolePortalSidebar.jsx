@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -15,6 +15,17 @@ import { clearFacultyScopeCache } from '@/hooks/useFacultyScope';
 import { useAuth } from '@/hooks/useAuth';
 import { titleCase } from '@/lib/student/learning';
 import toast from 'react-hot-toast';
+
+function accountLinkCurrent(href, pathname, tab) {
+  try {
+    const next = new URL(href, 'http://local.invalid');
+    if (pathname !== next.pathname) return false;
+    const want = next.searchParams.get('tab') || 'profile';
+    return want === (tab || 'profile');
+  } catch {
+    return pathname === href;
+  }
+}
 
 function getInitials(name, email, fallback = 'U') {
   const trimmed = name?.trim();
@@ -44,7 +55,9 @@ export default function RolePortalSidebar({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const settingsTab = searchParams?.get('tab') || '';
   const dispatch = useAppDispatch();
   const sidebarOpen = useAppSelector(selectSidebarOpen);
   const { user } = useAuth();
@@ -68,6 +81,10 @@ export default function RolePortalSidebar({
   useEffect(() => {
     hideTip();
   }, [sidebarOpen, hideTip]);
+
+  useEffect(() => {
+    if (menuOpen) hideTip();
+  }, [menuOpen, hideTip]);
 
   const u = sessionUIReady ? user : null;
   // Until the profile arrives, show neutral placeholders - never "Your college / Student Student".
@@ -169,11 +186,11 @@ export default function RolePortalSidebar({
 
       <div className="side-foot">
         <div
-          className="who"
+          className={`who${menuLinks.length ? ' who--menu' : ''}${menuOpen ? ' is-open' : ''}`}
           ref={menuRef}
-          {...(!sidebarOpen
-            ? tipHandlers(`${displayName} · ${displayEmail || ariaLabel}`, 'right')
-            : {})}
+          {...(!sidebarOpen && !menuOpen
+            ? tipHandlers(menuLinks.length ? `Account · ${displayName}` : `${displayName} · ${displayEmail || ariaLabel}`, 'right')
+            : { onMouseLeave: hideTip })}
         >
           {menuLinks.length ? (
             <button
@@ -181,16 +198,43 @@ export default function RolePortalSidebar({
               className="who-trigger"
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              aria-label="Account menu"
-              onClick={() => setMenuOpen((v) => !v)}
+              aria-controls="rps-account-menu"
+              aria-label={displayName ? `Account menu for ${displayName}` : 'Account menu'}
+              onClick={() => { hideTip(); setMenuOpen((v) => !v); }}
             />
           ) : null}
           {menuOpen ? (
-            <div className="who-menu" role="menu">
-              {menuLinks.map((it) => (
-                <Link key={it.href} href={it.href} role="menuitem" onClick={() => setMenuOpen(false)}>{it.label}</Link>
-              ))}
-              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); handleLogout(); }}>Sign out</button>
+            <div className="who-menu" id="rps-account-menu" role="menu" aria-label="Account">
+              {menuLinks.map((it) => {
+                const current = accountLinkCurrent(it.href, pathname, settingsTab);
+                return (
+                  <Link
+                    key={it.href}
+                    href={it.href}
+                    role="menuitem"
+                    className={current ? 'is-current' : undefined}
+                    aria-current={current ? 'page' : undefined}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {it.icon ? <span className="who-menu__ico" aria-hidden="true">{it.icon}</span> : null}
+                    {it.label}
+                  </Link>
+                );
+              })}
+              <button
+                type="button"
+                role="menuitem"
+                className="who-menu__out"
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+              >
+                <span className="who-menu__ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <path d="M16 17l5-5-5-5M21 12H9" />
+                  </svg>
+                </span>
+                Sign out
+              </button>
             </div>
           ) : null}
           <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
@@ -207,8 +251,13 @@ export default function RolePortalSidebar({
               </>
             )}
           </div>
-          {/* One sign-out control: with an account menu, Sign out lives in the menu. */}
-          {menuLinks.length ? null : (
+          {menuLinks.length ? (
+            <span className="who-cue" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </span>
+          ) : (
             <button
               type="button"
               className="logout"

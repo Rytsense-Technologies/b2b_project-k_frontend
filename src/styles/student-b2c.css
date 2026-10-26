@@ -78,13 +78,10 @@
 .q-student .sidebar.is-collapsed .tenant-box{margin:0 8px 8px;padding:8px 0 12px}
 .q-student .sidebar .nav{padding-left:16px;padding-right:16px}
 .q-student .sidebar.is-collapsed .nav{padding-left:8px;padding-right:8px}
-/* User row: avatar, name, caption — flat, no boxed card */
 .q-student .sidebar .side-foot{border-top:1.5px solid rgba(20,96,110,.25)}
-.q-student .sidebar .who{border:0;box-shadow:none;background:transparent;padding:8px 4px}
-.q-student .sidebar .who:hover{background:var(--sb-wash)}
-.q-student .sidebar .who .av{background:var(--sb-teal);color:#fff}
+.q-student .sidebar .who .av{background:var(--sb-teal);color:var(--neutral-0)}
 .q-student .sidebar .who .n{font-weight:500;color:var(--sb-ink)}
-.q-student .sidebar .who .r{color:var(--sb-muted);font-size:12px}
+.q-student .sidebar .who .r{color:var(--sb-muted);font-size:12px;line-height:18px}
 /* ---------- Page header: bold title on the grey canvas, one muted line ---------- */
 .q-student .topbar{
   position:sticky;top:0;z-index:30;background:var(--sb-canvas);
@@ -245,20 +242,70 @@
 .q-student ::-webkit-scrollbar-button{display:none;width:0;height:0}
 .q-student ::-webkit-scrollbar-track,.q-student ::-webkit-scrollbar-corner{background:transparent}
 
-/* Account menu on the user row (skill: white popover, 6px, teal 15% border, z 200) */
+/* Account card = the menu trigger. Chevron shows it opens; open state uses Teal 50. */
 .q-student .sidebar .who{position:relative}
-.q-student .sidebar .who-trigger{position:absolute;inset:0;z-index:1;background:transparent;border:0;border-radius:6px;cursor:pointer}
+.q-student .sidebar .who--menu:hover,
+.q-student .sidebar .who--menu.is-open{
+  background:var(--teal-50);border-color:var(--teal-200);
+}
+.q-student .sidebar .who-trigger{
+  position:absolute;inset:0;z-index:1;background:transparent;border:0;border-radius:var(--radius-control);
+  cursor:pointer;
+}
 .q-student .sidebar .who-trigger:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+.q-student .sidebar .who-cue{
+  position:relative;z-index:0;flex:none;display:grid;place-items:center;
+  width:32px;height:32px;color:var(--sb-teal);pointer-events:none;
+}
+.q-student .sidebar .who-cue svg{
+  width:16px;height:16px;transform:rotate(-90deg);transition:transform .15s ease-out;
+}
+.q-student .sidebar .who.is-open .who-cue svg{transform:rotate(90deg)}
+/* Collapsed rail: keep the cue on the avatar (menu opens to the right). */
+.q-student .sidebar.is-collapsed .who--menu{overflow:visible;padding:4px}
+.q-student .sidebar.is-collapsed .who-cue{
+  position:absolute;right:0;bottom:2px;z-index:2;
+  width:16px;height:16px;
+  background:var(--panel,#fff);border:1px solid var(--line);
+  border-radius:var(--radius-full);box-shadow:var(--shadow-1);
+}
+.q-student .sidebar.is-collapsed .who-cue svg{
+  width:10px;height:10px;transform:none;
+}
+.q-student .sidebar.is-collapsed .who.is-open .who-cue svg{transform:none}
 .q-student .sidebar .who .logout{position:relative;z-index:2}
 .q-student .sidebar .who-menu{
-  position:absolute;left:0;right:0;bottom:calc(100% + 8px);z-index:200;display:flex;flex-direction:column;padding:6px;
-  background:#fff;border:1px solid rgba(20,96,110,.15);border-radius:6px;box-shadow:var(--sb-shadow);
+  position:absolute;left:0;right:0;bottom:calc(100% + 8px);z-index:200;
+  display:flex;flex-direction:column;padding:8px;
+  background:var(--panel,#fff);border:1px solid var(--line);border-radius:var(--radius-card,8px);
+  box-shadow:var(--shadow-2),var(--shadow-1);
 }
-.q-student .sidebar.is-collapsed .who-menu{left:calc(100% + 8px);right:auto;bottom:0;width:200px}
+.q-student .sidebar.is-collapsed .who-menu{left:calc(100% + 8px);right:auto;bottom:0;width:220px}
 .q-student .sidebar .who-menu :is(a,button){
-  display:flex;align-items:center;min-height:44px;padding:0 12px;border:0;border-radius:6px;background:transparent;
-  font:inherit;font-size:14px;font-weight:500;color:var(--sb-ink);text-align:left;cursor:pointer;text-decoration:none;
+  display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border:0;
+  border-radius:var(--radius-control,6px);background:transparent;
+  font:inherit;font-size:14px;line-height:22px;font-weight:500;color:var(--sb-ink);
+  text-align:left;cursor:pointer;text-decoration:none;
 }
-.q-student .sidebar .who-menu :is(a,button):hover,.q-student .sidebar .who-menu :is(a,button):focus-visible{background:var(--sb-wash);color:var(--sb-teal);outline:none}
-.q-student .sidebar .who-menu button{color:var(--sb-danger)}
+.q-student .sidebar .who-menu__ico{
+  flex:none;display:grid;place-items:center;width:20px;height:20px;color:var(--sb-teal);
+}
+.q-student .sidebar .who-menu__ico svg{width:18px;height:18px;stroke-width:1.75}
+.q-student .sidebar .who-menu :is(a,button):hover,
+.q-student .sidebar .who-menu :is(a,button):focus-visible{
+  background:var(--surface-tint,var(--sb-wash));color:var(--sb-teal);outline:none;
+}
+.q-student .sidebar .who-menu a.is-current{background:var(--teal-50);color:var(--sb-teal)}
+.q-student .sidebar .who-menu .who-menu__out{
+  margin-top:4px;padding-top:4px;border-top:1px solid var(--line);border-radius:0 0 6px 6px;
+  color:var(--color-error);
+}
+.q-student .sidebar .who-menu .who-menu__out .who-menu__ico{color:var(--color-error)}
+.q-student .sidebar .who-menu .who-menu__out:hover,
+.q-student .sidebar .who-menu .who-menu__out:focus-visible{
+  background:var(--error-soft);color:var(--color-error);
+}
+@media (prefers-reduced-motion:reduce){
+  .q-student .sidebar .who-cue svg{transition:none}
+}
 .app.q-student .sidebar .nav{scrollbar-gutter:auto}

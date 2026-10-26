@@ -64,7 +64,38 @@ export default function StudentSidebar() {
       tenantSubtitle="Student"
       fallbackInitials="ST"
       loginPath="/auth/login"
-      menuLinks={[{ href: '/student/settings', label: 'Profile' }, { href: '/student/settings?tab=security', label: 'Security' }, { href: '/student/settings?tab=notifications', label: 'Notifications' }]}
+      menuLinks={[
+        {
+          href: '/student/settings',
+          label: 'Profile',
+          icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21a8 8 0 0 1 16 0" />
+            </svg>
+          ),
+        },
+        {
+          href: '/student/settings?tab=security',
+          label: 'Security',
+          icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+          ),
+        },
+        {
+          href: '/student/settings?tab=notifications',
+          label: 'Notifications',
+          icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+            </svg>
+          ),
+        },
+      ]}
     />
   );
 }
