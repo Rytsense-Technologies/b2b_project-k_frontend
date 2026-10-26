@@ -1,325 +1,388 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import PerformanceChart from '@/components/student/dashboard/PerformanceChart';
+import { Icon, SectionState } from '@/components/student/ui';
+import { BandPill, MetricList } from '@/components/shared/data-viz';
+import ScoreRing from '@/components/shared/ScoreRing';
+import { subjectColor } from '@/components/student/subjectColor';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
-import { loadStudentHome, scoreBand } from '@/lib/student/dashboardModel';
+import { loadStudentHomeData } from '@/components/student/studentHome';
+import { BRAND_PRIMARY } from '@/lib/constants/theme';
+import '@/styles/student-dashboard.css';
 
-/* ---------------------------------------------------------------- icons */
-const Ico = {
-  book: <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7" />,
-  play: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M10 9l5 3-5 3z" /></>,
-  check: <><path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" /></>,
-  mic: <path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4zM5 11a7 7 0 0 0 14 0M12 18v3" />,
-  clip: <path d="M9 4h6v3H9zM7 5H5v16h14V5h-2M9 12l2 2 4-4" />,
-  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
-  chev: <path d="M9 6l6 6-6 6" />,
-  trend: <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />,
-  refresh: <path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" />,
-  info: <><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></>,
-  layers: <path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5" />,
-  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-};
+/**
+ * Student Dashboard — Prep signed-in chrome inside Phase 1 B2B.
+ * Stack: teal welcome hero · KPI / lists in the main column · white side cards
+ * (one orange next-step action). Live student APIs only (lib/student/dashboardModel.js).
+ */
 
-function Svg({ name, size = 18 }) {
-  return (
-    <svg className="sd-i" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {Ico[name] || Ico.info}
-    </svg>
-  );
+const SUBJECTS = '/student/subjects';
+
+const PERF_TABS = [
+  { value: 'overall', label: 'Overall score' },
+  { value: 'highest', label: 'Highest score' },
+  { value: 'recent', label: 'Recent score' },
+];
+
+function pct(n) {
+  return n != null && n !== '' && Number.isFinite(Number(n)) ? `${Math.round(Number(n))}%` : '—';
+}
+const num = (n) => (n != null && n !== '' && Number.isFinite(Number(n)) ? Math.round(Number(n)) : null);
+
+/** The single most useful next action, in priority order. */
+function nextStep(m) {
+  const cl = m?.continueLearning;
+  if (cl && cl.watchPercent < 100) {
+    return {
+      icon: 'play',
+      title: cl.title,
+      lead: cl.watchPercent > 0 ? `${cl.watchPercent}% watched` : 'Ready to start',
+      meta: ['Video lecture', cl.subject, cl.duration],
+      cta: { label: cl.watchPercent > 0 ? 'Resume lecture' : 'Start lecture', href: cl.href || SUBJECTS, icon: 'play' },
+    };
+  }
+  const ready = m?.assessmentsReady?.[0];
+  if (ready) {
+    return {
+      icon: 'check',
+      title: ready.title,
+      lead: 'Assessment unlocked',
+      meta: ['Assessment', ready.subject, 'One attempt'],
+      cta: { label: 'Take assessment', href: ready.href, icon: 'check' },
+    };
+  }
+  return {
+    icon: 'play',
+    title: 'Pick up a lecture',
+    lead: null,
+    meta: ['My subjects', m?.deptName],
+    cta: { label: 'Go to my subjects', href: SUBJECTS, icon: 'play' },
+  };
 }
 
-const SUBJECT_TONES = ['teal', 'green', 'amber', 'deep', 'sky'];
-
-/* ---------------------------------------------------------- pieces */
-function Ring({ value, tone, label }) {
-  const has = Number.isFinite(value);
-  const pct = has ? Math.max(0, Math.min(100, value)) : 0;
-  const r = 42;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="sd-ring" role="img" aria-label={`${label}: ${has ? `${value}%` : 'no score yet'}`}>
-      <svg viewBox="0 0 100 100">
-        <circle className="sd-ring-track" cx="50" cy="50" r={r} />
-        {pct > 0 ? (
-          <circle className={`sd-ring-fill sd-ring-fill--${tone}`} cx="50" cy="50" r={r} strokeDasharray={`${(pct / 100) * c} ${c}`} />
-        ) : null}
-      </svg>
-      <span className="sd-ring-val">{has ? `${value}%` : '—'}</span>
-    </div>
-  );
+/** Study focus card copy + actions (each deep-links to its own chapter). */
+function studyFocus(m) {
+  const latest = m?.trend?.length ? m.trend[m.trend.length - 1] : null;
+  const fallbackTutor = m?.chapterWatch?.[0]?.tutorHref || SUBJECTS;
+  if (latest) {
+    const row = m?.chapterWatch?.find((c) => c.jobId === latest.jobId);
+    return {
+      title: 'Review your latest assessment',
+      // One line: the score itself is on the performance card (Recent score tab).
+      lines: [`You scored ${latest.score}%.`],
+      primary: { label: 'Review chapter', href: row?.href || SUBJECTS, icon: 'playFill' },
+      tutor: row?.tutorHref || fallbackTutor,
+    };
+  }
+  const ready = m?.assessmentsReady?.[0];
+  if (ready) {
+    return {
+      title: 'Take your next assessment',
+      lines: [`${ready.title} is unlocked.`],
+      primary: { label: 'Take assessment', href: ready.href, icon: 'check' },
+      tutor: m?.chapterWatch?.find((c) => c.jobId === ready.jobId)?.tutorHref || fallbackTutor,
+    };
+  }
+  const cl = m?.continueLearning;
+  if (cl) {
+    return {
+      title: `Finish ${cl.title}`,
+      lines: [`${cl.watchPercent}% watched.`],
+      primary: { label: cl.watchPercent > 0 ? 'Resume lecture' : 'Start lecture', href: cl.href || SUBJECTS, icon: 'playFill' },
+      tutor: cl.tutorHref || fallbackTutor,
+    };
+  }
+  return {
+    title: 'Nothing due right now',
+    lines: [],
+    primary: { label: 'Browse subjects', href: SUBJECTS, icon: 'book' },
+    tutor: fallbackTutor,
+  };
 }
 
-function Kpi({ icon, label, value, sub }) {
-  return (
-    <div className="sd-kpi">
-      <div className="sd-kpi-h"><Svg name={icon} size={16} /><span>{label}</span></div>
-      <div className="sd-kpi-v">{value ?? '—'}</div>
-      {sub ? <div className="sd-kpi-s">{sub}</div> : null}
-    </div>
-  );
+/** Up next: open assessments and the lecture to continue (max 4). */
+function upNext(m) {
+  const out = [];
+  (m?.assessmentsReady || []).slice(0, 2).forEach((r) => out.push({
+    key: `q-${r.jobId}`, icon: 'check', title: r.title, meta: ['Assessment ready', r.subject], label: 'Take', href: r.href,
+  }));
+  const cl = m?.continueLearning;
+  if (cl && cl.watchPercent < 100) {
+    out.push({
+      key: `w-${cl.jobId}`, icon: 'play', title: cl.title, meta: [cl.watchPercent > 0 ? `${cl.watchPercent}% watched` : 'Not started', cl.subject], label: cl.watchPercent > 0 ? 'Resume' : 'Watch', href: cl.href || SUBJECTS,
+    });
+  }
+  return out.slice(0, 4);
 }
 
-function SectionState({ tone = 'info', title, children }) {
-  return (
-    <div className={`sd-state sd-state--${tone}`}>
-      <Svg name="info" size={18} />
-      <div>
-        <b>{title}</b>
-        {children ? <span>{children}</span> : null}
-      </div>
-    </div>
-  );
-}
-
-function HeroArt() {
-  /* Flat illustration in the teal family (Brand v1.0) — student with a lecture screen. */
-  return (
-    <svg className="sd-hero-art" viewBox="0 0 220 170" aria-hidden="true">
-      <circle cx="120" cy="84" r="78" fill="#0A3F49" />
-      <rect x="62" y="30" width="116" height="72" rx="8" fill="#DDE8EA" />
-      <rect x="70" y="38" width="100" height="56" rx="4" fill="#0B4B58" />
-      <path d="M113 56l16 10-16 10z" fill="#FFFFFF" />
-      <circle cx="96" cy="120" r="14" fill="#86AEB5" />
-      <path d="M72 162c3-18 12-26 24-26s21 8 24 26z" fill="#4D8691" />
-      <rect x="128" y="124" width="44" height="30" rx="4" fill="#B7CED3" />
-      <path d="M136 134h28M136 142h18" stroke="#0A3F49" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="190" cy="28" r="6" fill="#F5821F" />
-    </svg>
-  );
-}
-
-/* ---------------------------------------------------------- page */
-export default function StudentHomePage() {
-  const { data: m, loading, error, reload } = useAsyncResource(loadStudentHome, []);
-  const isLoading = loading && !m;
-
+/** Assessment figure for the chosen performance tab. */
+function performance(m, tab) {
   const a = m?.assessments;
-  const delta = m?.score?.previous != null && m?.score?.current != null ? m.score.current - m.score.previous : null;
-  const trendCopy = delta == null
-    ? 'Take a couple of chapter assessments to see how your scores move.'
-    : delta > 0 ? 'Your assessment score has improved.'
-      : delta < 0 ? 'Your last score dipped a little — revise that chapter.'
-        : 'Your assessment score is holding steady.';
-  const progressPct = a?.available ? Math.round((a.done / a.available) * 100) : 0;
+  const trend = m?.trend || [];
+  if (tab === 'highest') {
+    return {
+      quiz: num(a?.best),
+      quizNote: a?.done ? `Best of ${a.done} assessment${a.done === 1 ? '' : 's'}` : 'No assessments yet',
+    };
+  }
+  if (tab === 'recent') {
+    const lastQuiz = trend.length ? trend[trend.length - 1] : null;
+    return {
+      quiz: num(lastQuiz?.score),
+      quizNote: lastQuiz ? (lastQuiz.subject || lastQuiz.label || 'Latest assessment') : 'No assessments yet',
+    };
+  }
+  return {
+    quiz: num(a?.avg),
+    quizNote: a?.done ? `Average of ${a.done} assessment${a.done === 1 ? '' : 's'}` : 'After your first assessment',
+  };
+}
+
+function RowsSkeleton({ rows = 3, h = 72 }) {
+  return (
+    <div className="shb-skel" aria-hidden="true">
+      {Array.from({ length: rows }, (_, i) => <span key={i} className="sb-skel" style={{ height: h }} />)}
+    </div>
+  );
+}
+
+function SectionHead({ id, title, sub, action }) {
+  return (
+    <div className="shb-sec-h">
+      <div>
+        <h3 id={id}>{title}</h3>
+        {sub ? <p>{sub}</p> : null}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+const Chev = () => (
+  <svg className="sb-row__chev" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+);
+
+export default function StudentHomePage() {
+  const { data: m, loading, error, reload } = useAsyncResource(loadStudentHomeData, []);
+  const [perfTab, setPerfTab] = useState('overall');
+  const isLoading = loading && !m;
+  const ready = Boolean(m);
+
+  const w = m?.watch;
+  const a = m?.assessments;
+  const step = ready ? nextStep(m) : null;
+  const focus = ready ? studyFocus(m) : null;
+  const next = ready ? upNext(m) : [];
+  const perf = ready ? performance(m, perfTab) : null;
+  const lbScope = m?.leaderboard?.scope === 'college' ? 'College leaderboard' : 'Department leaderboard';
+
+  const lbItems = m?.leaderboard?.items || [];
+  const lbTop = lbItems.slice(0, 3);
+  const lbMe = lbItems.find((r) => r.isMe);
+  const lbRows = lbMe && !lbTop.some((r) => r.isMe) ? [...lbTop, lbMe] : lbTop;
+
+  const onTabKey = (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const i = PERF_TABS.findIndex((t) => t.value === perfTab);
+    const nextTab = PERF_TABS[(i + (e.key === 'ArrowRight' ? 1 : PERF_TABS.length - 1)) % PERF_TABS.length];
+    setPerfTab(nextTab.value);
+    requestAnimationFrame(() => document.getElementById(`shb-tab-${nextTab.value}`)?.focus());
+  };
 
   return (
-    <div className={`sd animate-fade-in${isLoading ? ' is-loading' : ''}`} aria-busy={isLoading}>
+    <div className={`shb animate-fade-in${isLoading ? ' is-loading' : ''}`} aria-busy={isLoading}>
+      <section className="shb-hero" aria-labelledby="shb-welcome">
+        {ready ? (
+          <>
+            <h2 id="shb-welcome">{m.name ? `Welcome back, ${m.name}` : 'Welcome back'}</h2>
+            {m.deptName || m.collegeName ? <p className="shb-hero-meta">{[m.deptName, m.collegeName].filter(Boolean).join(' · ')}</p> : null}
+          </>
+        ) : <span className="sb-skel shb-greet-skel" aria-hidden="true" />}
+      </section>
+
       {error && !m ? (
-        <div className="sd-alert" role="alert">
-          <SectionState tone="err" title="Could not load your home">
-            {apiErrorMessage(error, 'Please try again in a moment.')}
-          </SectionState>
-          <button type="button" className="sd-btn sd-btn--ghost" onClick={() => reload().catch(() => {})}>
-            <Svg name="refresh" size={16} /> Try again
-          </button>
-        </div>
+        <SectionState
+          tone="err"
+          title="Could not load your dashboard"
+          action={(
+            <button type="button" className="text-link shb-retry" onClick={() => reload().catch(() => {})}>
+              Try again
+            </button>
+          )}
+        >
+          {apiErrorMessage(error, 'Please try again in a moment.')}
+        </SectionState>
       ) : null}
 
-      {/* ---------------- Welcome + up next ---------------- */}
-      <section className="sd-top">
-        <div className="sd-hero">
-          <div className="sd-hero-copy">
-            <h2>Welcome back{m?.name ? `, ${m.name}` : ''}!</h2>
-            <p>
-              Pick up where you left off — watch lectures built from your syllabus, ask the AI tutor,
-              take chapter assessments, or practise a mock interview.
-            </p>
-            <div className="sd-hero-cta">
-              <Link className="sd-btn sd-btn--light" href="/student/subjects">Continue learning</Link>
-              <Link className="sd-btn sd-btn--amber" href="/student/interviews">Start mock interview</Link>
+      <div className="shb-grid">
+        {/* ---------- Main column ---------- */}
+        <div className="shb-col shb-col--main">
+          {/* Performance card: text tabs, ring, note, semester figures */}
+          <section className="shb-card shb-perf" aria-labelledby="shb-perf-h">
+            <h3 id="shb-perf-h" className="sr-only">Performance</h3>
+            <div className="sb-tabs" role="tablist" aria-label="Performance view" onKeyDown={onTabKey}>
+              {PERF_TABS.map((t) => (
+                <button
+                  key={t.value}
+                  id={`shb-tab-${t.value}`}
+                  type="button"
+                  role="tab"
+                  className="sb-tab"
+                  aria-selected={perfTab === t.value}
+                  aria-controls="shb-perf-panel"
+                  tabIndex={perfTab === t.value ? 0 : -1}
+                  onClick={() => setPerfTab(t.value)}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
-          </div>
-          <HeroArt />
-        </div>
+            <div id="shb-perf-panel" role="tabpanel" aria-labelledby={`shb-tab-${perfTab}`} className="shb-perf-b">
+              {perf ? (
+                <>
+                  <div className="shb-perf-main">
+                    <div className="shb-ring">
+                      <ScoreRing score={perf.quiz ?? 0} size={112} strokeWidth={9} color={BRAND_PRIMARY} suffix={perf.quiz != null ? '%' : ''} label={perf.quiz != null ? `Assessment score ${perf.quiz}%` : 'No assessment score yet'} />
+                      <span>Assessment score</span>
+                    </div>
+                    <div className="shb-perf-copy">
+                      <p className="shb-perf-basis">{perf.quizNote}</p>
+                    </div>
+                  </div>
+                  <div className="sb-stats shb-stats" aria-label="This semester">
+                    <div className="sb-stat"><b>{w ? `${w.finished}/${w.total}` : '—'}</b><span>Lectures watched</span></div>
+                    <i className="sb-rule" aria-hidden="true" />
+                    <div className="sb-stat"><b>{a ? `${a.done}/${a.total}` : '—'}</b><span>Assessments done</span></div>
+                    <i className="sb-rule" aria-hidden="true" />
+                    <div className="sb-stat"><b>{a?.locked ?? 0}</b><span>Locked assessments</span></div>
+                  </div>
+                </>
+              ) : <RowsSkeleton rows={2} h={56} />}
+            </div>
+          </section>
 
-        <aside className="sd-focus" aria-labelledby="sd-focus-h">
-          <div className="sd-focus-h">
-            <span className="sd-focus-ic"><Svg name="clip" size={18} /></span>
-            <h3 id="sd-focus-h">Up next: assessments</h3>
-          </div>
-          {m?.upNext?.length ? (
-            <ul className="sd-next">
-              {m.upNext.map((q) => (
-                <li key={q.jobId}>
-                  <Link href={`/student/assessment?job=${encodeURIComponent(q.jobId)}&title=${encodeURIComponent(q.title)}`}>
-                    <span>
-                      <b>{q.title}</b>
-                      {q.subject ? <small>{q.subject}</small> : null}
+          {/* Subjects as skill rows */}
+          <section className="shb-card shb-subj" aria-labelledby="shb-subj-h">
+            <SectionHead id="shb-subj-h" title="My subjects" />
+            {isLoading ? <RowsSkeleton rows={2} h={52} /> : m?.subjects?.length ? (
+              <MetricList
+                label="My subjects: lectures watched"
+                className="shb-metrics"
+                items={m.subjects.map((s) => ({
+                  key: s.key,
+                  label: s.name,
+                  href: `${SUBJECTS}?s=${encodeURIComponent(s.key)}`,
+                  color: subjectColor(s.key),
+                  sub: `${s.watchedCount}/${s.chapterCount} watched · ${s.avgScore != null ? `Avg ${pct(s.avgScore)}` : `${s.quizDone}/${s.chapterCount} assessments`}`,
+                  value: s.completion ?? 0,
+                  display: `${s.completion ?? 0}%`,
+                }))}
+              />
+            ) : (
+              <p className="sb-empty">No subjects yet. They appear once lectures are published for your department.</p>
+            )}
+          </section>
+
+          {/* Up next: stacked white rows on the canvas */}
+          <section className="shb-sec shb-upnext" aria-labelledby="shb-next-h">
+            <SectionHead id="shb-next-h" title="Up next" />
+            {isLoading ? <RowsSkeleton rows={2} /> : next.length ? (
+              <div className="sb-rows">
+                {next.map((x) => (
+                  <Link key={x.key} className="sb-row shb-row" href={x.href}>
+                    <span className="shb-row-ic" aria-hidden="true"><Icon name={x.icon} size={18} /></span>
+                    <span className="shb-row-main">
+                      <span className="sb-row__title">{x.title}</span>
+                      <span className="sb-row__sub"><i className="sb-dot" aria-hidden="true" />{x.meta.filter(Boolean).join(' · ')}</span>
                     </span>
-                    <Svg name="chev" size={16} />
+                    <span className="shb-row-act">{x.label}</span>
+                    <Chev />
                   </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="sd-focus-empty">
-              {isLoading
-                ? 'Checking your chapter quizzes…'
-                : a?.done
-                  ? 'You are all caught up — every available chapter quiz is done.'
-                  : 'Chapter quizzes appear here once your faculty publishes them.'}
-            </p>
-          )}
-        </aside>
-      </section>
+                ))}
+              </div>
+            ) : (
+              <div className="shb-card">
+                <p className="sb-empty">
+                  {a?.locked
+                    ? `You are all caught up. Finish watching ${a.locked} lecture${a.locked === 1 ? '' : 's'} to unlock ${a.locked === 1 ? 'its' : 'their'} assessment.`
+                    : 'You are all caught up. New lectures and assessments appear here.'}
+                </p>
+              </div>
+            )}
+          </section>
 
-      {/* ---------------- KPIs ---------------- */}
-      <section className="sd-kpis" aria-label="Learning summary">
-        <Kpi icon="book" label="My subjects" value={m?.counts?.subjects} sub={m?.deptName || 'Your department'} />
-        <Kpi icon="play" label="Lectures published" value={m?.counts?.lectures} sub="Video lectures to watch" />
-        <Kpi
-          icon="check"
-          label="Assessments done"
-          value={a ? `${a.done}${a.available ? `/${a.available}` : ''}` : null}
-          sub={a?.best != null ? `Best score ${a.best}%` : 'One attempt per chapter'}
-        />
-        <Kpi
-          icon="mic"
-          label="Interviews completed"
-          value={m?.interviews?.total}
-          sub={m?.interviews?.avg != null ? `Average score ${Math.round(m.interviews.avg)}` : 'Mock and full interviews'}
-        />
-      </section>
-
-      {/* ---------------- Progress strip ---------------- */}
-      <section className="sd-limits" aria-label="Assessment progress">
-        <span className="sd-limits-h"><Svg name="layers" size={16} /> Semester progress</span>
-        <span>Assessments: <b className="is-amber">{a?.done ?? 0}/{a?.available ?? 0}</b> completed</span>
-        <span className="sd-strip-bar" aria-hidden="true"><i style={{ width: `${progressPct}%` }} /></span>
-        <Link className="sd-limits-link" href="/student/progress">
-          View my progress <Svg name="arrow" size={14} />
-        </Link>
-      </section>
-
-      {/* ---------------- Scores + trend ---------------- */}
-      <section className="sd-mid">
-        <div className="sd-scores">
-          <div className="sd-score-block">
-            <h3>Assessment average</h3>
-            <Ring value={a?.avg} tone="mist" label="Assessment average" />
-          </div>
-          <div className="sd-score-block">
-            <h3>Interview average</h3>
-            <Ring value={m?.interviews?.avg} tone="amber" label="Interview average" />
-          </div>
-          <p className="sd-scores-note">
-            Your chapter assessment and mock interview averages, updated each time Quirri scores a new attempt.
-          </p>
         </div>
 
-        <div className="sd-card sd-perf">
-          <div className="sd-card-h">
-            <h3>Assessment score trend</h3>
-            <button type="button" className="sd-iconbtn" onClick={() => reload().catch(() => {})} aria-label="Refresh">
-              <Svg name="refresh" size={16} />
-            </button>
-          </div>
-
-          <div className="sd-perf-sum">
-            <div>
-              <div className="sd-big">{m?.score?.previous != null ? `${m.score.previous}%` : '—'}</div>
-              <div className="sd-lbl">Previous Quiz</div>
-            </div>
-            <Svg name="arrow" size={28} />
-            <div>
-              <div className="sd-big is-good">{m?.score?.current != null ? `${m.score.current}%` : '—'}</div>
-              <div className="sd-lbl is-good">Latest Quiz</div>
-            </div>
-            <div className="sd-perf-note">
-              <b>{trendCopy}</b>
-              <span>Revisit a chapter lecture or ask the AI tutor before your next assessment.</span>
-            </div>
-          </div>
-
-          {m?.trend?.length ? (
-            <PerformanceChart items={m.trend} ariaLabel="Your chapter assessment scores over time" />
-          ) : (
-            <SectionState title={isLoading ? 'Loading your scores' : 'No assessments taken yet'}>
-              {isLoading ? null : 'Open a subject and take a chapter assessment — your scores plot here.'}
-            </SectionState>
-          )}
-        </div>
-      </section>
-
-      {/* ---------------- Recent lectures + subject progress ---------------- */}
-      <section className="sd-bottom">
-        <div className="sd-card">
-          <div className="sd-card-h">
-            <div>
-              <h3>Recent lectures</h3>
-              <p>Latest 3 published chapters</p>
-            </div>
-            <Link className="sd-chip" href="/student/subjects">
-              View all subjects <Svg name="chev" size={14} />
-            </Link>
-          </div>
-
-          {m?.recentLectures?.length ? (
-            <ul className="sd-recent">
-              {m.recentLectures.map((l) => (
-                <li key={l.jobId}>
-                  <Link href="/student/subjects" className="sd-recent-row">
-                    <div className="sd-recent-main">
-                      <b>{l.title}</b>
-                      <span className="sd-recent-mode">{l.subject}</span>
-                      <div className="sd-recent-meta">
-                        {l.duration ? <span className="sd-meta-i"><Svg name="clock" size={12} /> {l.duration}</span> : null}
-                        {l.published ? <span>{l.published}</span> : null}
-                        {l.quiz === 'open' ? <span className="sd-fb">Quiz open</span> : null}
-                        {l.quiz === 'done' ? <span className="sd-fb sd-fb--done">Quiz done</span> : null}
-                      </div>
-                    </div>
-                    <div className={`sd-recent-score sd-tone--${scoreBand(l.score).key}`}>
-                      <b>{l.score != null ? <>{l.score}<small>%</small></> : '—'}</b>
-                      <span>Quiz score</span>
-                    </div>
+        {/* ---------- Side column ---------- */}
+        <div className="shb-col shb-col--side">
+          <section className="shb-card shb-next" aria-labelledby="shb-step-h">
+            <span className="shb-over">Your next step</span>
+            {step ? (
+              <>
+                <div className="shb-next-t">
+                  <span className="shb-circle" aria-hidden="true"><Icon name={step.icon} size={20} /></span>
+                  <div>
+                    <h3 id="shb-step-h">{step.title}</h3>
+                    {step.lead ? <p>{step.lead}</p> : null}
+                  </div>
+                </div>
+                <p className="shb-meta">{step.meta.filter(Boolean).join(' · ')}</p>
+                <div className="shb-actions">
+                  <Link className="shb-btn shb-btn--primary" href={step.cta.href}>
+                    <Icon name={step.cta.icon} size={16} /> {step.cta.label}
                   </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <SectionState title={isLoading ? 'Loading lectures' : 'Nothing published yet'}>
-              {isLoading ? null : 'Lectures appear here after your HOD or faculty publishes them for your department.'}
-            </SectionState>
-          )}
-        </div>
+                </div>
+              </>
+            ) : <RowsSkeleton rows={3} h={20} />}
+          </section>
 
-        <div className="sd-card">
-          <div className="sd-card-h">
-            <div>
-              <h3>Subject progress</h3>
-              <p>Chapter assessments completed per subject</p>
+          <section className="shb-card shb-focus" aria-labelledby="shb-focus-h">
+            <div className="shb-next-t">
+              <span className="shb-circle" aria-hidden="true"><Icon name="target" size={20} /></span>
+              <div>
+                <span className="shb-over">Study focus</span>
+                <h3 id="shb-focus-h">{focus ? focus.title : ' '}</h3>
+              </div>
             </div>
-            <span className="sd-chip sd-chip--static"><Svg name="trend" size={14} /> This semester</span>
-          </div>
+            {focus ? (
+              <>
+                {focus.lines.map((line) => <p key={line} className="shb-line">{line}</p>)}
+                <div className="shb-actions">
+                  <Link className="shb-btn" href={focus.primary.href}>
+                    <Icon name={focus.primary.icon} size={16} /> {focus.primary.label}
+                  </Link>
+                  <Link className="shb-btn" href={focus.tutor || SUBJECTS}>
+                    <Icon name="chat" size={16} /> Ask AI tutor
+                  </Link>
+                </div>
+              </>
+            ) : <RowsSkeleton rows={2} h={20} />}
+          </section>
 
-          {m?.subjects?.length ? (
-            <ul className="sd-skills">
-              {m.subjects.map((s, i) => (
-                <li key={s.key} className={`sd-skill sd-skill--${SUBJECT_TONES[i % SUBJECT_TONES.length]}`}>
-                  <span className="sd-skill-ic"><Svg name="book" size={18} /></span>
-                  <span className="sd-skill-name">
-                    {s.name}
-                    <small>
-                      {s.chapterCount} chapter{s.chapterCount === 1 ? '' : 's'}
-                      {s.quizAvailable ? ` · ${s.quizDone}/${s.quizAvailable} quizzes` : ''}
-                      {s.avgScore != null ? ` · avg ${Math.round(s.avgScore)}%` : ''}
-                    </small>
-                  </span>
-                  <span className="sd-skill-val">{s.completion != null ? `${s.completion}%` : '—'}</span>
-                  <span className="sd-skill-bar" aria-hidden="true"><i style={{ width: `${s.completion ?? 0}%` }} /></span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <SectionState title={isLoading ? 'Loading subjects' : 'No subjects yet'}>
-              {isLoading ? null : 'Your subjects appear once lectures are published for your department.'}
-            </SectionState>
-          )}
+          <section className="shb-card shb-lb" aria-labelledby="shb-lb-h">
+            <SectionHead id="shb-lb-h" title={lbScope} />
+            {isLoading ? <RowsSkeleton rows={3} h={44} /> : lbRows.length ? (
+              <ol className="shb-rank" aria-label="Leaderboard snapshot">
+                {lbRows.map((r) => (
+                  <li key={`${r.rank}-${r.name}`} className={r.isMe ? 'is-me' : undefined}>
+                    <span className="shb-rank-n">{r.rank}</span>
+                    <span className="shb-rank-who">
+                      <b>{r.name}{r.isMe ? ' (you)' : ''}</b>
+                      <small>{r.attemptCount} assessment{r.attemptCount === 1 ? '' : 's'}{r.avgScore != null ? ' · ' : ''}{r.avgScore != null ? <BandPill score={r.avgScore} /> : null}</small>
+                    </span>
+                    <b className="shb-rank-v">{pct(r.avgScore)}</b>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="sb-empty">{m?.leaderboard?.note || 'No rankings yet. They appear after you and your classmates submit chapter assessments.'}</p>
+            )}
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

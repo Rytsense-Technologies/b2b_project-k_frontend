@@ -192,6 +192,8 @@ export function QuirriControlledField({
           inputMode={rule.inputMode}
           autoComplete={rule.autoComplete}
           {...shared}
+          // Autofill / grammar extensions inject inline styles before hydration.
+          suppressHydrationWarning
         />
       )}
     </QuirriField>
@@ -265,6 +267,8 @@ export function SearchBox({ placeholder, value, onChange }) {
         value={value}
         onChange={handleChange}
         autoComplete="off"
+        // Browser extensions (autofill / grammar tools) add inline styles before hydration.
+        suppressHydrationWarning
       />
     </div>
   );

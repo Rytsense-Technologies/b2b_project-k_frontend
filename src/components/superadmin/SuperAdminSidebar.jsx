@@ -7,7 +7,6 @@ import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { clearCredentials } from '@/store/slices/authSlice';
-import { resetSession } from '@/store/slices/interviewSlice';
 import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
 import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/lib/api/auth';
@@ -60,6 +59,18 @@ const NAV = [
     ),
   },
   {
+    href: '/superadmin/academics',
+    label: 'Academic structure',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 4v4M12 8H6v4M12 8h6v4" />
+        <rect x="3" y="12" width="6" height="4" rx="1" />
+        <rect x="15" y="12" width="6" height="4" rx="1" />
+        <path d="M6 16v3M18 16v3" />
+      </svg>
+    ),
+  },
+  {
     href: '/superadmin/users',
     label: 'Platform users',
     icon: (
@@ -71,6 +82,17 @@ const NAV = [
     ),
   },
   { group: 'Content' },
+  {
+    href: '/superadmin/content',
+    label: 'Upload & content',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 3v12" />
+        <path d="M8 7l4-4 4 4" />
+        <path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+      </svg>
+    ),
+  },
   {
     href: '/superadmin/reports',
     label: 'Reports',
@@ -142,15 +164,15 @@ export default function SuperAdminSidebar() {
   }, [sidebarOpen, hideTip]);
 
   const u = sessionUIReady ? user : null;
+  const pending = !u;
   const displayName = u?.name?.trim() || u?.first_name || 'Super Admin';
-  const displayEmail = u?.email || 'admin@quirri.ai';
+  const displayEmail = u?.email || '';
   const initials = getInitials(u?.name, u?.email);
 
   const handleLogout = async () => {
     try { await authApi.logout(); } catch { /* ignore */ }
     clearTokens();
     dispatch(clearCredentials());
-    dispatch(resetSession());
     queryClient.clear();
     toast.success('Logged out successfully');
     router.push('/auth/login');
@@ -231,17 +253,17 @@ export default function SuperAdminSidebar() {
             ? tipHandlers(`${displayName} · ${displayEmail}`, 'right')
             : {})}
         >
-          <div className="av">{initials}</div>
+          <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
           <div className="who-meta">
-            <div className="n">{displayName}</div>
-            <div className="r">{displayEmail}</div>
+            <div className="n">{pending ? <span className="rps-sk rps-sk--line" aria-hidden="true" /> : displayName}</div>
+            <div className="r">{pending ? <span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /> : displayEmail}</div>
           </div>
           <button
             type="button"
             className="logout"
             onClick={handleLogout}
-            aria-label="Log out"
-            {...tipHandlers('Log out', sidebarOpen ? 'top' : 'right')}
+            aria-label="Sign out"
+            {...tipHandlers('Sign out', sidebarOpen ? 'top' : 'right')}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

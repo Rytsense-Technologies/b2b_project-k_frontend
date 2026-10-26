@@ -6,7 +6,11 @@
  * CSS: student-portal.css (.sp-* / .sd-*) + superadmin-universities.css (.un-*) + portal-modules.css (.pm-*),
  * all loaded globally from src/app/layout.js.
  */
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useOverlay } from '@/components/superadmin/overlayStack';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Icon, Kpi, SectionState } from '@/components/student/ui';
 import { SearchBox } from '@/components/superadmin/quirri-ui';
 
@@ -24,6 +28,52 @@ export function countLabel(n) {
 /** Module page wrapper — vertical 24px rhythm. */
 export function ModulePage({ className = '', children }) {
   return <div className={`animate-fade-in sp pm-page ${className}`.trim()}>{children}</div>;
+}
+
+/**
+ * Module page head (recipe v2, 14 Oct 2026): the page title already sits in the top bar, so module
+ * pages open with one quiet line — what this page is for, scope / context chips — and the ONE
+ * primary action on the right. The teal hero is kept for dashboards (PortalHero) only.
+ */
+export function ModuleHead({ lede, chips = null, actions = null }) {
+  // Actions only: a compact, right-aligned row instead of a near-empty band.
+  const solo = !lede && !chips;
+  // b2c skill: page actions sit on the title row ("Title ... [actions]"). On desktop the actions are
+  // mirrored into the portal top bar (non-student shells); below 1024px the in-flow row is used.
+  const [bar, setBar] = useState(null);
+  useEffect(() => {
+    if (!actions) return undefined;
+    const el = document.querySelector('.q-app-shell:not(.q-student) .topbar');
+    setBar(el || null);
+    return () => setBar(null);
+  }, [actions ? 1 : 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lifted = Boolean(bar && actions);
+  // Nothing to show (e.g. a scope chip that was dropped): no empty band eating a section gap.
+  if (!lede && !chips && !actions) return null;
+  return (
+    <>
+      <section className={`pm-head${solo ? ' pm-head--solo' : ''}${lifted ? ' pm-head--lifted' : ''}`}>
+        {solo ? null : (
+          <div className="pm-head-copy">
+            {lede ? <p>{lede}</p> : null}
+            {chips ? <div className="pm-head-chips">{chips}</div> : null}
+          </div>
+        )}
+        {actions ? <div className="pm-head-actions">{actions}</div> : null}
+      </section>
+      {lifted ? createPortal(<div className="pm-head-actions pm-topbar-actions pm-topbar-actions--lifted">{actions}</div>, bar) : null}
+    </>
+  );
+}
+
+/** Small context chip for ModuleHead (scope, college, read-only…). tone: teal | orange | grey */
+export function HeadChip({ icon, tone = 'teal', children }) {
+  return (
+    <span className={`pm-chip pm-chip--${tone}`}>
+      {icon ? <Icon name={icon} size={14} /> : null}
+      {children}
+    </span>
+  );
 }
 
 /** Teal 500 banner with icon tile, overline, H2, lede, optional chips and ONE primary action. */
@@ -62,10 +112,78 @@ export function FilterBar({ children, label = 'Filters' }) {
   );
 }
 
+/**
+ * One labelled control in a teal filter bar. Use when several similar dropdowns
+ * sit together (notifications: Event / Channel / Period / Status) so each field
+ * has a visible name, not only an aria-label. `grow`: search | status | clear.
+ */
+export function FilterField({ label, htmlFor, grow, className = '', children }) {
+  const extra = grow === 'search' ? ' nf-field--search'
+    : grow === 'status' ? ' nf-field--status'
+      : grow === 'clear' ? ' nf-field--clear'
+        : '';
+  return (
+    <div className={`nf-field${extra}${className ? ` ${className}` : ''}`}>
+      {label
+        ? <label className="nf-field-l" htmlFor={htmlFor}>{label}</label>
+        : <span className="nf-field-l" aria-hidden="true">&nbsp;</span>}
+      {children}
+    </div>
+  );
+}
+
 /** Segmented control. options: [{ value, label, count? }] */
 export function SegTabs({ options, value, onChange, label = 'Filter' }) {
+  const ref = useRef(null);
+  const [edges, setEdges] = useState({ start: false, end: false });
+
+  // Edge fade tells the user the strip scrolls; the selected tab is kept in view.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const next = { start: el.scrollLeft > 2, end: max - el.scrollLeft > 2 };
+      setEdges((p) => (p.start === next.start && p.end === next.end ? p : next));
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      el.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [options.length]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const tab = el.querySelector('[aria-selected="true"]');
+    if (!tab) return;
+    const r = tab.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    const target = el.scrollLeft + (r.left - box.left) - (el.clientWidth - r.width) / 2;
+    el.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+  }, [value]);
+
+  const few = options.length <= 4;
+  // Arrow keys move between segments (tablist pattern); only the selected one is a Tab stop.
+  const onKey = (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const i = Math.max(0, options.findIndex((o) => o.value === value));
+    const next = options[(i + (e.key === 'ArrowRight' ? 1 : options.length - 1)) % options.length];
+    onChange(next.value);
+    requestAnimationFrame(() => ref.current?.querySelector('[aria-selected="true"]')?.focus());
+  };
   return (
-    <div className="sp-tabs un-seg" role="tablist" aria-label={label}>
+    <div
+      ref={ref}
+      className={`sp-tabs un-seg${few ? ' pm-seg--few' : ''}${edges.start ? ' pm-seg--fade-start' : ''}${edges.end ? ' pm-seg--fade-end' : ''}`}
+      role="tablist"
+      aria-label={label}
+      onKeyDown={onKey}
+    >
       {options.map((o) => (
         <button
           key={o.label}
@@ -73,6 +191,7 @@ export function SegTabs({ options, value, onChange, label = 'Filter' }) {
           role="tab"
           className="sp-tab"
           aria-selected={value === o.value}
+          tabIndex={value === o.value || (!options.some((x) => x.value === value) && o === options[0]) ? 0 : -1}
           onClick={() => onChange(o.value)}
         >
           {o.icon ? <Icon name={o.icon} size={16} /> : null}
@@ -98,8 +217,8 @@ export function ViewToggle({ value, onChange }) {
 }
 
 /** White panel with H4 head (title, sub, action) — Prep card. */
-export function Panel({ title, sub, action = null, children, className = '', bodyClassName = 'sp-panel-b' }) {
-  return (
+export function Panel({ title, sub, action = null, toolbar = null, children, className = '', bodyClassName = 'sp-panel-b' }) {
+  const panel = (
     <section className={`sp-panel ${className}`.trim()}>
       {title || action ? (
         <div className="sp-panel-h">
@@ -113,10 +232,19 @@ export function Panel({ title, sub, action = null, children, className = '', bod
       {bodyClassName ? <div className={bodyClassName}>{children}</div> : children}
     </section>
   );
+  if (!toolbar) return panel;
+  // quirri-b2c-student-ui (owner, 15 Oct 2026): the filter bar is a teal band ABOVE the list card, on the canvas.
+  return (
+    <div className="pm-panel-stack">
+      <div className="pm-panel-tools pm-filterbar" role="search">{toolbar}</div>
+      {panel}
+    </div>
+  );
 }
 
 export function StatusPill({ active, on = 'Active', off = 'Inactive', tone }) {
-  const t = tone || (active ? 'good' : 'err');
+  // Inactive is a state, not an error: teal pill (never grey).
+  const t = tone || (active ? 'good' : 'off');
   return (
     <span className={`sp-pill sp-pill--${t}`}>
       <i className="un-dot" aria-hidden="true" />
@@ -160,17 +288,16 @@ export function InfoList({ items }) {
 
 /** Right-hand detail drawer with Teal hero. Esc and backdrop close. */
 export function DetailDrawer({ open, onClose, eyebrow, title, mono, pills = null, stats = null, footer = null, wide = false, children }) {
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  const panelRef = useRef(null);
+  // Read view: focus the close button rather than the first field.
+  useOverlay(open, panelRef, onClose, { initialFocus: '.un-drawer-x' });
 
   if (!open) return null;
   return (
     <div className="un-drawer-wrap" role="presentation" onClick={onClose}>
       <aside
+        ref={panelRef}
+        tabIndex={-1}
         className={`un-drawer${wide ? ' pm-drawer--wide' : ''}`}
         role="dialog"
         aria-modal="true"
@@ -244,7 +371,8 @@ export function Pager({ page, pageSize, total, shown, onPage, noun = 'items' }) 
   const from = total ? (page - 1) * pageSize + 1 : 0;
   const to = total ? Math.min(total, (page - 1) * pageSize + (shown ?? pageSize)) : 0;
   const pages = total ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  if (!total || pages <= 1) return null;
+  // b2c skill: pager shows for any total > 0 (hidden only at 0), with a page counter.
+  if (!total) return null;
   return (
     <div className="un-pager">
       <span>Showing {countLabel(from)}–{countLabel(to)} of {countLabel(total)} {noun}</span>
@@ -252,6 +380,7 @@ export function Pager({ page, pageSize, total, shown, onPage, noun = 'items' }) 
         <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>
           <Icon name="back" size={14} /> Previous
         </button>
+        <span className="pm-pager-n" aria-live="polite">{countLabel(Math.min(page, pages))} / {countLabel(pages)}</span>
         <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>
           Next <Icon name="chev" size={14} />
         </button>
@@ -295,5 +424,252 @@ export function ComingSoon({ icon = 'layers', title, body, unlock, steps = [], a
         </section>
       ) : null}
     </>
+  );
+}
+
+/* ==========================================================================
+   Record & navigation patterns (docs/ux/ux-architecture.md §4 — Slice 1)
+   ========================================================================== */
+
+/**
+ * Compact position-in-hierarchy strip. levels: [{ label, state: 'done'|'current'|'later' }]
+ * Answers "where does this sit?" without repeating the page title.
+ */
+export function HierarchyStrip({ label = 'Hierarchy', levels }) {
+  return (
+    <nav className="pm-hier" aria-label={label}>
+      <ol>
+        {levels.map((l, i) => (
+          <li key={l.label} className={`is-${l.state || 'later'}`} aria-current={l.state === 'current' ? 'true' : undefined}>
+            <span className="pm-hier-dot" aria-hidden="true" />
+            <span className="pm-hier-label">{l.label}</span>
+            {l.state === 'later' ? <span className="pm-hier-note">Not available yet</span> : null}
+            {i < levels.length - 1 ? <Icon name="chev" size={14} className="pm-hier-sep" /> : null}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+/** Record identity card: monogram, overline, name, meta chips and key facts. */
+export function RecordHero({ overline, title, mono, muted = false, meta = null, facts = [], children = null }) {
+  return (
+    <section className="pm-record" aria-label={typeof title === 'string' ? `${title} summary` : 'Summary'}>
+      <div className="pm-record-id">
+        {mono ? <span className={`un-mono un-mono--lg pm-record-mono${muted ? ' pm-mono--muted' : ''}`}>{initials(mono)}</span> : null}
+        <div className="pm-record-t">
+          {overline ? <span className="pm-overline">{overline}</span> : null}
+          <h2>{title}</h2>
+          {meta ? <div className="pm-record-meta">{meta}</div> : null}
+        </div>
+      </div>
+      {facts.length ? (
+        <dl className="pm-record-facts">
+          {facts.map((f) => (
+            <div key={f.label}>
+              <dt>{f.label}</dt>
+              <dd className={f.tone ? `is-${f.tone}` : undefined}>{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {children}
+    </section>
+  );
+}
+
+/** Accessible underline tabs (role=tablist, arrow keys). tabs: [{ value, label, count? }] */
+// Keep the active tab visible when the strip scrolls (phones).
+function useActiveTabInView(ref, key) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const reveal = () => {
+      if (el.scrollWidth <= el.clientWidth) return;
+      const active = el.querySelector('.tab.active');
+      if (!active) return;
+      const r = active.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      if (r.left >= box.left && r.right <= box.right) return;
+      // Snap to a tab's start edge so the first visible tab is never cut ("…pproval"), with the
+      // active tab fully in view.
+      const starts = [...el.querySelectorAll('.tab')].map((t) => t.getBoundingClientRect().left - box.left + el.scrollLeft);
+      const aStart = r.left - box.left + el.scrollLeft;
+      const need = aStart + r.width - el.clientWidth;
+      const snap = starts.find((x) => x >= need && x <= aStart);
+      el.scrollLeft = Math.max(0, snap ?? aStart);
+    };
+    reveal();
+    // Tab counts and fonts arrive after the first paint and change the strip's width.
+    const t1 = setTimeout(reveal, 150);
+    const t2 = setTimeout(reveal, 800);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(reveal) : null;
+    ro?.observe(el);
+    return () => { clearTimeout(t1); clearTimeout(t2); ro?.disconnect(); };
+  }, [ref, key]);
+}
+
+export function TabNav({ tabs, value, onChange, label = 'Sections', idBase = 'tab' }) {
+  const stripRef = useRef(null);
+  useActiveTabInView(stripRef, value);
+  const onKey = (e) => {
+    const i = tabs.findIndex((t) => t.value === value);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      onChange(next.value);
+      document.getElementById(`${idBase}-${next.value}`)?.focus();
+    }
+  };
+  return (
+    <div ref={stripRef} className="tabs pm-tabs" role="tablist" aria-label={label} onKeyDown={onKey}>
+      {tabs.map((t) => (
+        <button
+          key={t.value}
+          id={`${idBase}-${t.value}`}
+          type="button"
+          role="tab"
+          className={`tab${value === t.value ? ' active' : ''}`}
+          aria-selected={value === t.value}
+          aria-controls={`${idBase}-panel-${t.value}`}
+          tabIndex={value === t.value ? 0 : -1}
+          onClick={() => onChange(t.value)}
+        >
+          {t.label}
+          {t.count != null ? <span className="ct">{t.count}</span> : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Route tabs for modules split into sub-pages (each tab is its own URL).
+ * tabs: [{ href, label, icon?, count?, exact? }]
+ */
+export function ModuleTabs({ tabs, label = 'Module sections' }) {
+  const pathname = usePathname() || '';
+  const stripRef = useRef(null);
+  useActiveTabInView(stripRef, pathname);
+  return (
+    <nav ref={stripRef} className="tabs pm-tabs pm-route-tabs" aria-label={label}>
+      {tabs.map((t) => {
+        const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`);
+        return (
+          <Link key={t.href} href={t.href} className={`tab${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
+            {t.icon ? <Icon name={t.icon} size={16} /> : null}
+            {t.label}
+            {t.count != null ? <span className="ct">{t.count}</span> : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function TabPanel({ value, current, idBase = 'tab', children }) {
+  if (value !== current) return null;
+  return (
+    <div role="tabpanel" id={`${idBase}-panel-${value}`} aria-labelledby={`${idBase}-${value}`} className="pm-tabpanel">
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Side form drawer for short create/edit forms (<= 6 fields). Esc / backdrop close,
+ * focuses the first field on open and returns focus to the opener on close.
+ */
+export function FormDrawer({ open, onClose, title, description, footer, children, busy = false }) {
+  const panelRef = useRef(null);
+  useOverlay(open, panelRef, onClose, { busy });
+
+  if (!open) return null;
+  return (
+    <div className="un-drawer-wrap pm-form-drawer-wrap" role="presentation" onClick={() => { if (!busy) onClose?.(); }}>
+      <aside
+        ref={panelRef}
+        tabIndex={-1}
+        className="un-drawer pm-form-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pm-form-drawer-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="pm-form-drawer-h">
+          <div>
+            <h2 id="pm-form-drawer-title">{title}</h2>
+            {description ? <p>{description}</p> : null}
+          </div>
+          <button type="button" className="modal-x" onClick={onClose} aria-label="Close" disabled={busy}>
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        <div className="pm-form-drawer-b">{children}</div>
+        {footer ? <div className="pm-form-drawer-f">{footer}</div> : null}
+      </aside>
+    </div>
+  );
+}
+
+/** Low-frequency, high-risk actions kept at the bottom of a record (progressive disclosure). */
+export function DangerZone({ title = 'Status', description, children }) {
+  return (
+    <section className="pm-danger" aria-label={title}>
+      <div>
+        <h3>{title}</h3>
+        {description ? <p>{description}</p> : null}
+      </div>
+      <div className="pm-danger-actions">{children}</div>
+    </section>
+  );
+}
+
+/** Success / next-step callout. links: [{ label, href, icon }] */
+export function Callout({ tone = 'success', title, children, links = [], onDismiss }) {
+  return (
+    <section className={`pm-callout is-${tone}`} role="status">
+      <span className="pm-callout-ic" aria-hidden="true"><Icon name={tone === 'success' ? 'tick' : 'info'} size={18} /></span>
+      <div className="pm-callout-body">
+        <b>{title}</b>
+        {children ? <p>{children}</p> : null}
+        {links.length ? (
+          <div className="pm-callout-links">
+            {links.map((l) => (
+              <Link key={l.label} href={l.href} className="pm-callout-link">
+                {l.icon ? <Icon name={l.icon} size={16} /> : null}{l.label}
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      {onDismiss ? (
+        <button type="button" className="pm-callout-x" onClick={onDismiss} aria-label="Dismiss">
+          <Icon name="x" size={16} />
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+/** Compact people list for record pages. people: [{ id, name, email, meta }] */
+export function PeopleList({ people, empty }) {
+  if (!people.length) return empty || null;
+  return (
+    <ul className="pm-people">
+      {people.map((p) => (
+        <li key={p.id || p.email}>
+          <span className="pm-person">
+            <span className="pm-av" aria-hidden="true">{initials(p.name || p.email)}</span>
+            <span>
+              <b>{p.name || p.email}</b>
+              {p.email && p.name ? <small>{p.email}</small> : null}
+            </span>
+          </span>
+          {p.meta ? <span className="pm-people-meta">{p.meta}</span> : null}
+        </li>
+      ))}
+    </ul>
   );
 }

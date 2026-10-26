@@ -3,7 +3,6 @@ import {
   selectUser, selectPlan, selectIsAuthed, clearCredentials,
   selectRole, selectTenantId, selectPermissions,
 } from '@/store/slices/authSlice';
-import { resetSession } from '@/store/slices/interviewSlice';
 import { queryClient } from '@/lib/queryClient';
 import api from '@/lib/axios';
 import { clearTokens } from '@/lib/tokens';
@@ -26,10 +25,9 @@ export function useAuth() {
     } catch { /* ignore — still clear local state */ }
     clearTokens();
     dispatch(clearCredentials());
-    dispatch(resetSession());
     queryClient.clear();
     router.push('/auth/login');
-    toast.success('Logged out successfully');
+    toast.success("You're signed out.");
   };
 
   // Returns true if the user holds the given permission.

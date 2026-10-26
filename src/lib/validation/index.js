@@ -14,7 +14,11 @@ export {
   codeField,
   emailField,
   phoneField,
+  toIndianMobile,
+  PHONE_RULE_MESSAGE,
   passwordField,
+  PASSWORD_RULE_MESSAGE,
+  isStrongPassword,
   otpField,
   addressField,
   searchField,
@@ -28,6 +32,7 @@ export {
   collapseSpaces,
   normalizeEmail,
   normalizePhone,
+  formatIndianPhone,
   normalizeCode,
   normalizeSearch,
 } from './normalize';
@@ -51,6 +56,7 @@ export {
   tenantMemberCreateSchema,
   tenantStudentCreateSchema,
   tenantFacultyCreateSchema,
+  studentDepartmentChangeSchema,
   MAX_COURSE_DURATION_YEARS,
   MAX_ASSIGNED_YEAR,
   MAX_ASSIGNED_SEMESTER,
@@ -68,15 +74,17 @@ export {
 } from './schemas/departments';
 
 export {
+  MAX_PROGRAMME_SEMESTERS,
+  programmeCreateSchema,
+  programmeUpdateSchema,
+  semesterSchema,
+  subjectSchema,
+  chapterSchema,
+} from './schemas/academics';
+
+export {
   settingsProfileSchema,
   settingsPasswordSchema,
 } from './schemas/settings';
-
-export {
-  interviewSetupSchema,
-  INTERVIEW_MODE_VALUES,
-  INTERVIEW_DIFFICULTY_VALUES,
-  INTERVIEW_EXPERIENCE_VALUES,
-} from './schemas/interview';
 
 export { mcqSubmitSchema } from './schemas/mcq';

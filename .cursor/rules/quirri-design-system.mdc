@@ -10,11 +10,12 @@ Applies to every post-login page in all four portals and to any new page. Login 
 
 ## Settled owner decisions (do not re-ask)
 
-- Primary CTA **Amber 700 `#AC5B16`** + white, **one per view**; `#F5821F` accent only, never white text.
+- Colour roles: **Primary** Quirri teal `#0E5C6B` (banners, side panels, filter bar, active sidebar text + icon, links, icons, teal secondary buttons) · **Main action + accent** one orange `#F5821F` (`--accent`: the one main button per view with white text, selected states, orange words · `--highlight`: chart points / dots / focus bars). **Never `#AC5B16`** in product UI. See design-system.md §0.
 - Radii: **6px** controls (buttons, inputs, selects, chips, nav items) · **8px** cards/banners/filter bars · **16px** modals/drawers · full only for pills, avatars, progress.
 - Canvas **`--canvas` #EEF0F0**; cards white, borderless, `--shadow-card`; nested cards 1px `--line`.
 - White sidebar · active item Teal 50 fill + Teal 500 Medium label (no edge bar) · bordered user card with Teal 500 avatar.
-- Banners, side panels, filter bars, summary headers = solid **Teal 500**. No gradients, glows, hover lift, looping motion.
+- Banners, filter bars, summary headers = solid **Teal 500**. No gradients, glows, hover lift, looping motion.
+- **Reference palette (§0b, owner screenshot):** Teal = structure (solid hero, insight side panel, score panel, labels, KPI notes) · Orange `--accent` = the one CTA, active tab, selected pill, needs-focus value (`--accent-text`), markers, title rules · Green `--progress` = progress rings / improving score · `--cat-1…6` = one hue per skill / subject / series (never status or actions) · teal tint `--surface-tint` for item cards · low scores orange, not red.
 
 ## Type
 
@@ -23,11 +24,11 @@ Poppins. Product weights 400/500; 700 only for ≥28px (banner H2). Sizes only f
 ## Before building UI
 
 1. Read `design-system.md` §0 and the component rows in §4; reuse the listed class/component (PortalHero, `.stat`, `.card`, `.toolbar`, `.tabs`/`.seg`, `.rowcard`, `.summary`, `.pill`, QuirriSelect, QuirriRHFField, QuirriModal, SectionState).
-2. Use CSS variables only — no raw hex, no new colours, no Tailwind default palette colours.
-3. Pick the single Amber 700 action. Plan on the 1440 max grid, 24px gaps, 32px gutters.
+2. Use CSS variables only — no raw hex, only the §0b palette roles, no Tailwind default palette colours.
+3. Pick the single orange action. Plan on the 1440 max grid, 24px gaps, 32px gutters.
 
 ## After building UI
 
 1. Diff check: no raw hex, no `font-weight` 600/800, no off-scale font sizes, no radius outside 6/8/16/full, no gradients, no `translateY` hover, no `title=` tooltips.
-2. Playwright screenshots at 1440 and 390 (+ collapsed sidebar for shell work); confirm aligned edges, equal gaps, no overflow, one amber CTA, AA contrast, visible focus.
+2. Playwright screenshots at 1440 and 390 (+ collapsed sidebar for shell work); confirm aligned edges, equal gaps, no overflow, one orange CTA, orange text only for focus, green only for progress, AA contrast, visible focus.
 3. If a shared pattern changed, update `design-system.md` in the same change.

@@ -10,7 +10,7 @@ alwaysApply: true
 ## Product must-haves
 
 1. No mocks in `src/` for portals — loading / error / empty only  
-2. One Amber 700 CTA per view  
+2. One orange `--accent` CTA per view  
 3. Forms: `FIELD_RULES` + `QuirriRHFField` (`fieldType`) — see `quirri-forms.mdc`  
 4. No native HTML `title` tooltips — use `QuirriTooltip` / `useQuirriTip`  
 5. WCAG 2.2 AA; calm sentence-case copy  
@@ -37,7 +37,7 @@ alwaysApply: true
 - **Center** only the auth login brand card  
 - Stack: label → control → hint **or** error  
 - Section head: title/description left, actions right  
-- Toolbar (filter bar): Teal 500 card, search flexes, selects `min-width: 168px`, Clear = Teal 400, primary = Amber 700  
+- Toolbar (filter bar): Teal 500 card, search flexes, selects `min-width: 168px`, Clear = Teal 400, primary = orange `--accent`  
 - Forms: `grid2` / `QuirriFormGrid`; long fields `full`  
 - Spacing: 4px scale only  
 

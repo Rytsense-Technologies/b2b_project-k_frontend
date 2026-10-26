@@ -91,42 +91,6 @@ export const departmentsApi = {
   reactivate: (id) => api.post(`/departments/${id}/reactivate`),
 };
 
-/** Out of Phase 1 Super Admin nav — do not reintroduce in UI. */
-export const skillsApi = {
-  list: (params = {}) =>
-    api.get(`/superadmin/skill-courses?${buildParams(params)}`),
-  metrics: () => api.get('/superadmin/skill-courses/metrics'),
-  generate: (payload) => api.post('/superadmin/skill-courses/generate', payload),
-  upload: (formData) =>
-    api.post('/superadmin/skill-courses/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  update: (id, payload) => api.patch(`/superadmin/skill-courses/${id}`, payload),
-};
-
-/**
- * Upload & Generate removed from Super Admin UI.
- * Prefer faculty/edu_video flows when content generation returns.
- */
-
-export const aiUsageApi = {
-  list: (params = {}) =>
-    api.get(`/superadmin/ai-usage?${buildParams(params)}`),
-  exportData: (params = {}) =>
-    downloadBlob(
-      () => api.get(`/superadmin/ai-usage/export?${buildParams(params)}`, { responseType: 'blob' }),
-      'ai-usage.csv',
-    ),
-};
-
-export const emailsApi = {
-  list: () => api.get('/superadmin/emails'),
-  create: (payload) => api.post('/superadmin/emails', payload),
-  update: (id, payload) => api.patch(`/superadmin/emails/${id}`, payload),
-  remove: (id) => api.delete(`/superadmin/emails/${id}`),
-  verify: (id) => api.post(`/superadmin/emails/${id}/verify`),
-};
-
 /** Live: /api/v1/reports — institution preview + CSV; learning report types stay empty. */
 export const reportsApi = {
   preview: (params = {}) =>
@@ -175,6 +139,36 @@ export const settingsApi = {
       new_password: payload.new_password,
       confirm_password: payload.confirm_password,
     }),
+  /**
+   * POST /auth/logout — revokes this device's refresh token and clears the
+   * auth cookies. Callers still clear local state (see useAuth().logout).
+   */
+  logout: () => api.post('/auth/logout'),
+  /**
+   * Super Admin only. Last 10 "Signed in" audit rows for `email`, newest first:
+   * [{ at: ISO string, ip: string | null, detail: string }].
+   * GET /audit-logs takes search (ILIKE on action/actor/module/resource),
+   * module and range (today | last_7_days | last_30_days, max 30 days).
+   */
+  recentSignIns: async (email) => {
+    const target = String(email || '').trim().toLowerCase();
+    if (!target) return [];
+    const res = await api.get(
+      `/audit-logs?${buildParams({ search: target, module: 'Authentication', range: 'last_30_days' })}`,
+    );
+    const body = unwrap(res);
+    const items = Array.isArray(body) ? body : body?.items ?? [];
+    return items
+      .filter((row) => row?.action === 'Signed in'
+        && String(row?.actor ?? row?.user ?? '').toLowerCase() === target)
+      .map((row) => ({
+        at: row.created_at ?? row.datetime ?? null,
+        ip: row.ip && row.ip !== '—' ? row.ip : null,
+        detail: 'Signed in',
+      }))
+      .sort((a, b) => String(b.at ?? '').localeCompare(String(a.at ?? '')))
+      .slice(0, 10);
+  },
 };
 
 /** Live: /api/v1/roles */

@@ -25,8 +25,8 @@ Voice: warm, plain, encouraging, grounded — “the calm, well-prepared friend 
 |---|---|
 | Quirri Teal | `#0E5C6B` |
 | Deep Teal | `#06252B` |
-| Signal Amber | `#F5821F` accent only — never white text on this fill |
-| Amber 700 (white-label buttons) | `#AC5B16` |
+| Signal Amber / Quirri orange | `#F5821F` — **the** product orange: the one main button (white Medium label), selected states, orange words (`--accent`) and small highlights (`--highlight`) |
+| Amber 700 | `#AC5B16` — **not used in product UI** (owner, Oct 2026); frozen login card only |
 | Mist | `#F8F8F9` |
 | Ink | `#102228` (never pure black body text) |
 | Success / Warning / Error | `#0F6E56` / `#C97A0E` / `#A32D2D` |
@@ -37,9 +37,9 @@ Amber ramp: 50 `#FEF6EF` · 100 `#FDE8D7` · 200 `#FBD0AA` · 500 `#F5821F` · 6
 
 Neutral: 0 `#FFFFFF` · 50 `#F8F8F9` · 100 `#EEF0F0` · 200 `#DEE0E1` · 300 `#BCC1C3` · 400 `#939C9E` · 500 `#707A7E` · 600 `#536064` · 900 `#102228`
 
-60% neutral/white · 30% teal · 10% amber. **One amber action per view.** No second accent (no purple, no random blue). No gradients across brand colours. No hand-mixed tints. Do not put teal text on amber or amber text on teal.
+60% neutral/white · 30% teal · 10% amber (product UI follows the owner's reference palette — teal structure, orange action/focus, green progress, categorical skill hues — see `docs/agent/design-system.md` §0b / §2b). **One amber action per view.** No second accent (no purple, no random blue). No gradients across brand colours. No hand-mixed tints. Do not put teal text on amber or amber text on teal.
 
-Buttons with white text: Amber 700 `#AC5B16` (primary) or Teal 500 (secondary). Tertiary: Teal outline + Teal label. Disabled: Neutral 200 fill, Neutral 400 label.
+Buttons with white text: Quirri orange `#F5821F` (primary) or Teal 500 (secondary). Tertiary: Teal outline + Teal label. Disabled: Neutral 200 fill, Neutral 400 label.
 
 ## Type
 
@@ -65,7 +65,7 @@ Icons: outline only, 1.75px stroke, Teal 500, one optional amber accent. Do not 
 
 ## Accessibility
 
-WCAG 2.2 AA. Focus: 2px Teal 500 outline. Touch target ≥44×44px. Do not use colour alone. Signal Amber on white fails contrast — do not use it for text or white-on-amber buttons.
+WCAG 2.2 AA. Focus: 2px Teal 500 outline. Touch target ≥44×44px. Do not use colour alone. Orange text on white uses `--accent-text` `#F5821F` at 14px Medium or larger (owner decision; it is below AA for small text).
 
 ## Tokens in this repo
 

@@ -6,6 +6,11 @@ const PRODUCTION_API_URL = '/api/v1';
 const apiProxyTarget = (process.env.API_PROXY_TARGET || '').replace(/\/$/, '');
 
 const nextConfig = {
+  // `npm run preview` builds into .next-preview so it never clashes with `npm run dev` (.next).
+  distDir: process.env.NEXT_DIST_DIR || '.next',
+  // Dev speed (owner, 26 Oct 2026): StrictMode double-runs every effect in dev, doubling API calls
+  // on each page switch. Production is unaffected either way.
+  reactStrictMode: false,
   env: {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL || (isProd ? PRODUCTION_API_URL : ''),

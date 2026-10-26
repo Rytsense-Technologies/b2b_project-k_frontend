@@ -2,38 +2,52 @@
 export const PAGE_META = {
   '/admin/dashboard': {
     title: 'Dashboard',
-    subtitle: 'Departments, content pipeline, and student activity across your college.',
+    subtitle: 'Last 30 days across your college.',
   },
   '/admin/structure': {
     title: 'Academic structure',
-    subtitle: 'Build and manage your Department → Program → Semester → Subject tree.',
+    subtitle: 'Departments, programmes, semesters and subjects.',
+  },
+  '/admin/structure/departments': {
+    title: 'Departments',
+    subtitle: 'HODs and the departments they review.',
+    crumbs: [{ label: 'Academic structure' }],
+  },
+  '/admin/structure/programmes': {
+    title: 'Programmes & subjects',
+    subtitle: 'Programmes, semesters, subjects and chapters.',
+    crumbs: [{ label: 'Academic structure' }],
+  },
+  '/admin/mcq': {
+    title: 'MCQ review',
+    subtitle: 'Approve questions before students sit the quiz.',
+  },
+  '/admin/notifications': {
+    title: 'Notifications',
+    subtitle: 'Invites and alerts sent from your college.',
   },
   '/admin/content': {
     title: 'Upload & content',
-    subtitle: 'Upload chapter material to generate a video lecture and follow status here.',
+    subtitle: 'Chapter uploads and lecture status.',
   },
   '/admin/students': {
     title: 'Students',
-    subtitle: 'Add, import, and manage students across every department.',
+    subtitle: 'People in every department.',
   },
   '/admin/staff': {
     title: 'Staff & HOD',
-    subtitle: 'Add faculty and assign HODs who review and approve content.',
-  },
-  '/admin/interviews': {
-    title: 'Interview assignments',
-    subtitle: 'Assign AI mock interviews to final-year cohorts.',
+    subtitle: 'Faculty and heads of department.',
   },
   '/admin/analytics': {
     title: 'Analytics',
-    subtitle: 'Completion, assessment performance, Q&A demand, interview readiness.',
+    subtitle: 'Completion, quizzes and tutor questions.',
   },
   '/admin/reports': {
     title: 'Reports',
-    subtitle: 'Student-level and cohort-level reports.',
+    subtitle: 'Student and cohort exports.',
   },
   '/admin/settings': {
     title: 'Settings',
-    subtitle: 'Your profile and account security.',
+    subtitle: 'Profile, sign-in and email.',
   },
 };

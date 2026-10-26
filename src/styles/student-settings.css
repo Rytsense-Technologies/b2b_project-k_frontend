@@ -1,0 +1,46 @@
+/*
+ * Student Settings (/student/settings).
+ * Layout + spacing live in account-settings.css; this file tunes the student palette.
+ * White 8px cards; Save is the one orange action; tabs use a teal underline.
+ */
+
+.q-student .sa-settings .tabs{margin-bottom:0;border-bottom-color:var(--sb-hairline)}
+.q-student .sa-settings .tab{min-height:44px;font-size:15px;line-height:22px;font-weight:500;color:var(--sb-muted)}
+.q-student .sa-settings .tab:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+
+.q-student .sa-settings .sp-panel{border:0;border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow))}
+.q-student .sa-settings .sp-panel-h{padding:16px;border-bottom:0}
+.q-student .sa-settings .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .sa-settings .sp-panel-h h3::before{display:none}
+.q-student .sa-settings .sp-panel-h p{font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .sa-settings .sp-panel-b{padding:0 16px 16px}
+@media (min-width:1024px){
+  .q-student .sa-settings .sp-panel-h{padding:24px 24px 12px}
+  .q-student .sa-settings .sp-panel-b{padding:0 24px 24px}
+}
+
+.q-student .sa-settings .field input,
+.q-student .sa-settings .field select{border-radius:var(--radius-control,6px);border-color:var(--sb-hairline);min-height:44px;color:var(--sb-ink)}
+.q-student .sa-settings .field input:focus{border-color:var(--sb-teal);box-shadow:0 0 0 3px var(--teal-100);outline:none}
+.q-student .sa-settings .field input[aria-invalid="true"],
+.q-student .sa-settings .field input[aria-invalid="true"]:focus{border-color:var(--color-error)}
+.q-student .sa-settings .field input:disabled{background:var(--mist,#F8F8F9);color:var(--sb-muted)}
+.q-student .sa-settings .field label{font-weight:500;color:var(--sb-ink)}
+.q-student .sa-settings .field .hint{color:var(--sb-muted);font-size:12px;line-height:18px}
+
+.q-student .sa-settings .sd-btn{min-height:44px;border-radius:var(--radius-control,6px);font-size:15px;line-height:20px;font-weight:500}
+.q-student .sa-settings .sd-btn--sm{min-height:40px}
+.q-student .sa-settings .sd-btn--amber{background:var(--sb-orange);color:#fff}
+.q-student .sa-settings .sd-btn--amber:hover{background:var(--sb-orange-hover);box-shadow:none}
+.q-student .sa-settings .sd-btn--amber:disabled{background:var(--sb-orange);color:#fff;opacity:.5}
+.q-student .sa-settings .sd-btn--ghost{background:var(--panel,#fff);color:var(--sb-ink);border-color:rgba(16,34,40,.15)}
+.q-student .sa-settings .sd-btn--ghost:hover{background:var(--mist,#F8F8F9);border-color:rgba(16,34,40,.15)}
+.q-student .sa-settings .sd-btn:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+
+.q-student .sa-settings .as-avatar{background:var(--sb-teal)}
+.q-student .sa-settings .as-row-ic{background:var(--sb-wash);color:var(--sb-teal)}
+.q-student .sa-settings .as-card-h p{font-size:14px;line-height:22px}
+.q-student .sa-settings .as-grid{gap:16px 24px}
+.q-student .sa-settings .as-grid .field{margin-bottom:0}
+.q-student .sa-settings .as-actions{padding-top:16px}
+.q-student .sa-settings .nr-card{border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow))}

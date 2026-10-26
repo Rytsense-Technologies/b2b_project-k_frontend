@@ -1,0 +1,114 @@
+/* Notification rules + shared Switch.
+   Tokens only — 8px cards, 6px controls, Poppins 400/500. Rows match Settings density. */
+
+/* ---------- Switch ---------- */
+.q-switch{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;
+  min-width:44px;min-height:44px;padding:0 2px;margin:0;border:0;background:transparent;
+  border-radius:22px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.q-switch-track{
+  position:relative;display:block;width:40px;height:24px;border-radius:12px;
+  background:var(--teal-200);transition:background-color .16s ease;
+}
+.q-switch-thumb{
+  position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--neutral-0);
+  box-shadow:0 1px 2px rgba(16,34,40,.12);transition:transform .16s ease;
+}
+.q-switch.is-on .q-switch-track{background:var(--teal-500)}
+.q-switch.is-on .q-switch-thumb{transform:translateX(16px)}
+.q-switch:hover:not(:disabled) .q-switch-track{background:var(--teal-300)}
+.q-switch.is-on:hover:not(:disabled) .q-switch-track{background:var(--teal-600)}
+.q-switch:focus-visible{outline:none}
+.q-switch:focus-visible .q-switch-track{outline:2px solid var(--teal-500);outline-offset:3px}
+.q-switch.is-busy{cursor:progress}
+.q-switch.is-busy .q-switch-track{opacity:.7}
+.q-switch:disabled{cursor:not-allowed}
+.q-switch:disabled .q-switch-track{background:var(--teal-100)}
+.q-switch:disabled.is-on .q-switch-track{background:var(--teal-300)}
+.q-switch:disabled .q-switch-thumb{box-shadow:none;background:var(--neutral-0)}
+@media (prefers-reduced-motion:reduce){.q-switch-track,.q-switch-thumb{transition:none}}
+
+/* ---------- Rules ---------- */
+.nr-rules{
+  display:flex;flex-direction:column;gap:16px;
+  flex:none;min-width:0;min-height:0;align-self:stretch;
+}
+.nr-stack{
+  display:flex;flex-direction:column;gap:16px;
+  flex:none;min-width:0;min-height:0;align-self:stretch;
+}
+.nr-intro{margin:0;font-size:14px;line-height:22px;color:var(--muted-2)}
+
+.nr-card{
+  background:var(--neutral-0);border-radius:var(--radius-card,8px);
+  box-shadow:var(--shadow-card,0 1px 2px rgba(16,34,40,.06),0 4px 12px rgba(16,34,40,.08));
+  padding:16px 24px;min-width:0;flex:none;
+}
+.nr-card-h{margin-bottom:4px}
+.nr-card-h h3{
+  margin:0;font-size:12px;line-height:18px;font-weight:500;
+  color:var(--muted-2);
+}
+
+.nr-rows{list-style:none;margin:0;padding:0}
+.nr-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:48px;padding:8px 0;border-top:1px solid var(--line);
+}
+.nr-rows .nr-row:first-child{border-top:0;padding-top:4px}
+.nr-rows .nr-row:last-child{padding-bottom:0}
+.nr-row-main{display:flex;align-items:center;min-width:0;flex:1 1 auto}
+.nr-row-main b{font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+
+.nr-row-side{flex:none;display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.nr-iconbtn{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:44px;height:44px;padding:0;margin:0;border:0;border-radius:6px;
+  background:transparent;color:var(--teal-500);cursor:pointer;
+}
+.nr-iconbtn:hover:not(:disabled){color:var(--teal-600);background:var(--teal-50)}
+.nr-iconbtn:disabled{color:var(--neutral-400);cursor:progress}
+.nr-iconbtn:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
+.nr-switch-wrap{display:inline-flex;align-items:center;flex:none}
+
+.nr-state{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:32px}
+.nr-state b{font-size:16px;line-height:26px;font-weight:500;color:var(--ink)}
+.nr-state p{margin:0;max-width:520px;font-size:14px;line-height:22px;color:var(--muted-2)}
+.nr-state-ic{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--teal-50);color:var(--teal-500)}
+.nr-btn{
+  display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;margin-top:8px;
+  border:1px solid var(--line);border-radius:6px;background:var(--neutral-0);color:var(--teal-500);
+  font:inherit;font-size:15px;line-height:20px;font-weight:500;cursor:pointer;
+}
+.nr-btn:hover{background:var(--teal-50)}
+.nr-btn:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
+
+.nr-skel{background:var(--teal-50);border-radius:6px;animation:nrPulse 1.4s ease-in-out infinite}
+.nr-skel--title{width:120px;max-width:50%;height:12px;margin-bottom:8px}
+.nr-skel--name{width:220px;max-width:70%;height:14px}
+.nr-skel--switch{width:40px;height:24px;border-radius:12px;flex:none}
+@keyframes nrPulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.nr-skel{animation:none}}
+
+/* SA college picker — labelled select, hugs the control (not a full-bleed bar) */
+.nr-scope{
+  display:flex;flex-direction:column;flex:none;align-self:start;
+  width:min(100%,240px);gap:0;
+}
+.nr-scope .field{margin:0}
+.nr-scope .field label{
+  font-size:12px;line-height:18px;font-weight:500;color:var(--muted-2);margin-bottom:4px;
+}
+.nr-scope .quirri-dd{width:100%}
+.nr-scope .quirri-dd__trigger{min-height:44px;padding:8px 12px}
+
+.pm-tabpanel > .nr-rules,
+.pm-tabpanel > .nr-stack,
+.pm-tabpanel > .nr-scope{flex:none;min-height:0}
+
+@media (max-width:640px){
+  .nr-card{padding:16px}
+  .nr-row{gap:8px}
+  .nr-scope{width:100%;align-self:stretch}
+}

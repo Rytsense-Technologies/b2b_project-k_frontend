@@ -1,19 +1,27 @@
 'use client';
 
-import AdminEmptyModule from '@/components/admin/AdminEmptyModule';
+import InsightsView from '@/components/admin/InsightsView';
+import { scopeChip, ReadOnlyNote } from '@/components/faculty/facultyKit';
+import { ModulePage, SectionState } from '@/components/shared/module-ui';
+import { analyticsApi } from '@/lib/api/analytics';
+import { useFacultyScope } from '@/hooks/useFacultyScope';
 
+/**
+ * HOD: department analytics. Faculty: the students and subjects they teach.
+ * Scope is said once (FacultyScopeChip); the full notice is kept only for Faculty without subjects.
+ * Nothing renders until scope is known, so Faculty never see department-wide wording first.
+ */
 export default function FacultyAnalyticsPage() {
+  const { scope, error } = useFacultyScope();
+  if (error) return <ModulePage className="fa-page"><SectionState tone="err" title="Could not load your access">Refresh the page to try again.</SectionState></ModulePage>;
+  if (!scope) return <ModulePage className="fa-page"><SectionState title="Loading analytics…" /></ModulePage>;
   return (
-    <AdminEmptyModule
-      icon="chart"
-      title="Department analytics"
-      description="Completion, assessment performance and Q&A demand for your department."
-      epic="department analytics"
-      steps={[
-        { title: 'Completion', body: 'How many students finish each chapter video and quiz.' },
-        { title: 'Assessment performance', body: 'Average quiz scores by subject and chapter, with weak topics flagged.' },
-        { title: 'Q&A demand', body: 'The topics students ask the AI tutor about most.' },
-      ]}
+    <InsightsView
+      load={analyticsApi.department}
+      showDepartmentFilter={false}
+      links={{ reports: scope.is_hod ? '/faculty/reports' : null }}
+      chips={scopeChip(scope)}
+      notice={<ReadOnlyNote scope={scope} what="results" />}
     />
   );
 }

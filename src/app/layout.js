@@ -9,6 +9,12 @@ import '../styles/portal-modules.css';
 import '../styles/portal-superadmin.css';
 import '../styles/portal-admin.css';
 import '../styles/portal-faculty.css';
+// Dual-tone accent layer (teal structure + Amber 700 accents) — must stay last.
+import '../styles/quirri-accents.css';
+import '../styles/data-viz.css';
+import '../styles/module-analytics.css';
+import '../styles/portal-b2c.css';
+import { dmSans } from '@/lib/student/fonts';
 import Providers from './Providers';
 
 /** Brand Guidelines v1.0 — Poppins only (300, 400, 500, 700). */
@@ -20,13 +26,16 @@ const portalFont = Poppins({
 });
 
 export const metadata = {
-  title: 'Quirri – Super Admin Portal',
-  description: 'Super Admin workspace for institutions, content, reports, and platform health.',
+  title: {
+    default: 'Quirri',
+    template: '%s · Quirri',
+  },
+  description: 'Quirri workspace for institutions, learning, and platform operations.',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={portalFont.variable}>
+    <html lang="en" className={`${portalFont.variable} ${dmSans.variable}`}>
       <body className={portalFont.className}>
         <Providers>{children}</Providers>
       </body>

@@ -23,7 +23,7 @@ export default function ConfirmDialog({ open, title = 'Are you sure?', message, 
             className={`flex-1 py-2.5 px-6 min-h-11 rounded-full text-sm font-medium text-white transition-colors ${
               danger
                 ? 'bg-error hover:opacity-90'
-                : 'bg-amber-700 hover:bg-amber-600'
+                : 'bg-accent hover:bg-accent-hover'
             }`}
           >
             {confirmLabel}

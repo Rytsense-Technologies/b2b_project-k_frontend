@@ -24,6 +24,21 @@ export function normalizePhone(value) {
   return hasPlus ? `+${digits}` : digits;
 }
 
+/**
+ * Display an Indian mobile as "+91 89397 37644" (other country codes stay "+<digits>").
+ * Spaces are display-only; normalizePhone strips them before saving.
+ */
+export function formatIndianPhone(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  const indian = !raw.startsWith('+') || digits.startsWith('91');
+  if (!indian) return `+${digits}`;
+  const local = (raw.startsWith('+') || digits.length > 10 ? digits.replace(/^91/, '') : digits).slice(0, 10);
+  if (!local) return '+91';
+  return `+91 ${local.slice(0, 5)}${local.length > 5 ? ` ${local.slice(5)}` : ''}`;
+}
+
 export function normalizeCode(value) {
   return trimValue(value).toUpperCase().replace(/\s+/g, '');
 }

@@ -1,0 +1,156 @@
+/* ==========================================================================
+   Student Dashboard (/student/home) — `.shb-*`.
+   Grey canvas, white 8px cards, teal welcome hero, one orange next-step action.
+   Shared student patterns (.sb-tabs, .sb-rows, .sb-stats, .sb-skel) come from student-b2c.css.
+   ========================================================================== */
+
+.q-student .shb{display:flex;flex-direction:column;gap:var(--qs-section,32px);min-width:0}
+
+/* Teal welcome hero — first in the dashboard stack */
+.q-student .shb-hero{
+  padding:32px;border-radius:var(--radius-card,8px);background:var(--sb-teal);color:var(--neutral-0);min-width:0;
+}
+.q-student .shb-hero h2{margin:0;font-size:28px;line-height:36px;font-weight:700;letter-spacing:-.005em;color:var(--neutral-0)}
+.q-student .shb-hero p{margin:8px 0 0;max-width:60ch;font-size:16px;line-height:26px;font-weight:400;color:var(--on-brand-muted,rgba(255,255,255,.78))}
+.q-student .shb-hero-meta{margin:8px 0 0;font-size:14px;line-height:22px;color:var(--on-brand-muted,rgba(255,255,255,.78))}
+.q-student .shb-greet-skel{display:block;width:280px;max-width:100%;height:24px;background:var(--on-brand-raised,rgba(255,255,255,.08));border-radius:4px}
+
+.app.q-app-shell.q-student .shb-grid,
+.q-student .shb-grid{
+  display:grid;
+  grid-template-columns:minmax(0,2fr) minmax(0,1fr);
+  grid-template-areas:"perf next" "subj focus" "upnext lb";
+  gap:var(--qs-gap,24px);
+  align-items:stretch;
+}
+.q-student .shb-col{display:contents}
+.q-student .shb-perf{grid-area:perf}
+.q-student .shb-next{grid-area:next}
+.q-student .shb-subj{grid-area:subj}
+.q-student .shb-focus{grid-area:focus}
+.q-student .shb-upnext{grid-area:upnext}
+.q-student .shb-lb{grid-area:lb}
+
+/* ---------- Card ---------- */
+.q-student .shb-card{
+  display:flex;flex-direction:column;gap:var(--qs-head-gap,16px);min-width:0;height:100%;padding:var(--qs-card-pad,24px);
+  background:var(--panel,#fff);border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow));
+}
+.q-student .shb-sec{display:flex;flex-direction:column;gap:12px;min-width:0}
+.q-student .shb-sec-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
+.q-student .shb-sec-h > div{min-width:0}
+.q-student .shb-sec-h h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .shb-sec-h p{margin:4px 0 0;font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .shb-more{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:44px;font-size:14px;font-weight:500;color:var(--sb-teal);text-decoration:none;white-space:nowrap}
+.q-student .shb-more:hover{text-decoration:underline}
+.q-student .shb-more:focus-visible,.q-student .shb a:focus-visible,.q-student .shb button:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+.q-student .shb-over{display:block;font-size:11px;line-height:16px;font-weight:500;color:var(--sb-index);text-transform:uppercase;letter-spacing:.08em}
+.q-student .shb-skel{display:flex;flex-direction:column;gap:8px}
+.q-student .shb-skel .sb-skel{display:block}
+.q-student .shb-retry{background:none;border:0;padding:0;cursor:pointer;font:inherit}
+
+/* ---------- Performance card ---------- */
+.q-student .shb-perf{gap:16px}
+.q-student .shb-perf-b{display:flex;flex-direction:column;gap:16px}
+.q-student .shb-perf-main{display:flex;align-items:center;gap:24px;min-width:0}
+.q-student .shb-ring{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
+.q-student .shb-ring > span{font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .shb-perf-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.q-student .shb-perf-note{margin:0;font-size:16px;line-height:26px;font-weight:400;color:var(--sb-ink)}
+.q-student .shb-perf-basis{margin:0;font-size:14px;line-height:22px;color:var(--sb-muted)}
+.q-student .shb-perf-list{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.q-student .shb-perf-list > div{min-width:0;padding:12px 16px;background:var(--surface-tint,var(--sb-wash));border-radius:var(--radius-card,8px)}
+.q-student .shb-perf-list dt{font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .shb-perf-list dd{margin:4px 0 0;display:flex;flex-direction:column;min-width:0}
+.q-student .shb-perf-list dd b{font-size:22px;line-height:30px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums}
+.q-student .shb-perf-list dd span{font-size:12px;line-height:18px;color:var(--sb-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-student .shb-stats{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;
+  justify-content:stretch;padding-top:16px;border-top:1px solid var(--sb-hairline);
+}
+.q-student .shb-stats .sb-stat{text-align:left;min-width:0}
+.q-student .shb-stats .sb-stat b{font-size:16px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .shb-stats .sb-stat span{font-size:12px;line-height:18px}
+.q-student .shb-stats .sb-rule{display:none}
+
+/* ---------- Stacked rows (Up next) ---------- */
+.q-student .shb-row{grid-template-columns:auto minmax(0,1fr) auto auto;min-height:76px;text-decoration:none}
+.q-student .shb-row-main{display:flex;flex-direction:column;min-width:0}
+.q-student .shb-row-ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sb-wash);color:var(--sb-teal)}
+.q-student .shb-row-act{font-size:14px;font-weight:500;color:var(--sb-teal)}
+.q-student .shb-row .sb-row__score small{font-size:12px;font-weight:500;color:var(--sb-muted);margin-left:4px}
+.q-student .shb-row .sb-row__sub span{white-space:nowrap}
+.q-student .shb .sb-empty .text-link{text-decoration:none}
+
+/* ---------- Side column: next step, study focus ---------- */
+.q-student .shb-next,.q-student .shb-focus{gap:16px}
+.q-student .shb-next-t{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.q-student .shb-next-t > div{min-width:0}
+.q-student .shb-circle{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sb-wash);color:var(--sb-teal)}
+.q-student .shb-next h3,.q-student .shb-focus h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink);overflow-wrap:anywhere}
+.q-student .shb-next-t p{margin:4px 0 0;font-size:14px;line-height:22px;color:var(--sb-ink)}
+.q-student .shb-meta{margin:0;font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .shb-line{margin:0;font-size:14px;line-height:22px;color:var(--sb-ink)}
+.q-student .shb-actions{display:flex;flex-direction:column;gap:8px;margin-top:0}
+.q-student .shb-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 24px;
+  border-radius:var(--radius-control,6px);background:var(--panel);border:1px solid var(--neutral-200);color:var(--sb-ink);
+  font-size:15px;line-height:20px;font-weight:500;text-decoration:none;white-space:nowrap;
+}
+.q-student .shb-btn:hover{background:var(--mist)}
+.q-student .shb-btn--primary{background:var(--sb-orange);border-color:transparent;color:var(--neutral-0)}
+.q-student .shb-btn--primary:hover{background:var(--sb-orange-hover)}
+
+/* ---------- Leaderboard snapshot ---------- */
+.q-student .shb-rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.q-student .shb-rank li{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:44px;padding:8px 12px;border-radius:var(--radius-control,6px)}
+.q-student .shb-rank li.is-me{background:var(--sb-wash)}
+.q-student .shb-rank-n{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--sb-wash);color:var(--sb-teal);font-size:14px;font-weight:500}
+.q-student .shb-rank li.is-me .shb-rank-n{background:var(--sb-teal);color:var(--neutral-0)}
+.q-student .shb-rank-who{display:flex;flex-direction:column;min-width:0}
+.q-student .shb-rank-who b{font-size:14px;line-height:22px;font-weight:500;color:var(--sb-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-student .shb-rank-who small{font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .shb-rank-v{font-size:16px;line-height:26px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums;text-align:right}
+
+/* Score bands read as text + 6px dot */
+.q-student .shb .dv-band,.q-student .spg .dv-band,.q-student .slb .dv-band{
+  height:auto;padding:0;background:none;border-radius:0;gap:8px;font-size:12px;font-weight:500;
+}
+.q-student .shb .dv-band::before,.q-student .spg .dv-band::before,.q-student .slb .dv-band::before{
+  content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1023px){
+  .q-student .shb-hero{padding:24px}
+  .q-student .shb-hero h2{font-size:22px;line-height:30px;font-weight:500}
+  .app.q-app-shell.q-student .shb-grid,
+  .q-student .shb-grid{
+    display:flex;flex-direction:column;align-items:stretch;gap:var(--qs-gap,16px);
+    grid-template-areas:none;grid-template-columns:none;
+  }
+  .q-student .shb-col{display:contents}
+  .q-student .shb-perf{order:1;grid-area:auto}
+  .q-student .shb-next{order:2;grid-area:auto}
+  .q-student .shb-subj{order:3;grid-area:auto}
+  .q-student .shb-upnext{order:4;grid-area:auto}
+  .q-student .shb-focus{order:5;grid-area:auto}
+  .q-student .shb-lb{order:6;grid-area:auto}
+  .q-student .shb-card{height:auto}
+  .q-student .shb-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .q-student .shb-card{padding:var(--qs-card-pad,16px)}
+  .q-student .shb-perf-main{flex-direction:column;align-items:stretch;gap:16px}
+  .q-student .shb-ring{align-self:center}
+  .q-student .shb-actions{grid-template-columns:minmax(0,1fr)}
+  .q-student .shb-row{grid-template-columns:auto minmax(0,1fr) auto;min-height:72px}
+  .q-student .shb-row .sb-row__chev{display:none}
+  .q-student .shb-stats{gap:8px}
+  .q-student .sb-tabs{gap:16px}
+  .q-student .shb .sb-tab{font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  .q-student .shb-btn--primary{transition:none}
+}
+.q-student .shb-row .sb-row__idx{min-width:24px}

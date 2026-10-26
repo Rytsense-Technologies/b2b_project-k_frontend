@@ -16,6 +16,11 @@ export const usersApi = {
     tenantId = '',
     status = '',
     is_active,
+    departmentId = '',
+    programId = '',
+    semesterId = '',
+    yearOfStudy = '',
+    includeCounts = false,
   } = {}) => {
     const query = {
       page,
@@ -23,13 +28,24 @@ export const usersApi = {
       q: q ?? search,
       role: role || undefined,
       tenant_id: tenantId || undefined,
+      // GET /users?department_id= (users.py list_users) - one department only.
+      department_id: departmentId || undefined,
+      // Student placement filters (list_users program_id / semester_id / year_of_study).
+      program_id: programId || undefined,
+      semester_id: semesterId || undefined,
+      year_of_study: yearOfStudy || undefined,
+      // Adds counts_by_role / counts_by_status (scope + institution / department / search).
+      include_counts: includeCounts ? 'true' : undefined,
     };
     if (is_active !== undefined && is_active !== '') {
       query.is_active = is_active;
     } else if (status) {
+      // Server three-state filter: a pending invite is is_active=false too, so is_active alone
+      // cannot tell "pending" from "deactivated".
       const s = String(status).toLowerCase();
-      if (s === 'active') query.is_active = true;
-      if (s === 'inactive' || s.includes('deactiv')) query.is_active = false;
+      if (s === 'active') query.status = 'active';
+      else if (s.includes('pending')) query.status = 'pending_activation';
+      else if (s === 'inactive' || s.includes('deactiv')) query.status = 'deactivated';
     }
     return api.get(`/users?${buildParams(query)}`);
   },
@@ -47,6 +63,8 @@ export const usersApi = {
       phone_number: payload.phone_number ?? payload.phone ?? undefined,
       department: payload.department || undefined,
       department_id: payload.department_id || undefined,
+      program_id: payload.program_id || undefined,
+      semester_id: payload.semester_id || undefined,
     };
     if (payload.course_duration_years != null && payload.course_duration_years !== '') {
       body.course_duration_years = Number(payload.course_duration_years);
@@ -61,6 +79,15 @@ export const usersApi = {
       body.assigned_semesters = payload.assigned_semesters;
     }
     return api.post('/users', body);
+  },
+
+  updateUser: (userId, payload) => {
+    const body = {};
+    if (payload.department_id) body.department_id = payload.department_id;
+    // Programme / semester may be cleared, so send null explicitly.
+    if ('program_id' in payload) body.program_id = payload.program_id || null;
+    if ('semester_id' in payload) body.semester_id = payload.semester_id || null;
+    return api.patch(`/users/${userId}`, body);
   },
 
   updateUserRole: (userId, role) =>
@@ -78,6 +105,13 @@ export const usersApi = {
   },
 
   /** Maps to POST /auth/resend-activation { email } */
+  /** Cancel an invite that was never accepted (removes the pending account). */
+  revokeInvite: (userId) => api.post(`/users/${userId}/revoke-invite`),
+
+  /** Yearly rollover: +1 year for every active student (capped per student). dryRun previews counts only. */
+  bulkPromoteYear: ({ dryRun = true, tenantId } = {}) =>
+    api.post('/users/bulk-promote-year', { dry_run: dryRun, ...(tenantId ? { tenant_id: tenantId } : {}) }),
+
   resendInvite: (emailOrUser) => {
     const email = typeof emailOrUser === 'string'
       ? emailOrUser
@@ -85,11 +119,12 @@ export const usersApi = {
     return api.post('/auth/resend-activation', { email });
   },
 
-  /** EPIC-12 bulk CSV — not live yet. */
-  bulkCreateUsers: (formData) =>
-    api.post('/users/bulk', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  /**
+   * Bulk student import (≤100 rows, parsed from CSV in the browser).
+   * dryRun=true checks every row and writes nothing.
+   */
+  bulkImportStudents: (rows, { dryRun = true } = {}) =>
+    api.post('/users/bulk-import', { rows, dry_run: dryRun }),
 
   downloadCSVTemplate: async () => {
     const res = await api.get('/users/csv-template', { responseType: 'blob' });

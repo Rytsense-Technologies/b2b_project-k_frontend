@@ -84,17 +84,23 @@ export default function QuirriCombobox({
 
   const openMenu = useCallback(() => {
     if (disabled) return;
-    setQuery(selected?.label || '');
+    setQuery('');
     placeMenu();
     setActiveIndex(0);
     setOpen(true);
-  }, [disabled, placeMenu, selected?.label]);
+  }, [disabled, placeMenu]);
 
   const pick = useCallback((next) => {
     emitChange(onChange, name, next);
     close();
-    inputRef.current?.blur();
   }, [close, name, onChange]);
+
+  // Keep the active option visible while moving with the keyboard.
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    const el = typeof document !== 'undefined' ? document.getElementById(`${listId}-opt-${activeIndex}`) : null;
+    el?.scrollIntoView?.({ block: 'nearest' });
+  }, [activeIndex, listId, open, menuBox]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -107,18 +113,19 @@ export default function QuirriCombobox({
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         close();
-        inputRef.current?.blur();
       }
     };
     const onReposition = () => placeMenu();
     document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
+    // Capture phase: close the menu before a surrounding modal sees Escape.
+    document.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', onReposition);
     window.addEventListener('scroll', onReposition, true);
     return () => {
       document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
       window.removeEventListener('resize', onReposition);
       window.removeEventListener('scroll', onReposition, true);
     };
@@ -134,10 +141,18 @@ export default function QuirriCombobox({
       e.preventDefault();
       if (!open) openMenu();
       else setActiveIndex((i) => Math.max(0, (i < 0 ? 0 : i) - 1));
+    } else if (open && (e.key === 'Home' || e.key === 'PageUp') && filtered.length) {
+      e.preventDefault();
+      setActiveIndex(0);
+    } else if (open && (e.key === 'End' || e.key === 'PageDown') && filtered.length) {
+      e.preventDefault();
+      setActiveIndex(filtered.length - 1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (open && filtered[activeIndex]) pick(filtered[activeIndex].value);
       else if (!open) openMenu();
+    } else if (e.key === 'Tab' && open) {
+      close();
     } else if (e.key === 'Escape' && open) {
       e.preventDefault();
       close();
@@ -158,6 +173,7 @@ export default function QuirriCombobox({
           aria-autocomplete="list"
           aria-expanded={open}
           aria-controls={open ? listId : undefined}
+          aria-activedescendant={open && filtered[activeIndex] ? `${listId}-opt-${activeIndex}` : undefined}
           aria-label={label ? undefined : (ariaLabel || placeholder || 'Search')}
           aria-invalid={Boolean(error)}
           disabled={disabled}
@@ -173,8 +189,10 @@ export default function QuirriCombobox({
             setActiveIndex(0);
             if (value) emitChange(onChange, name, '');
           }}
-          onFocus={() => {
-            if (!disabled) openMenu();
+          // Open on click, typing or ArrowDown - not on focus, so a dialog that
+          // focuses this field on open does not pop the list over it (phones).
+          onClick={() => {
+            if (!disabled && !open) openMenu();
           }}
           onKeyDown={onInputKeyDown}
           onBlur={onBlur}
@@ -211,9 +229,9 @@ export default function QuirriCombobox({
                 const selectedRow = String(item.value) === String(value ?? '');
                 const active = index === activeIndex;
                 return (
-                  <button
+                  <div
                     key={`${item.value}-${item.label}`}
-                    type="button"
+                    id={`${listId}-opt-${index}`}
                     role="option"
                     aria-selected={selectedRow}
                     className={`quirri-dd__option${selectedRow ? ' is-selected' : ''}${active ? ' is-active' : ''}`}
@@ -227,7 +245,7 @@ export default function QuirriCombobox({
                         <path d="M5 12l5 5L20 7" strokeWidth="2.2" />
                       </svg>
                     ) : null}
-                  </button>
+                  </div>
                 );
               })
             )}

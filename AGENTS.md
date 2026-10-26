@@ -47,7 +47,7 @@ After code edits: `graphify update . --no-cluster` (hooks should also run).
 
 - Four portals: SA `/superadmin` · CA `/admin` · Faculty `/faculty` · Student `/student`
 - Login UI **frozen** (centered Quirri card) until user unfreezes
-- Design system (`design-system.md`): white sidebar · Poppins 400/500 · canvas `#EEF0F0` · solid Teal 500 banners/filter bars · **one Amber 700 `#AC5B16` CTA** · radii 6 controls / 8 cards / 16 modals · no gradients · no mocks
+- Design system (`design-system.md`): white sidebar · Poppins 400/500 · canvas `#EEF0F0` · solid Teal 500 banners/filter bars · **reference palette (§0b): teal structure · teal `#0E5C6B` primary · one orange `#F5821F` for the main action (white text) and small highlights — never `#AC5B16` · green `#5CB414` progress · cat-1…6 skill hues** · radii 6 controls / 8 cards / 16 modals · no gradients · no mocks
 - UI work: `design-system.md` §6 BEFORE → build → §7 AFTER (Playwright 1440 + 390)
 - Forms: `FIELD_RULES` + `QuirriRHFField` · India-only location · no plan/licence UI
 - Workflow: Understand → Plan → Implement → Integrate → Validate → Refine → Report

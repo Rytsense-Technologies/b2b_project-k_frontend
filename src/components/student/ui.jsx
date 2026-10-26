@@ -57,6 +57,11 @@ const PATHS = {
   key: <><circle cx="8" cy="15" r="4" /><path d="M11 12l9-9M17 6l3 3M15 8l2 2" /></>,
   phone2: <><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></>,
   filter: <path d="M3 5h18l-7 8v6l-4 2v-8z" />,
+  target: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></>,
+  bulb: <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z" />,
+  bars: <path d="M6 20V12M12 20V6M18 20v-4" />,
+  bookOpen: <path d="M2 5h6a4 4 0 0 1 4 4v11a3 3 0 0 0-3-3H2zM22 5h-6a4 4 0 0 0-4 4v11a3 3 0 0 1 3-3h7z" />,
+  playCircle: <><circle cx="12" cy="12" r="9" /><path d="M10 8.5l5 3.5-5 3.5z" /></>,
 };
 
 export function Icon({ name, size = 18, className = '' }) {
@@ -96,16 +101,7 @@ export function Kpi({ icon, label, value, sub, tone }) {
     <div className="sd-kpi">
       <div className="sd-kpi-h"><Icon name={icon} size={16} /><span>{label}</span></div>
       <div className={`sd-kpi-v${tone ? ` is-${tone}` : ''}`}>{value ?? '—'}</div>
-      {sub ? <div className="sd-kpi-s">{sub}</div> : null}
+      <div className="sd-kpi-s" aria-hidden={!sub || undefined}>{sub || '\u00a0'}</div>
     </div>
   );
-}
-
-/** Score → tone key used by .sp-score / .sd-tone-- classes. */
-export function scoreToneKey(score) {
-  const n = Number(score);
-  if (!Number.isFinite(n)) return 'none';
-  if (n >= 75) return 'good';
-  if (n >= 50) return 'mid';
-  return 'low';
 }

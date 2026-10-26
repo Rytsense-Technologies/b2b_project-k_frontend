@@ -96,6 +96,23 @@ export function resolveLivekitBrowserUrl(urlFromApi) {
 /** @deprecated alias */
 export const resolveLivekitWsUrl = resolveLivekitBrowserUrl;
 
+/**
+ * Voice Q&A (FRONTEND_CHANGES.md §4): use the `livekit_url` the API returns
+ * on every call — the server's public address — instead of a hard-coded one.
+ * Only an internal/docker host the browser cannot reach (livekit-server,
+ * host.docker.internal) or a localhost URL handed to a non-local browser
+ * falls back to resolveLivekitBrowserUrl().
+ */
+export function livekitUrlFromApi(urlFromApi) {
+  const parsed = parseWsUrl(urlFromApi);
+  if (!parsed || !/^wss?:$/.test(parsed.protocol)) return resolveLivekitBrowserUrl(urlFromApi);
+  const host = parsed.hostname.toLowerCase();
+  const loopback = host === 'localhost' || host === '127.0.0.1';
+  if (loopback) return isLocalBrowserHost() ? urlFromApi : resolveLivekitBrowserUrl(urlFromApi);
+  if (isInternalLivekitHost(host)) return resolveLivekitBrowserUrl(urlFromApi);
+  return urlFromApi;
+}
+
 /** HTTP origin for LiveKit validate / health checks (ws → http). */
 export function livekitHttpOrigin(wsUrl) {
   const parsed = parseWsUrl(wsUrl || LOCAL_LIVEKIT_WS);

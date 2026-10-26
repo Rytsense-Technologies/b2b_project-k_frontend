@@ -34,6 +34,27 @@ export const mcqApi = {
   },
 
   /**
+   * GET /mcq/my-attempts — every quiz the signed-in student submitted, with its chapter job_id.
+   * One call instead of get(jobId) per chapter. Returns [{ job_id, percentage, correct_count, total_questions, submitted_at }].
+   */
+  myAttempts() {
+    return api.get('/mcq/my-attempts').then((res) => res?.data?.items || []);
+  },
+
+  /**
+   * Staff view that treats "no question set yet" (404) as `null` instead of an error.
+   * Note: the browser still logs the 404 response in the network console; only the
+   * backend can avoid that (e.g. by returning the set state on the jobs list).
+   */
+  getOrNull(jobId) {
+    return api
+      .get(`/mcq/jobs/${encodeURIComponent(jobId)}`, {
+        validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+      })
+      .then((res) => (res?.status === 404 ? null : res?.data));
+  },
+
+  /**
    * POST /mcq/jobs/{job_id}/submit — student only, one attempt.
    * Body: { answers: [{ question_id, selected_options: ['A'|…] }] }
    */
@@ -42,7 +63,67 @@ export const mcqApi = {
       .post(`/mcq/jobs/${encodeURIComponent(jobId)}/submit`, body)
       .then((res) => res?.data);
   },
+
+  /** POST /mcq/jobs/{job_id}/approve — HOD / Faculty (or admin) releases the set to students. */
+  approve(jobId) {
+    return api
+      .post(`/mcq/jobs/${encodeURIComponent(jobId)}/approve`)
+      .then((res) => res?.data);
+  },
+
+  /**
+   * GET /mcq/jobs/{job_id}/report.pdf — assessment PDF report (SOW §6.4.3).
+   * Students get their own; staff pass the student's userId.
+   */
+  async downloadReport(jobId, userId) {
+    const qs = userId ? `?user_id=${encodeURIComponent(userId)}` : '';
+    const res = await api.get(`/mcq/jobs/${encodeURIComponent(jobId)}/report.pdf${qs}`, { responseType: 'blob' });
+    const disposition = res.headers?.['content-disposition'] || '';
+    const name = disposition.match(/filename="?([^"]+)"?/i)?.[1] || 'quirri-assessment-report.pdf';
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
 };
+
+/**
+ * Staff-side "Generate MCQs" errors (FRONTEND_CHANGES.md §7):
+ * 404 not available · 409 already generating · 400 unreadable document (show detail).
+ */
+export function mcqGenerateErrorMessage(err) {
+  const status = err?.response?.status;
+  const detail = String(err?.response?.data?.detail || '').trim();
+  if (status === 404) return 'Not available — this chapter could not be found.';
+  if (status === 409) return 'MCQs are already being generated for this chapter. Please wait…';
+  if (status === 400 && detail && !/\/mcq\/jobs|POST\s*\//i.test(detail)) return detail;
+  if (status === 429) return 'Please wait a moment and try again.';
+  return mcqErrorMessage(err, 'Could not generate MCQs for this chapter.');
+}
+
+/**
+ * After a 409 ("already generating"), wait for the running generation to
+ * finish. Resolves with the document once it is ready/failed, or null on timeout.
+ */
+export async function waitForMcqGeneration(jobId, { intervalMs = 5000, timeoutMs = 180000 } = {}) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((r) => setTimeout(r, intervalMs));
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const doc = await mcqApi.get(jobId);
+      if (doc && doc.status && doc.status !== 'generating' && doc.status !== 'pending') return doc;
+    } catch (err) {
+      if (err?.response?.status !== 404) return null; // 404 = document row not created yet
+    }
+  }
+  return null;
+}
 
 export function mcqErrorMessage(err, fallback = 'Something went wrong with this quiz.') {
   const status = err?.response?.status;
@@ -98,6 +179,30 @@ export function optionEntries(question) {
   return keys
     .filter((k) => map[k] != null && String(map[k]).trim() !== '')
     .map((k) => ({ key: k, label: String(map[k]) }));
+}
+
+/**
+ * Question-set state for a chapter, from a staff MCQ document (or null when none exists).
+ * 'none' | 'generating' | 'failed' | 'awaiting' | 'approved'
+ */
+export function mcqSetState(doc) {
+  if (!doc) return 'none';
+  const s = String(doc.status || '').toLowerCase();
+  if (s === 'generating' || s === 'pending') return 'generating';
+  if (s === 'failed') return 'failed';
+  if (doc.approved_at) return 'approved';
+  return 'awaiting';
+}
+
+/** Human label for a question type: "true_false" → "True / False". */
+export function questionTypeLabel(type) {
+  const t = String(type || '').toLowerCase();
+  if (!t) return '';
+  if (t === 'true_false' || t === 'truefalse' || t === 'boolean') return 'True / False';
+  if (t === 'single' || t === 'single_choice' || t === 'mcq') return 'Single answer';
+  if (t === 'multiple' || t === 'multiple_choice' || t === 'multi') return 'Multiple answers';
+  const text = t.replace(/_/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export function isMultiSelect(question) {

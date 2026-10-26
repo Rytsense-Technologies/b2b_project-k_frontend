@@ -1,0 +1,124 @@
+/* ==========================================================================
+   Student · My progress (/student/progress) — `.spg-*`.
+   Text tabs, white 8px cards, teal filter bar above lists, stacked rows,
+   one orange action (recommended next step). .sb-* from student-b2c.css.
+   ========================================================================== */
+
+.q-student .spg{display:flex;flex-direction:column;gap:var(--qs-section,32px);min-width:0}
+.q-student .spg-panel{display:flex;flex-direction:column;gap:24px;min-width:0}
+.q-student .spg-col{display:flex;flex-direction:column;gap:24px;min-width:0}
+.q-student .spg-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:24px;align-items:start}
+.q-student .spg-context{margin:0;display:inline-flex;align-items:center;gap:8px;font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .spg-context .sd-i{color:var(--sb-teal)}
+.q-student .spg a:focus-visible,.q-student .spg button:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+.q-student .spg .sb-filterbar :focus-visible{outline-color:#fff}
+.q-student .spg-linkbtn{background:none;border:0;padding:0;cursor:pointer;font:inherit}
+
+/* ---------- Card + section heads ---------- */
+.q-student .spg-card{display:flex;flex-direction:column;gap:16px;background:var(--panel,#fff);border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow));padding:var(--qs-card-pad,24px);min-width:0}
+.q-student .spg-card-h,.q-student .spg-sec-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}
+.q-student .spg-card-h > div,.q-student .spg-sec-h > div{min-width:0}
+.q-student .spg-card-h h3,.q-student .spg-sec-h h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .spg-card-h h3::before,.q-student .spg-sec-h h3::before{content:none;display:none}
+.q-student .spg-card-h p,.q-student .spg-sec-h p{margin:4px 0 0;font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .spg-sec{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+/* ---------- Stat cluster card ---------- */
+.q-student .spg-kpis{flex-direction:row;align-items:center;justify-content:space-around;gap:16px;padding:16px 24px}
+.q-student .spg-kpi{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;min-width:0}
+.q-student .spg-kpi b{font-size:22px;line-height:30px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums}
+.q-student .spg-kpi > span{font-size:14px;line-height:22px;font-weight:500;color:var(--sb-ink)}
+.q-student .spg-kpi small{display:inline-flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:4px;font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .spg-kpis .sb-rule{flex:none;width:1px;height:56px;background:rgba(16,34,40,.1)}
+
+/* ---------- Buttons ---------- */
+.q-student .spg-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 24px;
+  border-radius:var(--radius-control,6px);background:var(--panel,#fff);border:1px solid rgba(16,34,40,.15);color:var(--sb-ink);
+  font-size:15px;line-height:20px;font-weight:500;text-decoration:none;white-space:nowrap;
+}
+.q-student .spg-btn:hover{background:var(--mist,#F8F8F9)}
+.q-student .spg-btn--primary{width:100%;min-height:44px;background:var(--sb-orange);border-color:transparent;color:#fff}
+.q-student .spg-btn--primary:hover{background:var(--sb-orange-hover)}
+.q-student .spg-circle{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--sb-wash);color:var(--sb-teal)}
+.q-student .spg-circle--lg{width:48px;height:48px}
+
+/* ---------- Recommended next step ---------- */
+.q-student .spg-next{gap:12px}
+.q-student .spg-next-tag{display:flex;align-items:center;gap:12px;font-size:11px;line-height:16px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--sb-index)}
+.q-student .spg-next h2{margin:4px 0 0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .spg-next p{margin:0 0 4px;font-size:14px;line-height:22px;color:var(--sb-ink)}
+.q-student .spg-next-links{list-style:none;margin:4px 0 0;padding:0}
+.q-student .spg-next-links li{border-top:1px solid var(--sb-hairline)}
+.q-student .spg-next-links a{display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 4px;color:var(--sb-teal);text-decoration:none;font-size:14px;font-weight:500}
+.q-student .spg-next-links a span{flex:1}
+.q-student .spg-next-links a:hover span{text-decoration:underline}
+
+/* ---------- By subject ---------- */
+.q-student .spg-tab-n{font-size:12px;font-weight:500;color:var(--sb-muted);margin-left:4px}
+.q-student .spg-subj-h{display:flex;align-items:center;gap:16px}
+.q-student .spg-subj-h > div{flex:1;min-width:0}
+.q-student .spg-subj-h h2{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-teal)}
+.q-student .spg-subj-h h2::before{content:none;display:none}
+.q-student .spg-subj-h p{margin:4px 0 0;font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .spg-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.q-student .spg-metric{display:flex;flex-direction:column;gap:8px;padding:16px;background:var(--surface-tint,var(--sb-wash));border-radius:var(--radius-card,8px);min-width:0}
+.q-student .spg-metric > span{font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .spg-metric-row{display:flex;align-items:center;gap:12px;min-height:64px}
+.q-student .spg-metric-row b{font-size:22px;line-height:30px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums}
+.q-student .spg-metric small{font-size:12px;line-height:18px;color:var(--sb-muted)}
+.q-student .spg-assess-top{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:24px;align-items:stretch}
+.q-student .spg-sum{display:grid;gap:12px}
+.q-student .spg-sum .spg-metric{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 16px}
+.q-student .spg-sum .spg-metric > span{font-size:14px;line-height:22px}
+.q-student .spg-sum .spg-metric b{font-size:16px;line-height:26px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums}
+.q-student .spg-metric-row--flat{min-height:0;gap:8px}
+
+/* ---------- Rows ---------- */
+.q-student .spg-row{grid-template-columns:auto minmax(0,1fr) auto auto auto;min-height:76px;text-decoration:none}
+.q-student .spg-row--record{grid-template-columns:96px minmax(0,1fr) auto auto}
+.q-student .spg-row .sb-row__idx{min-width:24px}
+.q-student .spg-row-main{display:flex;flex-direction:column;min-width:0}
+.q-student .spg-row-date{font-size:12px;line-height:18px;font-weight:500;color:var(--sb-index);font-variant-numeric:tabular-nums}
+.q-student .spg-row-state{display:inline-flex;align-items:center;gap:8px;font-size:12px;line-height:18px;font-weight:500;color:var(--sb-muted);white-space:nowrap}
+.q-student .spg-row-act{font-size:14px;font-weight:500;color:var(--sb-teal);min-width:52px;text-align:right}
+.q-student .spg-row .sb-row__score small{font-size:12px;font-weight:500;color:var(--sb-muted);margin-left:4px}
+.q-student .spg .sb-dot--muted{background:var(--neutral-300)}
+.q-student .spg .sb-empty .text-link{text-decoration:none}
+
+/* ---------- Notes ---------- */
+.q-student .spg-note{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;line-height:22px;color:var(--sb-muted)}
+.q-student .spg-note .sd-i{color:var(--sb-teal);flex:none}
+
+/* ---------- Loading ---------- */
+.q-student .spg-skel{display:flex;flex-direction:column;gap:8px}
+.q-student .spg-skel .sb-skel{display:block}
+
+.q-student .spg .dv-band{height:auto;padding:0;background:none;border-radius:0;gap:8px;font-size:12px;font-weight:500}
+.q-student .spg .dv-band::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1100px){
+  .q-student .spg-assess-top{grid-template-columns:minmax(0,1fr)}
+  .q-student .spg-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:768px){
+  .q-student .spg-kpis{flex-direction:column;align-items:stretch;gap:12px;padding:16px}
+  .q-student .spg-kpis .sb-rule{width:100%;height:1px}
+  .q-student .spg-metrics{grid-template-columns:minmax(0,1fr)}
+  .q-student .spg .sb-meta{flex-direction:column;align-items:flex-start}
+  .q-student .spg .sb-meta .sb-stats{width:100%;justify-content:space-around}
+}
+@media (max-width:640px){
+  .q-student .spg-card{padding:16px}
+  .q-student .spg-subj-h{flex-wrap:wrap}
+  .q-student .spg-subj-open{width:100%}
+  .q-student .spg-row{grid-template-columns:auto minmax(0,1fr) auto;min-height:72px}
+  .q-student .spg-row-act{display:none}
+  .q-student .spg-row--record{grid-template-columns:minmax(0,1fr) auto}
+  .q-student .spg-row--record .spg-row-date{grid-column:1 / -1;font-size:12px}
+}
+@media (min-width:1024px){
+  .q-student .spg .sb-filterbar .sb-search{flex:1 1 308px;max-width:420px}
+  .q-student .spg .sb-filterbar .sb-select{flex:0 1 240px}
+}

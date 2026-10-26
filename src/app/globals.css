@@ -38,12 +38,12 @@
   border-color: var(--line, #DEE0E1);
 }
 .quirri-btn-primary {
-  background: var(--amber-700, #AC5B16);
+  background: var(--accent);
   color: #fff;
   border-color: transparent;
 }
 .quirri-btn-primary:hover {
-  background: var(--amber-600, #CE6D1A);
+  background: var(--accent-hover);
 }
 .quirri-btn-light,
 .quirri-btn-ghost {

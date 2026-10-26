@@ -7,7 +7,6 @@ import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { clearCredentials } from '@/store/slices/authSlice';
-import { resetSession } from '@/store/slices/interviewSlice';
 import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
 import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/lib/api/auth';
@@ -51,6 +50,17 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    href: '/admin/mcq',
+    label: 'MCQ review',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M9 11l2 2 4-4" />
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <path d="M8 17h8" />
+      </svg>
+    ),
+  },
   { group: 'People' },
   {
     href: '/admin/students',
@@ -70,17 +80,6 @@ const NAV = [
         <circle cx="9" cy="8" r="3" />
         <path d="M3 19c0-3.2 2.7-5 6-5s6 1.8 6 5" />
         <path d="M17 7l2 2 3-3.2" />
-      </svg>
-    ),
-  },
-  { group: 'Placement' },
-  {
-    href: '/admin/interviews',
-    label: 'Interview assignments',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4z" />
-        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
       </svg>
     ),
   },
@@ -105,6 +104,16 @@ const NAV = [
     ),
   },
   { group: 'Account' },
+  {
+    href: '/admin/notifications',
+    label: 'Notifications',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+      </svg>
+    ),
+  },
   {
     href: '/admin/settings',
     label: 'Settings',
@@ -146,6 +155,8 @@ export default function CollegeAdminSidebar() {
   }, [sidebarOpen, hideTip]);
 
   const u = sessionUIReady ? user : null;
+  // Neutral placeholders until the profile loads - never "Your college / College Admin".
+  const pending = !u;
   const displayName = u?.name?.trim() || u?.first_name || 'College Admin';
   const displayEmail = u?.email || '';
   const initials = getInitials(u?.name, u?.email);
@@ -162,7 +173,6 @@ export default function CollegeAdminSidebar() {
     }
     clearTokens();
     dispatch(clearCredentials());
-    dispatch(resetSession());
     queryClient.clear();
     toast.success('Logged out successfully');
     router.push('/auth/login');
@@ -203,10 +213,11 @@ export default function CollegeAdminSidebar() {
             )
           : {})}
       >
-        <div className="mark" aria-hidden="true">{tenantInitials}</div>
+        <div className={`mark${pending ? ' rps-sk' : ''}`} aria-hidden="true">{pending ? '' : tenantInitials}</div>
         <div className="txt">
-          <div className="nm">{collegeName}</div>
-          {universityName ? <div className="sc">{universityName}</div> : null}
+          <div className="nm">{pending ? <span className="rps-sk rps-sk--line" aria-hidden="true" /> : collegeName}</div>
+          {pending ? <div className="sc"><span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /></div> : null}
+          {!pending && universityName ? <div className="sc">{universityName}</div> : null}
         </div>
       </div>
 
@@ -248,17 +259,17 @@ export default function CollegeAdminSidebar() {
             ? tipHandlers(`${displayName} · ${displayEmail || 'College Admin'}`, 'right')
             : {})}
         >
-          <div className="av">{initials}</div>
+          <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
           <div className="who-meta">
-            <div className="n">{displayName}</div>
-            <div className="r">{displayEmail || 'College Admin'}</div>
+            <div className="n">{pending ? <span className="rps-sk rps-sk--line" aria-hidden="true" /> : displayName}</div>
+            <div className="r">{pending ? <span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /> : (displayEmail || 'College Admin')}</div>
           </div>
           <button
             type="button"
             className="logout"
             onClick={handleLogout}
-            aria-label="Log out"
-            {...tipHandlers('Log out', sidebarOpen ? 'top' : 'right')}
+            aria-label="Sign out"
+            {...tipHandlers('Sign out', sidebarOpen ? 'top' : 'right')}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

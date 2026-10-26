@@ -1,257 +1,372 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import {
   ModulePage,
-  ModuleBanner,
+  TabNav,
+  TabPanel,
   KpiRow,
   Panel,
-  Kpi,
+  SegTabs,
   Icon,
   SectionState,
+  Pager,
 } from '@/components/shared/module-ui';
+import { MetricListCard, ModernDonut } from '@/components/shared/data-viz';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { healthApi } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
+import { useUrlState, useTabParam } from '@/hooks/useUrlState';
+import { formatCount } from '@/lib/superadmin/format';
+import {
+  UPTIME_OK, UPTIME_BAD, serviceTone, toNumber, groupNumbers, overallHealth,
+} from '@/lib/superadmin/health';
+import { withoutInterview } from '@/lib/product/interviewOff';
 
 const METRIC_ICONS = ['activity', 'clock', 'layers', 'alert'];
+const METRIC_PLACEHOLDERS = ['Uptime · 30d', 'API p95 latency', 'Jobs in queue', 'Failed jobs · 24h'];
+const TONE = { green: 'sp-pill--good', amber: 'sp-pill--low', red: 'sp-pill--err', muted: '' };
 
-/** Expected health metrics — shown as "—" until the health API reports them. */
-const METRIC_PLACEHOLDERS = [
-  { k: 'Uptime · 30d', icon: 'activity' },
-  { k: 'API p95 latency', icon: 'clock' },
-  { k: 'Jobs in queue', icon: 'layers' },
-  { k: 'Failed jobs · 24h', icon: 'alert' },
+const TABS = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'errors', label: 'Errors' },
 ];
 
-const TONE = { green: 'sp-pill--good', amber: 'sp-pill--low', red: 'sp-pill--err' };
+const ERR_PAGE_SIZE = 10;
 
-function statusVariant(status) {
-  const value = String(status || '').toLowerCase();
-  if (value.includes('operational') || value.includes('ok') || value.includes('healthy')) return 'green';
-  if (value.includes('degraded') || value.includes('warn')) return 'amber';
-  return 'red';
+/** GET /health/errors accepts days 1–30. */
+const RANGES = [
+  { value: '1', label: '24 hours' },
+  { value: '7', label: '7 days' },
+  { value: '30', label: '30 days' },
+];
+
+/** "12 Oct, 2:05 pm" in IST - the time an error last happened. */
+function formatWhen(iso) {
+  const d = new Date(iso || '');
+  if (Number.isNaN(d.getTime())) return iso || '—';
+  return d.toLocaleString('en-IN', {
+    day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+  }).replace('Sept', 'Sep');
 }
 
-/** Empty panel body: Teal 300 outline icon, title, one line. */
-function PanelEmpty({ icon, title, children }) {
+/** 406000 ms -> "6 min 46 s"; 950 -> "950 ms". */
+function formatMs(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n)) return '—';
+  if (n < 1000) return `${Math.round(n)} ms`;
+  const s = Math.round(n / 1000);
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return r ? `${m} min ${r} s` : `${m} min`;
+}
+
+function ErrorRow({ row, open, onToggle }) {
+  const message = String(row.error || row.message || '');
+  const [firstLine, ...restLines] = message.split('\n');
+  const headline = firstLine.length > 160 ? `${firstLine.slice(0, 157)}…` : firstLine;
+  const detail = [firstLine.length > 160 || restLines.length ? message : null, row.detail]
+    .filter(Boolean).join('\n\n') || null;
   return (
-    <div className="sa-empty">
-      <span className="sa-empty-ic" aria-hidden="true"><Icon name={icon} size={24} /></span>
-      <div>
-        <b>{title}</b>
-        {children ? <p>{children}</p> : null}
-      </div>
-    </div>
+    <>
+      <tr>
+        <td>
+          <b className="sa-err-head">{headline || '—'}</b>
+          {row.path || row.institution ? (
+            <small className="sa-row-code">{[row.path, row.status_code ? `HTTP ${row.status_code}` : null, row.institution].filter(Boolean).join(' · ')}</small>
+          ) : null}
+        </td>
+        <td data-label="Service" className="sa-nowrap">{row.service}</td>
+        <td data-label="Count" className="num"><b>{formatCount(row.count ?? 1)}</b></td>
+        <td data-label="Last seen" className="sa-muted sa-nowrap">{formatWhen(row.time || row.created_at)}</td>
+        <td className="sa-actions-cell">
+          {detail ? (
+            <button type="button" className="sp-link sa-err-toggle" aria-expanded={open} onClick={onToggle}>
+              {open ? 'Hide' : 'Details'}
+            </button>
+          ) : null}
+        </td>
+      </tr>
+      {open && detail ? (
+        <tr className="sa-err-detail">
+          <td colSpan={5}><pre>{detail}</pre></td>
+        </tr>
+      ) : null}
+    </>
+  );
+}
+
+function HealthView() {
+  const [tab] = useTabParam(TABS.map((t) => t.value), 'overview');
+  const [url, setUrl] = useUrlState({ service: '', days: '7', page: '1' });
+  const days = RANGES.some((r) => r.value === url.days) ? url.days : '7';
+  const errPage = Math.max(1, Number.parseInt(url.page, 10) || 1);
+  const [openError, setOpenError] = useState(null);
+
+  const { data: statusData, loading: statusLoading, error: statusError, reload: reloadStatus } = useAsyncResource(
+    () => fetchOptional(() => healthApi.getStatus()),
+    [],
+  );
+  const { data: errorsData, loading: errorsLoading, error: errorsError, reload: reloadErrors } = useAsyncResource(
+    () => fetchOptional(() => healthApi.getErrors({ days, service: url.service || undefined, limit: 100 })),
+    [days, url.service],
+  );
+  // Live: re-check status and errors every minute + on tab focus.
+  const ago = useTimeAgo(useLiveRefresh(() => Promise.all([reloadStatus({ silent: true }), reloadErrors({ silent: true })])));
+
+  const unavailable = !statusLoading && statusData == null && !statusError;
+  const health = overallHealth(statusData);
+  const services = withoutInterview(asList(statusData?.services, []), (svc) => `${svc.name || ''} ${svc.service || ''}`);
+  const latency = asList(statusData?.pipeline_latency, []);
+  const errorsByService = withoutInterview(asList(statusData?.errors_by_service, []), (e) => e.service);
+  const errors = withoutInterview(asList(errorsData, []), (row) => `${row.service || ''} ${row.path || ''} ${row.error || ''}`);
+  // Skill: lists show 10 rows with "Showing X–Y of Z" + Previous / Next under them.
+  const errPageCount = Math.max(1, Math.ceil(errors.length / ERR_PAGE_SIZE));
+  const errPageNow = Math.min(errPage, errPageCount);
+  const errRows = errors.slice((errPageNow - 1) * ERR_PAGE_SIZE, errPageNow * ERR_PAGE_SIZE);
+  const errors24h = toNumber(statusData?.errors_24h);
+
+  const kpis = useMemo(() => {
+    const raw = withoutInterview(asList(statusData?.metrics, []), (m) => m.title || m.k);
+    if (!raw.length) {
+      return METRIC_PLACEHOLDERS.map((k, i) => ({
+        icon: METRIC_ICONS[i], label: k, value: null, sub: statusLoading ? 'Loading…' : 'Not reported yet',
+      }));
+    }
+    return raw.map((m, i) => {
+      const k = m.title || m.k;
+      const v = m.value ?? m.v;
+      const n = toNumber(v);
+      let value = groupNumbers(typeof v === 'number' ? formatCount(v) : v);
+      let sub = groupNumbers(m.trend || m.s);
+      let tone;
+      if (/uptime/i.test(k)) {
+        if (n != null && n < UPTIME_OK) tone = 'focus';
+        // Monitoring only runs while the API is up, so the share is of checked minutes.
+        sub = sub ? `${sub} · share of checked minutes` : 'Share of checked minutes';
+      } else if (/failed/i.test(k)) {
+        if (n) tone = 'focus';
+        // Server errors have their own panel; this tile is video jobs only.
+        sub = n ? 'Video jobs that failed — see Upload & content' : 'Video pipeline jobs';
+      }
+      if (/uptime/i.test(k) && n != null && n < UPTIME_BAD) value = <span className="sa-err-text">{value}</span>;
+      return { icon: METRIC_ICONS[i % METRIC_ICONS.length], label: k, value, sub, tone };
+    });
+  }, [statusData, statusLoading]);
+
+  const serviceBars = errorsByService
+    .filter((e) => Number(e.errors_24h) > 0)
+    .map((e) => ({
+      key: e.service,
+      label: e.service,
+      sub: Number(e.errors_1h) ? `${formatCount(e.errors_1h)} in the last hour` : null,
+      value: Number(e.errors_24h) || 0,
+      href: `/superadmin/health?tab=errors&service=${encodeURIComponent(e.service)}&days=1`,
+    }));
+  const stageBars = latency.map((s, i) => ({
+    key: i,
+    label: s.name,
+    sub: s.samples ? `${formatCount(s.samples)} ${Number(s.samples) === 1 ? 'chapter' : 'chapters'}` : null,
+    value: Number(s.ms) || 0,
+  }));
+
+  const serviceOptions = useMemo(() => {
+    const names = new Set(errorsByService.map((e) => e.service));
+    if (url.service) names.add(url.service);
+    return [{ value: '', label: 'All services' }, ...[...names].map((n) => ({ value: n, label: n }))];
+  }, [errorsByService, url.service]);
+
+  // Errors tab badge uses the same window as the list: exact 24 h total, else the sum of the grouped rows.
+  const errorsInWindow = days === '1'
+    ? errors24h
+    : (errorsData ? errors.reduce((a, r) => a + (Number(r.count) || 0), 0) : null);
+  const rangeLabel = RANGES.find((r) => r.value === days)?.label;
+  // The badge follows the Errors tab window (default 7 days); the overview donut is always the last 24 hours — label both.
+  const tabs = TABS.map((t) => (t.value === 'errors' && errorsInWindow ? { ...t, label: `Errors · ${rangeLabel}`, count: formatCount(errorsInWindow) } : t));
+
+  return (
+    <ModulePage className="sa-page">
+      <p className="sa-live">Live · updated {ago}</p>
+
+      {services.length ? (
+        <section className={`sa-strip is-${health.level}`} role="status">
+          <Icon name={health.level === 'green' ? 'tick' : 'alert'} size={18} />
+          <div>
+            <b>{health.title}</b>
+            {health.reason ? <span>{health.reason}</span> : null}
+          </div>
+        </section>
+      ) : null}
+
+      {unavailable ? (
+        <SectionState title="Platform health not available">
+          The health API is not reachable. This screen stays empty until it responds.
+        </SectionState>
+      ) : null}
+      {statusError ? (
+        <SectionState
+          tone="err"
+          title="Could not load health data"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reloadStatus().catch(() => {})}>
+              <Icon name="refresh" size={16} /> Try again
+            </button>
+          )}
+        >
+          {apiErrorMessage(statusError, 'Please try again.')}
+        </SectionState>
+      ) : null}
+
+      <TabNav tabs={tabs} value={tab} onChange={(v) => setUrl({ tab: v === 'overview' ? null : v }, { push: true })} label="Health sections" idBase="health" />
+
+      <TabPanel value="overview" current={tab} idBase="health">
+        <KpiRow label="Health summary" items={kpis} />
+
+        <div className="dv-grid">
+          <Panel title="Services" bodyClassName={null}>
+            {services.length ? (
+              <ul className="sp-rows">
+                {services.map((svc) => {
+                  const e24 = Number(svc.errors_24h) || 0;
+                  // A service that is up now but logged errors in the last 24 h must not read as all-clear.
+                  const recent = serviceTone(svc.status) === 'green' && e24 > 0;
+                  const tone = recent ? 'amber' : serviceTone(svc.status);
+                  return (
+                    <li key={svc.name} className="sp-row">
+                      <span className={`sp-row-ic${tone === 'green' ? ' sp-row-ic--good' : ''} sa-svc-ic--${tone}`}>
+                        <Icon name={tone === 'green' ? 'tick' : tone === 'muted' ? 'clock' : 'alert'} size={18} />
+                      </span>
+                      <div className="sp-row-main">
+                        <b>{svc.name}</b>
+                        <div className="sp-row-meta">
+                          <span>p95 {groupNumbers(svc.p95) || '—'}</span>
+                          {svc.note ? <span>{groupNumbers(svc.note)}</span> : null}
+                        </div>
+                      </div>
+                      <span className={`sa-svc-errs${e24 ? ' is-on' : ''}`}>
+                        <b>{formatCount(e24)}</b>
+                        <small>errors · 24h</small>
+                      </span>
+                      <span className={`sp-pill ${TONE[tone]}`}>
+                        <i className="un-dot" aria-hidden="true" />
+                        {recent ? 'Recent errors' : svc.status}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="dv-empty sa-pad">{statusLoading ? 'Loading services…' : 'No service status available.'}</p>
+            )}
+          </Panel>
+
+          {/* Errors donut + stage timings stack beside the tall Services list so neither card is half-empty. */}
+          <div className="sa-col-stack">
+            <Panel
+              title="Errors by service · 24h"
+              className="mdc-card"
+              action={errors24h != null ? <div className="mdc-chip"><small>Total errors · 24h</small><b>{formatCount(errors24h)}</b></div> : null}
+            >
+              {statusLoading && !statusData ? <p className="dv-empty">Loading…</p> : (
+                <ModernDonut
+                  title="Errors by service"
+                  unit="Errors"
+                  parts={serviceBars}
+                  empty="No server errors in the last 24 hours."
+                />
+              )}
+            </Panel>
+
+            {statusLoading && !statusData ? (
+              <Panel title="Video pipeline stages"><p className="dv-empty">Loading…</p></Panel>
+            ) : (
+              <MetricListCard
+                title="Video pipeline stages"
+                items={stageBars}
+                format={formatMs}
+                colorBy="single"
+                empty="No chapters generated this week. Stage timings appear after the next one."
+              />
+            )}
+          </div>
+        </div>
+      </TabPanel>
+
+      <TabPanel value="errors" current={tab} idBase="health">
+        <Panel
+          title="Server errors"
+          bodyClassName={null}
+          toolbar={(
+            <>
+              <div className="sa-filter-select">
+                <QuirriSelect
+                  ariaLabel="Filter by service"
+                  value={url.service}
+                  onChange={(e) => setUrl({ service: e.target.value, page: '1' })}
+                  options={serviceOptions}
+                />
+              </div>
+              <SegTabs label="Time range" options={RANGES} value={days} onChange={(v) => setUrl({ days: v, page: '1' })} />
+              {url.service || days !== '7' ? (
+                <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setUrl({ service: '', days: '7', page: '1' })}>
+                  Clear
+                </button>
+              ) : null}
+            </>
+          )}
+        >
+          {errorsError ? (
+            <div className="sa-panel-state">
+              <SectionState tone="err" title="Could not load errors">{apiErrorMessage(errorsError, 'Please try again.')}</SectionState>
+            </div>
+          ) : null}
+          {errors.length ? (
+            <div className="sp-table-wrap">
+              <table className="sp-table un-table sa-table-tight sa-stack">
+                <thead>
+                  <tr>
+                    <th>Error</th>
+                    <th>Service</th>
+                    <th className="num">Count</th>
+                    <th>Last seen</th>
+                    <th><span className="sr-only">Details</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {errRows.map((row) => {
+                    const key = row.id || `${row.time}-${row.error}`;
+                    const open = openError === key;
+                    return <ErrorRow key={key} row={row} open={open} onToggle={() => setOpenError(open ? null : key)} />;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : !errorsError ? (
+            <p className="dv-empty sa-pad">
+              {errorsLoading ? 'Loading errors…' : errorsData == null ? 'The error log is not available yet.' : `No server errors in the last ${rangeLabel}.`}
+            </p>
+          ) : null}
+        </Panel>
+        <Pager
+          page={errPageNow}
+          pageSize={ERR_PAGE_SIZE}
+          total={errors.length}
+          shown={errRows.length}
+          onPage={(p) => { setOpenError(null); setUrl({ page: String(p) }, { push: true }); }}
+          noun="errors"
+        />
+      </TabPanel>
+    </ModulePage>
   );
 }
 
 export default function HealthPage() {
-  const { data: statusData, loading: statusLoading, error: statusError } = useAsyncResource(
-    () => fetchOptional(() => healthApi.getStatus()),
-    [],
-  );
-
-  const { data: errorsData, loading: errorsLoading, error: errorsError } = useAsyncResource(
-    () => fetchOptional(() => healthApi.getErrors({})),
-    [],
-  );
-
-  const unavailable = !statusLoading && statusData == null && !statusError;
-
-  const metrics = useMemo(() => {
-    const raw = statusData?.metrics;
-    if (Array.isArray(raw) && raw.length) {
-      return raw.map((m) => ({
-        k: m.title || m.k,
-        v: m.value ?? m.v,
-        s: m.trend || m.s,
-        down: m.trendDown || String(m.trend || '').toLowerCase().includes('fail'),
-        up: m.trendUp,
-      }));
-    }
-    if (!statusData) return [];
-    const items = [];
-    if (statusData.uptime != null) {
-      items.push({ k: 'Uptime · 30d', v: <>{statusData.uptime}<small className="sa-kpi-unit">%</small></>, s: statusData.uptime_note || 'No incidents', up: true });
-    }
-    if (statusData.api_p95 != null) {
-      items.push({ k: 'API p95 latency', v: <>{statusData.api_p95}<small className="sa-kpi-unit">ms</small></>, s: statusData.latency_note || 'Within budget' });
-    }
-    if (statusData.jobs_in_queue != null) {
-      items.push({ k: 'Jobs in queue', v: String(statusData.jobs_in_queue), s: statusData.queue_note });
-    }
-    if (statusData.failed_jobs_24h != null) {
-      items.push({
-        k: 'Failed jobs · 24h',
-        v: <span className="sa-err-text">{statusData.failed_jobs_24h}</span>,
-        s: statusData.failed_note,
-        down: true,
-      });
-    }
-    return items;
-  }, [statusData]);
-
-  const services = asList(statusData?.services, []);
-  const latency = asList(statusData?.pipeline_latency || statusData?.latency_stages, []);
-  const errors = asList(errorsData, []);
-  const maxLatency = Math.max(...latency.map((l) => Number(l.ms || l.value || 0)), 1);
-
-  const serviceCounts = services.reduce((acc, s) => {
-    acc[statusVariant(s.status)] += 1;
-    return acc;
-  }, { green: 0, amber: 0, red: 0 });
-
-  const kpis = metrics.length
-    ? metrics.map((m, i) => ({ icon: METRIC_ICONS[i % METRIC_ICONS.length], label: m.k, value: m.v, sub: m.s || null }))
-    : METRIC_PLACEHOLDERS.map((m) => ({ icon: m.icon, label: m.k, value: null, sub: statusLoading ? 'Loading…' : 'Not reported yet' }));
-
-  let chips = null;
-  if (services.length) {
-    chips = (
-      <>
-        <span className={serviceCounts.red || serviceCounts.amber ? undefined : 'is-on'}>
-          <Icon name={serviceCounts.red || serviceCounts.amber ? 'alert' : 'tick'} size={14} />
-          {serviceCounts.red || serviceCounts.amber ? 'Some services need attention' : 'All services operational'}
-        </span>
-        <span>{serviceCounts.green} operational</span>
-        {serviceCounts.amber ? <span>{serviceCounts.amber} degraded</span> : null}
-        {serviceCounts.red ? <span>{serviceCounts.red} down</span> : null}
-      </>
-    );
-  } else if (unavailable) {
-    chips = <span><Icon name="clock" size={14} /> Not reporting yet</span>;
-  }
-
   return (
-    <ModulePage className="sa-page">
-      <ModuleBanner
-        icon="activity"
-        eyebrow="Operations"
-        title="Platform health"
-        lede="System status, uptime, AI pipeline throughput and recent errors in one place."
-        chips={chips}
-      />
-
-      {kpis.length > 4 ? (
-        <section className="sd-kpis sa-kpis--5" aria-label="Health summary">
-          {kpis.map((k) => <Kpi key={k.label} icon={k.icon} label={k.label} value={k.value} sub={k.sub} />)}
-        </section>
-      ) : (
-        <KpiRow label="Health summary" items={kpis} />
-      )}
-
-      {unavailable ? (
-        <SectionState title="Platform health not available">
-          Health APIs are not reachable. This screen stays empty until system status endpoints respond.
-        </SectionState>
-      ) : (
-        <SectionState title="Live database and API checks">
-          Uptime percentages, API p95, and AI pipeline latency stay empty until observability instrumentation ships — no invented numbers.
-        </SectionState>
-      )}
-
-      {(statusError || errorsError) ? (
-        <SectionState tone="err" title="Could not load health data">
-          {apiErrorMessage(statusError || errorsError, 'Please try again.')}
-        </SectionState>
-      ) : null}
-
-      <div className="sa-cols">
-        <Panel title="Service status" sub="Current state and p95 response time per service." bodyClassName={null}>
-          {services.length ? (
-            <ul className="sp-rows">
-              {services.map((svc) => {
-                const tone = statusVariant(svc.status);
-                return (
-                  <li key={svc.name || svc.service} className="sp-row">
-                    <span className={`sp-row-ic${tone === 'green' ? ' sp-row-ic--good' : ''} sa-svc-ic--${tone}`}>
-                      <Icon name={tone === 'green' ? 'tick' : 'alert'} size={18} />
-                    </span>
-                    <div className="sp-row-main">
-                      <b>{svc.name || svc.service}</b>
-                      <div className="sp-row-meta"><span>p95 {svc.p95 || svc.latency || '—'}</span></div>
-                    </div>
-                    <span className={`sp-pill ${TONE[tone]}`}>
-                      <i className="un-dot" aria-hidden="true" />
-                      {svc.status}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <PanelEmpty icon="activity" title={statusLoading ? 'Loading services…' : 'No service status available'}>
-              {statusLoading ? null : 'API, database, render and email services report here once health checks respond.'}
-            </PanelEmpty>
-          )}
-        </Panel>
-
-        <Panel title="AI pipeline latency" sub="Per-stage p95, last 24 hours.">
-          {latency.length ? (
-            <div className="sa-bars">
-              {latency.map((stage, i) => {
-                const ms = Number(stage.ms || stage.value || 0);
-                const width = Math.round((ms / maxLatency) * 100);
-                return (
-                  <div className="cmp" key={stage.name || stage.stage || i}>
-                    <div className="nm">{stage.name || stage.stage || stage.nm}</div>
-                    <div className="track">
-                      <i style={{ width: `${width}%` }} />
-                    </div>
-                    <div className="val">{stage.label || stage.display || `${ms}s`}</div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <PanelEmpty icon="clock" title="No latency stages returned">
-              Stage timings appear when pipeline instrumentation is live.
-            </PanelEmpty>
-          )}
-        </Panel>
-      </div>
-
-      <Panel
-        title="Recent errors"
-        sub="Redacted — no student PII."
-        action={errors.length ? <span className="sp-pill sp-pill--err">{errors.length} recent</span> : null}
-        bodyClassName={null}
-      >
-        {errors.length ? (
-          <div className="sp-table-wrap">
-            <table className="sp-table un-table sa-table-tight">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Service</th>
-                  <th>Error</th>
-                  <th>Institution</th>
-                  <th className="num">Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {errors.map((row) => (
-                  <tr key={row.id || `${row.time}-${row.error}`}>
-                    <td className="sa-muted sa-nowrap">{row.time || row.created_at}</td>
-                    <td className="sa-nowrap">{row.service}</td>
-                    <td><b>{row.error || row.message}</b></td>
-                    <td className="sa-muted">{row.institution || row.college || '—'}</td>
-                    <td className="num"><b>{row.count ?? 1}</b></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <PanelEmpty
-            icon={errorsData == null && !errorsLoading ? 'clock' : 'tick'}
-            title={errorsLoading ? 'Loading errors…' : errorsData == null ? 'Error log not available yet' : 'No recent errors'}
-          >
-            {errorsLoading ? null : 'Errors from any service show up here, grouped and redacted.'}
-          </PanelEmpty>
-        )}
-      </Panel>
-    </ModulePage>
+    <Suspense fallback={<SectionState title="Loading platform health…" />}>
+      <HealthView />
+    </Suspense>
   );
 }

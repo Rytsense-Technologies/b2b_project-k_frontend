@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { clearTokens } from './tokens';
 import { getApiBaseUrl } from './apiConfig';
+import { handleSessionExpired } from './sessionExpiry';
 
 const api = axios.create({
   baseURL: getApiBaseUrl(),
@@ -45,8 +45,7 @@ api.interceptors.response.use(
       } catch {
         refreshing = false;
         queue = [];
-        clearTokens();
-        if (typeof window !== 'undefined') window.location.href = '/auth/login';
+        handleSessionExpired();
         return Promise.reject(err);
       }
 

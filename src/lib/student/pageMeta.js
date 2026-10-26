@@ -1,40 +1,27 @@
 /** Student page titles — aligned with new_updated_design_four/Student.dc.html */
 export const PAGE_META = {
   '/student/home': {
-    title: 'Home',
-    subtitle: 'Pick up where you left off — lectures, tutor, quizzes and interviews.',
+    title: 'Dashboard',
+    subtitle: 'Your lectures and assessments.',
   },
   '/student/subjects': {
     title: 'My subjects',
-    subtitle: 'Your college material turned into video lectures, quizzes and an AI tutor.',
+    subtitle: 'Lectures, chapter quizzes and the AI tutor.',
   },
   '/student/leaderboard': {
     title: 'Leaderboard',
-    subtitle: 'How you rank against classmates in your cohort.',
-  },
-  '/student/interviews': {
-    title: 'Interviews',
-    subtitle: 'Practice with an AI interviewer using your semester allocation.',
-  },
-  '/student/interviews/reports': {
-    title: 'Interviews',
-    subtitle: 'Every scored interview, your trend and per-question feedback.',
-  },
-  '/student/interviews/report': {
-    title: 'Interview report',
-    subtitle: 'Your overall score, feedback on each answer and what to practise next.',
-  },
-  '/student/interviews/live': {
-    title: 'Live interview',
-    subtitle: 'Stay present — speak clearly and take a breath between answers.',
+    subtitle: 'Ranked by chapter assessment scores.',
   },
   '/student/assessment': {
     title: 'Assessment',
-    subtitle: 'Chapter quiz — one attempt, scored by Quirri.',
+    subtitle: 'One attempt, scored by Quirri.',
   },
-
   '/student/progress': {
     title: 'My progress',
-    subtitle: 'Chapter completion, assessments and interview readiness.',
+    subtitle: 'Completion and scores by subject.',
+  },
+  '/student/settings': {
+    title: 'Settings',
+    subtitle: 'Profile, sign-in and email.',
   },
 };

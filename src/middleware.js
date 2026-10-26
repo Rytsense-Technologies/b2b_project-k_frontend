@@ -4,6 +4,7 @@ const PUBLIC_PATHS = [
   '/auth/login',
   '/auth/forgot-password',
   '/auth/reset-password',
+  '/activate', // invite e-mail link: first password (signed out)
 ];
 
 /** Legacy portal login URLs — always redirect to the unified login. */

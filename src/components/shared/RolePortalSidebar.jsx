@@ -1,19 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { clearCredentials } from '@/store/slices/authSlice';
-import { resetSession } from '@/store/slices/interviewSlice';
 import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
 import { queryClient } from '@/lib/queryClient';
 import { authApi } from '@/lib/api/auth';
 import { clearTokens } from '@/lib/tokens';
+import { clearFacultyScopeCache } from '@/hooks/useFacultyScope';
 import { useAuth } from '@/hooks/useAuth';
+import { titleCase } from '@/lib/student/learning';
 import toast from 'react-hot-toast';
+
+function accountLinkCurrent(href, pathname, tab) {
+  try {
+    const next = new URL(href, 'http://local.invalid');
+    if (pathname !== next.pathname) return false;
+    const want = next.searchParams.get('tab') || 'profile';
+    return want === (tab || 'profile');
+  } catch {
+    return pathname === href;
+  }
+}
 
 function getInitials(name, email, fallback = 'U') {
   const trimmed = name?.trim();
@@ -37,12 +49,28 @@ export default function RolePortalSidebar({
   tenantSubtitle = '',
   fallbackInitials = 'U',
   loginPath = '/auth/login',
+  /** Account menu items on the user row (quirri-b2c-student-ui: avatar row opens a menu). */
+  menuLinks = [],
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const settingsTab = searchParams?.get('tab') || '';
   const dispatch = useAppDispatch();
   const sidebarOpen = useAppSelector(selectSidebarOpen);
   const { user } = useAuth();
+
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDown = (e) => { if (!menuRef.current?.contains(e.target)) setMenuOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [menuOpen]);
   const { show: showTip, hide: hideTip, TipLayer } = useQuirriTip();
 
   const [sessionUIReady, setSessionUIReady] = useState(false);
@@ -54,8 +82,15 @@ export default function RolePortalSidebar({
     hideTip();
   }, [sidebarOpen, hideTip]);
 
+  useEffect(() => {
+    if (menuOpen) hideTip();
+  }, [menuOpen, hideTip]);
+
   const u = sessionUIReady ? user : null;
-  const displayName = u?.name?.trim() || u?.first_name || ariaLabel;
+  // Until the profile arrives, show neutral placeholders - never "Your college / Student Student".
+  const pending = !u;
+  // Names are stored as typed ("siva prakasham m"); show them title-cased.
+  const displayName = titleCase(u?.name?.trim() || u?.first_name || '') || ariaLabel;
   const displayEmail = u?.email || '';
   const initials = getInitials(u?.name, u?.email, fallbackInitials);
   const tenantName = u?.college_name || u?.tenant_name || tenantTitle;
@@ -69,8 +104,8 @@ export default function RolePortalSidebar({
       /* ignore */
     }
     clearTokens();
+    clearFacultyScopeCache();
     dispatch(clearCredentials());
-    dispatch(resetSession());
     queryClient.clear();
     toast.success('Logged out successfully');
     router.push(loginPath);
@@ -108,10 +143,19 @@ export default function RolePortalSidebar({
           ? tipHandlers(tenantSub ? `${tenantName} · ${tenantSub}` : tenantName, 'right')
           : {})}
       >
-        <div className="mark" aria-hidden="true">{tenantInitials}</div>
+        <div className={`mark${pending ? ' rps-sk' : ''}`} aria-hidden="true">{pending ? '' : tenantInitials}</div>
         <div className="txt">
-          <div className="nm">{tenantName}</div>
-          {tenantSub ? <div className="sc">{tenantSub}</div> : null}
+          {pending ? (
+            <>
+              <div className="nm"><span className="rps-sk rps-sk--line" aria-hidden="true" /></div>
+              <div className="sc"><span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /></div>
+            </>
+          ) : (
+            <>
+              <div className="nm">{tenantName}</div>
+              {tenantSub ? <div className="sc">{tenantSub}</div> : null}
+            </>
+          )}
         </div>
       </div>
 
@@ -142,28 +186,91 @@ export default function RolePortalSidebar({
 
       <div className="side-foot">
         <div
-          className="who"
-          {...(!sidebarOpen
-            ? tipHandlers(`${displayName} · ${displayEmail || ariaLabel}`, 'right')
-            : {})}
+          className={`who${menuLinks.length ? ' who--menu' : ''}${menuOpen ? ' is-open' : ''}`}
+          ref={menuRef}
+          {...(!sidebarOpen && !menuOpen
+            ? tipHandlers(menuLinks.length ? `Account · ${displayName}` : `${displayName} · ${displayEmail || ariaLabel}`, 'right')
+            : { onMouseLeave: hideTip })}
         >
-          <div className="av">{initials}</div>
+          {menuLinks.length ? (
+            <button
+              type="button"
+              className="who-trigger"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-controls="rps-account-menu"
+              aria-label={displayName ? `Account menu for ${displayName}` : 'Account menu'}
+              onClick={() => { hideTip(); setMenuOpen((v) => !v); }}
+            />
+          ) : null}
+          {menuOpen ? (
+            <div className="who-menu" id="rps-account-menu" role="menu" aria-label="Account">
+              {menuLinks.map((it) => {
+                const current = accountLinkCurrent(it.href, pathname, settingsTab);
+                return (
+                  <Link
+                    key={it.href}
+                    href={it.href}
+                    role="menuitem"
+                    className={current ? 'is-current' : undefined}
+                    aria-current={current ? 'page' : undefined}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {it.icon ? <span className="who-menu__ico" aria-hidden="true">{it.icon}</span> : null}
+                    {it.label}
+                  </Link>
+                );
+              })}
+              <button
+                type="button"
+                role="menuitem"
+                className="who-menu__out"
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+              >
+                <span className="who-menu__ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <path d="M16 17l5-5-5-5M21 12H9" />
+                  </svg>
+                </span>
+                Sign out
+              </button>
+            </div>
+          ) : null}
+          <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
           <div className="who-meta">
-            <div className="n">{displayName}</div>
-            <div className="r">{displayEmail || ariaLabel}</div>
+            {pending ? (
+              <>
+                <div className="n"><span className="rps-sk rps-sk--line" aria-hidden="true" /></div>
+                <div className="r"><span className="rps-sk rps-sk--line rps-sk--short" aria-hidden="true" /></div>
+              </>
+            ) : (
+              <>
+                <div className="n">{displayName}</div>
+                <div className="r">{displayEmail || ariaLabel}</div>
+              </>
+            )}
           </div>
-          <button
-            type="button"
-            className="logout"
-            onClick={handleLogout}
-            aria-label="Log out"
-            {...tipHandlers('Log out', sidebarOpen ? 'top' : 'right')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <path d="M16 17l5-5-5-5M21 12H9" />
-            </svg>
-          </button>
+          {menuLinks.length ? (
+            <span className="who-cue" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="logout"
+              onClick={handleLogout}
+              aria-label="Sign out"
+              {...tipHandlers('Sign out', sidebarOpen ? 'top' : 'right')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5M21 12H9" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

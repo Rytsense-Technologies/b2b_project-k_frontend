@@ -4,14 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import toast from 'react-hot-toast';
 import { Icon, SectionState } from '@/components/student/ui';
-import { voiceQnaApi, readVoiceQnaToken, voiceQnaErrorMessage } from '@/lib/api/voiceQna';
-import { formatLivekitError, resolveLivekitBrowserUrl } from '@/lib/livekitUrl';
+import { voiceQnaApi, voiceQnaCanRetry, voiceQnaErrorMessage } from '@/lib/api/voiceQna';
+import { formatLivekitError, livekitUrlFromApi } from '@/lib/livekitUrl';
 
 function formatWhen(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString();
+  return `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toUpperCase()}`;
 }
 
 /**
@@ -30,7 +30,10 @@ export default function VoiceQnaPanel({
   const pollRef = useRef(null);
 
   const [phase, setPhase] = useState('idle'); // idle | connecting | live
-  const [callError, setCallError] = useState('');
+  // { kind: 'mic'|'http'|'audio', title, message, retry, detail? }
+  const [callError, setCallError] = useState(null);
+  const [lastStart, setLastStart] = useState({});
+  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
   const [tutorJoined, setTutorJoined] = useState(false);
   const [conversationId, setConversationId] = useState(null);
 
@@ -60,16 +63,18 @@ export default function VoiceQnaPanel({
     }
   }, [detachAudio]);
 
-  useEffect(() => () => {
-    disconnectRoom();
+  useEffect(() => {
+    // Leaving / closing the page ends the call (the backend marks the
+    // conversation ended from LiveKit's webhook).
+    const onLeave = () => { roomRef.current?.disconnect(); };
+    window.addEventListener('pagehide', onLeave);
+    return () => {
+      window.removeEventListener('pagehide', onLeave);
+      disconnectRoom();
+    };
   }, [disconnectRoom]);
 
   const loadList = useCallback(async () => {
-    if (!readVoiceQnaToken()) {
-      setConversations([]);
-      setListError('');
-      return;
-    }
     setListLoading(true);
     setListError('');
     try {
@@ -77,7 +82,8 @@ export default function VoiceQnaPanel({
       setConversations(Array.isArray(rows) ? rows : []);
     } catch (err) {
       setConversations([]);
-      if (err?.message === 'missing_token' || err?.status === 401) {
+      // 401/403 = no history access for this session yet — show the empty state, not an error.
+      if (err?.message === 'missing_token' || err?.status === 401 || err?.status === 403) {
         setListError('');
       } else {
         setListError(err?.message || 'Could not load past doubts.');
@@ -88,7 +94,7 @@ export default function VoiceQnaPanel({
   }, []);
 
   const loadDetail = useCallback(async (id, { quiet = false } = {}) => {
-    if (!id || !readVoiceQnaToken()) return;
+    if (!id) return;
     if (!quiet) setDetailLoading(true);
     try {
       const data = await voiceQnaApi.get(id);
@@ -118,38 +124,106 @@ export default function VoiceQnaPanel({
     setTutorJoined(true);
   }, []);
 
+  const failCall = async (error) => {
+    await disconnectRoom();
+    setPhase('idle');
+    setNeedsAudioUnlock(false);
+    setCallError(error);
+    toast.error(error.message);
+  };
+
   const startCall = async ({ resumeId } = {}) => {
     const targetJob = resumeId ? null : jobId;
     if (!resumeId && !targetJob) {
       toast.error('Choose a chapter before asking a doubt.');
       return;
     }
-    setCallError('');
+    setCallError(null);
+    setNeedsAudioUnlock(false);
     setPhase('connecting');
     setTutorJoined(false);
+    setLastStart({ resumeId });
     await disconnectRoom();
+
+    // 1) Microphone permission first, so "denied" is reported as exactly that.
     try {
-      const ticket = await voiceQnaApi.start(
-        resumeId ? { conversationId: resumeId } : { jobId: targetJob },
-      );
-      const id = ticket?.conversation_id;
-      setConversationId(id);
-      setSelectedId(id);
+      const probe = await Promise.race([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            const timeout = new Error('Microphone timed out');
+            timeout.name = 'TimeoutError';
+            reject(timeout);
+          }, 8000);
+        }),
+      ]);
+      probe.getTracks().forEach((t) => t.stop());
+    } catch (err) {
+      const denied = err?.name === 'NotAllowedError' || err?.name === 'SecurityError';
+      const timedOut = err?.name === 'TimeoutError';
+      await failCall({
+        kind: 'mic',
+        title: denied ? 'Microphone access is blocked' : timedOut ? 'Microphone did not respond' : 'No microphone found',
+        message: denied
+          ? 'Allow microphone access for this site in your browser, then try again.'
+          : timedOut
+            ? 'The browser did not return a microphone in time. Allow access if asked, then try again.'
+            : 'Connect a microphone and try again.',
+        retry: true,
+      });
+      return;
+    }
+
+    // 2) The HTTP call - a backend / voice-server problem or the chapter not ready.
+    let ticket;
+    try {
+      ticket = await voiceQnaApi.start(resumeId ? { conversationId: resumeId } : { jobId: targetJob });
+    } catch (err) {
+      const status = err?.status;
+      await failCall({
+        kind: 'http',
+        title: 'Could not start voice Q&A',
+        message: status ? voiceQnaErrorMessage(status, err.data) : (err?.message || 'Voice assistant is unavailable. Try again later.'),
+        retry: status ? voiceQnaCanRetry(status, err.data) : true,
+      });
+      return;
+    }
+
+    // 3) The call succeeded but the audio connection (LiveKit) failed -
+    //    a browser <-> LiveKit network/microphone problem, not the backend.
+    const id = ticket?.conversation_id;
+    setConversationId(id);
+    setSelectedId(id);
+    const url = livekitUrlFromApi(ticket.livekit_url);
+    try {
       const room = new Room();
       roomRef.current = room;
       room.on(RoomEvent.TrackSubscribed, (track) => attachTrack(track));
       room.on(RoomEvent.ParticipantConnected, () => setTutorJoined(true));
+      // The tutor (agent) leaving mid-call - e.g. the speech service failed -
+      // must not leave the student "talking" to an empty room.
+      room.on(RoomEvent.ParticipantDisconnected, () => {
+        if (roomRef.current !== room || room.remoteParticipants.size > 0) return;
+        failCall({
+          kind: 'tutor',
+          title: 'The tutor left the session',
+          message: 'The voice tutor stopped responding. Start a new session; if it keeps happening, the voice service may be unavailable.',
+          retry: true,
+        });
+      });
+      room.on(RoomEvent.AudioPlaybackStatusChanged, () => setNeedsAudioUnlock(!room.canPlaybackAudio));
       room.on(RoomEvent.Disconnected, () => {
         setPhase('idle');
         setTutorJoined(false);
+        setNeedsAudioUnlock(false);
         detachAudio();
         roomRef.current = null;
         loadList();
         if (id) loadDetail(id, { quiet: true });
       });
-      const url = resolveLivekitBrowserUrl(ticket.livekit_url);
       await room.connect(url, ticket.livekit_token);
       await room.localParticipant.setMicrophoneEnabled(true);
+      setNeedsAudioUnlock(!room.canPlaybackAudio);
       setPhase('live');
       if (id) {
         loadDetail(id, { quiet: true });
@@ -157,13 +231,23 @@ export default function VoiceQnaPanel({
       }
       loadList();
     } catch (err) {
-      await disconnectRoom();
-      setPhase('idle');
-      const message = err?.status
-        ? (err.message || voiceQnaErrorMessage(err.status, err.data))
-        : formatLivekitError(err, resolveLivekitBrowserUrl());
-      setCallError(message);
-      toast.error(message);
+      console.error('[voice_qna] LiveKit connection failed:', url, err?.message || err);
+      await failCall({
+        kind: 'audio',
+        title: 'Could not connect audio',
+        message: 'Could not connect audio. Check your network and microphone.',
+        detail: formatLivekitError(err, url),
+        retry: true,
+      });
+    }
+  };
+
+  const unlockAudio = async () => {
+    try {
+      await roomRef.current?.startAudio();
+      setNeedsAudioUnlock(!roomRef.current?.canPlaybackAudio);
+    } catch {
+      toast.error('Audio is still blocked. Click again or check the site sound settings.');
     }
   };
 
@@ -191,6 +275,9 @@ export default function VoiceQnaPanel({
   };
 
   const turns = Array.isArray(detail?.turns) ? detail.turns : [];
+  // Sessions where nothing was asked add noise - hide them (older API
+  // responses without `has_questions` keep everything).
+  const shownConversations = conversations.filter((c) => c.has_questions !== false || c.id === selectedId);
   const statusLabel = phase === 'connecting'
     ? 'Connecting'
     : phase === 'live' && tutorJoined
@@ -203,147 +290,160 @@ export default function VoiceQnaPanel({
   const isConnecting = phase === 'connecting';
 
   return (
-    <div className="voice-qna sp">
-      <div className="sp-tutor-h">
-        <span className={`sp-orb${isLive ? ' is-live' : ''}${isConnecting ? ' is-connecting' : ''}`} aria-hidden="true">
-          <Icon name="mic" size={22} />
-        </span>
-        <div className="sp-tutor-copy">
-          <b>{isLive ? statusLabel : isConnecting ? 'Connecting to your tutor…' : 'Your AI voice tutor'}</b>
-          <span>
-            Answers come only from {chapterTitle || 'this chapter'}
-            {subjectName ? ` · ${subjectName}` : ''}.
-            Speak in English, Tamil, or Thanglish. The tutor will not answer outside this document.
-          </span>
+    <div className="voice-qna sl-tutor">
+      <section className="sl-card sl-history" aria-labelledby="sl-hist-h">
+        <div className="sl-card-h sl-card-h--stack">
+          <h3 id="sl-hist-h">Session history</h3>
+          <span>{listLoading ? 'Loading…' : `${shownConversations.length} saved session${shownConversations.length === 1 ? '' : 's'}`}</span>
         </div>
-        {isLive || isConnecting ? (
-          <button type="button" className="sd-btn sd-btn--glass" onClick={hangUp}>
-            <Icon name="phone" size={16} /> {isConnecting ? 'Cancel' : 'Hang up'}
-          </button>
-        ) : (
-          <button type="button" className="sd-btn sd-btn--amber" onClick={() => startCall()} disabled={!jobId}>
-            <Icon name="mic" size={16} /> Ask a doubt
-          </button>
-        )}
-      </div>
-
-      {Array.isArray(chapters) && chapters.length > 1 && typeof onSelectChapter === 'function' ? (
-        <div className="sp-chapter-chips" role="group" aria-label="Choose the chapter to ask about">
-          <span>Asking about</span>
-          {chapters.map((c) => (
-            <button
-              key={c.job_id}
-              type="button"
-              className={`sp-chip-btn${c.job_id === jobId ? ' is-active' : ''}`}
-              aria-pressed={c.job_id === jobId}
-              disabled={phase !== 'idle'}
-              onClick={() => onSelectChapter(c.job_id)}
-            >
-              {c.chapter_title || 'Untitled chapter'}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {callError ? (
-        <SectionState tone="err" title="Could not start voice Q&A">{callError}</SectionState>
-      ) : null}
-
-      <div className="sp-tutor-grid">
-        <div className="sp-panel">
-          <div className="sp-panel-h">
-            <div>
-              <h3>Past doubts</h3>
-              <p>{listLoading ? 'Loading…' : `${conversations.length} saved`}</p>
-            </div>
+        {listError ? <SectionState tone="err" title="Could not load past sessions">{listError}</SectionState> : null}
+        {!listLoading && !shownConversations.length && !listError ? (
+          <div className="sl-empty sl-empty--plain">
+            <span className="sl-empty-ic" aria-hidden="true"><Icon name="doc" size={26} /></span>
+            <b>No past questions yet</b>
+            <p>Your past questions appear here after your first session.</p>
           </div>
-          {listError ? (
-            <div className="sp-panel-b"><SectionState tone="err" title="Could not load past doubts">{listError}</SectionState></div>
-          ) : null}
-          {!listLoading && !conversations.length && !listError ? (
-            <div className="sp-panel-b">
-              <SectionState title="No doubts yet">Past doubts appear here after you ask a question.</SectionState>
-            </div>
-          ) : null}
-          {conversations.map((row) => {
-            const active = row.id === selectedId;
-            return (
-              <div key={row.id} className={`sp-doubt${active ? ' is-active' : ''}`}>
-                <button type="button" className="sp-doubt-open" onClick={() => loadDetail(row.id)}>
-                  <b>{row.title || 'New conversation'}</b>
-                  <small>
-                    {row.document_title || 'Chapter'}
-                    {row.status ? ` · ${row.status}` : ''}
-                    {row.started_at ? ` · ${formatWhen(row.started_at)}` : ''}
-                  </small>
-                </button>
-                <div className="sp-doubt-actions">
-                  <button
-                    type="button"
-                    className="sd-btn sd-btn--outline sd-btn--sm"
-                    onClick={() => startCall({ resumeId: row.id })}
-                    disabled={phase !== 'idle'}
-                  >
-                    Continue
+        ) : null}
+        {shownConversations.length ? (
+          <ul className="sl-sessions">
+            {shownConversations.map((row) => {
+              const active = row.id === selectedId;
+              return (
+                <li key={row.id} className={`sl-session${active ? ' is-active' : ''}`}>
+                  <button type="button" className="sl-session-open" onClick={() => loadDetail(row.id)} aria-pressed={active}>
+                    <b>{row.title || 'New conversation'}</b>
+                    <small>
+                      {row.document_title || 'Chapter'}
+                      {row.started_at ? ` · ${formatWhen(row.started_at)}` : ''}
+                    </small>
                   </button>
-                  {confirmDeleteId === row.id ? (
+                  <div className="sl-session-actions">
                     <button
                       type="button"
-                      className="sd-btn sd-btn--danger sd-btn--sm"
-                      onClick={() => removeConversation(row.id)}
+                      className="sd-btn sd-btn--outline sd-btn--sm"
+                      onClick={() => startCall({ resumeId: row.id })}
+                      disabled={phase !== 'idle'}
                     >
-                      Confirm delete
+                      Continue
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="sd-btn sd-btn--ghost sd-btn--sm"
-                      onClick={() => setConfirmDeleteId(row.id)}
-                      aria-label={`Delete ${row.title || 'conversation'}`}
-                    >
-                      <Icon name="trash" size={14} /> Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    {confirmDeleteId === row.id ? (
+                      <button type="button" className="sd-btn sd-btn--danger sd-btn--sm" onClick={() => removeConversation(row.id)}>
+                        Confirm delete
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="sd-btn sd-btn--ghost sd-btn--sm"
+                        onClick={() => setConfirmDeleteId(row.id)}
+                        aria-label={`Delete ${row.title || 'conversation'}`}
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </section>
 
-        <div className="sp-panel">
-          <div className="sp-panel-h">
-            <div>
-              <h3>{detail?.title || chapterTitle || 'Voice tutor'}</h3>
-              <p>
-                {statusLabel}
-                {detail?.document_title ? ` · ${detail.document_title}` : ''}
-              </p>
-            </div>
-            <span
-              className={`sp-live-dot${isLive ? ' is-live' : ''}${isConnecting ? ' is-connecting' : ''}`}
-              aria-hidden="true"
-            />
+      <div className="sl-tutor-main">
+        <section className="sl-card sl-voice" aria-labelledby="sl-voice-h">
+          <div className="sl-voice-bar">
+            <span className="sl-inline">
+              <Icon name="bookOpen" size={18} />
+              {/* One text node so the subject wraps after the title on phones (not a second column). */}
+              <span>{chapterTitle || 'Choose a chapter'}{subjectName ? <span className="sl-muted"> · {subjectName}</span> : null}</span>
+            </span>
+            <span className={`sl-live${isLive ? ' is-live' : ''}${isConnecting ? ' is-connecting' : ''}`}>
+              <i aria-hidden="true" /> {statusLabel}
+            </span>
           </div>
-          <div className="sp-chat" aria-live="polite">
+
+          {Array.isArray(chapters) && chapters.length > 1 && typeof onSelectChapter === 'function' ? (
+            <div className="sl-chapter-pick" role="group" aria-label="Choose the chapter to ask about">
+              <span>Asking about</span>
+              {chapters.map((c) => (
+                <button
+                  key={c.job_id}
+                  type="button"
+                  className={`sl-pickbtn${c.job_id === jobId ? ' is-active' : ''}`}
+                  aria-pressed={c.job_id === jobId}
+                  disabled={phase !== 'idle'}
+                  onClick={() => onSelectChapter(c.job_id)}
+                >
+                  {c.chapter_title || 'Untitled chapter'}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="sl-voice-body">
+            <h2 id="sl-voice-h">{isLive ? (tutorJoined ? 'I’m listening — ask your question' : 'Connecting you to your tutor…') : 'What would you like to understand?'}</h2>
+            <p>{isLive ? 'Speak naturally. A short silence ends the call.' : 'Ask a question about this chapter using your voice.'}</p>
+            <span className={`sl-orb${isLive ? ' is-live' : ''}${isConnecting ? ' is-connecting' : ''}`} aria-hidden="true">
+              <span><Icon name="mic" size={34} /></span>
+            </span>
+            {isLive || isConnecting ? (
+              <button type="button" className="sd-btn sd-btn--outline" onClick={hangUp}>
+                <Icon name="phone" size={18} /> {isConnecting ? 'Cancel' : 'End session'}
+              </button>
+            ) : (
+              <button type="button" className="sd-btn sd-btn--amber sd-btn--lg" onClick={() => startCall()} disabled={!jobId}>
+                Start voice session
+              </button>
+            )}
+            <p className="sl-voice-langs"><Icon name="chat" size={18} /> Speaks English, Tamil and Tanglish</p>
+          </div>
+
+          {isLive && needsAudioUnlock ? (
+            <div className="sl-audio-unlock" role="status">
+              <span><Icon name="info" size={18} /> Your browser paused the tutor&apos;s audio.</span>
+              <button type="button" className="sd-btn sd-btn--outline sd-btn--sm" onClick={unlockAudio}>Enable audio</button>
+            </div>
+          ) : null}
+
+          {callError ? (
+            <SectionState
+              tone="err"
+              title={callError.title}
+              action={callError.retry && phase === 'idle' ? (
+                <button type="button" className="sd-btn sd-btn--outline sd-btn--sm" onClick={() => startCall(lastStart)}>
+                  <Icon name="refresh" size={14} /> Retry
+                </button>
+              ) : null}
+            >
+              {callError.message}
+            </SectionState>
+          ) : null}
+
+          <p className="sl-scope">
+            <Icon name="info" size={20} />
+            <span><b>Answers are based only on this chapter’s material.</b>The tutor cannot answer outside this document.</span>
+          </p>
+        </section>
+
+        <section className="sl-card sl-transcript" aria-labelledby="sl-tr-h">
+          <div className="sl-card-h">
+            <h3 id="sl-tr-h" className="sl-inline"><Icon name="doc" size={18} /> Transcript{detail?.title ? <span className="sl-muted"> · {detail.title}</span> : null}</h3>
+          </div>
+          <div className="sl-chat" aria-live="polite">
             {detailLoading ? <SectionState title="Loading transcript…" /> : null}
             {!detailLoading && !turns.length ? (
-              <SectionState title={isLive ? 'Speak your question' : 'Ask a doubt to begin'}>
-                {isLive
-                  ? 'The tutor answers by voice. Your questions and answers appear here as they are saved. A short silence ends the call.'
-                  : 'One tap starts a voice call grounded in this chapter. Past transcripts stay in the list on the left.'}
-              </SectionState>
+              <p className="sl-dashed"><Icon name="doc" size={22} /> {isLive ? 'Your questions and answers appear here as they are saved.' : 'Your conversation will appear here once a session begins.'}</p>
             ) : null}
             {turns.map((turn) => (
-              <div key={turn.turn_number || turn.created_at} className="sp">
-                <div className="sp-bubble sp-bubble--me">{turn.question || '—'}</div>
-                <div className="sp-bubble sp-bubble--ai">
+              <div key={turn.turn_number || turn.created_at} className="sl-turn">
+                <div className="sl-bubble sl-bubble--me">{turn.question || '—'}</div>
+                <div className="sl-bubble sl-bubble--ai">
                   {turn.answer || '—'}
                   {turn.detected_language ? <small>{turn.detected_language}</small> : null}
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

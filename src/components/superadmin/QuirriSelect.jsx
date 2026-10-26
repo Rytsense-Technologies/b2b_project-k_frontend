@@ -95,6 +95,28 @@ export default function QuirriSelect({
     triggerRef.current?.focus();
   }, [close, name, onChange]);
 
+  // Keep the active option visible while moving with the keyboard.
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    const el = typeof document !== 'undefined' ? document.getElementById(`${listId}-opt-${activeIndex}`) : null;
+    el?.scrollIntoView?.({ block: 'nearest' });
+  }, [activeIndex, listId, open, menuBox]);
+
+  const typeRef = useRef({ text: '', at: 0 });
+  const typeAhead = useCallback((ch, from) => {
+    const now = Date.now();
+    const t = typeRef.current;
+    t.text = now - t.at > 700 ? ch : t.text + ch;
+    t.at = now;
+    const q = t.text.toLowerCase();
+    const base = from < 0 ? 0 : from + (q.length === 1 ? 1 : 0);
+    for (let k = 0; k < items.length; k += 1) {
+      const i = (base + k) % items.length;
+      if (String(items[i].label).toLowerCase().startsWith(q)) return i;
+    }
+    return -1;
+  }, [items]);
+
   useEffect(() => {
     if (!open) return undefined;
     placeMenu();
@@ -106,55 +128,66 @@ export default function QuirriSelect({
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         close();
         triggerRef.current?.focus();
       }
     };
     const onReposition = () => placeMenu();
     document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
+    // Capture phase: close the menu before a surrounding modal sees Escape.
+    document.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', onReposition);
     window.addEventListener('scroll', onReposition, true);
     return () => {
       document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
       window.removeEventListener('resize', onReposition);
       window.removeEventListener('scroll', onReposition, true);
     };
   }, [close, open, placeMenu]);
 
+  // Focus stays on the trigger; the active option is exposed via aria-activedescendant.
   const onTriggerKeyDown = (e) => {
     if (disabled) return;
-    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      if (!open) openMenu();
-      else if (e.key === 'Enter' || e.key === ' ') {
-        const item = items[activeIndex];
-        if (item) pick(item.value);
+    const { key } = e;
+    const printable = key.length === 1 && /\S/.test(key) && !e.ctrlKey && !e.metaKey && !e.altKey;
+    if (!open) {
+      if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') {
+        e.preventDefault();
+        openMenu();
+      } else if (printable) {
+        e.preventDefault();
+        const from = items.findIndex((o) => String(o.value) === String(value ?? ''));
+        openMenu();
+        const i = typeAhead(key, from);
+        if (i >= 0) setActiveIndex(i);
       }
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (!open) openMenu();
+      return;
     }
-  };
-
-  const onMenuKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
+    if (key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIndex((i) => Math.min(items.length - 1, (i < 0 ? 0 : i) + 1));
-    } else if (e.key === 'ArrowUp') {
+      setActiveIndex((i) => Math.min(items.length - 1, i + 1));
+    } else if (key === 'ArrowUp') {
       e.preventDefault();
-      setActiveIndex((i) => Math.max(0, (i < 0 ? 0 : i) - 1));
-    } else if (e.key === 'Enter' || e.key === ' ') {
+      setActiveIndex((i) => Math.max(0, i - 1));
+    } else if (key === 'Home' || key === 'PageUp') {
+      e.preventDefault();
+      setActiveIndex(0);
+    } else if (key === 'End' || key === 'PageDown') {
+      e.preventDefault();
+      setActiveIndex(items.length - 1);
+    } else if (key === 'Enter' || key === ' ') {
       e.preventDefault();
       const item = items[activeIndex];
       if (item) pick(item.value);
-    } else if (e.key === 'Home') {
+      else close();
+    } else if (key === 'Tab') {
+      close();
+    } else if (printable) {
       e.preventDefault();
-      setActiveIndex(0);
-    } else if (e.key === 'End') {
-      e.preventDefault();
-      setActiveIndex(items.length - 1);
+      const i = typeAhead(key, activeIndex);
+      if (i >= 0) setActiveIndex(i);
     }
   };
 
@@ -172,6 +205,7 @@ export default function QuirriSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
+        aria-activedescendant={open && activeIndex >= 0 ? `${listId}-opt-${activeIndex}` : undefined}
         aria-label={label ? undefined : (ariaLabel || placeholder || 'Select')}
         aria-invalid={Boolean(error)}
         onClick={() => (open ? close() : openMenu())}
@@ -198,7 +232,6 @@ export default function QuirriSelect({
             className="quirri-dd__menu"
             id={listId}
             role="listbox"
-            tabIndex={-1}
             aria-labelledby={selectId}
             style={{
               left: menuBox.left,
@@ -207,15 +240,15 @@ export default function QuirriSelect({
               bottom: menuBox.bottom,
               maxHeight: menuBox.maxHeight,
             }}
-            onKeyDown={onMenuKeyDown}
+            onMouseDown={(e) => e.preventDefault()}
           >
             {items.map((item, index) => {
               const selected = String(item.value) === String(value ?? '');
               const active = index === activeIndex;
               return (
-                <button
+                <div
                   key={`${item.value}-${item.label}`}
-                  type="button"
+                  id={`${listId}-opt-${index}`}
                   role="option"
                   aria-selected={selected}
                   className={`quirri-dd__option${selected ? ' is-selected' : ''}${active ? ' is-active' : ''}`}
@@ -228,7 +261,7 @@ export default function QuirriSelect({
                       <path d="M5 12l5 5L20 7" strokeWidth="2.2" />
                     </svg>
                   ) : null}
-                </button>
+                </div>
               );
             })}
           </div>,

@@ -1,106 +1,243 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import PortalHero from '@/components/shared/PortalHero';
-import { ModulePage, KpiRow, Panel, Icon } from '@/components/shared/module-ui';
+import { ModulePage, KpiRow, Panel, Icon, SectionState, countLabel, initials } from '@/components/shared/module-ui';
+import { MetricList, ModernDonut } from '@/components/shared/data-viz';
+import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
+import { analyticsApi } from '@/lib/api/analytics';
+import { apiErrorMessage } from '@/lib/api/superadmin/http';
+import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { useFacultyScope } from '@/hooks/useFacultyScope';
+import { useAuth } from '@/hooks/useAuth';
+import { titleCase } from '@/lib/student/learning';
+import {
+  OVERDUE_DAYS, ageLabel, daysSince, pct, useFacultySubjects, useSubjectColor,
+} from '@/components/faculty/facultyKit';
 
-const QUEUES = [
-  {
-    href: '/faculty/videos',
-    icon: 'video',
-    title: 'Video review',
-    body: 'Preview chapters your College Admin sends, fix slides, then publish to students.',
-  },
-  {
-    href: '/faculty/mcq',
-    icon: 'check',
-    title: 'MCQ review',
-    body: 'Check generated questions and the answer key for each rendered chapter.',
-  },
-];
+const queueHref = (q) => `${q.kind === 'video' ? '/faculty/videos' : '/faculty/mcq'}?job=${encodeURIComponent(q.job_id)}`;
 
-const COMING = [
-  { href: '/faculty/subjects', icon: 'book', title: 'Subjects' },
-  { href: '/faculty/students', icon: 'users', title: 'Students' },
-  { href: '/faculty/interviews', icon: 'mic', title: 'Interview assignments' },
-  { href: '/faculty/analytics', icon: 'chart', title: 'Department analytics' },
-];
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
+/** HOD / Faculty home: what is waiting for review, who needs attention, how each subject is doing. */
 export default function FacultyDashboardPage() {
+  const { scope } = useFacultyScope();
+  const { user } = useAuth();
+  // Name and time-of-day exist only in the browser: render them after mount (no hydration mismatch).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const { data, loading, error, reload } = useAsyncResource(() => facultyDirectoryApi.overview(), []);
+  const insights = useAsyncResource(() => analyticsApi.department({}), []);
+  const subjects = useFacultySubjects();
+  const colorFor = useSubjectColor();
+
+  const first = loading && !data;
+  const a = insights.data;
+  const aFirst = insights.loading && !a;
+  // A failed request shows its error, never zeros that look like real data.
+  const failed = Boolean(error) && !data;
+  const aFailed = Boolean(insights.error) && !a;
+  const errNote = (title, err, retry) => (
+    <SectionState
+      tone="err"
+      title={title}
+      action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => retry()}>Try again</button>}
+    >
+      {apiErrorMessage(err, 'Try again in a moment.')}
+    </SectionState>
+  );
+  const isHod = Boolean(scope?.is_hod);
+  const readOnly = Boolean(scope?.read_only);
+  const dept = scope?.department_name || 'your department';
+  const name = !mounted ? '' : titleCase(String(user?.name || user?.first_name || '').trim().split(/\s+/)[0] || '');
+  const next = data?.queue?.[0] || null;
+
+  const scopeLine = !scope
+    ? 'Loading your scope…'
+    : isHod
+      ? `${dept} · whole department`
+      : readOnly
+        ? `${dept} · view only until your College Admin assigns you subjects`
+        : (scope.subjects || []).map((s) => [s.name, s.code].filter(Boolean).join(' · ')).join(', ');
+
+  const sideRows = [
+    { id: 'videos', count: data?.videos_awaiting, href: '/faculty/videos', label: (n) => n === 1 ? 'video to review' : 'videos to review' },
+    { id: 'mcq', count: data?.mcq_to_approve, href: '/faculty/mcq?tab=awaiting', label: (n) => n === 1 ? 'MCQ set to approve' : 'MCQ sets to approve' },
+    { id: 'none', count: data?.mcq_not_generated, href: '/faculty/mcq?tab=none', label: (n) => n === 1 ? 'chapter without questions' : 'chapters without questions' },
+  ];
+
+  // Chapter pipeline across the subjects in scope.
+  const subjItems = subjects.data?.items || [];
+  const sum = (k) => subjItems.reduce((n, s) => n + (Number(s[k]) || 0), 0);
+  const pipeline = [
+    // Tones (not CSS vars) so the SVG donut gets real colours. In progress = teal; no video = cyan so the two still read apart.
+    { key: 'published', label: 'Published', value: sum('published'), tone: 'good' },
+    { key: 'in_review', label: 'In review', value: sum('in_review'), tone: 'warn' },
+    { key: 'in_progress', label: 'In progress', value: sum('in_progress'), tone: 'neutral' },
+    { key: 'no_content', label: 'No video yet', value: sum('no_content'), tone: 'cyan' },
+  ];
+
+  const atRisk = a?.at_risk || [];
+
   return (
-    <ModulePage className="fa-page">
+    <ModulePage className="fa-page fa-dash">
       <PortalHero
-        eyebrow="HOD / Faculty · Department scope"
-        title="Review queue"
-        description="Generated videos and MCQs land here for your approval. Nothing publishes to students until you approve it."
-        secondaryHref="/faculty/videos"
-        secondaryLabel="Review videos"
-        primaryHref="/faculty/mcq"
-        primaryLabel="Review MCQs"
-        sideTitle="Your scope"
-        sideItems={[
-          {
-            id: 'scope',
-            title: 'Department and subject limited',
-            body: 'You only see content and students assigned to your subjects.',
-            tone: 'info',
-          },
-          {
-            id: 'publish',
-            title: 'You decide what goes live',
-            body: 'Chapters stay hidden from students until you publish them.',
-            tone: 'info',
-          },
-        ]}
-      />
-
-      <KpiRow
-        label="Review summary"
-        items={[
-          { icon: 'video', label: 'Videos pending', value: null, sub: 'See Video review' },
-          { icon: 'check', label: 'MCQ sets to check', value: null, sub: 'See MCQ review' },
-          { icon: 'book', label: 'Subjects', value: null, sub: 'Shown when subjects go live' },
-        ]}
-      />
-
-      <div className="fa-dash-cols">
-        <Panel
-          title="Your review queues"
-          sub="Open a queue to see what is waiting for you."
-          bodyClassName=""
-        >
-          <ul className="fa-queue">
-            {QUEUES.map((q) => (
-              <li key={q.href}>
-                <Link href={q.href}>
-                  <span className="sp-row-ic" aria-hidden="true"><Icon name={q.icon} size={20} /></span>
-                  <span className="sp-row-main">
-                    <b>{q.title}</b>
-                    <span className="sp-row-meta">{q.body}</span>
-                  </span>
-                  <span className="fa-go" aria-hidden="true"><Icon name="chev" size={16} /></span>
+        eyebrow={scope ? (isHod ? 'Head of department' : 'Faculty') : 'Dashboard'}
+        title={!mounted ? 'Dashboard' : name ? `${greeting()}, ${name}` : greeting()}
+        description={scopeLine}
+        secondaryHref="/faculty/subjects"
+        secondaryLabel="Open subjects"
+        primaryHref={next && !readOnly ? queueHref(next) : undefined}
+        primaryLabel={next && !readOnly ? 'Review next' : undefined}
+        sideTitle="Waiting on you"
+      >
+        {!data ? (
+          <p className="q-attn-note">Loading…</p>
+        ) : sideRows.some((r) => (r.count ?? 0) > 0) ? (
+          <ul className="q-attn">
+            {sideRows.filter((r) => (r.count ?? 0) > 0).map((r) => (
+              <li key={r.id}>
+                <Link href={r.href}>
+                  <b>{countLabel(r.count)}</b>
+                  <span>{r.label(r.count)}</span>
+                  <Icon name="chev" size={16} />
                 </Link>
               </li>
             ))}
           </ul>
+        ) : (
+          <p className="q-attn-note">You&apos;re up to date.</p>
+        )}
+      </PortalHero>
+
+      {error ? (
+        <SectionState
+          tone="err"
+          title="Could not load your queue"
+          action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>Try again</button>}
+        >
+          {apiErrorMessage(error, 'Try again in a moment.')}
+        </SectionState>
+      ) : null}
+
+      {failed || aFailed ? null : (
+      <KpiRow
+        label="Learning summary"
+        items={[
+          { icon: 'users', label: 'Active students', value: first ? null : countLabel(data?.students ?? 0) },
+          { icon: 'book', label: 'Chapter completion', value: aFirst ? null : pct(a?.totals?.completion) },
+          { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: aFirst ? null : a?.totals?.pass_rate != null ? `${pct(a.totals.pass_rate)} pass` : 'No quizzes yet' },
+          { icon: 'alert', label: 'Need attention', value: aFirst ? null : countLabel(atRisk.length), tone: atRisk.length ? 'focus' : undefined },
+        ]}
+      />
+      )}
+
+      <div className="dv-grid">
+        <Panel
+          title="Review queue"
+          sub={readOnly ? 'View only.' : null}
+          bodyClassName=""
+        >
+          {first ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
+          {data && !data.queue.length ? (
+            <div className="ad-empty">
+              <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
+              <div>
+                <b>All caught up</b>
+              </div>
+            </div>
+          ) : null}
+          {data?.queue?.length ? (
+            <ul className="fa-queue">
+              {data.queue.map((q) => {
+                const age = daysSince(q.since);
+                const late = age != null && age > OVERDUE_DAYS;
+                return (
+                  <li key={`${q.kind}-${q.job_id}`}>
+                    <Link href={queueHref(q)}>
+                      <span className={`sp-row-ic fa-kind fa-kind--${q.kind}`} aria-hidden="true">
+                        <Icon name={q.kind === 'video' ? 'video' : 'check'} size={18} />
+                      </span>
+                      <span className="sp-row-main">
+                        <b>{q.chapter_title}</b>
+                        <span className="sp-row-meta">
+                          {q.kind === 'video' ? 'Video to review' : 'Questions to approve'}
+                          {ageLabel(q.since) && !late ? ` · sent ${ageLabel(q.since) === 'today' ? 'today' : `${ageLabel(q.since)} ago`}` : ''}
+                        </span>
+                      </span>
+                      {late ? <span className="sp-pill sp-pill--low">{`Waiting ${age} days`}</span> : null}
+                      <span className="fa-go" aria-hidden="true"><Icon name="chev" size={16} /></span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
         </Panel>
 
-        <Panel
-          title="Department overview"
-          sub="These modules connect when the academic hierarchy is live."
-          bodyClassName=""
-        >
-          <ul className="fa-soon-list">
-            {COMING.map((m) => (
-              <li key={m.href}>
-                <Link href={m.href}>
-                  <span className="sp-row-ic sp-row-ic--muted" aria-hidden="true"><Icon name={m.icon} size={18} /></span>
-                  <b>{m.title}</b>
-                  <span className="sp-pill">Not available yet</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <Panel title="Students who need attention" bodyClassName="">
+          {aFirst ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
+          {insights.error ? (
+            <div className="sp-panel-b">
+              <SectionState tone="err" title="Could not load students">{apiErrorMessage(insights.error, 'Try again.')}</SectionState>
+            </div>
+          ) : null}
+          {a && !atRisk.length ? (
+            <div className="ad-empty">
+              <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
+              <div>
+                <b>No one flagged</b>
+              </div>
+            </div>
+          ) : null}
+          {atRisk.length ? (
+            <ul className="fa-risk">
+              {atRisk.slice(0, 5).map((s) => (
+                <li key={s.id}>
+                  <Link href={`/faculty/students?tab=risk&student=${encodeURIComponent(s.id)}`}>
+                    <span className="pm-av fa-av" aria-hidden="true">{initials(s.student, 'S')}</span>
+                    <span className="sp-row-main">
+                      <b>{s.student}</b>
+                      <span className="fa-reasons">
+                        {s.reasons.map((r) => <span key={r} className="fa-reason">{r}</span>)}
+                      </span>
+                    </span>
+                    <span className="fa-go" aria-hidden="true"><Icon name="chev" size={16} /></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Panel>
+      </div>
+
+      <div className="dv-grid fa-grid-top">
+        <Panel title="Completion by subject">
+          {aFailed ? errNote('Could not load completion', insights.error, insights.reload) : aFirst ? <SectionState title="Loading…" /> : (
+            <MetricList
+              label="Completion by subject"
+              suffix="%"
+              empty="No subjects with published chapters yet."
+              items={(a?.subjects || []).map((s) => ({
+                key: s.subject_id,
+                label: s.subject,
+                sub: s.code || undefined,
+                value: s.completion ?? 0,
+                color: colorFor(s.subject_id),
+              }))}
+            />
+          )}
+        </Panel>
+        <Panel title="Chapter pipeline">
+          {subjects.error && !subjects.data ? errNote('Could not load chapters', subjects.error, subjects.reload) : subjects.loading && !subjects.data ? <SectionState title="Loading…" /> : (
+            <ModernDonut compact title="Chapter pipeline" unit="Chapters" parts={pipeline} empty="No chapters in your subjects yet." />
+          )}
         </Panel>
       </div>
     </ModulePage>
