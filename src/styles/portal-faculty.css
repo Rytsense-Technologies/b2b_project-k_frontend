@@ -9,6 +9,8 @@
 /* ---------- Module panels: H4 head (18/26) per §4 ---------- */
 .fa-page{min-width:0}
 .fa-page .sp-panel-h > .sp-pill{flex:none;margin-top:2px}
+.fa-page .pm-filterbar .search{flex:1 1 240px;min-width:200px;max-width:none;position:relative}
+.fa-page .pm-filterbar .search input{width:100%}
 .fa-filter-select{min-width:208px}
 .fa-filter-select .quirri-dd{min-width:208px}
 /* Even Prep rhythm on faculty grids (do not un-stack chapter-column filters). */

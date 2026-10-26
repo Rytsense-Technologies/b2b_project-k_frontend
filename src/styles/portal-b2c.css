@@ -497,69 +497,70 @@ body > .un-drawer-wrap .un-drawer-hero .un-mono--lg{
 }
 
 /* =========================================================================
-   Dashboard extra-effort (24 Oct 2026) — one page grid for SA / CA / Faculty.
+   Dashboard extra-effort (24 Oct 2026) — one page grid for SA / CA / Faculty
+   dashboards only (.sa-dash / .ad-dash / .fa-dash — never all .fa-page modules).
    Hero, KPI strip and every card pair sit on the same 2fr + 1fr tracks so
    left/right edges line up. Nested .dv-grid / .sa-cols dissolve (display:contents)
    so paired cards share a row and a bottom edge. Compact donuts stay ring|legend
    so a narrow 1fr column does not balloon the row and leave a hollow neighbour.
    ========================================================================= */
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page){
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash){
   --dash-grid:minmax(0,2fr) minmax(0,1fr);
   display:grid;
   grid-template-columns:var(--dash-grid);
   gap:var(--qs-section,32px) var(--qs-gap,24px);
   align-items:stretch;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > :is(.q-hero-split,.sd-kpis,.sd-state,.pm-head){
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > :is(.q-hero-split,.sd-kpis,.sd-state,.pm-head){
   grid-column:1/-1;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .sp-panel{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > .sp-panel{
   grid-column:1/-1;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > .q-hero-split{
   display:grid;
   grid-template-columns:var(--dash-grid);
   column-gap:var(--qs-gap,24px);
   align-items:stretch;
   margin-bottom:0;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split > .banner{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > .q-hero-split > .banner{
   grid-column:auto;
   display:flex;
   flex-direction:column;
   justify-content:center;
   min-height:0;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split > .q-hero-side{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > .q-hero-split > .q-hero-side{
   min-height:0;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > :is(.dv-grid,.sa-cols){
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > :is(.dv-grid,.sa-cols){
   display:contents;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > :is(.dv-grid,.sa-cols) > .sp-panel{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > :is(.dv-grid,.sa-cols) > .sp-panel{
   min-width:0;
   min-height:0;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .banner h2{margin-bottom:8px}
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .banner p{margin:0}
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .banner-cta{margin-top:24px}
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpis{align-items:stretch}
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .banner h2{margin-bottom:8px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .banner p{margin:0}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .banner-cta{margin-top:24px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .sd-kpis{align-items:stretch}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .sd-kpi{
   min-height:108px;
   display:flex;
   flex-direction:column;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi-v{margin-top:4px}
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi-s{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .sd-kpi-v{margin-top:4px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .sd-kpi-s{
   margin-top:auto;
   min-height:18px;
   font-size:12px;
   line-height:18px;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sp-panel-b{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .sp-panel-b{
   justify-content:flex-start;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .mdc--compact .mdc-body{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .mdc--compact .mdc-body{
   grid-template-columns:auto minmax(0,1fr);
   align-items:center;
   gap:16px;
@@ -592,35 +593,35 @@ body > .un-drawer-wrap .un-drawer-hero .un-mono--lg{
 }
 
 /* Queue / at-risk rows: 14/22 title, 12/18 meta, 16px air, no stretched interiors */
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) :is(.ad-queue,.fa-queue,.fa-risk) b,
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) :is(.ad-queue,.fa-queue,.fa-risk) .sp-row-main b{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) :is(.ad-queue,.fa-queue,.fa-risk) b,
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) :is(.ad-queue,.fa-queue,.fa-risk) .sp-row-main b{
   font-size:14px;line-height:22px;font-weight:500;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) :is(.ad-queue small,.fa-queue .sp-row-meta){
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) :is(.ad-queue small,.fa-queue .sp-row-meta){
   font-size:12px;line-height:18px;color:var(--muted-2);
 }
 .app.q-app-shell .fa-page :is(.fa-queue a,.fa-risk a,.fa-risk button){
   gap:12px;padding:12px var(--qs-card-pad,24px);min-height:56px;
 }
 .app.q-app-shell .ad-dash .ad-queue li{padding:12px 0;min-height:56px}
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .ad-empty{
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .ad-empty{
   flex:1 1 auto;padding:8px 0;align-items:center;
 }
-.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .ad-empty b{font-size:14px;line-height:22px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .ad-empty b{font-size:14px;line-height:22px}
 
 @media (max-width:960px){
-  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page){
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash){
     grid-template-columns:minmax(0,1fr);
   }
-  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split{
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > .q-hero-split{
     grid-template-columns:minmax(0,1fr);
   }
-  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split > .banner{grid-column:auto}
-  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .mdc--compact .mdc-body{
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) > .q-hero-split > .banner{grid-column:auto}
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .mdc--compact .mdc-body{
     grid-template-columns:auto minmax(0,1fr);
   }
 }
 @media (max-width:760px){
-  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi{min-height:0}
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-dash) .sd-kpi{min-height:0}
   .app.q-app-shell .fa-page :is(.fa-queue a,.fa-risk a,.fa-risk button){padding:12px 16px}
 }

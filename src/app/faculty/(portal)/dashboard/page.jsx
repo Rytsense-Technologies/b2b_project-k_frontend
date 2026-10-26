@@ -86,7 +86,7 @@ export default function FacultyDashboardPage() {
   const atRisk = a?.at_risk || [];
 
   return (
-    <ModulePage className="fa-page">
+    <ModulePage className="fa-page fa-dash">
       <PortalHero
         eyebrow={scope ? (isHod ? 'Head of department' : 'Faculty') : 'Dashboard'}
         title={!mounted ? 'Dashboard' : name ? `${greeting()}, ${name}` : greeting()}
