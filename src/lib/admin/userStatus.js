@@ -18,7 +18,7 @@ export const isPending = (user) => accountState(user) === 'pending';
 export const isDeactivated = (user) => accountState(user) === 'deactivated';
 
 /** Status key used by the College Admin tables: green active, amber (orange) pending,
- *  'off' (neutral grey) deactivated - same colours as the Super Admin users table and the
+ *  teal ('off') deactivated — same colours as the Super Admin users table and the
  *  Account status donut. Deactivated is a state, not an error (design-system §0b rule 3). */
 export function statusVariant(user) {
   return { active: 'green', pending: 'amber', deactivated: 'off' }[accountState(user)];

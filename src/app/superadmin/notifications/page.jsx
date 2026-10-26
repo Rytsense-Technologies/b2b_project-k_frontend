@@ -12,6 +12,7 @@ import {
   SearchBox,
   Pager,
   Panel,
+  FilterField,
   Icon,
   SectionState,
   countLabel,
@@ -47,10 +48,11 @@ const STATUS_FILTERS = [
 ];
 
 const RANGES = [
-  { value: '7', label: '7 days' },
-  { value: '30', label: '30 days' },
-  { value: '90', label: '90 days' },
+  { value: '7', label: 'Last 7 days' },
+  { value: '30', label: 'Last 30 days' },
+  { value: '90', label: 'Last 90 days' },
 ];
+const RANGE_SHORT = { 7: '7 days', 30: '30 days', 90: '90 days' };
 
 const CHANNELS = [
   { value: '', label: 'All channels' },
@@ -103,34 +105,28 @@ function RulesTab({ collegeId, onCollege }) {
     [collegesData],
   );
   const options = [
-    { value: '', label: 'All of Quirri (platform)' },
+    { value: '', label: 'All of Quirri' },
     ...colleges.map((c) => ({ value: String(c.id), label: c.is_active === false ? `${c.name} (inactive)` : c.name })),
   ];
-  const college = collegeId ? colleges.find((c) => String(c.id) === String(collegeId)) : null;
   return (
-    <>
-      <div className="nr-scopebar">
-        <div className="nr-scopebar-field">
-          <QuirriSelect
-            id="nr-scope-college"
-            label="Rules for"
-            ariaLabel="Show rules for"
-            value={collegeId}
-            onChange={(e) => onCollege(e.target.value)}
-            options={options}
-            disabled={!collegesData && !collegesError}
-          />
-        </div>
+    <div className="nr-rules">
+      <div className="nr-scope">
+        <QuirriSelect
+          id="nr-scope-college"
+          label="Rules for"
+          ariaLabel="Rules for"
+          value={collegeId}
+          onChange={(e) => onCollege(e.target.value)}
+          options={options}
+          disabled={!collegesData && !collegesError}
+        />
       </div>
       <NotificationRules
         scope={collegeId ? 'tenant' : 'platform'}
         scopeId={collegeId || undefined}
         canTest
-        intro={collegeId
-          ? `What ${college?.name || 'this college'} receives. Anything you turn off here is off for the whole college.`
-          : 'Turning an email off here stops it for every college on Quirri.'}
       />
-    </>
+    </div>
   );
 }
 
@@ -180,7 +176,7 @@ function NotificationsView() {
   const emailReady = Boolean(provider.email_ready);
   const filtersOn = Boolean(url.q || url.status || url.event || url.channel || days !== '30');
   const total = deliveriesData?.total ?? deliveries.length;
-  const rangeLabel = RANGES.find((r) => r.value === days)?.label;
+  const rangeShort = RANGE_SHORT[days] || '30 days';
 
   const handleRetry = async () => {
     setRetrying(true);
@@ -212,18 +208,19 @@ function NotificationsView() {
 
   return (
     <ModulePage className="sa-page">
-      {/* One muted line instead of three header chips: channel set-up and freshness. */}
-      <p className="sa-live">
-        {eventsData ? (
-          <>
-            Email {emailReady ? `· ${provider.email || 'connected'}` : 'is recorded only, not sent yet'}
-            {' · '}WhatsApp {provider.whatsapp ? `· ${provider.whatsapp}` : 'is not configured'}
-            {' · '}
-          </>
-        ) : null}
-        Live · updated {ago}
-        {provider.test_redirect ? <> · <b>Test mode: e-mails go to the QA inbox</b></> : null}
-      </p>
+      {tab !== 'rules' ? (
+        <p className="sa-live">
+          {eventsData ? (
+            <>
+              Email {emailReady ? `· ${provider.email || 'connected'}` : 'is recorded only, not sent yet'}
+              {' · '}WhatsApp {provider.whatsapp ? `· ${provider.whatsapp}` : 'is not configured'}
+              {' · '}
+            </>
+          ) : null}
+          Live · updated {ago}
+          {provider.test_redirect ? <> · <b>Test mode: e-mails go to the QA inbox</b></> : null}
+        </p>
+      ) : null}
       <ModuleHead
         actions={retryable ? (
           <button type="button" className="sd-btn sd-btn--amber" onClick={handleRetry} disabled={retrying}>
@@ -267,13 +264,12 @@ function NotificationsView() {
           <KpiRow
             label="Deliveries summary"
             items={[
-              { icon: 'tick', label: `Delivered · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.sent) : null, sub: emailReady ? `Accepted by ${provider.email || 'the mail provider'}` : 'Email not connected yet' },
-              { icon: 'alert', label: `Failed · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.failed) : null, tone: summary.failed ? 'focus' : undefined, sub: retryable ? `${countLabel(retryable)} can be retried (last ${RETRY_DAYS} days)` : 'Nothing to retry' },
-              // Skipped (turned off by a rule) rides on this tile; the mix panel and the Skipped filter show it too.
-              { icon: 'clock', label: `Log-only · ${rangeLabel}`, value: deliveriesData ? countLabel(summary.log_only) : null, sub: summary.skipped ? `Recorded, not sent · ${countLabel(summary.skipped)} skipped by rules` : 'Recorded, not sent' },
+              { icon: 'tick', label: 'Delivered', value: deliveriesData ? countLabel(summary.sent) : null, sub: emailReady ? null : 'Email not connected' },
+              { icon: 'alert', label: 'Failed', value: deliveriesData ? countLabel(summary.failed) : null, tone: summary.failed ? 'focus' : undefined, sub: retryable ? `${countLabel(retryable)} can be retried` : null },
+              { icon: 'clock', label: 'Log-only', value: deliveriesData ? countLabel(summary.log_only) : null, sub: summary.skipped ? `${countLabel(summary.skipped)} skipped by rules` : null },
             ]}
           />
-          <Panel title="Delivery mix" sub={`Every message in the last ${rangeLabel}`} className="mdc-card mdc-card--compact">
+          <Panel title="Delivery mix" className="mdc-card mdc-card--compact">
             {deliveriesData ? (
               <ModernDonut
                 compact
@@ -293,46 +289,60 @@ function NotificationsView() {
 
         <Panel
           title="Deliveries"
-          sub={deliveriesData ? `${countLabel(total)} ${total === 1 ? 'message' : 'messages'}${filtersOn ? ' match these filters' : ''} · last ${rangeLabel}, newest first` : null}
+          sub={deliveriesData ? `${countLabel(total)} ${total === 1 ? 'message' : 'messages'}${filtersOn ? ' match these filters' : ''} · last ${rangeShort}, newest first` : null}
           bodyClassName={null}
           toolbar={(
             <>
-              <SearchBox
-                placeholder="Search recipient or subject…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <div className="sa-filter-select">
+              <FilterField label="Search" grow="search">
+                <SearchBox
+                  placeholder="Recipient or subject"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </FilterField>
+              <FilterField label="Event">
                 <QuirriSelect
-                  ariaLabel="Filter by event"
+                  ariaLabel="Event"
                   value={url.event}
                   onChange={(e) => setUrl({ event: e.target.value, page: '1' })}
                   options={eventOptions}
                 />
-              </div>
-              <div className="sa-filter-select sa-filter-select--sm">
+              </FilterField>
+              <FilterField label="Channel">
                 <QuirriSelect
-                  ariaLabel="Filter by channel"
+                  ariaLabel="Channel"
                   value={url.channel}
                   onChange={(e) => setUrl({ channel: e.target.value, page: '1' })}
                   options={CHANNELS}
                 />
-              </div>
-              <SegTabs label="Filter by delivery status" options={STATUS_FILTERS} value={url.status} onChange={(v) => setUrl({ status: v, page: '1' })} />
-              <SegTabs label="Time range" options={RANGES} value={days} onChange={(v) => setUrl({ days: v, page: '1' })} />
+              </FilterField>
+              <FilterField label="Period">
+                <QuirriSelect
+                  ariaLabel="Period"
+                  value={days}
+                  onChange={(e) => setUrl({ days: e.target.value, page: '1' })}
+                  options={RANGES}
+                />
+              </FilterField>
               {filtersOn ? (
-                <button
-                  type="button"
-                  className="sd-btn sd-btn--ghost sd-btn--sm"
-                  onClick={() => setUrl({ q: '', status: '', event: '', channel: '', days: '30', page: '1' })}
-                >
-                  Clear
-                </button>
+                <FilterField grow="clear">
+                  <button
+                    type="button"
+                    className="sd-btn sd-btn--ghost"
+                    onClick={() => setUrl({ q: '', status: '', event: '', channel: '', days: '30', page: '1' })}
+                  >
+                    Clear
+                  </button>
+                </FilterField>
               ) : null}
+              <FilterField label="Status" grow="status">
+                <SegTabs label="Status" options={STATUS_FILTERS} value={url.status} onChange={(v) => setUrl({ status: v, page: '1' })} />
+              </FilterField>
             </>
           )}
         >
           {deliveries.length ? (
+            <>
             <div className="sp-table-wrap">
               <table className="sp-table un-table sa-table-tight sa-stack">
                 <thead>
@@ -372,31 +382,30 @@ function NotificationsView() {
                 </tbody>
               </table>
             </div>
+            <Pager
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              shown={deliveries.length}
+              onPage={(p) => setUrl({ page: String(p) }, { push: true })}
+              noun="deliveries"
+            />
+            </>
           ) : (
             <p className="dv-empty sa-pad">
-              {deliveriesLoading ? 'Loading deliveries…' : deliveriesData == null ? 'Deliveries are not available right now.' : filtersOn ? 'No deliveries match these filters.' : `No messages in the last ${rangeLabel}. They appear here the moment an event is triggered.`}
+              {deliveriesLoading ? 'Loading deliveries…' : deliveriesData == null ? 'Deliveries are not available right now.' : filtersOn ? 'No deliveries match these filters.' : `No messages in the last ${rangeShort}.`}
             </p>
           )}
         </Panel>
-
-        <Pager
-          page={page}
-          pageSize={PAGE_SIZE}
-          total={total}
-          shown={deliveries.length}
-          onPage={(p) => setUrl({ page: String(p) }, { push: true })}
-          noun="deliveries"
-        />
       </TabPanel>
 
       <TabPanel value="events" current={tab} idBase="notif">
         {eventBars.length ? (
-          <MetricListCard title="Messages per event · 30 days" sub="Sent and log-only messages for each event." items={eventBars} className="sa-metric-cols" />
+          <MetricListCard title="Messages per event · 30 days" items={eventBars} className="sa-metric-cols" />
         ) : null}
 
         <Panel
           title="Event catalogue"
-          sub="What triggers each message, who receives it, and how each channel is set up."
           bodyClassName={null}
         >
           {events.length ? (

@@ -1,7 +1,8 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import PortalHero from '@/components/shared/PortalHero';
 import {
   ModulePage,
   ModuleHead,
@@ -10,6 +11,7 @@ import {
   SegTabs,
   Icon,
   SectionState,
+  countLabel,
 } from '@/components/shared/module-ui';
 import { MetricList, ModernDonut, BandPill } from '@/components/shared/data-viz';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
@@ -19,11 +21,13 @@ import {
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, apiErrorMessage, isApiUnavailable, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { useUrlState } from '@/hooks/useUrlState';
+import { useAuth } from '@/hooks/useAuth';
 import { formatCount, formatMinutes, formatPct } from '@/lib/superadmin/format';
 import { overallHealth, toNumber } from '@/lib/superadmin/health';
 import { isInterviewOff } from '@/lib/product/interviewOff';
+import { titleCase } from '@/lib/student/learning';
 
 /** The five ranges GET /dashboard accepts (reports.py RANGES). */
 const RANGES = [
@@ -43,6 +47,22 @@ const METRICS = [
 ];
 
 const plural = (n, one, many) => `${formatCount(n)} ${Number(n) === 1 ? one : many}`;
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function firstNameOf(user) {
+  const fromFirst = String(user?.first_name || '').trim().split(/\s+/)[0] || '';
+  const fromName = String(user?.name || '').trim().split(/\s+/)[0] || '';
+  const token = fromFirst || fromName;
+  // Role labels ("Super Admin") are not a person's name.
+  if (!token || /^(super|admin|college|faculty|student|hod)$/i.test(token)) return '';
+  return titleCase(token);
+}
 
 /** Total from a 1-row list call, or null when the call failed (never a guessed 0). */
 async function totalOf(request) {
@@ -68,47 +88,60 @@ async function loadAttention() {
     totalOf(() => notificationsApi.listDeliveries({ status: 'failed', days: 7, page: 1, page_size: 1 })),
   ]);
   const items = [];
-  if (health) items.push(...overallHealth(health).items);
+  if (health) {
+    overallHealth(health).items.forEach((item) => {
+      items.push({ id: item.id, label: item.title, href: item.href });
+    });
+  }
   if (failedRecent) {
     items.push({
       id: 'failed-notifications',
-      title: `${plural(failedRecent, 'notification', 'notifications')} failed in the last 7 days`,
-      body: 'Retry them from Notifications.',
-      tone: 'warning',
+      count: failedRecent,
+      label: Number(failedRecent) === 1
+        ? 'notification failed in the last 7 days'
+        : 'notifications failed in the last 7 days',
       href: '/superadmin/notifications?status=failed&days=7',
     });
   }
   if (pendingInvites) {
     items.push({
       id: 'pending-invites',
-      title: `${plural(pendingInvites, 'invite', 'invites')} not accepted yet`,
-      body: 'These people have not set a password. Resend the invite if needed.',
-      tone: 'info',
+      count: pendingInvites,
+      label: Number(pendingInvites) === 1 ? 'invite not accepted yet' : 'invites not accepted yet',
       href: '/superadmin/users?tab=pending',
     });
   }
   if (inactiveColleges) {
     items.push({
       id: 'inactive-colleges',
-      title: `${plural(inactiveColleges, 'college is', 'colleges are')} deactivated`,
-      body: 'Their people cannot sign in. Reactivate from Colleges if this is a mistake.',
-      tone: 'info',
+      count: inactiveColleges,
+      label: Number(inactiveColleges) === 1 ? 'college is deactivated' : 'colleges are deactivated',
       href: '/superadmin/colleges?status=false',
     });
   }
   return { items, checked: Boolean(health) || pendingInvites != null || inactiveColleges != null };
 }
 
-function AttentionList({ items }) {
+function AttentionList({ items, loading, checked }) {
+  if (loading) return <p className="q-attn-note">Loading…</p>;
+  if (!items.length) {
+    return (
+      <p className="q-attn-note">
+        {checked ? 'You\'re up to date.' : 'Could not check the platform just now.'}
+      </p>
+    );
+  }
   return (
-    <ul className="sa-attn-list">
+    <ul className="q-attn">
       {items.map((item) => (
         <li key={item.id}>
-          <span className={`sa-attn-dot is-${item.tone || 'info'}`} aria-hidden="true" />
-          <div>
-            <Link className="sa-attn-t" href={item.href}>{item.title}</Link>
-            {item.body ? <small>{item.body}</small> : null}
-          </div>
+          <Link href={item.href}>
+            {item.count != null
+              ? <b>{countLabel(item.count)}</b>
+              : <span className="q-attn-mark" aria-hidden="true" />}
+            <span>{item.label}</span>
+            <Icon name="chev" size={16} />
+          </Link>
         </li>
       ))}
     </ul>
@@ -121,18 +154,21 @@ function pct(value) {
 }
 
 function DashboardView() {
+  const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const name = mounted ? firstNameOf(user) : '';
+
   const [url, setUrl] = useUrlState({ range: 'last_30_days', metric: 'completion' });
   const range = RANGE_KEYS.includes(url.range) ? url.range : 'last_30_days';
   const metric = METRICS.some((m) => m.value === url.metric) ? url.metric : 'completion';
-  const rangeLabel = RANGES.find((r) => r.value === range)?.label || 'Last 30 days';
-
   const { data, loading, error, reload } = useAsyncResource(
     () => fetchOptional(() => dashboardApi.getOverview({ range })),
     [range],
   );
   const { data: attention, loading: attentionLoading, reload: reloadAttention } = useAsyncResource(loadAttention, []);
   // Live like the student pages: every minute + when the tab regains focus.
-  const ago = useTimeAgo(useLiveRefresh(() => Promise.all([reload({ silent: true }), reloadAttention({ silent: true })])));
+  useLiveRefresh(() => Promise.all([reload({ silent: true }), reloadAttention({ silent: true })]));
 
   const unavailable = !loading && data == null && !error;
   const hardError = error && !isApiUnavailable(error);
@@ -171,7 +207,7 @@ function DashboardView() {
   const kpis = [
     { icon: 'building', label: 'Institutions', value: m('institutions') ? formatCount(m('institutions').value) : null, sub: m('institutions')?.trend },
     // Watch time rides on the students tile so the row stays at four tiles (spec: max 4 per row).
-    { icon: 'users', label: 'Active students', value: m('active students') ? formatCount(m('active students').value) : null, sub: data ? `${formatMinutes(watchMinutes)} watched · ${rangeLabel.toLowerCase()}` : null },
+    { icon: 'users', label: 'Active students', value: m('active students') ? formatCount(m('active students').value) : null, sub: data ? formatMinutes(watchMinutes) : null },
     { icon: 'tick', label: 'Completion rate', value: m('completion rate')?.value, sub: m('completion rate')?.trend },
     {
       icon: 'chart',
@@ -201,6 +237,7 @@ function DashboardView() {
 
   const isBand = metric === 'completion' || metric === 'score';
   const attentionItems = attention?.items || [];
+  const rangeLabel = RANGES.find((r) => r.value === range)?.label || 'Last 30 days';
 
   return (
     <ModulePage className="sa-page sa-dash">
@@ -217,7 +254,22 @@ function DashboardView() {
         )}
       />
 
-      <p className="sa-live" title="Refreshes every minute">Live · updated {ago}</p>
+      <PortalHero
+        eyebrow="Super Admin"
+        title={!mounted ? 'Dashboard' : name ? `${greeting()}, ${name}` : greeting()}
+        description={`How colleges are using Quirri · ${rangeLabel.toLowerCase()}.`}
+        secondaryHref="/superadmin/colleges"
+        secondaryLabel="Add a college"
+        primaryHref="/superadmin/users"
+        primaryLabel="Add a user"
+        sideTitle="Needs your attention"
+      >
+        <AttentionList
+          items={attentionItems.slice(0, 5)}
+          loading={attentionLoading && !attention}
+          checked={Boolean(attention?.checked)}
+        />
+      </PortalHero>
 
       <section className="sd-kpis" aria-label="Platform summary">
         {kpis.map((k) => (
@@ -247,7 +299,6 @@ function DashboardView() {
       <div className="sa-cols">
         <Panel
           title="Institution comparison"
-          sub={`${METRICS.find((x) => x.value === metric)?.label} per active college · ${rangeLabel.toLowerCase()}`}
           action={(
             <SegTabs
               label="Compare by"
@@ -264,51 +315,19 @@ function DashboardView() {
               items={comparison}
               colorBy={isBand ? 'band' : 'series'}
               format={metric === 'watch' ? formatMinutes : isBand ? formatPct : undefined}
-              empty="No active colleges yet. Colleges appear here once they are onboarded."
-            />
-          )}
-          <div className="sa-panel-foot">
-            <Link className="sp-link" href="/superadmin/reports">
-              Open institution report <Icon name="arrow" size={14} />
-            </Link>
-          </div>
-        </Panel>
-
-        <Panel title="Attention needed" sub="What to act on, and where to fix it.">
-          {attentionItems.length ? <AttentionList items={attentionItems.slice(0, 6)} /> : (
-            <p className="sa-attn-none">
-              {attentionLoading && !attention
-                ? 'Checking the platform…'
-                : attention?.checked
-                  ? 'Nothing needs attention. Services, invites, colleges and notifications look normal.'
-                  : 'Could not check the platform right now. It will try again in a minute.'}
-            </p>
-          )}
-          {data && !pipeline.length ? (
-            <p className="sa-attn-note"><Icon name="layers" size={14} /> No chapters generating right now.</p>
-          ) : null}
-        </Panel>
-      </div>
-
-      <div className="dv-grid">
-        <Panel title="Top Q&A queries" sub={`Most-asked questions to the AI tutor · ${rangeLabel.toLowerCase()}`}>
-          {firstLoad ? <p className="dv-empty">Loading questions…</p> : (
-            <MetricList
-              label="Top Q&A queries"
-              items={topics.map((t, i) => ({ key: `${i}-${t.topic}`, label: t.topic, sub: t.chapter || null, value: Number(t.count) || 0 }))}
-              colorBy="single"
-              empty="No questions asked in this range."
+              empty="No active colleges yet."
             />
           )}
         </Panel>
+
         <Panel
           title="Activity mix"
-          sub={`Q&A turns and assessments · ${rangeLabel.toLowerCase()}`}
           className="mdc-card"
           action={firstLoad ? null : <div className="mdc-chip"><small>Total activities</small><b>{formatCount(mix.qa + mix.assessments)}</b></div>}
         >
           {firstLoad ? <p className="dv-empty">Loading activity…</p> : (
             <ModernDonut
+              compact
               title="Activity mix"
               unit="Activities"
               parts={[
@@ -321,12 +340,19 @@ function DashboardView() {
         </Panel>
       </div>
 
+      <Panel title="Top Q&A queries">
+        {firstLoad ? <p className="dv-empty">Loading questions…</p> : (
+          <MetricList
+            label="Top Q&A queries"
+            items={topics.map((t, i) => ({ key: `${i}-${t.topic}`, label: t.topic, sub: t.chapter || null, value: Number(t.count) || 0 }))}
+            colorBy="single"
+            empty="No questions asked in this range."
+          />
+        )}
+      </Panel>
+
       {pipeline.length ? (
-        <Panel
-          title="Content pipeline"
-          sub="Chapters being turned into lectures and assessments right now."
-          bodyClassName={null}
-        >
+        <Panel title="Content pipeline" bodyClassName={null}>
           <div className="sp-table-wrap">
             <table className="sp-table un-table sa-table-tight sa-stack">
               <thead>
@@ -359,9 +385,6 @@ function DashboardView() {
                 })}
               </tbody>
             </table>
-          </div>
-          <div className="sa-panel-foot sa-panel-foot--pad">
-            <Link className="sp-link" href="/superadmin/content">Open Upload &amp; content <Icon name="arrow" size={14} /></Link>
           </div>
         </Panel>
       ) : null}

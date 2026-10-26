@@ -101,7 +101,7 @@ export function Kpi({ icon, label, value, sub, tone }) {
     <div className="sd-kpi">
       <div className="sd-kpi-h"><Icon name={icon} size={16} /><span>{label}</span></div>
       <div className={`sd-kpi-v${tone ? ` is-${tone}` : ''}`}>{value ?? '—'}</div>
-      {sub ? <div className="sd-kpi-s">{sub}</div> : null}
+      <div className="sd-kpi-s" aria-hidden={!sub || undefined}>{sub || '\u00a0'}</div>
     </div>
   );
 }

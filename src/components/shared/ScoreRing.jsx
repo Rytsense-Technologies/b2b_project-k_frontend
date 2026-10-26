@@ -8,13 +8,13 @@ import { bandFor } from '@/components/shared/data-viz';
  *
  * Replacement for ScoreMeter (modern-cards-plan.md): `<ScoreRing score={72} size="sm" suffix="%" label="Completion 72%" />`
  *   size: number (px) or preset 'xs' 32 · 'sm' 44 · 'md' 64 · 'lg' 80 (default 80)
- *   score null / '' / NaN → grey ring with "—" (no data), never "0".
+ *   score null / '' / NaN → teal ring with "—" (no data), never "0".
  */
 const BAND_STROKE = {
   strong: 'var(--band-strong)', ok: 'var(--band-ok)', focus: 'var(--band-focus)', none: 'var(--band-none)',
 };
 const BAND_TEXT = {
-  strong: 'var(--band-strong-text)', ok: 'var(--band-ok-text)', focus: 'var(--band-focus-text)', none: 'var(--muted)',
+  strong: 'var(--band-strong-text)', ok: 'var(--band-ok-text)', focus: 'var(--band-focus-text)', none: 'var(--band-none-text)',
 };
 const SIZES = { xs: 32, sm: 44, md: 64, lg: 80 };
 
@@ -28,7 +28,7 @@ export default function ScoreRing({ score = 0, size = 80, strokeWidth, tone = 'b
   const offset = circumference - (value / 100) * circumference;
   const band = bandFor(score);
   const stroke = color || (tone === 'progress' ? 'var(--progress)' : BAND_STROKE[band]);
-  const text = noData ? 'var(--muted)' : color || (tone === 'progress' ? 'var(--progress-text)' : BAND_TEXT[band]);
+  const text = noData ? 'var(--band-none-text)' : color || (tone === 'progress' ? 'var(--progress-text)' : BAND_TEXT[band]);
   // Small rings drop the suffix when it would not fit ("100%" at 32px).
   const shown = noData ? '—' : `${Math.round(value)}${px < 40 ? '' : suffix}`;
   const fontSize = Math.max(px < 40 ? 10 : 11, Math.round(px * (px < 56 ? 0.26 : 0.22)));
@@ -56,7 +56,7 @@ export default function ScoreRing({ score = 0, size = 80, strokeWidth, tone = 'b
           />
         )}
       </svg>
-      <span className="absolute text-center" style={{ color: text, fontSize, fontWeight: px < 56 ? 600 : 500, fontVariantNumeric: 'tabular-nums' }} aria-hidden="true">
+      <span className="absolute text-center" style={{ color: text, fontSize, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }} aria-hidden="true">
         {shown}
       </span>
     </div>

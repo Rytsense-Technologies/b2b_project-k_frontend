@@ -130,9 +130,9 @@ export const FIELD_RULES = {
   },
   password: {
     id: 'password',
-    labelHint: 'At least 8 characters, one uppercase letter, one number',
+    labelHint: 'At least 8 characters with upper- and lowercase letters and a number',
     min: 8,
-    max: 128,
+    max: 72,
     inputMode: 'text',
     autoComplete: 'new-password',
     type: 'password',
@@ -333,43 +333,54 @@ export function emailField(label = 'Email') {
     );
 }
 
+/**
+ * Indian mobile → "+91XXXXXXXXXX", or null when it isn't one.
+ * Accepts an optional "+91" / "91" / "0" prefix (spaces, hyphens, brackets ignored),
+ * then exactly 10 digits starting with 6–9 (same rule as the backend import).
+ */
+export function toIndianMobile(value) {
+  const s = String(value ?? '').replace(/[\s\-().]/g, '');
+  let d;
+  if (/^\+91\d{10}$/.test(s)) d = s.slice(3);
+  else if (/^91\d{10}$/.test(s)) d = s.slice(2);
+  else if (/^0\d{10}$/.test(s)) d = s.slice(1);
+  else if (/^\d{10}$/.test(s)) d = s;
+  else return null;
+  return /^[6-9]\d{9}$/.test(d) ? `+91${d}` : null;
+}
+
+export const PHONE_RULE_MESSAGE = 'Enter a 10-digit Indian mobile number';
+
 export function phoneField(label = 'Phone', { required = true } = {}) {
-  const rule = FIELD_RULES.phone;
-  const noun = /number$/i.test(label) ? label.toLowerCase() : `${label.toLowerCase()} number`;
-  const core = z
-    .string()
-    .transform(normalizePhone)
-    .pipe(
-      z
-        .string()
-        .refine((v) => {
-          const digits = v.replace(/\D/g, '');
-          return digits.length >= rule.min && digits.length <= 15;
-        }, `Enter a valid ${noun}`),
-    );
+  const toMobile = (v, ctx) => {
+    const m = toIndianMobile(v);
+    if (!m) {
+      ctx.addIssue({ code: 'custom', message: PHONE_RULE_MESSAGE });
+      return z.NEVER;
+    }
+    return m;
+  };
 
   if (!required) {
     return z
       .string()
       // The input pre-fills "+91"; a bare country code means the optional field was left empty.
-      .transform((v) => {
+      .transform((v, ctx) => {
         const p = normalizePhone(v);
-        return p === '+' || p === '+91' ? '' : p;
-      })
-      .pipe(z.union([z.literal(''), core]));
+        if (p === '' || p === '+' || p === '+91') return '';
+        return toMobile(p, ctx);
+      });
   }
   return z
     .string({ required_error: `${label} is required` })
-    .transform(normalizePhone)
-    .pipe(
-      z
-        .string()
-        .min(1, `${label} is required`)
-        .refine((v) => {
-          const digits = v.replace(/\D/g, '');
-          return digits.length >= rule.min && digits.length <= 15;
-        }, `Enter a valid ${noun}`),
-    );
+    .transform((v, ctx) => {
+      const p = normalizePhone(v);
+      if (p === '' || p === '+' || p === '+91') {
+        ctx.addIssue({ code: 'custom', message: `${label} is required` });
+        return z.NEVER;
+      }
+      return toMobile(p, ctx);
+    });
 }
 
 export function passwordField(label = 'Password') {
@@ -377,10 +388,24 @@ export function passwordField(label = 'Password') {
   return z
     .string({ required_error: `${label} is required` })
     .min(1, `${label} is required`)
-    .min(rule.min, `${label} must be at least ${rule.min} characters`)
     .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
-    .regex(/[A-Z]/, `${label} must contain at least one uppercase letter`)
-    .regex(/[0-9]/, `${label} must contain at least one number`);
+    // Mirrors the backend rule (8–72 chars, upper + lower + digit) with ONE
+    // message, so the form never lists the rules piecemeal.
+    .refine(
+      (v) => v.length === 0 || v.length > rule.max || isStrongPassword(v),
+      PASSWORD_RULE_MESSAGE,
+    );
+}
+
+/** The single helper/error text for new passwords. */
+export const PASSWORD_RULE_MESSAGE =
+  'Use at least 8 characters with upper- and lowercase letters and a number';
+
+/** True when `v` meets the backend password policy (8–72, A-Z, a-z, 0-9). */
+export function isStrongPassword(v) {
+  const s = String(v ?? '');
+  const { min, max } = FIELD_RULES.password;
+  return s.length >= min && s.length <= max && /[A-Z]/.test(s) && /[a-z]/.test(s) && /[0-9]/.test(s);
 }
 
 export function otpField(label = 'OTP') {

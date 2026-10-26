@@ -12,7 +12,7 @@ import {
   ModulePage, ModuleHead, KpiRow, Panel, SegTabs, StatusPill, IconButton, Mono, Pager, Icon, SectionState,
 } from '@/components/shared/module-ui';
 import { MetricListCard } from '@/components/shared/data-viz';
-import { useUrlState } from '@/hooks/useUrlState';
+import { useUrlState, writeAppUrl } from '@/hooks/useUrlState';
 import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
 } from '@/lib/superadmin/listState';
@@ -437,7 +437,7 @@ function UniversitiesView() {
     openCreate();
     params.delete('new');
     const rest = params.toString();
-    window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`);
+    writeAppUrl(`${window.location.pathname}${rest ? `?${rest}` : ''}`);
   }, []);
 
   const openEdit = async (row) => {
@@ -529,14 +529,14 @@ function UniversitiesView() {
 
       {studentsBars.length > 1 ? (
         <div className="dv-grid">
-          <MetricListCard title="Students by university" sub="Active universities, most students first." items={studentsBars} />
-          <MetricListCard title="Colleges by university" sub="Open one to see its colleges." items={collegeBars} />
+          <MetricListCard title="Students by university" items={studentsBars} />
+          <MetricListCard title="Colleges by university" items={collegeBars} />
         </div>
       ) : null}
 
       <Panel
         title={url.status === 'true' ? 'Active universities' : url.status === 'false' ? 'Inactive universities' : 'All universities'}
-        sub={data ? `${countLabel(total)} ${total === 1 ? 'university' : 'universities'}${filtersOn ? ' match these filters' : ''}` : null}
+        sub={data ? `${countLabel(total)} ${total === 1 ? 'university' : 'universities'}` : null}
         bodyClassName={null}
         toolbar={(
           <>

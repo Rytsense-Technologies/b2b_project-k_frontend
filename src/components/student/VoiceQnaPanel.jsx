@@ -147,16 +147,28 @@ export default function VoiceQnaPanel({
 
     // 1) Microphone permission first, so "denied" is reported as exactly that.
     try {
-      const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const probe = await Promise.race([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            const timeout = new Error('Microphone timed out');
+            timeout.name = 'TimeoutError';
+            reject(timeout);
+          }, 8000);
+        }),
+      ]);
       probe.getTracks().forEach((t) => t.stop());
     } catch (err) {
       const denied = err?.name === 'NotAllowedError' || err?.name === 'SecurityError';
+      const timedOut = err?.name === 'TimeoutError';
       await failCall({
         kind: 'mic',
-        title: denied ? 'Microphone access is blocked' : 'No microphone found',
+        title: denied ? 'Microphone access is blocked' : timedOut ? 'Microphone did not respond' : 'No microphone found',
         message: denied
           ? 'Allow microphone access for this site in your browser, then try again.'
-          : 'Connect a microphone and try again.',
+          : timedOut
+            ? 'The browser did not return a microphone in time. Allow access if asked, then try again.'
+            : 'Connect a microphone and try again.',
         retry: true,
       });
       return;

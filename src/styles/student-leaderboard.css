@@ -1,37 +1,35 @@
 /*
  * Student Leaderboard (/student/leaderboard) — SOW §6.4.4. Prefix .slb-*.
- * quirri-b2c-student-ui skill (15 Oct 2026): white 6px cards on the canvas, teal titles /
- * scores / ranks, ONE orange action (your-position card). Teal filter bar, stat cluster,
- * stacked rows and pager come from student-b2c.css (.sb-*). Rank medals keep gold / silver /
- * bronze as data colours. Score bands read as text + dot (student-dashboard.css).
+ * White 8px cards, teal titles / scores / ranks, ONE orange action (your-position card).
+ * Teal filter bar, stacked rows and pager come from student-b2c.css (.sb-*).
  */
-.q-student .slb{display:flex;flex-direction:column;gap:16px;min-width:0}
-.q-student .slb-card{background:#fff;border-radius:6px;box-shadow:var(--sb-shadow);min-width:0}
+.q-student .slb{display:flex;flex-direction:column;gap:var(--qs-section,32px);min-width:0}
+.q-student .slb-card{background:var(--panel,#fff);border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow));min-width:0}
 .q-student .slb-muted{color:var(--sb-muted)}
 .q-student .slb a:focus-visible,.q-student .slb button:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
 .q-student .slb .sb-filterbar button:focus-visible,.q-student .slb .sb-filterbar input:focus-visible,.q-student .slb .sb-filterbar select:focus-visible{outline-color:#fff}
-.q-student .slb-linkbtn{background:none;border:0;padding:0;margin-left:8px;cursor:pointer;font:inherit;font-weight:600;color:var(--sb-teal)}
+.q-student .slb-linkbtn{background:none;border:0;padding:0;margin-left:8px;cursor:pointer;font:inherit;font-weight:500;color:var(--sb-teal)}
 
 /* ---------- Your position ---------- */
-.q-student .slb-pos{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:24px;align-items:center;padding:20px}
+.q-student .slb-pos{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:24px;align-items:center;padding:24px}
 .q-student .slb-rank{width:96px;height:96px;border-radius:50%;border:6px solid var(--sb-wash);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none}
-.q-student .slb-rank small{font-size:12px;line-height:16px;letter-spacing:.08em;text-transform:uppercase;color:var(--sb-muted)}
-.q-student .slb-rank b{font-size:30px;line-height:36px;font-weight:700;color:var(--sb-teal)}
+.q-student .slb-rank small{font-size:11px;line-height:16px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;color:var(--sb-muted)}
+.q-student .slb-rank b{font-size:28px;line-height:36px;font-weight:700;color:var(--sb-teal)}
 .q-student .slb-rank.is-r1{border-color:var(--rank-1)}
 .q-student .slb-rank.is-r2{border-color:var(--rank-2)}
 .q-student .slb-rank.is-r3{border-color:var(--rank-3)}
 .q-student .slb-pos-copy{min-width:0}
-.q-student .slb-pos h2{margin:0;font-size:20px;line-height:28px;font-weight:600;color:var(--sb-ink)}
-.q-student .slb-pos p{margin:4px 0 0;font-size:14px;line-height:21px;color:var(--sb-ink)}
-.q-student .slb-pos-stats{margin-top:14px;flex-wrap:wrap;justify-content:flex-start}
+.q-student .slb-pos h2{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .slb-pos p{margin:4px 0 0;font-size:14px;line-height:22px;color:var(--sb-ink)}
+.q-student .slb-pos-stats{margin-top:16px;flex-wrap:wrap;justify-content:flex-start}
 .q-student .slb-pos-cta{display:flex;flex-direction:column;gap:8px;min-width:220px}
 .q-student .slb-btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;
-  border-radius:6px;background:#fff;border:1px solid rgba(0,0,0,.15);color:var(--sb-ink);
-  font:inherit;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 24px;
+  border-radius:var(--radius-control,6px);background:var(--panel,#fff);border:1px solid rgba(16,34,40,.15);color:var(--sb-ink);
+  font:inherit;font-size:15px;line-height:20px;font-weight:500;text-decoration:none;white-space:nowrap;cursor:pointer;
 }
-.q-student .slb-btn:hover{background:#fafafa}
-.q-student .slb-btn--primary{background:var(--sb-orange);border-color:transparent;color:#fff;min-height:46px}
+.q-student .slb-btn:hover{background:var(--mist,#F8F8F9)}
+.q-student .slb-btn--primary{background:var(--sb-orange);border-color:transparent;color:#fff}
 .q-student .slb-btn--primary:hover{background:var(--sb-orange-hover)}
 
 /* ---------- Filter bar + meta ---------- */
@@ -40,64 +38,63 @@
 .q-student .slb-select:disabled{opacity:.7}
 .q-student .slb-meta{align-items:center}
 .q-student .slb-live{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
-.q-student .slb-live > i{display:inline-block;margin-right:6px;width:8px;height:8px;border-radius:50%;background:var(--sb-teal)}
+.q-student .slb-live > i{display:inline-block;margin-right:8px;width:8px;height:8px;border-radius:50%;background:var(--sb-teal)}
 .q-student .slb-meta .sb-stats{flex-wrap:wrap}
 
 /* ---------- Class score bands ---------- */
-.q-student .slb-dist{padding:16px 20px}
+.q-student .slb-dist{padding:16px 24px}
 .q-student .slb-dist-h{margin-bottom:12px}
-.q-student .slb-dist-h h3{margin:0;font-size:18px;line-height:26px;font-weight:600;color:var(--sb-ink)}
+.q-student .slb-dist-h h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
 .q-student .slb-dist-h h3::before{content:none;display:none}
-.q-student .slb-dist-h p{margin:2px 0 0;font-size:12px;line-height:18px;color:var(--sb-muted)}
-/* Score bands donut beside the cohort figures (modern-cards-plan): 2 columns on desktop, stacked on phone. */
+.q-student .slb-dist-h p{margin:4px 0 0;font-size:12px;line-height:18px;color:var(--sb-muted)}
 .q-student .slb-top{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:16px;align-items:stretch}
-.q-student .slb-cohort-list{display:grid;gap:10px;margin:0}
-.q-student .slb-cohort-list > div{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:10px 14px;border-radius:6px;background:#f6f9f9}
-.q-student .slb-cohort-list dt{font-size:14px;line-height:20px;color:var(--sb-muted)}
-.q-student .slb-cohort-list dd{margin:0;font-size:16px;line-height:22px;font-weight:600;color:var(--sb-teal);font-variant-numeric:tabular-nums;text-align:right}
+.q-student .slb-cohort-list{display:grid;gap:8px;margin:0}
+.q-student .slb-cohort-list > div{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 16px;border-radius:var(--radius-card,8px);background:var(--surface-tint,var(--sb-wash))}
+.q-student .slb-cohort-list dt{font-size:14px;line-height:22px;color:var(--sb-muted)}
+.q-student .slb-cohort-list dd{margin:0;font-size:16px;line-height:26px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums;text-align:right}
 @media (max-width:1100px){.q-student .slb-top{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- Podium ---------- */
 .q-student .slb-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:end}
-.q-student .slb-pod{padding:20px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
-.q-student .slb-pod.is-r1{padding-top:28px}
+.q-student .slb-pod{padding:24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.q-student .slb-pod.is-r1{padding-top:32px}
 .q-student .slb-pod.is-me{box-shadow:var(--sb-shadow),0 0 0 2px var(--sb-teal)}
-.q-student .slb-medal{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:600;background:var(--sb-wash);color:var(--sb-teal)}
+.q-student .slb-medal{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:500;background:var(--sb-wash);color:var(--sb-teal)}
 .q-student .slb-medal.is-r1{background:var(--rank-1);color:#fff}
 .q-student .slb-medal.is-r2{background:var(--rank-2);color:#fff}
 .q-student .slb-medal.is-r3{background:var(--rank-3);color:#fff}
-.q-student .slb-pod > div{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
-.q-student .slb-pod b{font-size:16px;line-height:24px;font-weight:600;color:var(--sb-ink);overflow-wrap:anywhere}
+.q-student .slb-pod > div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.q-student .slb-pod b{font-size:16px;line-height:26px;font-weight:500;color:var(--sb-ink);overflow-wrap:anywhere}
 .q-student .slb-pod span{font-size:12px;line-height:18px;color:var(--sb-muted)}
 .q-student .slb-pod .slb-you{color:#fff}
-.q-student .slb-pod strong{font-size:20px;line-height:28px;font-weight:600;color:var(--sb-teal)}
-.q-student .slb-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:14px;font-weight:600;background:var(--sb-wash);color:var(--sb-teal)}
+.q-student .slb-pod strong{font-size:22px;line-height:30px;font-weight:500;color:var(--sb-teal)}
+.q-student .slb-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:14px;font-weight:500;background:var(--sb-wash);color:var(--sb-teal)}
 .q-student .slb-av.is-me{background:var(--sb-teal);color:#fff}
 .q-student .slb-pod .slb-av{width:56px;height:56px;font-size:18px}
 
 /* ---------- Rows ---------- */
 .q-student .slb-list{display:flex;flex-direction:column;gap:12px;min-width:0}
-.q-student .slb-list-h h3{margin:0;font-size:18px;line-height:26px;font-weight:600;color:var(--sb-ink)}
-.q-student .slb-list-h p{margin:2px 0 0;font-size:13px;line-height:20px;color:var(--sb-muted)}
+.q-student .slb-list-h h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .slb-list-h p{margin:4px 0 0;font-size:12px;line-height:18px;color:var(--sb-muted)}
 .q-student .slb-rows{list-style:none;margin:0;padding:0}
 .q-student .slb-row{grid-template-columns:40px minmax(0,1fr) auto 64px;cursor:default;min-height:76px}
-.q-student .slb-row:hover{background:#fff}
+.q-student .slb-row:hover{background:var(--panel,#fff)}
 .q-student .slb-row.is-me,.q-student .slb-row.is-me:hover{background:var(--sb-wash)}
 .q-student .slb-row-main{display:flex;flex-direction:column;min-width:0}
 .q-student .slb-row .sb-row__title{display:flex;align-items:center;min-width:0}
 .q-student .slb-row .sb-row__score{text-align:right}
-.q-student .slb-rankcell{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--sb-wash);color:var(--sb-teal);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.q-student .slb-rankcell{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--sb-wash);color:var(--sb-teal);font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
 .q-student .slb-rankcell.is-r1{background:var(--rank-1);color:#fff}
 .q-student .slb-rankcell.is-r2{background:var(--rank-2);color:#fff}
 .q-student .slb-rankcell.is-r3{background:var(--rank-3);color:#fff}
 .q-student .slb-row.is-me .slb-rankcell.is-rn{background:var(--sb-teal);color:#fff}
-.q-student .slb-you{display:inline-flex;align-items:center;flex:none;padding:0 8px;border-radius:6px;background:var(--sb-teal);color:#fff;font-size:12px;line-height:18px;font-weight:600;margin-left:8px}
-.q-student .slb-sep{padding:4px 4px 0;font-size:12px;font-weight:600;color:var(--sb-muted);text-transform:uppercase;letter-spacing:.06em}
+.q-student .slb-you{display:inline-flex;align-items:center;flex:none;padding:0 8px;border-radius:var(--radius-control,6px);background:var(--sb-teal);color:#fff;font-size:12px;line-height:18px;font-weight:500;margin-left:8px}
+.q-student .slb-sep{padding:4px 4px 0;font-size:11px;line-height:16px;font-weight:500;color:var(--sb-muted);text-transform:uppercase;letter-spacing:.08em}
 
 /* how-it-works modal list */
 .q-student .slb-rules,.slb-rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
 .slb-rules li{display:flex;gap:12px;font-size:14px;line-height:22px;color:var(--ink)}
-.slb-rules li .sd-i{flex:none;margin-top:3px;color:var(--teal-500)}
+.slb-rules li .sd-i{flex:none;margin-top:4px;color:var(--teal-500)}
 
 @media (max-width:1100px){
   .q-student .slb-pos{grid-template-columns:auto minmax(0,1fr)}
@@ -109,12 +106,12 @@
 @media (max-width:768px){
   .q-student .slb-pos{grid-template-columns:minmax(0,1fr);padding:16px;gap:16px}
   .q-student .slb-rank{width:80px;height:80px}
-  .q-student .slb-rank b{font-size:24px;line-height:30px}
+  .q-student .slb-rank b{font-size:22px;line-height:30px;font-weight:500}
   .q-student .slb-pos-cta{grid-template-columns:minmax(0,1fr)}
   .q-student .slb-pos-stats{gap:12px}
-  .q-student .slb-podium{grid-template-columns:minmax(0,1fr);gap:10px}
-  .q-student .slb-pod{flex-direction:row;text-align:left;padding:14px 16px}
-  .q-student .slb-pod.is-r1{padding-top:14px;order:-1}
+  .q-student .slb-podium{grid-template-columns:minmax(0,1fr);gap:12px}
+  .q-student .slb-pod{flex-direction:row;text-align:left;padding:16px}
+  .q-student .slb-pod.is-r1{padding-top:16px;order:-1}
   .q-student .slb-pod > div{flex:1;align-items:flex-start}
   .q-student .slb-dist{padding:16px}
   .q-student .slb-meta{flex-direction:column;align-items:flex-start}
@@ -122,6 +119,5 @@
   .q-student .slb-row{grid-template-columns:36px minmax(0,1fr) auto}
   .q-student .slb-row-band{display:none}
 }
-/* Score bands read as text + 6px dot (skill "Badges": no rainbow of pills) */
-.q-student .slb .dv-band{height:auto;padding:0;background:none;border-radius:0;gap:6px;font-size:12px;font-weight:500}
+.q-student .slb .dv-band{height:auto;padding:0;background:none;border-radius:0;gap:8px;font-size:12px;font-weight:500}
 .q-student .slb .dv-band::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}

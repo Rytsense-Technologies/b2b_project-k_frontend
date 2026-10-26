@@ -19,6 +19,7 @@ import { departmentHod, hodCanReview, loadCollegeStaff } from '@/components/admi
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPct } from '@/lib/superadmin/format';
+import { titleCase } from '@/lib/student/learning';
 
 const STAGE = {
   awaiting_you: { label: 'Review plan', cls: 'sp-pill--low' },
@@ -41,12 +42,12 @@ function shortDate(iso) {
 /** Live "Needs your attention" rows for the hero side panel; a row at 0 is hidden. */
 function AttentionList({ items, loading }) {
   const live = items.filter((i) => i.count > 0);
-  if (loading) return <p className="ad-attn-note">Checking your college…</p>;
+  if (loading) return <p className="q-attn-note">Loading…</p>;
   if (!live.length) {
-    return <p className="ad-attn-note">Nothing needs you right now. New reviews, invites and students who need help show here.</p>;
+    return <p className="q-attn-note">You&apos;re up to date.</p>;
   }
   return (
-    <ul className="ad-attn">
+    <ul className="q-attn">
       {live.map((i) => (
         <li key={i.id}>
           <Link href={i.href}>
@@ -68,6 +69,13 @@ export default function AdminDashboardPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const college = mounted ? (user?.college_name || user?.tenant_name || 'your college') : 'your college';
+  const firstName = mounted ? (() => {
+    const fromFirst = String(user?.first_name || '').trim().split(/\s+/)[0] || '';
+    const fromName = String(user?.name || '').trim().split(/\s+/)[0] || '';
+    const token = fromFirst || fromName;
+    if (!token || /^(super|admin|college|faculty|student|hod)$/i.test(token)) return '';
+    return titleCase(token);
+  })() : '';
 
   // Live college overview (last 30 days). Totals, departments, bands, at-risk and review queue.
   const { data: overview, loading: overviewLoading, error: overviewError } = useAsyncResource(
@@ -117,8 +125,7 @@ export default function AdminDashboardPage() {
     <div className="animate-fade-in sp pm-page ad-page ad-dash">
       <PortalHero
         eyebrow={`College admin · ${college}`}
-        title={college && college !== 'your college' ? `Welcome, ${college}` : 'Welcome'}
-        description="Build your academic structure, upload subject material and track how students learn. Everything you upload goes to the department HOD for review before students see it."
+        title={firstName ? `Welcome, ${firstName}` : (mounted ? 'Welcome' : 'Dashboard')}
         secondaryHref="/admin/content"
         secondaryLabel="Upload a chapter"
         primaryHref="/admin/students"
@@ -135,13 +142,13 @@ export default function AdminDashboardPage() {
             icon: 'users',
             label: 'Active students',
             value: first ? null : (totals ? countLabel(totals.students) : '—'),
-            sub: !totals ? (first ? 'Loading…' : 'Last 30 days') : totals.pending_students ? `${countLabel(totals.pending_students)} invite${totals.pending_students === 1 ? '' : 's'} to activate` : 'Everyone invited has activated',
+            sub: !totals ? (first ? 'Loading…' : null) : totals.pending_students ? `${countLabel(totals.pending_students)} invite${totals.pending_students === 1 ? '' : 's'} to activate` : null,
           },
           {
             icon: 'bookOpen',
             label: 'Chapter completion',
             value: first ? null : pct(totals?.completion),
-            sub: totals ? `${countLabel(totals.chapters_completed)} of ${countLabel(totals.chapters_available)} chapters` : (first ? 'Loading…' : 'Last 30 days'),
+            sub: totals ? `${countLabel(totals.chapters_completed)} of ${countLabel(totals.chapters_available)} chapters` : (first ? 'Loading…' : null),
           },
           {
             icon: 'target',
@@ -153,13 +160,13 @@ export default function AdminDashboardPage() {
                 {totals.quiz_avg != null ? <BandPill score={totals.quiz_avg} /> : null}
                 {totals.pass_rate != null ? `${pct(totals.pass_rate)} pass` : 'No quizzes yet'}
               </span>
-            ) : (first ? 'Loading…' : 'Chapter quizzes, last 30 days'),
+            ) : (first ? 'Loading…' : null),
           },
           {
             icon: 'chat',
             label: 'Tutor questions',
             value: first ? null : (totals ? countLabel(totals.qa) : '—'),
-            sub: !totals ? (first ? 'Loading…' : 'Last 30 days') : totals.qa ? 'Asked to the AI tutor, last 30 days' : 'No tutor questions yet',
+            sub: !totals ? (first ? 'Loading…' : null) : totals.qa ? null : 'No tutor questions yet',
           },
         ]}
       />
@@ -171,15 +178,7 @@ export default function AdminDashboardPage() {
       ) : null}
 
       <div className="dv-grid ad-grid-start">
-        <Panel
-          title="Completion by department"
-          sub="Chapters completed by students, last 30 days"
-          action={(
-            <Link className="sp-link" href="/admin/analytics?tab=departments">
-              Analytics <Icon name="arrow" size={14} />
-            </Link>
-          )}
-        >
+        <Panel title="Completion by department">
           {first ? <p className="dv-empty">Loading…</p> : (
             <MetricList
               label="Completion by department"
@@ -189,16 +188,12 @@ export default function AdminDashboardPage() {
             />
           )}
         </Panel>
-        <Panel
-          title="Students by quiz score"
-          sub={totals?.pass_rate != null ? `Each student's quiz average · ${pct(totals.pass_rate)} of quiz attempts passed` : "Each student's quiz average"}
-        >
+        <Panel title="Students by quiz score">
           {first ? <p className="dv-empty">Loading…</p> : (
             <ModernDonut
               compact
               unit="Students"
               title="Students by quiz score"
-              link={{ href: '/admin/analytics?tab=students', label: 'View details' }}
               parts={bands ? [
                 { key: 'strong', label: 'Strong (80+)', value: bands.strong },
                 { key: 'ok', label: 'On track (60–79)', value: bands.ok },
@@ -216,12 +211,7 @@ export default function AdminDashboardPage() {
           title="Content review queue"
           sub={queue
             ? `${countLabel(queue.awaiting_you)} waiting for you · ${countLabel(queue.awaiting_hod)} with the HOD · ${countLabel(queue.ready_to_send)} ready to send`
-            : 'Chapters on their way to students'}
-          action={(
-            <Link className="sp-link" href="/admin/content">
-              Open content <Icon name="arrow" size={14} />
-            </Link>
-          )}
+            : null}
         >
           {queue?.items?.length ? (
             <ul className="ad-queue">
@@ -241,20 +231,11 @@ export default function AdminDashboardPage() {
               <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
               <div>
                 <b>{first ? 'Loading…' : 'Nothing waiting'}</b>
-                <small>Uploaded chapters show here until they are published to students.</small>
               </div>
             </div>
           )}
         </Panel>
-        <Panel
-          title="Students who need attention"
-          sub="Low scores or no activity, last 30 days"
-          action={(
-            <Link className="sp-link" href="/admin/analytics?tab=students">
-              All students <Icon name="arrow" size={14} />
-            </Link>
-          )}
-        >
+        <Panel title="Students who need attention">
           {atRisk.length ? (
             <ul className="ad-queue ad-attn-risk">
               {atRisk.slice(0, 5).map((s) => (
@@ -275,7 +256,6 @@ export default function AdminDashboardPage() {
               <span className="ad-empty-ic" aria-hidden="true"><Icon name="users" size={20} /></span>
               <div>
                 <b>{first ? 'Loading…' : 'No one flagged'}</b>
-                <small>Students with low scores or no activity in the last 30 days appear here.</small>
               </div>
             </div>
           )}

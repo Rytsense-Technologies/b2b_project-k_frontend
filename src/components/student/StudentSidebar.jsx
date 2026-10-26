@@ -64,7 +64,7 @@ export default function StudentSidebar() {
       tenantSubtitle="Student"
       fallbackInitials="ST"
       loginPath="/auth/login"
-      menuLinks={[{ href: '/student/settings', label: 'Profile' }, { href: '/student/settings?tab=security', label: 'Security' }]}
+      menuLinks={[{ href: '/student/settings', label: 'Profile' }, { href: '/student/settings?tab=security', label: 'Security' }, { href: '/student/settings?tab=notifications', label: 'Notifications' }]}
     />
   );
 }

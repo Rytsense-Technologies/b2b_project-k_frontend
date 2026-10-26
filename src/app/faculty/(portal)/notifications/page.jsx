@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
+  FilterField,
   Icon,
   ModulePage,
   Pager,
@@ -26,9 +27,9 @@ const SECTIONS = ['messages', 'rules'];
 const REVIEW_EVENT = 'content_ready_for_review';
 const CHANNEL = { email: 'Email', whatsapp: 'WhatsApp' };
 const FILTERS = [
-  { value: 'all', label: 'All' },
+  { value: 'all', label: 'All messages' },
   { value: 'review', label: 'Review alerts' },
-  { value: 'other', label: 'Other' },
+  { value: 'other', label: 'Other messages' },
 ];
 
 const TZ = 'Asia/Kolkata';
@@ -111,14 +112,16 @@ function FacultyNotificationsView() {
         title="Messages"
         sub={data ? `${countLabel(data.total ?? rows.length)} in the last 90 days · newest first` : 'Newest first'}
         bodyClassName={null}
-        action={rows.length ? (
-          <SegTabs
-            label="Show"
-            value={kind}
-            onChange={setKind}
-            options={FILTERS.map((f) => ({ ...f, count: countLabel(kindCount[f.value]) }))}
-          />
-        ) : null}
+        toolbar={(
+          <FilterField label="Show" grow="status">
+            <SegTabs
+              label="Show"
+              value={kind}
+              onChange={setKind}
+              options={FILTERS.map((f) => ({ ...f, count: countLabel(kindCount[f.value]) }))}
+            />
+          </FilterField>
+        )}
       >
         {first ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
         {data && !rows.length ? (
@@ -129,7 +132,7 @@ function FacultyNotificationsView() {
         {rows.length && !shown.length ? (
           <div className="sp-panel-b">
             {(data?.total ?? rows.length) > PAGE_SIZE ? (
-              <SectionState title={kind === 'review' ? 'No review alerts on this page' : 'No other messages on this page'}>Try the next page, or switch to All.</SectionState>
+              <SectionState title={kind === 'review' ? 'No review alerts on this page' : 'No other messages on this page'}>Try the next page, or switch to All messages.</SectionState>
             ) : (
               <SectionState title={kind === 'review' ? 'No review alerts' : 'No other messages'}>
                 {kind === 'review' ? 'Nothing was sent for your review in the last 90 days.' : 'Only review alerts arrived in the last 90 days.'}

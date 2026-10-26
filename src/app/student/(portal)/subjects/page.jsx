@@ -327,20 +327,17 @@ function SubjectPage({ subject, watchByJob, quizzes, ready, url, setUrl, onHow }
         </div>
 
         {toolbar ? (
-          <form className="sl-tb" role="search" aria-label="Filter chapters" onSubmit={apply}>
-            <label className="sl-tb-search">
+          <form className="sb-filterbar" role="search" aria-label="Filter chapters" onSubmit={apply}>
+            <label className="sb-search">
               <span className="sr-only">Search chapters</span>
               <Icon name="search" size={18} />
               <input type="search" placeholder="Search chapters" value={draftQ} onChange={(e) => setDraftQ(e.target.value)} />
             </label>
-            <label className="sl-tb-filter">
-              <span className="sr-only">Chapter status</span>
-              <select value={url.f || 'all'} onChange={(e) => setUrl({ f: e.target.value, p: '1' })}>
-                {CHAPTER_FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label} ({counts[f.value]})</option>)}
-              </select>
-            </label>
+            <select className="sb-select" aria-label="Chapter status" value={url.f || 'all'} onChange={(e) => setUrl({ f: e.target.value, p: '1' })}>
+              {CHAPTER_FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label} ({counts[f.value]})</option>)}
+            </select>
+            {filtered && pageRows.length ? <button type="button" className="sb-btn sb-btn--clear" onClick={clear}>Clear</button> : null}
             <button type="submit" className="sr-only" tabIndex={-1}>Search</button>
-            {filtered && pageRows.length ? <button type="button" className="sl-linkbtn" onClick={clear}>Clear filters</button> : null}
           </form>
         ) : null}
 
@@ -607,8 +604,22 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes 
     schedulePersist(activeJob.job_id, p, maxWatchedRef.current);
   };
 
+  const restoreMaxWatched = (el) => {
+    if (!el || !activeJob) return;
+    const d = el.duration;
+    if (!Number.isFinite(d) || d <= 0) return;
+    const savedPct = watchByJob[activeJob.job_id] ?? lastSavedPctRef.current ?? 0;
+    const fromSaved = (Math.min(100, Math.max(0, Number(savedPct) || 0)) / 100) * d;
+    maxWatchedRef.current = Math.max(maxWatchedRef.current, fromSaved);
+  };
+
+  const onLoadedMetadata = (e) => {
+    restoreMaxWatched(e.currentTarget);
+  };
+
   const onSeeking = (e) => {
     const el = e.currentTarget;
+    restoreMaxWatched(el);
     if (el.currentTime > maxWatchedRef.current + 1.25) el.currentTime = maxWatchedRef.current;
   };
 
@@ -685,6 +696,7 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes 
                   src={eduVideoApi.getDownloadUrl(activeJob.job_id)}
                   onTimeUpdate={onTimeUpdate}
                   onSeeking={onSeeking}
+                  onLoadedMetadata={onLoadedMetadata}
                   onEnded={onEnded}
                 >
                   Your browser does not support embedded video playback.

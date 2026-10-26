@@ -226,7 +226,7 @@ function HealthView() {
         <KpiRow label="Health summary" items={kpis} />
 
         <div className="dv-grid">
-          <Panel title="Services" sub="Current state, p95 and server errors in the last 24 hours." bodyClassName={null}>
+          <Panel title="Services" bodyClassName={null}>
             {services.length ? (
               <ul className="sp-rows">
                 {services.map((svc) => {
@@ -267,7 +267,6 @@ function HealthView() {
           <div className="sa-col-stack">
             <Panel
               title="Errors by service · 24h"
-              sub={errors24h != null ? `${formatCount(errors24h)} server errors logged in the last 24 hours.` : 'Server errors logged in the last 24 hours.'}
               className="mdc-card"
               action={errors24h != null ? <div className="mdc-chip"><small>Total errors · 24h</small><b>{formatCount(errors24h)}</b></div> : null}
             >
@@ -282,11 +281,10 @@ function HealthView() {
             </Panel>
 
             {statusLoading && !statusData ? (
-              <Panel title="Video pipeline stages" sub="p95 time per stage of chapter video generation, last 7 days."><p className="dv-empty">Loading…</p></Panel>
+              <Panel title="Video pipeline stages"><p className="dv-empty">Loading…</p></Panel>
             ) : (
               <MetricListCard
                 title="Video pipeline stages"
-                sub="p95 time per stage of chapter video generation, last 7 days."
                 items={stageBars}
                 format={formatMs}
                 colorBy="single"
@@ -300,7 +298,6 @@ function HealthView() {
       <TabPanel value="errors" current={tab} idBase="health">
         <Panel
           title="Server errors"
-          sub={`Grouped by error, newest first · last ${rangeLabel}. Emails and phone numbers are redacted.`}
           bodyClassName={null}
           toolbar={(
             <>

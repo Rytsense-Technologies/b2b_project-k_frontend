@@ -34,6 +34,7 @@ import {
   countLabel,
 } from '@/components/shared/module-ui';
 import { ModernDonut } from '@/components/shared/data-viz';
+import { BAND_NONE, BRAND_CTA, PROGRESS } from '@/lib/constants/theme';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
@@ -413,8 +414,8 @@ function PromoteYearModal({ open, onClose, onDone }) {
 const TABS = ['all', 'pending', 'import'];
 const PAGE_SIZE = 10; // quirri-b2c-student-ui: lists page at 10
 const YEAR_OPTIONS = [1, 2, 3, 4, 5].map((y) => ({ value: String(y), label: `Year ${y}` }));
-// Raw hex: the donut ring is SVG (CSS variables do not resolve in its stroke attribute).
-const STATUS_HEX = { active: '#5CB414', pending: '#F5821F', inactive: '#BCC1C3' };
+// Donut SVG needs resolved hex (CSS variables do not apply to stroke). Palette from theme.js.
+const STATUS_HEX = { active: PROGRESS, pending: BRAND_CTA, inactive: BAND_NONE };
 
 function StudentsWorkspace() {
   const { tenantId } = useAuth();
@@ -753,7 +754,6 @@ function StudentsWorkspace() {
         <div className="dv-grid ad-viz-row">
           <Panel
             title="Account status"
-            sub="Every student in your college"
             className="mdc-card"
             action={countData ? (
               <div className="mdc-chip">
@@ -777,7 +777,6 @@ function StudentsWorkspace() {
           </Panel>
           <Panel
             title="Students by department"
-            sub="Placed in each active department"
             className="mdc-card"
             action={deptData ? (
               <div className="mdc-chip">
@@ -801,7 +800,7 @@ function StudentsWorkspace() {
 
         <Panel
           title="Student directory"
-          sub={firstLoad ? 'Loading…' : `${countLabel(total)} student${total === 1 ? '' : 's'}${filtered ? (total === 1 ? ' matches these filters' : ' match these filters') : ''}`}
+          sub={firstLoad ? null : `${countLabel(total)} student${total === 1 ? '' : 's'}`}
           bodyClassName={null}
           toolbar={toolbar}
         >
@@ -863,7 +862,6 @@ function StudentsWorkspace() {
       <TabPanel value="pending" current={tab} idBase="students-tab">
         <Panel
           title="Pending invites"
-          sub="Students who have not set a password yet. Resend the link, or cancel an invite sent by mistake."
           bodyClassName={null}
           toolbar={toolbar}
         >

@@ -11,6 +11,7 @@ import { PAGE_META } from '@/lib/superadmin/pageMeta';
 import SuperAdminSidebar from '@/components/superadmin/SuperAdminSidebar';
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
+import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 
 export default function SuperAdminLayout({ children }) {
   const pathname = usePathname();
@@ -40,6 +41,7 @@ export default function SuperAdminLayout({ children }) {
 
   const matchedRoute = Object.keys(PAGE_META).find((k) => pathname?.startsWith(k));
   const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'Super Admin', subtitle: '' };
+  usePortalDocumentTitle(meta.title, 'Super Admin');
 
   return (
     <div className={`app q-app-shell sa-shell ${mobileNavShellClass(navOpen)}`}>

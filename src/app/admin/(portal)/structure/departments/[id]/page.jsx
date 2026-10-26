@@ -235,7 +235,7 @@ function DepartmentRecord() {
       <TabPanel value="overview" current={tab} idBase="dept-tab">
         <div className="pm-cols">
           <div className="pm-stack">
-            <Panel title="Details" sub="What staff and students see for this department.">
+            <Panel title="Details">
               <dl className="pm-kv">
                 <div><dt>Department name</dt><dd>{dept.name}</dd></div>
                 <div><dt>Code</dt><dd>{dept.code || '—'}</dd></div>
@@ -248,7 +248,6 @@ function DepartmentRecord() {
 
             <Panel
               title="Below this department"
-              sub="Programmes, semesters, subjects and chapters in this department."
               action={(
                 <Link className="sp-link" href={`/admin/structure/programmes?department=${dept.id}`}>
                   Manage <Icon name="arrow" size={14} />
@@ -275,7 +274,6 @@ function DepartmentRecord() {
           <div className="pm-stack">
             <Panel
               title="Head of department"
-              sub="Reviews and approves this department's chapter videos and MCQs."
               action={active && hod.state !== 'none' ? (
                 <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setDrawer('hod')}>
                   {hod.state === 'role' ? 'Set as head' : 'Change'}
@@ -347,7 +345,6 @@ function DepartmentRecord() {
         <div className="pm-cols">
           <Panel
             title="Staff"
-            sub="Faculty and HOD accounts placed in this department."
             action={<Link className="sp-link" href="/admin/staff">Manage in Staff & HOD <Icon name="arrow" size={14} /></Link>}
           >
             {peopleLoading ? <SectionState title="Loading staff…" /> : (

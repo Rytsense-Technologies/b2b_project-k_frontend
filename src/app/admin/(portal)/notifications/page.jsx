@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   Icon,
+  FilterField,
   ModuleHead,
   ModulePage,
   Pager,
@@ -32,6 +33,7 @@ const TONE = { sent: 'sp-pill--good', failed: 'sp-pill--err', log_only: 'sp-pill
 const CHANNEL = { email: 'Email', whatsapp: 'WhatsApp' };
 /** Events a college can receive (backend notification_service.EVENTS; GET /notifications/deliveries?event=). */
 const EVENT_OPTIONS = [
+  { value: '', label: 'All events' },
   { value: 'account_activation', label: 'Account activation invite' },
   { value: 'password_reset', label: 'Password reset link' },
   { value: 'content_ready_for_review', label: 'Content ready for review' },
@@ -41,6 +43,7 @@ const EVENT_OPTIONS = [
   { value: 'pipeline_completed', label: 'Video pipeline finished' },
 ];
 const CHANNEL_OPTIONS = [
+  { value: '', label: 'All channels' },
   { value: 'email', label: 'Email' },
   { value: 'whatsapp', label: 'WhatsApp' },
 ];
@@ -122,10 +125,10 @@ function NotificationsLog() {
     { value: 'log_only', label: 'Log-only', count: tabCounts ? countLabel(tabCounts.log_only || 0) : null },
     { value: 'skipped', label: 'Skipped', count: tabCounts ? countLabel(tabCounts.skipped || 0) : null },
   ];
-  const filtered = Boolean(url.q || url.status || url.event || url.channel);
+  const filtered = Boolean(url.q || url.status || url.event || url.channel || days !== '90');
   const clearFilters = () => {
     setSearchInput('');
-    setUrl({ q: '', status: '', event: '', channel: '', page: '1' });
+    setUrl({ q: '', status: '', event: '', channel: '', days: '90', page: '1' });
   };
 
   const retry = async () => {
@@ -196,31 +199,41 @@ function NotificationsLog() {
         bodyClassName={null}
         toolbar={(
           <>
-            <SearchBox placeholder="Search email address or subject…" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
-            <QuirriSelect
-              ariaLabel="Filter by event"
-              value={url.event}
-              onChange={(e) => setUrl({ event: e.target.value, page: '1' })}
-              placeholder="All events"
-              options={EVENT_OPTIONS}
-            />
-            <QuirriSelect
-              ariaLabel="Filter by channel"
-              value={url.channel}
-              onChange={(e) => setUrl({ channel: e.target.value, page: '1' })}
-              placeholder="All channels"
-              options={CHANNEL_OPTIONS}
-            />
-            <QuirriSelect
-              ariaLabel="Date range"
-              value={days}
-              onChange={(e) => setUrl({ days: e.target.value || '90', page: '1' })}
-              options={RANGE_OPTIONS}
-            />
-            <SegTabs label="Delivery status" options={statusTabs} value={url.status} onChange={(v) => setUrl({ status: v, page: '1' })} />
+            <FilterField label="Search" grow="search">
+              <SearchBox placeholder="Email or subject" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+            </FilterField>
+            <FilterField label="Event">
+              <QuirriSelect
+                ariaLabel="Event"
+                value={url.event}
+                onChange={(e) => setUrl({ event: e.target.value, page: '1' })}
+                options={EVENT_OPTIONS}
+              />
+            </FilterField>
+            <FilterField label="Channel">
+              <QuirriSelect
+                ariaLabel="Channel"
+                value={url.channel}
+                onChange={(e) => setUrl({ channel: e.target.value, page: '1' })}
+                options={CHANNEL_OPTIONS}
+              />
+            </FilterField>
+            <FilterField label="Period">
+              <QuirriSelect
+                ariaLabel="Period"
+                value={days}
+                onChange={(e) => setUrl({ days: e.target.value || '90', page: '1' })}
+                options={RANGE_OPTIONS}
+              />
+            </FilterField>
             {filtered ? (
-              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={clearFilters}>Clear</button>
+              <FilterField grow="clear">
+                <button type="button" className="sd-btn sd-btn--ghost" onClick={clearFilters}>Clear</button>
+              </FilterField>
             ) : null}
+            <FilterField label="Status" grow="status">
+              <SegTabs label="Status" options={statusTabs} value={url.status} onChange={(v) => setUrl({ status: v, page: '1' })} />
+            </FilterField>
           </>
         )}
       >

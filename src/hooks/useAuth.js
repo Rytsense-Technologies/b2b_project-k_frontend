@@ -27,7 +27,7 @@ export function useAuth() {
     dispatch(clearCredentials());
     queryClient.clear();
     router.push('/auth/login');
-    toast.success('Logged out successfully');
+    toast.success("You're signed out.");
   };
 
   // Returns true if the user holds the given permission.

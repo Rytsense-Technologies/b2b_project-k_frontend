@@ -640,8 +640,6 @@ function UsersView() {
     () => loadUserCounts({ q: url.q, institution: url.institution, department: url.department }),
     [url.q, url.institution, url.department],
   );
-  const countScope = url.q || url.institution || url.department ? 'Matching search and institution' : 'Platform totals';
-
   // Role / status presets per tab; the role select narrows within All and Staff.
   const roleOptions = tab === 'staff'
     ? [{ value: '', label: 'All staff roles' }, ...ROLE_OPTIONS.filter((o) => STAFF_ROLES.includes(o.value))]
@@ -839,14 +837,13 @@ function UsersView() {
         {tab === 'all' ? (
           <div className="dv-grid">
             {counts ? (
-              <ModernDonutCard title="Users by role" sub={`${countScope}, every status.`} totalLabel="Total users" unit="Users" parts={roleParts} />
+              <ModernDonutCard title="Users by role" totalLabel="Total users" unit="Users" parts={roleParts} />
             ) : (
-              <Panel title="Users by role" sub={`${countScope}, every status.`}><p className="dv-empty">Loading…</p></Panel>
+              <Panel title="Users by role"><p className="dv-empty">Loading…</p></Panel>
             )}
             {counts ? (
               <ModernDonutCard
                 title="Account status"
-                sub={`${countScope}, every role.`}
                 totalLabel="Total users"
                 unit="Users"
                 parts={statusParts}
@@ -855,7 +852,7 @@ function UsersView() {
                   : null}
               />
             ) : (
-              <Panel title="Account status" sub={`${countScope}, every role.`}><p className="dv-empty">Loading…</p></Panel>
+              <Panel title="Account status"><p className="dv-empty">Loading…</p></Panel>
             )}
           </div>
         ) : null}

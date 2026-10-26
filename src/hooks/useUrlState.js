@@ -4,6 +4,25 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 /**
+ * Write a same-origin URL without an RSC round-trip.
+ *
+ * Next 14.2 patches history.pushState / replaceState:
+ *   - data with `__NA` is treated as an internal Next write → no ACTION_RESTORE
+ *   - data without `__NA` (including `null`) copies internals, then restores
+ *     the App Router so `useSearchParams` and `<Link>` match the new URL
+ *
+ * Passing `window.history.state` (which already has `__NA`) skips that restore.
+ * The address bar updates, but the router still thinks it is on the previous
+ * URL, so sidebar links and module tabs do nothing until a full refresh.
+ */
+export function writeAppUrl(url, { push = false } = {}) {
+  if (typeof window === 'undefined' || !window.history) return false;
+  const method = push ? 'pushState' : 'replaceState';
+  window.history[method](null, '', url);
+  return true;
+}
+
+/**
  * Keep list/record UI state (search, filters, tab, paging) in the query string so that
  * refresh, Back/Forward and shared links reopen the same view (docs/ux/ux-architecture.md §4).
  *
@@ -42,11 +61,10 @@ export function useUrlState(defaults) {
     const url = qs ? `${pathname}?${qs}` : pathname;
     // Next 14.2 keeps useSearchParams in sync with the native history API, so filters and tabs
     // change the URL without a server round trip (Back / Forward still work).
-    if (typeof window !== 'undefined' && window.history) {
-      if (push) window.history.pushState(null, '', url);
-      else window.history.replaceState(null, '', url);
-    } else if (push) router.push(url, { scroll: false });
-    else router.replace(url, { scroll: false });
+    if (!writeAppUrl(url, { push })) {
+      if (push) router.push(url, { scroll: false });
+      else router.replace(url, { scroll: false });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramString, pathname, router]);
 

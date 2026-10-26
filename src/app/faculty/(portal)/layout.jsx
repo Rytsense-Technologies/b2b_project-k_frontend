@@ -13,6 +13,7 @@ import FacultySidebar from '@/components/faculty/FacultySidebar';
 import FacultyAccessGate from '@/components/faculty/FacultyAccessGate';
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
+import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 
 export default function FacultyLayout({ children }) {
   const pathname = usePathname();
@@ -45,9 +46,10 @@ export default function FacultyLayout({ children }) {
     .filter((k) => pathname?.startsWith(k))
     .sort((a, b) => b.length - a.length)[0];
   const meta = matchedRoute ? facultyPageMeta(matchedRoute, scope) : { title: 'Page not found', subtitle: 'This address does not match a page in your portal.' };
+  usePortalDocumentTitle(meta.title, scope?.is_hod ? 'HOD' : (scope ? 'Faculty' : 'HOD / Faculty'));
 
   return (
-    <div className={`app q-app-shell ${mobileNavShellClass(navOpen)}`}>
+    <div className={`app q-app-shell q-faculty ${mobileNavShellClass(navOpen)}`}>
       <FacultySidebar />
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>

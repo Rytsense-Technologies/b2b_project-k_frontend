@@ -4,7 +4,7 @@
  * Data visuals shared by every portal (design-system.md §0c).
  * Colour roles:
  *   series   → --cat-1…6 in fixed order (blue, green, orange, purple, cyan, teal)
- *   score    → strong ≥ 80 green · on track 60–79 blue · needs focus < 60 orange · no data grey
+ *   score    → strong ≥ 80 green · on track 60–79 blue · needs focus < 60 orange · no data teal
  *   rank     → 1 orange · 2 blue · 3 purple · rest teal
  * Buttons, status pills and navigation never use these colours.
  */
@@ -45,7 +45,7 @@ export function bandFor(score) {
   return 'focus';
 }
 
-const BAND_HEX = { strong: '#5CB414', ok: '#2C74E0', focus: '#F5821F', none: '#BCC1C3' };
+const BAND_HEX = { strong: '#5CB414', ok: '#2C74E0', focus: '#F5821F', none: '#4D8691' };
 
 function fmt(v, format) {
   if (v == null || Number.isNaN(Number(v))) return '—';
@@ -208,10 +208,11 @@ export function TrendChart({ data, xKey = 'label', series, height = 220, format,
    Pure SVG (no recharts) so it renders on the server too and never animates.
    ========================================================================== */
 
-// Named tones for parts / rows. Grey = neutral states (Generating, Not set, Pending…).
+// Named tones for parts / rows. Teal = not-started / generating / inactive (never grey).
 const TONE_HEX = {
   strong: BAND_HEX.strong, ok: BAND_HEX.ok, focus: BAND_HEX.focus, none: BAND_HEX.none,
-  good: '#5CB414', info: '#2C74E0', warn: '#F5821F', bad: '#D34141', neutral: '#BCC1C3',
+  good: '#5CB414', info: '#2C74E0', warn: '#F5821F', bad: '#D34141',
+  neutral: BAND_HEX.none, off: BAND_HEX.none,
   purple: '#6C3CD8', cyan: '#23B6B9', teal: '#0E5C6B',
 };
 

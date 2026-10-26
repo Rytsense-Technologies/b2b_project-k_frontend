@@ -1,0 +1,92 @@
+/*
+ * Settings (all portals) — src/components/shared/AccountSettings.jsx (settings-plan.md, 22 Oct 2026).
+ * Profile · Security · Notifications. One column of white cards, --qs-* spacing (qa-clean-pass-plan.md),
+ * one orange primary per card, status as plain text. Student look tweaks stay in student-settings.css.
+ */
+
+.as-page .pm-tabs{margin-bottom:0}
+.as-page .pm-tabpanel{min-width:0;width:100%;align-self:stretch}
+
+.as-stack{
+  display:flex;flex-direction:column;gap:var(--qs-gap,24px);
+  width:100%;max-width:none;min-width:0;align-self:stretch;
+}
+
+/* cards */
+.as-card{padding:var(--qs-card-pad,24px);min-width:0;width:100%}
+.as-card-h{margin-bottom:var(--qs-head-gap,16px)}
+.as-page .as-card-h h2{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.as-page .as-card-h p{margin:4px 0 0;font-size:14px;line-height:22px;color:var(--muted-2)}
+.as-page .as-stack .sd-btn{width:auto;align-self:flex-start}
+
+/* header card: avatar + name in a row (beats .sp-panel’s column flex) */
+.app.q-app-shell .as-page .sp-panel.as-head,
+.as-head{
+  display:flex;flex-direction:row;align-items:center;justify-content:flex-start;
+  gap:16px;text-align:left;
+}
+.as-avatar{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--teal-500);color:var(--neutral-0);font-size:18px;line-height:1;font-weight:500;letter-spacing:.02em}
+.as-who{display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left}
+.as-who b{font-size:18px;line-height:26px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.as-who span{font-size:14px;line-height:22px;color:var(--muted-2);overflow-wrap:anywhere}
+.as-who .as-role{font-size:14px;line-height:22px;color:var(--ink);font-weight:500}
+
+/* personal details form */
+.as-fieldset{border:0;margin:0;padding:0;min-width:0}
+.as-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}
+.as-grid .field{margin-bottom:0;min-width:0}
+.as-grid .field input:disabled{background:var(--neutral-50);color:var(--muted-2);cursor:not-allowed}
+.as-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding-top:16px}
+.as-actions--start{justify-content:flex-start;padding-top:0}
+.as-actions .sd-btn{min-height:44px;padding:0 20px;width:auto}
+
+/* your access: read-only definition list + one closing line */
+.as-dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;margin:0}
+.as-dl > div{min-width:0}
+.as-dl dt{font-size:12px;line-height:18px;font-weight:500;color:var(--muted-2)}
+.as-dl dd{margin:4px 0 0;font-size:14px;line-height:22px;color:var(--ink);overflow-wrap:anywhere}
+.as-page .as-note{margin:16px 0 0;padding-top:16px;border-top:1px solid var(--line);font-size:14px;line-height:22px;color:var(--muted-2)}
+
+/* security rows */
+.as-rows{display:flex;flex-direction:column}
+.as-row{display:flex;align-items:center;gap:16px;min-height:72px;padding:16px 0;border-top:1px solid var(--line)}
+.as-row:first-child{border-top:0;padding-top:0}
+.as-row:last-child{padding-bottom:0}
+.as-row-ic{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--teal-50);color:var(--teal-500)}
+.as-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.as-row-main b{font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
+.as-row-main span{font-size:14px;line-height:22px;color:var(--muted-2)}
+.as-row .sd-btn{flex:none;min-height:44px;padding:0 20px;width:auto}
+
+/* recent sign-ins */
+.as-signins{list-style:none;margin:0;padding:0}
+.as-signins li{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:52px;padding:12px 0;border-top:1px solid var(--line)}
+.as-signins li:first-child{border-top:0;padding-top:0}
+.as-signin-when{font-size:14px;line-height:22px;color:var(--ink)}
+.as-signin-ip{font-size:14px;line-height:22px;color:var(--muted-2);font-variant-numeric:tabular-nums}
+
+/* empty / loading / error inside the card */
+.as-state{margin:0;padding:32px 16px;text-align:center;font-size:14px;line-height:22px;color:var(--muted-2);display:flex;flex-direction:column;align-items:center;gap:16px}
+.as-page .as-state p{margin:0}
+
+/* password modal */
+.as-pw-form .field{margin-bottom:16px}
+.as-forgot{margin:4px 0 0;font-size:14px;line-height:22px}
+.as-forgot a{color:var(--teal-500);font-weight:500;text-decoration:underline;text-underline-offset:2px;display:inline-flex;align-items:center;min-height:44px}
+.as-forgot a:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px;border-radius:6px}
+
+/* invalid fields (profile + password): red border, red focus ring */
+.as-page .field input[aria-invalid="true"],.as-pw-form input[aria-invalid="true"]{border-color:var(--color-error)}
+.as-page .field input[aria-invalid="true"]:focus,.as-pw-form input[aria-invalid="true"]:focus{border-color:var(--color-error);box-shadow:0 0 0 3px var(--error-line);outline:none}
+
+@media (max-width:720px){
+  .as-grid,.as-dl{grid-template-columns:minmax(0,1fr)}
+  .as-head{gap:14px}
+  .as-avatar{width:48px;height:48px;font-size:18px}
+}
+@media (max-width:560px){
+  .as-row{flex-wrap:wrap}
+  .as-row .sd-btn{margin-left:56px;width:calc(100% - 56px)}
+  .as-actions{justify-content:stretch}
+  .as-actions .sd-btn{width:100%}
+}

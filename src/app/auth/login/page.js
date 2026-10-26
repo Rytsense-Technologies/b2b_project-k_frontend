@@ -94,6 +94,10 @@ function LoginForm() {
   }, [checkLockout]);
 
   useEffect(() => {
+    document.title = 'Sign in · Quirri';
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     if (window.location.search.includes('password=') || window.location.search.includes('email=')) {
       router.replace('/auth/login');

@@ -16,6 +16,8 @@ export const SEMANTIC_SUCCESS = '#0F6E56';
 export const SEMANTIC_WARNING = '#C97A0E';
 export const SEMANTIC_ERROR = '#A32D2D';
 export const PROGRESS = '#5CB414';            /* positive progress (rings, bars) */
+/** Teal 400 — no data / not started / inactive marks. Never grey for status or charts. */
+export const BAND_NONE = '#4D8691';
 export const CATEGORY = ['#2C74E0', '#54B058', '#F5821F', '#6C3CD8', '#23B6B9', '#0E5C6B']; /* skills / series */
 
 /** Super Admin settings — tab panel height locked to Security tab layout */

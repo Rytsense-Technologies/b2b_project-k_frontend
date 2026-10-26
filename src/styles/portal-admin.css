@@ -34,19 +34,19 @@
 .ad-list-chev{flex:none;color:var(--neutral-400)}
 .pm-list-btn[aria-current="true"] .ad-list-chev{color:var(--teal-500)}
 .ad-detail{display:flex;flex-direction:column}
-.ad-detail-h{display:flex;align-items:flex-start;gap:16px;padding:24px;border-bottom:1px solid var(--line-soft)}
+.ad-detail-h{display:flex;align-items:flex-start;gap:16px;padding:var(--qs-card-pad,24px);border-bottom:1px solid var(--line-soft)}
 .ad-detail-h .un-mono--lg{background:var(--teal-500);border:0;color:var(--neutral-0)}
 .ad-detail-h .un-mono--lg.pm-mono--muted{background:var(--neutral-200);color:var(--ink-2)}
 .ad-detail-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .ad-detail-t h3{font-size:18px;line-height:26px;font-weight:500;color:var(--ink);margin:0}
 .ad-overline{font-size:11px;line-height:16px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
 .ad-detail-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
-.ad-detail-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:24px 24px 0}
+.ad-detail-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:var(--qs-card-pad,24px) var(--qs-card-pad,24px) 0}
 .ad-detail-stats > div{padding:12px 16px;border-radius:var(--radius-card);background:var(--teal-50);min-width:0}
 .ad-detail-stats small{display:block;font-size:12px;line-height:18px;color:var(--ink-2)}
 .ad-detail-stats b{display:block;font-size:22px;line-height:30px;font-weight:500;color:var(--teal-700);font-variant-numeric:tabular-nums}
 .ad-detail-stats b.ad-detail-name{font-size:16px;line-height:30px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ad-detail-sec{display:flex;flex-direction:column;gap:12px;padding:24px 24px 0}
+.ad-detail-sec{display:flex;flex-direction:column;gap:12px;padding:var(--qs-card-pad,24px) var(--qs-card-pad,24px) 0}
 .ad-detail-sec h4{font-size:14px;line-height:22px;font-weight:500;color:var(--ink);margin:0}
 .ad-detail-sec .ad-muted{margin:-8px 0 0}
 .ad-levels{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--radius-card)}
@@ -55,7 +55,7 @@
 .ad-levels li > div{flex:1;min-width:0}
 .ad-levels b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
 .ad-levels small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
-.ad-detail-foot{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:12px;margin-top:24px;padding:16px 24px;border-top:1px solid var(--line-soft);background:var(--neutral-50)}
+.ad-detail-foot{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:12px;margin-top:24px;padding:16px var(--qs-card-pad,24px);border-top:1px solid var(--line-soft);background:var(--neutral-50)}
 @media (max-width:760px){
   .ad-detail-h,.ad-detail-stats,.ad-detail-sec{padding-left:16px;padding-right:16px}
   .ad-detail-stats{grid-template-columns:1fr}
@@ -69,9 +69,9 @@
 
 /* Content: upload card + how-to side card */
 .ad-upload-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:stretch}
-.ad-upload .sp-panel-b{display:flex;flex-direction:column;gap:16px;padding:24px}
+.ad-upload .sp-panel-b{display:flex;flex-direction:column;gap:16px;padding:var(--qs-card-pad,24px)}
 .ad-upload .field{margin-bottom:0}
-.ad-drop{display:flex;align-items:center;gap:16px;width:100%;min-height:88px;padding:16px 20px;border:1px dashed var(--teal-300);border-radius:var(--radius-card);background:var(--neutral-50);cursor:pointer;transition:background-color .2s ease-out,border-color .2s ease-out}
+.ad-drop{display:flex;align-items:center;gap:16px;width:100%;min-height:96px;padding:16px 24px;border:1px dashed var(--teal-300);border-radius:var(--radius-card);background:var(--neutral-50);cursor:pointer;transition:background-color .2s ease-out,border-color .2s ease-out}
 .ad-drop:hover,.ad-drop.is-drag{background:var(--teal-50);border-color:var(--teal-500)}
 .ad-drop:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
 .ad-drop.has-file{border-style:solid;border-color:var(--teal-200);background:var(--teal-50)}
@@ -83,11 +83,11 @@
 .ad-upload-foot .ad-muted{display:flex;gap:8px;align-items:flex-start;max-width:56ch;margin:0}
 .ad-upload-foot .ad-muted .sd-i{flex:none;margin-top:2px;color:var(--teal-500)}
 .ad-upload-foot .sd-btn{flex:none}
-.ad-howto{display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--teal-500);color:var(--neutral-0);box-shadow:none}
-.ad-howto h3{font-size:18px;line-height:26px;font-weight:500;color:var(--neutral-0);margin:0;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.2)}
+.ad-howto{display:flex;flex-direction:column;gap:16px;padding:var(--qs-card-pad,24px);background:var(--teal-500);color:var(--neutral-0);box-shadow:none;border-radius:var(--radius-card)}
+.ad-howto h3{font-size:18px;line-height:26px;font-weight:500;color:var(--neutral-0);margin:0;padding-bottom:16px;border-bottom:1px solid var(--on-brand-line)}
 .ad-howto ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
 .ad-howto li{display:flex;gap:12px;align-items:flex-start}
-.ad-howto .pm-step-n{background:rgba(255,255,255,.12);color:var(--neutral-0)}
+.ad-howto .pm-step-n{background:var(--on-brand-raised);color:var(--neutral-0)}
 .ad-howto b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--neutral-0)}
 .ad-howto small{display:block;font-size:12px;line-height:18px;color:var(--teal-100)}
 
@@ -131,11 +131,11 @@
 
 /* Settings (Prep: underline tabs → account card + side card) */
 .ad-page .tabs{margin-bottom:0}
-.ad-set-h{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:24px;border-bottom:1px solid var(--line-soft)}
-.ad-set-b{padding:24px}
+.ad-set-h{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:var(--qs-card-pad,24px);border-bottom:1px solid var(--line-soft)}
+.ad-set-b{padding:var(--qs-card-pad,24px)}
 .ad-set-b > .sd-state{margin-bottom:16px}
 .ad-set-sec{margin-bottom:16px}
-.ad-set-sec h3{font-size:16px;line-height:26px;font-weight:500;color:var(--ink);margin:0}
+.ad-set-sec h3{font-size:18px;line-height:26px;font-weight:500;color:var(--ink);margin:0}
 .ad-set-sec p{font-size:14px;line-height:22px;color:var(--muted-2);margin:0}
 .ad-set-foot{display:flex;justify-content:flex-end;gap:12px;margin-top:8px;padding-top:24px;border-top:1px solid var(--line-soft)}
 .ad-set-side{display:flex;flex-direction:column;gap:24px;min-width:0}
@@ -176,9 +176,9 @@
 .mdp-file small{font-size:12px;line-height:18px;color:var(--muted-2)}
 .mdp-file em{font-style:normal;font-size:12px;line-height:18px;font-weight:500;color:var(--accent-text)}
 .mdp-role .field{margin:0}
-.mdp-role .quirri-dd__trigger{min-height:36px;height:36px;padding-top:0;padding-bottom:0;font-size:14px}
+.mdp-role .quirri-dd__trigger{min-height:44px;height:44px;padding-top:0;padding-bottom:0;font-size:14px}
 .mdp-actions{display:flex;gap:4px}
-.mdp-actions .un-icon-btn{width:32px;height:32px}
+.mdp-actions .un-icon-btn{width:40px;height:40px}
 .mdp-actions .un-icon-btn:not(.mdp-down):not(.is-danger) .sd-i{transform:rotate(-90deg)}
 .mdp-actions .mdp-down .sd-i{transform:rotate(90deg)}
 .mdp-actions .un-icon-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -198,7 +198,7 @@
   .mdp-role{grid-area:role}
 }
 /* Content upload: optional link to Programme > Semester > Subject > Chapter */
-.ad-chapter-link{margin:4px 0 16px;padding:14px 16px;border-radius:var(--radius-control);background:var(--surface-tint);display:flex;flex-direction:column;gap:12px}
+.ad-chapter-link{margin:4px 0 16px;padding:12px 16px;border-radius:var(--radius-card);background:var(--surface-tint);display:flex;flex-direction:column;gap:12px}
 .ad-chapter-link-h b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
 .ad-chapter-link-h small{display:block;font-size:12px;line-height:18px;color:var(--muted)}
 .ad-chapter-link .grid2 .field{margin-bottom:0}
@@ -224,7 +224,7 @@
 .ad-import-table{max-height:360px;overflow:auto;border:1px solid var(--line-soft);border-radius:var(--radius-card)}
 .ad-import-table thead th{position:sticky;top:0;z-index:1;background:var(--neutral-0)}
 .ad-import-table tr.is-err td{background:var(--error-soft)}
-.ad-row-errs{margin:6px 0 0;padding-left:16px;font-size:12px;line-height:18px;color:var(--color-error)}
+.ad-row-errs{margin:8px 0 0;padding-left:16px;font-size:12px;line-height:18px;color:var(--color-error)}
 
 /* Staff -> subjects picker */
 .ad-subj-pick{display:flex;flex-direction:column;gap:16px}
@@ -241,23 +241,23 @@
 
 /* Dashboard lists */
 .ad-queue{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.ad-queue li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.ad-queue li{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid var(--line-soft)}
 .ad-queue li:last-child{border-bottom:0}
 .ad-queue li>div{flex:1;min-width:0}
 .ad-queue b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ad-queue small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
 .ad-queue .sp-pill{flex:none}
 
-/* Analytics */
-/* Dashboard viz row: a short metric list beside the compact donut keeps its own height (no half-empty card) */
-.dv-grid.ad-grid-start{align-items:start}
+/* Analytics — cards stretch with the row; inner lists fill (portal-b2c.css) */
+.dv-grid.ad-grid-start{align-items:stretch}
+.ad-dash .dv-grid.ad-grid-start{align-items:stretch}
 .ad-risk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.ad-risk>li{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.ad-risk>li{display:flex;flex-direction:column;gap:8px;padding:16px 0;border-bottom:1px solid var(--line-soft)}
 .ad-risk>li:last-child{border-bottom:0}
 .ad-risk b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
 .ad-risk small{display:block;font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
 .ad-qa{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.ad-qa li{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.ad-qa li{display:flex;align-items:flex-start;gap:12px;padding:16px 0;border-bottom:1px solid var(--line-soft)}
 .ad-qa li:last-child{border-bottom:0}
 .ad-qa li>div{flex:1;min-width:0}
 .ad-qa b{display:block;font-size:14px;line-height:22px;font-weight:400;color:var(--ink);overflow-wrap:anywhere}
@@ -272,15 +272,15 @@
 /* Search box outside the teal filter bar (panel tools, subject picker) */
 .ad-panel-tools .search,.ad-subj-head .search{flex:1;min-width:200px;max-width:420px;position:relative}
 .ad-panel-tools .search svg,.ad-subj-head .search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--teal-500);pointer-events:none}
-.ad-panel-tools .search input,.ad-subj-head .search input{width:100%;padding-left:44px;min-height:44px;border:1px solid var(--neutral-300);border-radius:var(--radius-control);background:var(--neutral-0);font:inherit;font-size:14px}
+.ad-panel-tools .search input,.ad-subj-head .search input{width:100%;padding-left:44px;min-height:44px;border:1px solid var(--neutral-200);border-radius:var(--radius-control);background:var(--neutral-0);font:inherit;font-size:14px}
 .ad-panel-tools .search input:focus,.ad-subj-head .search input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
 
 /* HOD / Faculty note on a change request (content studio feedback queue) */
-.ad-feedback-note{display:block;margin-top:4px;font-size:12px;line-height:18px;color:var(--ink-2);font-style:italic;overflow-wrap:anywhere;max-width:48ch}
+.ad-feedback-note{display:block;margin-top:4px;font-size:12px;line-height:18px;color:var(--ink-2);overflow-wrap:anywhere;max-width:48ch}
 
 /* Department › Assign HOD dialog: nobody placed in the department yet. */
 .ad-hod-intro { margin: 0 0 12px; }
-.ad-hod-empty { display: grid; gap: 6px; margin-top: 12px; }
+.ad-hod-empty { display: grid; gap: 8px; margin-top: 12px; }
 .ad-hod-empty p { margin: 0; }
 
 /* ==========================================================================
@@ -294,31 +294,31 @@
 .ad-attn{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .ad-attn li{display:block}
 .ad-attn li + li{border-top:1px solid var(--line)}
-.ad-attn a{display:flex;align-items:center;gap:12px;min-height:52px;padding:12px 4px;color:var(--sb-ink);text-decoration:none;border-radius:6px;transition:background-color .2s ease-out}
-.ad-attn a:hover{background:#fafafa}
+.ad-attn a{display:flex;align-items:center;gap:12px;min-height:52px;padding:12px 0;color:var(--sb-ink);text-decoration:none;border-radius:var(--radius-control);transition:background-color .2s ease-out}
+.ad-attn a:hover{background:var(--surface-tint)}
 .ad-attn a:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
-.ad-attn b{flex:none;min-width:28px;font-size:20px;line-height:28px;font-weight:600;color:var(--sb-teal);font-variant-numeric:tabular-nums}
-.ad-attn span{flex:1;min-width:0;font-size:15px;line-height:22px}
+.ad-attn b{flex:none;min-width:28px;font-size:22px;line-height:30px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums}
+.ad-attn span{flex:1;min-width:0;font-size:14px;line-height:22px}
 .ad-attn .sd-i{flex:none;color:var(--sb-muted)}
-.ad-attn-note{margin:0;font-size:15px;line-height:23px;color:var(--sb-muted)}
+.ad-attn-note{margin:0;font-size:14px;line-height:22px;color:var(--sb-muted)}
 
 /* Students who need attention: reasons as pills on the right. */
 .ad-attn-risk .un-mono{flex:none}
-.ad-reasons{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:55%}
+.ad-reasons{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:55%}
 .ad-reasons .sp-pill{white-space:nowrap}
 
 /* Students › All: two small visuals above the directory. */
 
 /* Staff: subject chips with a stable series dot. */
-.ad-subj-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
-.ad-subj-chip{display:inline-flex;align-items:center;gap:6px;max-width:180px;height:26px;padding:0 10px;border-radius:var(--radius-control);background:var(--surface-tint);font-size:12px;line-height:18px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ad-subj-chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.ad-subj-chip{display:inline-flex;align-items:center;gap:8px;max-width:180px;height:24px;padding:0 8px;border-radius:var(--radius-control);background:var(--surface-tint);font-size:12px;line-height:18px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ad-subj-chip i,.ad-subj-pill i{width:8px;height:8px;border-radius:50%;flex:none}
 .ad-subj-chips small{font-size:12px;line-height:18px;color:var(--muted-2)}
 .ad-subj-pill{display:inline-flex;align-items:center;gap:6px}
 
 /* Staff › Subject coverage: subjects with nobody assigned. */
-.ad-uncovered{list-style:none;margin:0;padding:0 24px 8px;display:flex;flex-direction:column;max-height:420px;overflow:auto}
-.ad-uncovered li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.ad-uncovered{list-style:none;margin:0;padding:0 var(--qs-card-pad,24px) 8px;display:flex;flex-direction:column;max-height:420px;overflow:auto}
+.ad-uncovered li{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid var(--line-soft)}
 .ad-uncovered li:last-child{border-bottom:0}
 .ad-uncovered li > div{flex:1;min-width:0}
 .ad-uncovered b{display:block;font-size:14px;line-height:22px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
@@ -337,12 +337,11 @@
   .ad-import-foot .right > .sd-btn{flex:1 1 auto;justify-content:center}
 }
 
-/* In-panel filters on College Admin list pages (same look as the content / analytics modules). */
-/* Sizing comes from data-viz.css (.pm-panel-tools .search); only the icon and input look are here. */
-.ad-page .pm-panel-tools .search{position:relative}
-.ad-page .pm-panel-tools .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--teal-500);pointer-events:none}
-.ad-page .pm-panel-tools .search input{width:100%;padding-left:42px;min-height:44px;background:#fff;border:1px solid var(--neutral-300);border-radius:var(--radius-control);font:inherit;font-size:14px}
-.ad-page .pm-panel-tools .search input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
+/* Filter bar stays teal (portal-b2c.css). White bordered search only when the tools are NOT the teal bar. */
+.ad-page .pm-panel-tools:not(.pm-filterbar) .search{position:relative}
+.ad-page .pm-panel-tools:not(.pm-filterbar) .search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--teal-500);pointer-events:none}
+.ad-page .pm-panel-tools:not(.pm-filterbar) .search input{width:100%;padding-left:44px;min-height:44px;background:var(--panel);border:1px solid var(--neutral-200);border-radius:var(--radius-control);font:inherit;font-size:14px}
+.ad-page .pm-panel-tools:not(.pm-filterbar) .search input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
 .ad-page .pm-panel-tools .quirri-dd{flex:0 1 200px;min-width:168px;width:auto}
 .ad-page .pm-panel-tools .un-seg{flex:0 0 auto}
 @media (max-width:640px){
@@ -362,14 +361,14 @@
    Scoped to College Admin page roots (.ad-page / .ad-dash / .ad-dept / .ad-missing).
    ========================================================================== */
 /* Dashboard hero: plain over-line (no orange pill); orange stays for the one primary. */
-.q-app-shell:not(.q-student) .ad-dash .banner-eyebrow{background:transparent;padding:0;border-radius:0;color:#cfe3e7;letter-spacing:.08em}
+.q-app-shell:not(.q-student) .ad-dash .banner-eyebrow{background:transparent;padding:0;border-radius:0;color:var(--on-brand-muted);letter-spacing:.08em}
 @media (max-width:640px){
   .q-app-shell:not(.q-student) .ad-dash .banner-cta{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;width:100%}
   .q-app-shell:not(.q-student) .ad-dash .banner-cta .btn{width:100%;justify-content:center;min-height:44px}
 }
 /* Dashboard lists: status as text + 6px dot, not a rainbow of pills. */
-.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill{display:inline-flex;align-items:center;gap:6px;height:auto;padding:0;background:transparent;border:0;font-size:12px;line-height:18px;font-weight:500;color:var(--sb-ink)}
-.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:#94a3b8}
+.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill{display:inline-flex;align-items:center;gap:8px;height:auto;padding:0;background:transparent;border:0;font-size:12px;line-height:18px;font-weight:500;color:var(--sb-ink)}
+.q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:var(--neutral-400)}
 .q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill--teal::before{background:var(--sb-teal)}
 .q-app-shell:not(.q-student) .ad-dash .ad-queue .sp-pill--low::before{background:var(--sb-orange)}
 @media (max-width:640px){
@@ -395,7 +394,7 @@
   .q-app-shell:not(.q-student) .ad-page .ad-levels li .sp-pill{margin-left:0}
 }
 /* Danger zone = a normal white card; the red lives on the button. */
-.q-app-shell:not(.q-student) .ad-page .pm-danger{background:#fff;border:0;border-radius:6px;box-shadow:var(--sb-shadow)}
+.q-app-shell:not(.q-student) .ad-page .pm-danger{background:var(--panel);border:0;border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
 @media (max-width:760px){
   .q-app-shell:not(.q-student) .ad-page .pm-danger-actions,
   .q-app-shell:not(.q-student) .ad-page .pm-danger-actions > .sd-btn,
@@ -405,12 +404,12 @@
 }
 
 /* Unknown route: centred muted sentence + one teal text link, inside a white card. */
-.ad-missing{background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.25);padding:40px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
-.ad-missing h2{margin:0;font-size:18px;line-height:26px;font-weight:600;color:#102228}
-.ad-missing p{margin:0;max-width:48ch;font-size:14px;line-height:22px;color:#707a7e}
-.ad-missing-link{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-top:4px;color:#14606e;font-weight:600;text-decoration:none}
+.ad-missing{background:var(--panel);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:32px var(--qs-card-pad,24px);display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.ad-missing h2{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.ad-missing p{margin:0;max-width:48ch;font-size:14px;line-height:22px;color:var(--muted-2)}
+.ad-missing-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:4px;color:var(--teal-500);font-weight:500;text-decoration:none}
 .ad-missing-link:hover{text-decoration:underline}
-.ad-missing-link:focus-visible{outline:2px solid #14606e;outline-offset:2px;border-radius:6px}
+.ad-missing-link:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px;border-radius:var(--radius-control)}
 /* A disabled select in the teal bar ("Pick a programme first") must read as disabled. */
 .q-app-shell:not(.q-student) .ad-page .pm-filterbar .quirri-dd__trigger:disabled{opacity:.6;cursor:not-allowed}
 .q-app-shell:not(.q-student) .ad-page .pm-filterbar .quirri-dd__trigger:disabled .quirri-dd__value{color:var(--sb-muted)}
@@ -428,6 +427,58 @@
 }
 
 /* Staff table (clean pass, 20 Oct 2026): subjects as plain text, short cells on one line */
-.ad-page .ad-subj-text{color:var(--ink);font-size:15px;line-height:22px}
-.ad-page .ad-subj-text small{color:var(--qs-muted,#64748b);font-size:13px}
+.ad-page .ad-subj-text{color:var(--ink);font-size:14px;line-height:22px}
+.ad-page .ad-subj-text small{color:var(--muted-2);font-size:12px;line-height:18px}
 @media (min-width:761px){.ad-page td.ad-nowrap{white-space:nowrap}}
+
+/* ==========================================================================
+   College Admin polish (24 Oct 2026) — Prep student chrome, tokens only.
+   Teal filter bar, card pad, table/list air, settings type. No new patterns.
+   ========================================================================== */
+.ad-page .pm-filterbar .search input,
+.ad-page.cs-page .pm-filterbar .search input,
+.ad-page .as-filters .search input,
+.ad-page .pm-filterbar input[type="search"],
+.ad-page .pm-filterbar input[type="text"]{
+  background:var(--sb-search,var(--teal-100));
+  border:0;
+  min-height:44px;
+  padding-left:44px;
+}
+
+/* ModuleHead actions-only rows are already lifted into the top bar on desktop. */
+.ad-page .pm-head--lifted.pm-head--solo{margin-bottom:0}
+
+/* Tables inside College Admin lists keep the global 16px cell air. */
+.ad-page .sp-table :is(th,td){padding-top:16px;padding-bottom:16px}
+
+/* Dashboard KPI row sits on the same left edge as the hero. */
+.ad-dash .sd-kpis,.ad-dash .dv-grid{margin:0}
+
+.ad-page .ad-jobs .ad-progress{margin-top:8px}
+
+/* Settings (AccountSettings is shared; CA wrap adds .ad-page / .ad-settings). */
+.ad-page .as-card-h h2,
+.ad-settings .as-card-h h2,
+.ad-settings .as-who b,
+.ad-settings .as-row-main b{font-weight:500}
+.ad-page .as-card-h p,
+.ad-settings .as-card-h p,
+.ad-settings .as-who .as-role,
+.ad-settings .as-row-main span,
+.ad-settings .as-page .as-note,
+.ad-settings .as-signin-ip{font-size:14px;line-height:22px}
+.ad-settings .as-who span{font-size:14px;line-height:22px}
+.ad-settings .as-avatar{font-size:18px;line-height:26px;font-weight:500}
+.ad-settings .as-dl dt{font-size:12px;line-height:18px}
+.ad-settings .as-dl dd{font-size:14px;line-height:22px}
+.ad-settings .as-state{font-size:14px;line-height:22px}
+.ad-settings .as-head{gap:16px}
+.ad-settings .as-grid .field input:disabled{background:var(--neutral-100);color:var(--ink-2)}
+
+/* Programmes workspace lives in a shared kit; keep CA filter bar on the page edge. */
+.ad-page .as-filters{margin:0}
+.ad-page .sa-acad-grid{gap:var(--qs-gap,24px)}
+
+/* Notifications / students / staff empty states stay inside the list card. */
+.ad-page .sp-panel-b > .sd-state{padding:32px var(--qs-card-pad,24px)}

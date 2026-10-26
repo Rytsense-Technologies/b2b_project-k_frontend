@@ -14,12 +14,13 @@ import StudentSidebar from '@/components/student/StudentSidebar';
 import '@/styles/student-portal.css';
 import '@/styles/student-b2c.css';
 import { dmSans } from '@/lib/student/fonts';
+import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 
 /**
  * Redesign (14 Oct 2026): every student page keeps the shell top bar (spec X5).
  * 20 Oct 2026: the AI interview module is removed (owner); old /student/interviews and
  * /student/reports URLs land on the in-shell "page isn’t available" state ([...missing]).
- * 15 Oct 2026: student shell follows the quirri-b2c-student-ui skill (student-b2c.css, DM Sans).
+ * 15 Oct 2026: student shell follows Prep chrome (student-b2c.css). Type stays Poppins (Brand v1.0).
  */
 export default function StudentLayout({ children }) {
   const pathname = usePathname();
@@ -51,6 +52,7 @@ export default function StudentLayout({ children }) {
     .sort((a, b) => b.length - a.length)[0];
   // Every real route is in PAGE_META; anything else is the [...missing] catch-all.
   const meta = matchedRoute ? PAGE_META[matchedRoute] : { title: 'Page not found', subtitle: '' };
+  usePortalDocumentTitle(meta.title, 'Student');
 
   return (
     <div className={`app q-app-shell q-student ${dmSans.variable} ${mobileNavShellClass(navOpen)}`}>

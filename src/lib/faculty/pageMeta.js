@@ -2,43 +2,43 @@
 export const PAGE_META = {
   '/faculty/dashboard': {
     title: 'Dashboard',
-    subtitle: 'Review queues and department activity in your scope.',
+    subtitle: 'Review queues in your scope.',
   },
   '/faculty/videos': {
     title: 'Video review',
-    subtitle: 'Approve generated lectures before students can watch them.',
+    subtitle: 'Approve lectures before students watch them.',
   },
   '/faculty/mcq': {
     title: 'MCQ review',
-    subtitle: 'Review generated questions for each chapter quiz.',
+    subtitle: 'Approve chapter quiz questions.',
   },
   '/faculty/subjects': {
     title: 'Subjects',
-    subtitle: 'Subjects in your scope and how far each is through review.',
+    subtitle: 'Subjects in your scope and their review stage.',
   },
   '/faculty/students': {
     title: 'Students',
-    subtitle: 'Students within your scope, with learning and assessment activity.',
+    subtitle: 'People in your scope.',
   },
   '/faculty/staff': {
     title: 'Department staff',
-    subtitle: 'Faculty in your department and the subjects each one teaches.',
+    subtitle: 'Faculty and the subjects they teach.',
   },
   '/faculty/reports': {
     title: 'Reports',
-    subtitle: 'Student and cohort reports for your department.',
+    subtitle: 'Student and cohort exports.',
   },
   '/faculty/notifications': {
     title: 'Notifications',
-    subtitle: 'Review alerts and other messages Quirri sent you.',
+    subtitle: 'Review alerts and messages.',
   },
   '/faculty/settings': {
     title: 'Settings',
-    subtitle: 'Your profile and account security.',
+    subtitle: 'Profile, sign-in and email.',
   },
   '/faculty/analytics': {
     title: 'Department analytics',
-    subtitle: 'Completion, assessment performance, and Q&A demand for your department.',
+    subtitle: 'Completion, quizzes and tutor questions.',
   },
 };
 
@@ -46,10 +46,10 @@ const GATED = 'Available to your head of department.';
 
 /** Role-neutral wording while GET /faculty/me is loading (no HOD-only phrasing flashes for Faculty). */
 const NEUTRAL = {
-  '/faculty/dashboard': { title: 'Dashboard', subtitle: 'Review queues and activity in your scope.' },
+  '/faculty/dashboard': { title: 'Dashboard', subtitle: 'Review queues in your scope.' },
   '/faculty/staff': { title: 'Department staff', subtitle: '' },
   '/faculty/reports': { title: 'Reports', subtitle: '' },
-  '/faculty/analytics': { title: 'Analytics', subtitle: 'Completion, quiz scores and tutor questions.' },
+  '/faculty/analytics': { title: 'Analytics', subtitle: 'Completion, quizzes and tutor questions.' },
 };
 
 /**
@@ -63,13 +63,13 @@ export function facultyPageMeta(route, scope) {
   const limited = Boolean(scope.subject_limited);
   switch (route) {
     case '/faculty/dashboard':
-      return { ...base, subtitle: limited ? 'Review queues and activity for the subjects you teach.' : base.subtitle };
+      return { ...base, subtitle: limited ? 'Review queues for the subjects you teach.' : base.subtitle };
     case '/faculty/analytics':
       return {
         title: 'Analytics',
         subtitle: limited
-          ? 'Completion, quiz scores and tutor questions for the students and subjects you teach.'
-          : 'Completion, quiz scores and tutor questions across your department (view only).',
+          ? 'Completion, quizzes and tutor questions for your subjects.'
+          : 'Completion, quizzes and tutor questions (view only).',
       };
     case '/faculty/staff':
       return scope.can_see_staff ? base : { ...base, subtitle: GATED };

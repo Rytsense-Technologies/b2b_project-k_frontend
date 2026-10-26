@@ -67,20 +67,20 @@ export default function FacultyDashboardPage() {
         : (scope.subjects || []).map((s) => [s.name, s.code].filter(Boolean).join(' · ')).join(', ');
 
   const sideRows = [
-    { label: 'Videos to review', value: data?.videos_awaiting, href: '/faculty/videos' },
-    { label: 'MCQ sets to approve', value: data?.mcq_to_approve, href: '/faculty/mcq?tab=awaiting' },
-    { label: 'Chapters without questions', value: data?.mcq_not_generated, href: '/faculty/mcq?tab=none' },
+    { id: 'videos', count: data?.videos_awaiting, href: '/faculty/videos', label: (n) => n === 1 ? 'video to review' : 'videos to review' },
+    { id: 'mcq', count: data?.mcq_to_approve, href: '/faculty/mcq?tab=awaiting', label: (n) => n === 1 ? 'MCQ set to approve' : 'MCQ sets to approve' },
+    { id: 'none', count: data?.mcq_not_generated, href: '/faculty/mcq?tab=none', label: (n) => n === 1 ? 'chapter without questions' : 'chapters without questions' },
   ];
 
   // Chapter pipeline across the subjects in scope.
   const subjItems = subjects.data?.items || [];
   const sum = (k) => subjItems.reduce((n, s) => n + (Number(s[k]) || 0), 0);
   const pipeline = [
-    // Tones (not CSS vars) so the SVG donut gets real colours. In progress = neutral grey (like "Generating" on SA content); No video = lighter grey so the two read apart.
+    // Tones (not CSS vars) so the SVG donut gets real colours. In progress = teal; no video = cyan so the two still read apart.
     { key: 'published', label: 'Published', value: sum('published'), tone: 'good' },
     { key: 'in_review', label: 'In review', value: sum('in_review'), tone: 'warn' },
     { key: 'in_progress', label: 'In progress', value: sum('in_progress'), tone: 'neutral' },
-    { key: 'no_content', label: 'No video yet', value: sum('no_content'), color: '#DDE2E5' },
+    { key: 'no_content', label: 'No video yet', value: sum('no_content'), tone: 'cyan' },
   ];
 
   const atRisk = a?.at_risk || [];
@@ -97,16 +97,23 @@ export default function FacultyDashboardPage() {
         primaryLabel={next && !readOnly ? 'Review next' : undefined}
         sideTitle="Waiting on you"
       >
-        <ul className="fa-hero-counts">
-          {sideRows.map((r) => (
-            <li key={r.label}>
-              <Link href={r.href}>
-                <span>{r.label}</span>
-                <b>{data ? countLabel(r.value ?? 0) : '—'}</b>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {!data ? (
+          <p className="q-attn-note">Loading…</p>
+        ) : sideRows.some((r) => (r.count ?? 0) > 0) ? (
+          <ul className="q-attn">
+            {sideRows.filter((r) => (r.count ?? 0) > 0).map((r) => (
+              <li key={r.id}>
+                <Link href={r.href}>
+                  <b>{countLabel(r.count)}</b>
+                  <span>{r.label(r.count)}</span>
+                  <Icon name="chev" size={16} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="q-attn-note">You&apos;re up to date.</p>
+        )}
       </PortalHero>
 
       {error ? (
@@ -123,10 +130,10 @@ export default function FacultyDashboardPage() {
       <KpiRow
         label="Learning summary"
         items={[
-          { icon: 'users', label: 'Active students', value: first ? null : countLabel(data?.students ?? 0), sub: !scope ? 'In your scope' : isHod || readOnly ? 'In your department' : 'In your subjects' },
-          { icon: 'book', label: 'Chapter completion', value: aFirst ? null : pct(a?.totals?.completion), sub: 'To date' },
-          { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: aFirst ? 'Chapter quizzes' : a?.totals?.pass_rate != null ? `${pct(a.totals.pass_rate)} of attempts passed` : 'No quizzes yet' },
-          { icon: 'alert', label: 'Need attention', value: aFirst ? null : countLabel(atRisk.length), sub: 'Low scores or no activity', tone: atRisk.length ? 'focus' : undefined },
+          { icon: 'users', label: 'Active students', value: first ? null : countLabel(data?.students ?? 0) },
+          { icon: 'book', label: 'Chapter completion', value: aFirst ? null : pct(a?.totals?.completion) },
+          { icon: 'target', label: 'Quiz average', value: aFirst ? null : pct(a?.totals?.quiz_avg), sub: aFirst ? null : a?.totals?.pass_rate != null ? `${pct(a.totals.pass_rate)} pass` : 'No quizzes yet' },
+          { icon: 'alert', label: 'Need attention', value: aFirst ? null : countLabel(atRisk.length), tone: atRisk.length ? 'focus' : undefined },
         ]}
       />
       )}
@@ -134,13 +141,7 @@ export default function FacultyDashboardPage() {
       <div className="dv-grid">
         <Panel
           title="Review queue"
-          sub={readOnly ? 'View only: you can open these but not publish or approve yet.' : 'Videos sent for review and question sets to approve.'}
-          action={data?.queue?.length ? (
-            <span className="fa-panel-links">
-              <Link className="sp-link" href="/faculty/videos">Videos</Link>
-              <Link className="sp-link" href="/faculty/mcq">MCQs</Link>
-            </span>
-          ) : null}
+          sub={readOnly ? 'View only.' : null}
           bodyClassName=""
         >
           {first ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
@@ -149,7 +150,6 @@ export default function FacultyDashboardPage() {
               <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
               <div>
                 <b>All caught up</b>
-                <small>Chapters your College Admin sends, and question sets to approve, appear here.</small>
               </div>
             </div>
           ) : null}
@@ -181,12 +181,7 @@ export default function FacultyDashboardPage() {
           ) : null}
         </Panel>
 
-        <Panel
-          title="Students who need attention"
-          sub="Low scores, behind on chapters or no activity in the last 30 days."
-          action={atRisk.length ? <Link className="sp-link" href="/faculty/students?tab=risk">See all</Link> : null}
-          bodyClassName=""
-        >
+        <Panel title="Students who need attention" bodyClassName="">
           {aFirst ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
           {insights.error ? (
             <div className="sp-panel-b">
@@ -198,7 +193,6 @@ export default function FacultyDashboardPage() {
               <span className="ad-empty-ic" aria-hidden="true"><Icon name="tick" size={20} /></span>
               <div>
                 <b>No one flagged</b>
-                <small>Students with low scores or no learning activity show up here.</small>
               </div>
             </div>
           ) : null}
@@ -224,7 +218,7 @@ export default function FacultyDashboardPage() {
       </div>
 
       <div className="dv-grid fa-grid-top">
-        <Panel title="Completion by subject" sub="Share of each subject's published chapters its learners have finished, to date.">
+        <Panel title="Completion by subject">
           {aFailed ? errNote('Could not load completion', insights.error, insights.reload) : aFirst ? <SectionState title="Loading…" /> : (
             <MetricList
               label="Completion by subject"
@@ -240,7 +234,7 @@ export default function FacultyDashboardPage() {
             />
           )}
         </Panel>
-        <Panel title="Chapter pipeline" sub="Every chapter in your scope, by video status.">
+        <Panel title="Chapter pipeline">
           {subjects.error && !subjects.data ? errNote('Could not load chapters', subjects.error, subjects.reload) : subjects.loading && !subjects.data ? <SectionState title="Loading…" /> : (
             <ModernDonut compact title="Chapter pipeline" unit="Chapters" parts={pipeline} empty="No chapters in your subjects yet." />
           )}

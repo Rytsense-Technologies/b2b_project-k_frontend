@@ -262,8 +262,8 @@ export default function SuperAdminSidebar() {
             type="button"
             className="logout"
             onClick={handleLogout}
-            aria-label="Log out"
-            {...tipHandlers('Log out', sidebarOpen ? 'top' : 'right')}
+            aria-label="Sign out"
+            {...tipHandlers('Sign out', sidebarOpen ? 'top' : 'right')}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

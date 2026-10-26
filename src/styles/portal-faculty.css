@@ -7,15 +7,22 @@
    ========================================================================== */
 
 /* ---------- Module panels: H4 head (18/26) per §4 ---------- */
+.fa-page{min-width:0}
 .fa-page .sp-panel-h > .sp-pill{flex:none;margin-top:2px}
 .fa-filter-select{min-width:208px}
 .fa-filter-select .quirri-dd{min-width:208px}
+/* Even Prep rhythm on faculty grids (do not un-stack chapter-column filters). */
+.fa-split,
+.fa-dash-cols,
+.fa-review-col,
+.fa-plan,
+.fa-plan .edu-plan-editor{gap:var(--qs-gap,24px)}
 
 /* ---------- Chapter rows inside a panel (row-card list pattern) ---------- */
 .fa-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .fa-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto;align-items:center;gap:16px;padding:16px 24px;border-top:1px solid var(--line-soft);transition:background-color .2s ease-out}
 .fa-row:first-child{border-top:0}
-.fa-row:hover{background:var(--neutral-50)}
+.fa-row:hover{background:var(--surface-tint)}
 .fa-row-main{min-width:0}
 .fa-row-main > b{display:block;font-size:16px;line-height:26px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
 .fa-row .sp-row-meta{gap:4px 16px;margin-top:2px;color:var(--muted-2)}
@@ -31,9 +38,9 @@
 .fa-err{flex-basis:100%;font-size:12px;line-height:18px;color:var(--color-error);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:default}
 
 /* ---------- MCQ review: chapter list + review column ---------- */
-.fa-split{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:24px;align-items:start}
+.fa-split{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);align-items:start}
 .fa-chapters .pm-list{max-height:min(70vh,720px);overflow-y:auto}
-.fa-chapters .pm-list-btn{align-items:flex-start;padding:12px}
+.fa-chapters .pm-list-btn{align-items:flex-start;padding:12px;min-height:44px}
 .fa-chapters .pm-list-btn .sp-chapter-n{margin-top:2px}
 .fa-chapters .pm-list-btn[aria-current="true"] .sp-chapter-n{background:var(--teal-500);color:var(--neutral-0)}
 .fa-chapters .pm-list-btn small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -41,8 +48,8 @@
 .fa-chapter-tag.is-good{color:var(--color-success)}
 .fa-chapter-tag.is-low{color:var(--accent-text)}
 .fa-chapter-tag.is-muted{color:var(--muted-2)}
-.fa-review-col{display:flex;flex-direction:column;gap:24px;min-width:0}
-.fa-chapter-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 24px;background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.fa-review-col{display:flex;flex-direction:column;min-width:0}
+.fa-chapter-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:var(--qs-card-pad,24px);background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
 .fa-chapter-bar .sp-row-ic{width:44px;height:44px}
 .fa-chapter-bar > div{flex:1;min-width:200px}
 .fa-chapter-bar small{display:block;font-size:11px;line-height:16px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
@@ -51,7 +58,7 @@
 
 /* ---------- McqDocumentReview + McqQuestionBlock (shared) ---------- */
 .fa-mcq{display:flex;flex-direction:column;gap:16px;text-align:left}
-.fa-mcq-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 24px;background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.fa-mcq-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:var(--qs-card-pad,24px);background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
 .fa-mcq-head h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
 .fa-mcq-head p{margin:2px 0 0;font-size:14px;line-height:22px;color:var(--muted-2)}
 .fa-mcq-head-side{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -94,14 +101,14 @@
 .fa-video-foot a.sd-btn{text-decoration:none}
 
 /* ---------- EduVideoPlanEditor (shared) ---------- */
-.fa-plan{display:flex;flex-direction:column;gap:24px}
-.fa-plan .edu-plan-editor{grid-template-columns:minmax(220px,272px) minmax(0,1fr);gap:24px}
+.fa-plan{display:flex;flex-direction:column}
+.fa-plan .edu-plan-editor{grid-template-columns:minmax(220px,272px) minmax(0,1fr)}
 .fa-plan .edu-plan-scenes{position:sticky;top:0;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--neutral-0);max-height:min(64vh,640px);display:flex;flex-direction:column}
 .fa-plan .edu-plan-scenes-h{position:sticky;top:0;z-index:1;background:var(--neutral-50);padding:12px 16px;font-size:14px;line-height:22px;font-weight:500;color:var(--ink);border-bottom:1px solid var(--line)}
 .fa-plan .edu-plan-scenes-h .sub{font-size:12px;line-height:18px;font-weight:400;color:var(--muted-2)}
 .fa-plan-slides{display:flex;flex-direction:column;gap:4px;padding:8px}
 .fa-plan .edu-plan-scene{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:8px 12px;min-height:56px;border:1px solid transparent;border-radius:var(--radius-control);transition:background-color .2s ease-out,border-color .2s ease-out}
-.fa-plan .edu-plan-scene:hover{background:var(--neutral-50)}
+.fa-plan .edu-plan-scene:hover{background:var(--surface-tint)}
 .fa-plan .edu-plan-scene.is-active{background:var(--teal-50);border-color:var(--teal-100)}
 .fa-plan .edu-plan-scene.is-active .sp-chapter-n{background:var(--teal-500);color:var(--neutral-0)}
 .fa-plan .edu-plan-scene .sp-chapter-n{margin-top:2px}
@@ -127,23 +134,23 @@
 .fa-plan code{font-size:12px;padding:0 4px;border-radius:var(--radius-control);background:var(--neutral-100);color:var(--ink)}
 
 /* ---------- Faculty dashboard ---------- */
-/* hero, KPI row and panels share one 3-column grid so card edges line up */
-.fa-page > .q-hero-split{margin-bottom:0;grid-template-columns:repeat(3,minmax(0,1fr))}
-.fa-page > .q-hero-split > .banner{grid-column:span 2}
-.fa-dash-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:start}
+/* hero, KPI row and panels share the dashboard 2fr / 1fr grid so card edges line up */
+.fa-page > .q-hero-split{margin-bottom:0;grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.fa-page > .q-hero-split > .banner{grid-column:auto}
+.fa-dash-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--qs-gap,24px);align-items:start}
 .fa-dash-cols > :first-child{grid-column:span 2}
 .fa-queue{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .fa-queue li + li{border-top:1px solid var(--line-soft)}
-.fa-queue a{display:flex;align-items:center;gap:16px;padding:16px 24px;color:inherit;text-decoration:none;transition:background-color .2s ease-out}
-.fa-queue a:hover{background:var(--neutral-50)}
-.fa-queue a:hover .fa-go{background:var(--teal-500);color:var(--neutral-0)}
-.fa-queue .sp-row-main b{font-size:16px;line-height:26px}
-.fa-queue .sp-row-meta{color:var(--muted-2);font-size:14px;line-height:22px}
+.fa-queue a{display:flex;align-items:center;gap:12px;padding:12px 24px;color:inherit;text-decoration:none;transition:background-color .2s ease-out}
+.fa-queue a:hover{background:var(--surface-tint)}
+.fa-queue a:hover .fa-go{color:var(--teal-500)}
+.fa-queue .sp-row-main b{font-size:14px;line-height:22px}
+.fa-queue .sp-row-meta{color:var(--muted-2);font-size:12px;line-height:18px}
 .fa-go{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-500);transition:background-color .2s ease-out,color .2s ease-out}
 .fa-soon-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .fa-soon-list li + li{border-top:1px solid var(--line-soft)}
 .fa-soon-list a{display:flex;align-items:center;gap:12px;padding:12px 24px;color:inherit;text-decoration:none;transition:background-color .2s ease-out}
-.fa-soon-list a:hover{background:var(--neutral-50)}
+.fa-soon-list a:hover{background:var(--surface-tint)}
 .fa-soon-list .sp-row-ic{width:36px;height:36px}
 .fa-soon-list b{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
 
@@ -173,12 +180,12 @@
   .fa-row-actions{justify-content:flex-start;flex-wrap:wrap}
   .fa-filter-select,.fa-filter-select .quirri-dd{min-width:0;width:100%}
   .fa-chapter-bar,.fa-mcq-head{padding:16px}
-  .fa-pick{padding:20px}
+  .fa-pick{padding:var(--qs-card-pad,24px)}
   .fa-pick .pm-soon-art{display:none}
   .fa-queue a{padding:16px}
   .modal-f:has(.fa-foot-btn){flex-direction:column-reverse;align-items:stretch}
   .modal-f .fa-foot-btn{width:100%}
-  .fa-soon-list a{padding:12px 16px}
+  .fa-soon-list a{padding:16px}
 }
 @media (prefers-reduced-motion:reduce){
   .fa-progress-bar i{transition:none}
@@ -187,16 +194,16 @@
 /* ---- HOD / Faculty completion (Oct 2026): subjects, student drawer, view-only ---- */
 .fa-subjects{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .fa-subjects > li{padding:0;overflow:hidden}
-.fa-subject-h{display:flex;align-items:center;gap:12px;width:100%;padding:16px 20px;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
-.fa-subject-h:hover{background:var(--neutral-50)}
+.fa-subject-h{display:flex;align-items:center;gap:12px;width:100%;padding:16px 24px;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.fa-subject-h:hover{background:var(--surface-tint)}
 .fa-subject-h:focus-visible{outline:2px solid var(--teal-500);outline-offset:-2px}
 .fa-subject-main{flex:1;min-width:0;display:flex;flex-direction:column}
-.fa-subject-main b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-subject-main b{font-size:16px;line-height:26px;font-weight:500;color:var(--ink)}
 .fa-subject-main b small{font-weight:400;color:var(--muted-2)}
 .fa-subject-main > small{font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
 .fa-subject-counts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
-.fa-chapter-list{list-style:none;margin:0;padding:0 20px 12px;display:flex;flex-direction:column;border-top:1px solid var(--line-soft)}
-.fa-chapter-list li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.fa-chapter-list{list-style:none;margin:0;padding:0 24px 16px;display:flex;flex-direction:column;border-top:1px solid var(--line-soft)}
+.fa-chapter-list li{display:flex;align-items:center;gap:12px;min-height:44px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
 .fa-chapter-list li:last-child{border-bottom:0}
 .fa-chapter-list b{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:400;color:var(--ink);overflow-wrap:anywhere}
 .fa-chapter-empty{margin:0;padding:12px 20px 16px;border-top:1px solid var(--line-soft)}
@@ -250,12 +257,12 @@
 /* students who need attention */
 .fa-risk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .fa-risk li + li{border-top:1px solid var(--line-soft)}
-.fa-risk a,.fa-risk button{display:flex;align-items:center;gap:16px;width:100%;padding:14px 24px;border:0;background:none;font:inherit;text-align:left;color:inherit;text-decoration:none;cursor:pointer;transition:background-color .2s ease-out}
+.fa-risk a,.fa-risk button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 24px;border:0;background:none;font:inherit;text-align:left;color:inherit;text-decoration:none;cursor:pointer;transition:background-color .2s ease-out}
 .fa-risk a:hover,.fa-risk button:hover{background:var(--surface-tint)}
-.fa-risk a:hover .fa-go{background:var(--teal-500);color:var(--neutral-0)}
+.fa-risk a:hover .fa-go{color:var(--teal-500)}
 .fa-risk a:focus-visible,.fa-risk button:focus-visible{outline:2px solid var(--teal-500);outline-offset:-2px}
 .fa-risk .sp-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-.fa-risk .sp-row-main b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-risk .sp-row-main b{font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
 .fa-reasons{display:flex;flex-wrap:wrap;gap:6px}
 .fa-reason{display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:var(--radius-control);background:var(--accent-soft);color:var(--accent-text);font-size:12px;line-height:18px;font-weight:500}
 .fa-risk-nums{display:flex;align-items:center;gap:16px;flex:none}
@@ -278,26 +285,26 @@
 .fa-click-table tbody tr{cursor:pointer}
 
 /* subjects: card grid inside the panel */
-.fa-subj-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.fa-subj-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--qs-gap,24px)}
 .fa-subj-grid.is-single{grid-template-columns:minmax(0,1fr)}
-.fa-subj-card{display:flex;flex-direction:column;gap:16px;padding:20px;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--neutral-0);min-width:0}
+.fa-subj-card{display:flex;flex-direction:column;gap:16px;padding:var(--qs-card-pad,24px);border:1px solid var(--line);border-radius:var(--radius-card);background:var(--neutral-0);min-width:0}
 .fa-subj-h{display:flex;align-items:flex-start;gap:12px}
 .fa-subj-disc{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--neutral-0)}
 .fa-subj-t{display:flex;flex-direction:column;min-width:0}
-.fa-subj-t b{font-size:16px;line-height:24px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.fa-subj-t b{font-size:16px;line-height:26px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
 .fa-subj-t b small{font-weight:400;color:var(--muted-2)}
 .fa-subj-t > small{font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
 .fa-subj-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0}
 .fa-subj-stats > div{min-width:0}
 .fa-subj-stats dt{font-size:12px;line-height:18px;color:var(--muted-2)}
-.fa-subj-stats dd{margin:2px 0 0;font-size:16px;line-height:24px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.fa-subj-stats dd{margin:2px 0 0;font-size:16px;line-height:26px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
 .fa-subj-stats .fa-score{flex-wrap:wrap;white-space:normal}
-.fa-subj-toggle{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;min-height:36px;padding:0;border:0;background:none;font:inherit;font-size:14px;line-height:22px;font-weight:500;color:var(--teal-500);cursor:pointer}
+.fa-subj-toggle{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;min-height:44px;padding:0;border:0;background:none;font:inherit;font-size:14px;line-height:22px;font-weight:500;color:var(--teal-500);cursor:pointer}
 .fa-subj-toggle:disabled{cursor:default;color:var(--ink)}
 .fa-subj-toggle:disabled .sa-acad-caret{display:none}
 .fa-subj-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px;border-radius:var(--radius-control)}
 .fa-subj-card .fa-chapter-list{padding:0}
-.fa-chapter-list--flat{padding:0 24px 12px;border-top:0}
+.fa-chapter-list--flat{padding:0 24px 16px;border-top:0}
 .fa-subj-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--band-none)}
 
 /* one-line notice (orange text = needs focus) */
@@ -308,12 +315,12 @@
 
 /* notifications grouped by day */
 .fa-day + .fa-day{border-top:1px solid var(--line-soft)}
-.fa-day-h{margin:0;padding:12px 24px 4px;font-size:12px;line-height:18px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+.fa-day-h{margin:0;padding:12px 24px 4px;font-size:12px;line-height:18px;font-weight:500;color:var(--muted-2)}
 .fa-notes{list-style:none;margin:0;padding:0}
-.fa-notes li{display:flex;align-items:center;gap:16px;padding:12px 24px}
+.fa-notes li{display:flex;align-items:center;gap:16px;padding:16px 24px}
 .fa-notes li + li{border-top:1px solid var(--line-soft)}
 .fa-note-main{flex:1;min-width:0;display:flex;flex-direction:column}
-.fa-note-main b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.fa-note-main b{font-size:16px;line-height:26px;font-weight:500;color:var(--ink)}
 .fa-note-main small{font-size:14px;line-height:22px;color:var(--ink-2);overflow-wrap:anywhere}
 .fa-note-main small.fa-note-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;line-height:18px;color:var(--muted-2)}
 .fa-notes .sp-link{flex:none;display:inline-flex;align-items:center;gap:4px}
@@ -358,7 +365,7 @@
   .fa-tabs-fit .pm-tabs{display:grid;overflow:visible}
   .fa-tabs-fit--3 .pm-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
   .fa-tabs-fit--2x2 .pm-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .fa-tabs-fit .pm-tabs .tab{padding:12px 4px;text-align:center;font-size:14px}
+  .fa-tabs-fit .pm-tabs .tab{padding:12px 4px;text-align:center;font-size:14px;line-height:22px}
   .fa-tabs-fit .pm-tabs .tab .ct{margin-left:4px;padding:0 6px}
   .fa-risk-nums{padding-left:0}
 }
@@ -374,79 +381,77 @@
   .fa-page .fa-link-tap{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
 }
 
-/* ---- quirri-b2c-student-ui deep audit (15 Oct 2026): HOD / Faculty pages ---- */
-/* Hero eyebrow: quiet uppercase label on teal (no pill) */
-.q-app-shell .fa-page .banner-eyebrow{background:none;padding:0;border:0;border-radius:0;color:rgba(255,255,255,.78)}
-/* KPI "needs attention" number: danger red, not orange (orange = the one primary action) */
-.q-app-shell .fa-page .sd-kpi-v.is-focus{color:#d34141}
-/* Status in lists = text + 6px dot (no pill chips) */
-.q-app-shell .fa-page :is(.dv-band,.fa-reason){height:auto;min-height:0;padding:0;background:none;border-radius:0;display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:18px;font-weight:500}
-.q-app-shell .fa-page :is(.dv-band,.fa-reason)::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
-.q-app-shell .fa-page .fa-reason{color:#d34141}
-.q-app-shell .fa-page .fa-reasons{gap:4px 14px}
-.q-app-shell .fa-page .sp-pill:has(> .un-dot){height:auto;min-height:0;padding:0;background:none;border:0;border-radius:0;font-size:12px;font-weight:500;gap:6px}
-.q-app-shell .fa-page .sp-pill:has(> .un-dot) > .un-dot{width:6px;height:6px}
-/* Empty / loading / error: muted line inside the card; on the canvas it becomes a white card */
-.q-app-shell .fa-page .sd-state{background:transparent;border:0;border-radius:6px;color:var(--sb-muted)}
-.q-app-shell .fa-page .sd-state b{color:var(--sb-ink);font-weight:600}
-.q-app-shell .fa-page > .sd-state,.q-app-shell .fa-page .pm-tabpanel > .sd-state{background:#fff;box-shadow:var(--sb-shadow)}
-.q-app-shell .fa-page .sd-state--err > .sd-i{color:#d34141}
+/* ---- Faculty chrome (Prep + Brand): tokens, 400/500, 8px cards ---- */
+.q-app-shell .fa-page .banner-eyebrow{background:none;padding:0;border:0;border-radius:0;color:var(--on-brand-muted)}
+.q-app-shell .fa-page .sd-kpi-v.is-focus{color:var(--accent-text)}
+.q-app-shell .fa-page :is(.dv-band,.fa-reason){height:auto;min-height:0;padding:0;background:none;border-radius:0;display:inline-flex;align-items:center;gap:8px;font-size:12px;line-height:18px;font-weight:500}
+.q-app-shell .fa-page :is(.dv-band,.fa-reason)::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.q-app-shell .fa-page .fa-reason{color:var(--accent-text)}
+.q-app-shell .fa-page .fa-reasons{gap:4px 12px}
+.q-app-shell .fa-page .sp-pill:has(> .un-dot){height:auto;min-height:0;padding:0;background:none;border:0;border-radius:0;font-size:12px;line-height:18px;font-weight:500;gap:8px}
+.q-app-shell .fa-page .sp-pill:has(> .un-dot) > .un-dot{width:8px;height:8px}
+.q-app-shell .fa-page .sd-state{background:transparent;border:0;border-radius:var(--radius-card);color:var(--muted-2)}
+.q-app-shell .fa-page .sd-state b{color:var(--ink);font-weight:500}
+.q-app-shell .fa-page > .sd-state,
+.q-app-shell .fa-page .pm-tabpanel > .sd-state{background:var(--neutral-0);box-shadow:var(--shadow-card)}
+.q-app-shell .fa-page .sd-state--err > .sd-i{color:var(--color-error)}
 .q-app-shell .fa-page .sd-btn .sd-i{color:currentColor}
-/* 404 / no-access: centred muted sentence + one teal text button back */
-.q-app-shell .fa-page .fa-missing{display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 20px;text-align:center;background:#fff;border-radius:6px;box-shadow:var(--sb-shadow)}
-.q-app-shell .fa-page .fa-missing b{font-size:18px;line-height:26px;font-weight:600;color:var(--sb-ink)}
-.q-app-shell .fa-page .fa-missing p{margin:0;max-width:52ch;font-size:14px;line-height:22px;color:var(--sb-muted)}
-.q-app-shell .fa-page .fa-missing a{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-top:4px;color:var(--sb-teal);font-weight:600;text-decoration:none}
+.q-app-shell .fa-page .fa-missing{display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 24px;text-align:center;background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.q-app-shell .fa-page .fa-missing b{font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.q-app-shell .fa-page .fa-missing p{margin:0;max-width:52ch;font-size:14px;line-height:22px;color:var(--muted-2)}
+.q-app-shell .fa-page .fa-missing a{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:4px;color:var(--teal-500);font-weight:500;text-decoration:none}
 .q-app-shell .fa-page .fa-missing a:hover{text-decoration:underline}
-.q-app-shell .fa-page .fa-missing a:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px;border-radius:6px}
-/* Subjects: no card chrome inside the Subjects card — hairline-separated sections */
-.q-app-shell .fa-page .fa-subj-grid{gap:0 32px}
-.q-app-shell .fa-page .fa-subj-card{border:0;border-radius:0;padding:20px 0;background:none;box-shadow:none}
-.q-app-shell .fa-page .fa-subj-grid > .fa-subj-card:first-child{padding-top:0}
-.q-app-shell .fa-page .fa-subj-grid:not(.is-single) > .fa-subj-card:nth-child(2){padding-top:0}
-.q-app-shell .fa-page .fa-subj-grid > .fa-subj-card:nth-child(n+2){border-top:1px solid var(--sb-hairline)}
-.q-app-shell .fa-page .fa-subj-grid:not(.is-single) > .fa-subj-card:nth-child(2){border-top:0}
-.q-app-shell .fa-page .fa-subj-grid > .fa-subj-card:last-child{padding-bottom:0}
-@media (max-width:760px){
-  .q-app-shell .fa-page .fa-subj-grid:not(.is-single) > .fa-subj-card:nth-child(2){border-top:1px solid var(--sb-hairline);padding-top:20px}
-}
-/* Teal text links + scores; panel links readable */
-.q-app-shell .fa-page .sp-link{color:var(--sb-teal);font-weight:600}
-.q-app-shell .fa-page .fa-go{background:var(--sb-wash);color:var(--sb-teal)}
-/* Light rows: hover #fafafa */
-.q-app-shell .fa-page :is(.fa-queue a,.fa-risk a,.fa-risk button):hover{background:#fafafa}
+.q-app-shell .fa-page .fa-missing a:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px;border-radius:var(--radius-control)}
+.q-app-shell .fa-page .sp-link{color:var(--teal-500);font-weight:500}
+.q-app-shell .fa-page .fa-go{background:var(--teal-50);color:var(--teal-500)}
+.q-app-shell .fa-page :is(.fa-queue a,.fa-risk a,.fa-risk button):hover{background:var(--surface-tint)}
 @media (max-width:760px){
   .q-app-shell .fa-page .fa-notes .fa-note-main{flex:1 1 calc(100% - 56px)}
   .q-app-shell .fa-page .fa-notes .sp-link{min-height:44px}
+  .q-app-shell .fa-page .fa-subj-card{padding:16px}
 }
-/* Loading line inside a dialog: no card chrome inside the white dialog */
-.q-app-shell .modal .fa-loading{box-shadow:none;background:var(--sb-wash,#e8f2f4);border-radius:6px}
-/* Empty state rendered straight in a panel body (bodyClassName=""): keep the card padding */
-.q-app-shell .fa-page .sp-panel > .ad-empty{padding:20px 24px}
-.q-app-shell .fa-page .ad-empty-ic{border-radius:50%;background:var(--sb-wash);color:var(--sb-teal)}
+.q-app-shell .modal .fa-loading{box-shadow:none;background:var(--teal-50);border-radius:var(--radius-card)}
+.q-app-shell .fa-page .sp-panel > .ad-empty{padding:var(--qs-card-pad,24px)}
+.q-app-shell .fa-page .ad-empty-ic{border-radius:50%;background:var(--teal-50);color:var(--teal-500)}
 @media (max-width:760px){.q-app-shell .fa-page .sp-panel > .ad-empty{padding:16px}}
 
-/* ---- QA clean pass (20 Oct 2026): one solid teal block per screen ----
-   Dashboard hero side panel (white card globally, Agent 1): each count is a link row to its review list. */
+/* Dashboard hero side (white card): count rows link to the matching review list. */
 .q-app-shell .fa-page .fa-hero-counts{gap:0}
 .q-app-shell .fa-page .fa-hero-counts li{display:block;padding:0;border-radius:0;background:none}
-.q-app-shell .fa-page .fa-hero-counts li + li{border-top:1px solid var(--sb-hairline)}
-.q-app-shell .fa-page .fa-hero-counts a{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 4px;color:#334155;font-size:15px;line-height:22px;text-decoration:none;border-radius:6px;transition:background-color .2s ease-out}
-.q-app-shell .fa-page .fa-hero-counts a:hover{background:#fafafa}
-.q-app-shell .fa-page .fa-hero-counts a:focus-visible{outline:2px solid var(--sb-teal);outline-offset:-2px}
-.q-app-shell .fa-page .fa-hero-counts b{font-size:22px;line-height:28px;font-weight:600;color:var(--sb-teal)}
-/* Card-head links (See all, Videos / MCQs) stay on the title row on phones instead of dropping under the subtitle */
+.q-app-shell .fa-page .fa-hero-counts li + li{border-top:1px solid var(--line)}
+.q-app-shell .fa-page .fa-hero-counts a{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 4px;color:var(--ink-2);font-size:15px;line-height:22px;text-decoration:none;border-radius:var(--radius-control);transition:background-color .2s ease-out}
+.q-app-shell .fa-page .fa-hero-counts a:hover{background:var(--surface-tint)}
+.q-app-shell .fa-page .fa-hero-counts a:focus-visible{outline:2px solid var(--teal-500);outline-offset:-2px}
+.q-app-shell .fa-page .fa-hero-counts b{font-size:22px;line-height:30px;font-weight:500;color:var(--teal-500)}
 @media (max-width:760px){
   .q-app-shell:not(.q-student) .fa-page .sp-panel-h:has(> .sp-link, > .fa-panel-links){flex-wrap:nowrap}
   .q-app-shell:not(.q-student) .fa-page .sp-panel-h:has(> .sp-link, > .fa-panel-links) > div{flex:1;min-width:0}
 }
-/* Modern cards (modern-cards-plan.md, 21 Oct 2026): ring meters replace the bar meters; the subject pipeline donut stays compact on a wide single card. */
 .fa-risk-nums{align-items:start}
 .fa-risk-nums dd{min-height:44px}
 .fa-subj-pipe{max-width:560px}
-/* A short list beside a donut card keeps its own height instead of stretching half-empty. */
-.fa-page .dv-grid.fa-grid-top{align-items:start}
-/* Phone: the band pill under "Quiz average" collided with "Tutor questions" (the shell :is() rule out-ranked the 480px hide). */
+.fa-page .dv-grid.fa-grid-top{align-items:stretch}
 @media (max-width:480px){
   .q-app-shell .fa-page .fa-risk-nums .dv-band{display:none}
 }
+
+/* Settings + analytics (shared shells) — Faculty/HOD only */
+.q-faculty .as-page .as-card-h h2,
+.q-faculty .as-who b,
+.q-faculty .as-row-main b,
+.q-faculty .as-avatar{font-weight:500}
+.q-faculty .as-page .as-card-h p,
+.q-faculty .as-who span,
+.q-faculty .as-row-main span,
+.q-faculty .as-page .as-note,
+.q-faculty .as-signin-ip,
+.q-faculty .as-forgot{color:var(--muted-2);line-height:22px}
+.q-faculty .as-dl dt{font-size:12px;line-height:18px;color:var(--muted-2)}
+.q-faculty .as-dl dd{font-size:14px;line-height:22px;color:var(--ink)}
+.q-faculty .as-who .as-role{font-size:14px;line-height:22px}
+.q-faculty .as-grid{gap:16px 24px}
+.q-faculty .as-head{gap:16px}
+.q-faculty .as-grid .field input:disabled{background:var(--neutral-50);color:var(--muted-2)}
+.q-faculty .as-avatar{background:var(--teal-500);color:var(--neutral-0)}
+.q-faculty .ad-analytics{gap:var(--qs-section,32px)}
+.q-faculty .ad-analytics .dv-grid{gap:var(--qs-gap,24px)}

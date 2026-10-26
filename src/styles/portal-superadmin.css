@@ -4,7 +4,7 @@
    ========================================================================== */
 
 /* ---- shared helpers (.sa-*) ---- */
-.sa-grid{gap:24px}
+.sa-grid{gap:var(--qs-gap,24px)}
 .sa-card-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .un-card-stats b.sa-stat-text{font-size:14px;line-height:30px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sa-grid .un-card-main{flex:1}
@@ -20,9 +20,8 @@
 
 /* ---- dashboard ---- */
 .sa-kpis--5{grid-template-columns:repeat(5,minmax(0,1fr))}
-.sa-cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:start}
-.sa-cols > .sp-panel{height:100%}
-.sa-empty{display:flex;align-items:flex-start;gap:16px;padding:24px}
+.sa-cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--qs-gap,24px);align-items:start}
+.sa-empty{display:flex;align-items:flex-start;gap:16px;padding:var(--qs-card-pad,24px)}
 .sa-empty-ic{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--teal-50);color:var(--teal-300)}
 .sa-empty b{display:block;font-size:16px;line-height:26px;font-weight:500;color:var(--ink)}
 .sa-empty p{margin:2px 0 0;max-width:48ch;font-size:14px;line-height:22px;color:var(--muted-2)}
@@ -35,12 +34,12 @@
 .sa-progress{display:flex;align-items:center;gap:12px;min-width:160px}
 .sa-progress .bar{flex:1}
 .sa-progress small{width:40px;text-align:right;font-size:12px;line-height:18px;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.sa-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.sa-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--qs-gap,24px)}
 .sa-shortcut{display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card);color:inherit;text-decoration:none;transition:box-shadow .2s ease-out}
 .sa-shortcut:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
 .sa-shortcut:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
 .sa-shortcut-t{flex:1;min-width:0}
-.sa-shortcut-t b{display:block;font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.sa-shortcut-t b{display:block;font-size:16px;line-height:26px;font-weight:500;color:var(--ink)}
 .sa-shortcut-t small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
 .sa-shortcut .sa-shortcut-go{color:var(--muted-2)}
 .sa-shortcut:hover .sa-shortcut-go{color:var(--teal-500)}
@@ -53,12 +52,13 @@
 }
 @media (max-width:760px){
   .sa-kpis--5,.sa-shortcuts{grid-template-columns:1fr}
-  .sa-shortcuts,.sa-cols{gap:16px}
+  .sa-shortcuts,.sa-cols,.sa-page .un-grid{gap:var(--qs-gap,16px)}
 }
+.sa-dash .sd-kpis,.sa-page .sd-kpis,.sa-page .un-grid{gap:var(--qs-gap,24px)}
 .sa-dash .q-hero-split{margin-bottom:0}
 .sa-table-tight th,.sa-table-tight td{padding-left:16px;padding-right:16px}
-.sa-table-tight th:first-child,.sa-table-tight td:first-child{padding-left:24px}
-.sa-table-tight th:last-child,.sa-table-tight td:last-child{padding-right:24px}
+.sa-table-tight th:first-child,.sa-table-tight td:first-child{padding-left:var(--qs-card-pad,24px)}
+.sa-table-tight th:last-child,.sa-table-tight td:last-child{padding-right:var(--qs-card-pad,24px)}
 .sa-page .sp-panel-h .sp-link{white-space:nowrap;flex:none}
 .sa-err-text{color:var(--color-error)}
 .sa-kpi-unit{font-size:14px;line-height:22px;font-weight:400;color:var(--ink-2);margin-left:2px}
@@ -66,14 +66,14 @@
 .sp-row-ic.sa-svc-ic--amber{background:var(--warning-soft);color:var(--accent-text)}
 .sp-row-ic.sa-svc-ic--muted{background:var(--teal-50);color:var(--teal-400)}
 .sp-row-ic.sa-svc-ic--red{background:var(--error-soft);color:var(--color-error)}
-.sa-page .sp-rows .sp-row{padding:16px 24px}
+.sa-page .sp-rows .sp-row{padding:16px var(--qs-card-pad,24px)}
 
 /* ---- settings (Prep: underline tabs + account card + side card) ---- */
 .sa-settings .tabs{margin-bottom:0}
-.sa-account-h{padding:24px;border-bottom:1px solid var(--line-soft)}
+.sa-account-h{padding:var(--qs-card-pad,24px);border-bottom:1px solid var(--line-soft)}
 .sa-account-who{flex:1;min-width:0}
 .sa-account-who b,.sa-account-who small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sa-account-b{padding:24px;display:flex;flex-direction:column;gap:16px}
+.sa-account-b{padding:var(--qs-card-pad,24px);display:flex;flex-direction:column;gap:16px}
 .sa-fieldset{border:0;padding:0;margin:0;min-width:0}
 .sa-account-sec{margin-bottom:16px}
 .sa-account-b > .sa-account-sec{margin-bottom:0}
@@ -98,7 +98,7 @@
   .sa-page .pm-filter .un-seg .sp-tab{flex:0 0 auto;justify-content:center;padding:0 10px}
   .sa-account-who{flex:1 1 calc(100% - 80px)}
   .sa-account-h .sp-pill{margin-left:80px}
-  .sa-page .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .sa-page .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--qs-gap,16px)}
   .sa-page .sd-kpis.pm-kpis--3{grid-template-columns:1fr}
   .sa-page .sp-table-wrap > table{min-width:640px}
 }
@@ -123,8 +123,8 @@
 .sa-shell .q-hero-side__badge::before{content:"";width:8px;height:8px;border-radius:var(--radius-full);background:var(--progress)}
 
 /* Inactive / deactivated is a state, not an error: neutral pill (red stays for real failures) */
-.sp-pill.sp-pill--off{background:var(--neutral-100);color:var(--muted)}
-.sp-pill.sp-pill--off::before{background:var(--muted-2)}
+.sp-pill.sp-pill--off{background:var(--teal-50);color:var(--teal-700)}
+.sp-pill.sp-pill--off::before{background:var(--band-none)}
 /* Orange words only for "missing" - an assigned HOD reads in ink */
 .un-card-stats > div:nth-child(2) b.sa-stat-text.is-set{color:var(--ink)}
 .un-card-stats > div:nth-child(2):has(b.sa-stat-text.is-set){background:var(--surface-tint)}
@@ -138,41 +138,41 @@
 .sa-kpis--6{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:900px){.sa-kpis--6{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.sa-kpis--6{grid-template-columns:1fr}}
-.sa-bars .cmp.sa-topq{flex-wrap:wrap;row-gap:6px}
+.sa-bars .cmp.sa-topq{flex-wrap:wrap;row-gap:8px}
 .sa-bars .cmp.sa-topq .nm{width:100%;white-space:normal;overflow:visible;line-height:20px}
 .sa-bars .cmp.sa-topq .nm small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
 /* Academic structure (/superadmin/academics) */
-.sa-acad-grid{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:20px;align-items:start}
+.sa-acad-grid{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:var(--qs-gap,24px);align-items:start}
 .sa-acad-list{list-style:none;margin:0;padding:8px;display:flex;flex-direction:column;gap:4px;max-height:640px;overflow:auto}
-.sa-acad-prog{width:100%;text-align:left;display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:var(--radius-control);border:1px solid transparent;background:none;cursor:pointer;font:inherit;color:var(--ink)}
+.sa-acad-prog{width:100%;text-align:left;display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:var(--radius-control);border:1px solid transparent;background:none;cursor:pointer;font:inherit;color:var(--ink)}
 .sa-acad-prog:hover{background:var(--surface-tint)}
 .sa-acad-prog.is-on{background:var(--teal-50);border-color:var(--teal-200)}
 .sa-acad-prog.is-off b{color:var(--muted)}
 .sa-acad-prog b{font-size:14px;line-height:22px;font-weight:500;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .sa-acad-prog small{font-size:12px;line-height:18px;color:var(--muted-2)}
 .sa-acad-prog .sp-pill{align-self:flex-start;margin-top:4px}
-.sa-acad-detail{padding:16px 20px 20px;display:flex;flex-direction:column;gap:16px}
+.sa-acad-detail{padding:var(--qs-card-pad,24px);display:flex;flex-direction:column;gap:16px}
 .sa-acad-sems{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
-.sa-acad-sem{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:8px 14px;border-radius:var(--radius-control);border:1px solid var(--line);background:var(--panel);cursor:pointer;font:inherit;font-size:14px;line-height:20px;font-weight:500;color:var(--ink)}
+.sa-acad-sem{flex:none;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:0;min-height:44px;padding:8px 16px;border-radius:var(--radius-control);border:1px solid var(--line);background:var(--panel);cursor:pointer;font:inherit;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
 .sa-acad-sem small{font-size:11px;line-height:16px;font-weight:400;color:var(--muted-2)}
 .sa-acad-sem.is-on{background:var(--select);border-color:var(--select);color:var(--select-on)}
 .sa-acad-sem.is-on small{color:var(--ink-2)}
 .sa-acad-sem.is-off{opacity:.6}
 .sa-acad-sem--add{flex-direction:row;align-items:center;gap:6px;border-style:dashed;color:var(--teal-500)}
 .sa-acad-semhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.sa-acad-semhead b{display:block;font-size:16px;line-height:24px;font-weight:500}
+.sa-acad-semhead b{display:block;font-size:16px;line-height:26px;font-weight:500}
 .sa-acad-semhead small{font-size:12px;line-height:18px;color:var(--muted-2)}
 .sa-acad-subjects{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .sa-acad-subject{border:1px solid var(--line);border-radius:var(--radius-control);background:var(--panel)}
 .sa-acad-subject.is-off{background:var(--neutral-50)}
 .sa-acad-subject-h{display:flex;align-items:center;gap:12px;padding:8px 12px}
-.sa-acad-subject-toggle{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 0;cursor:pointer;font:inherit;text-align:left;color:var(--ink)}
+.sa-acad-subject-toggle{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:none;border:0;padding:4px 0;cursor:pointer;font:inherit;text-align:left;color:var(--ink)}
 .sa-acad-subject-name{display:flex;flex-direction:column;min-width:0}
 .sa-acad-subject-name b{font-size:14px;line-height:22px;font-weight:500}
 .sa-acad-subject-name small{font-size:12px;line-height:18px;color:var(--muted-2)}
 .sa-acad-caret{display:inline-grid;place-items:center;color:var(--teal-500);transition:transform .15s}
 .sa-acad-caret.is-open{transform:rotate(90deg)}
-.sa-acad-chapters{border-top:1px solid var(--line-soft);padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.sa-acad-chapters{border-top:1px solid var(--line-soft);padding:12px 16px 16px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 .sa-acad-chapters ol{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column}
 .sa-acad-chapters li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
 .sa-acad-chapters li:last-child{border-bottom:0}
@@ -221,21 +221,21 @@
 .sa-filter-select{flex:0 1 220px;min-width:180px}
 .sa-filter-select--sm{flex-basis:170px;min-width:150px}
 .sa-filter-select .quirri-dd{width:100%}
-.sa-chip-toggle{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:var(--radius-control);border:1px solid var(--neutral-300);background:var(--panel);color:var(--ink-2);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.sa-chip-toggle{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--radius-control);border:1px solid var(--neutral-300);background:var(--panel);color:var(--ink-2);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
 .sa-chip-toggle:hover{border-color:var(--teal-300);color:var(--teal-500)}
 .sa-chip-toggle.is-on{background:var(--select);border-color:var(--select);color:var(--select-on)}
 .sa-chip-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
 .sa-range{width:200px}
 .sa-range .quirri-dd{width:100%}
 /* Freshness note: a muted line above the KPIs (only page actions sit in the header row). */
-.sa-page > .sa-live{margin:0 0 calc(12px - var(--qs-section, 32px));font-size:13px;line-height:20px;color:var(--muted-2)}
+.sa-page > .sa-live{margin:0 0 calc(8px - var(--qs-section, 32px));font-size:12px;line-height:18px;color:var(--muted-2)}
 
 /* Panel helpers */
-.sa-panel-state{padding:16px 24px}
-.sa-pad{padding:16px 24px}
+.sa-panel-state{padding:var(--qs-card-pad,24px)}
+.sa-pad{padding:var(--qs-card-pad,24px)}
 .sa-panel-foot{margin-top:16px;padding-top:12px;border-top:1px solid var(--line-soft);display:flex;justify-content:flex-end}
 /* Foot of a table / list panel (no body padding): inset like the card. */
-.sa-panel-foot.sa-panel-foot--pad{margin:0;padding:14px var(--qs-card-pad,24px)}
+.sa-panel-foot.sa-panel-foot--pad{margin:0;padding:16px var(--qs-card-pad,24px)}
 .sa-gap-top{margin-top:12px}
 .sa-link-btn{background:none;border:0;padding:0;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
 .sa-plain-link{color:inherit;text-decoration:none}
@@ -244,7 +244,7 @@
 .sa-actions-cell{width:1%;white-space:nowrap}
 .sa-inst{display:flex;flex-direction:column;gap:2px;min-width:0}
 .sa-inst small{font-size:12px;line-height:18px;color:var(--muted-2)}
-.sa-split{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;align-items:stretch}
+.sa-split{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--qs-gap,24px);align-items:stretch}
 .sa-split > .sd-kpis{margin:0}
 .sd-kpi-v.is-focus{color:var(--accent-text)}
 .sa-err-head{display:block;font-weight:500;overflow-wrap:anywhere}
@@ -263,9 +263,9 @@
 .sa-compare .sp-panel-h{flex-wrap:wrap;gap:12px}
 
 /* Health: one status strip coloured by the worst state */
-.sa-strip{display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card);border-left:4px solid var(--teal-500)}
+.sa-strip{display:flex;align-items:flex-start;gap:12px;padding:16px var(--qs-card-pad,24px);border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-card);border-left:4px solid var(--teal-500)}
 .sa-strip > div{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;min-width:0}
-.sa-strip b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink)}
+.sa-strip b{font-size:16px;line-height:26px;font-weight:500;color:var(--ink)}
 .sa-strip span{font-size:14px;line-height:22px;color:var(--ink-2)}
 .sa-strip .sd-i{margin-top:2px;flex:none}
 .sa-strip.is-green{border-left-color:var(--progress)}
@@ -275,7 +275,7 @@
 .sa-strip.is-red{border-left-color:var(--color-error)}
 .sa-strip.is-red .sd-i{color:var(--color-error)}
 .sa-svc-errs{display:flex;flex-direction:column;align-items:flex-end;flex:none;min-width:72px}
-.sa-svc-errs b{font-size:15px;line-height:22px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.sa-svc-errs b{font-size:16px;line-height:26px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
 .sa-svc-errs small{font-size:11px;line-height:16px;color:var(--muted-2);white-space:nowrap}
 .sa-svc-errs.is-on b{color:var(--accent-text)}
 
@@ -292,7 +292,7 @@
 /* Row action menu (kebab), portalled to body */
 .sa-kebab{color:var(--ink-2)}
 .sa-menu{position:fixed;z-index:90;padding:6px;border-radius:var(--radius-card);background:var(--panel);box-shadow:var(--shadow-1),var(--shadow-3);border:1px solid var(--line);display:flex;flex-direction:column}
-.sa-menu-item{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border:0;border-radius:var(--radius-control);background:none;font:inherit;font-size:14px;color:var(--ink);text-align:left;cursor:pointer}
+.sa-menu-item{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border:0;border-radius:var(--radius-control);background:none;font:inherit;font-size:14px;color:var(--ink);text-align:left;cursor:pointer}
 .sa-menu-item .sd-i{color:var(--teal-500)}
 .sa-menu-item:hover:not(:disabled),.sa-menu-item:focus-visible{background:var(--surface-tint);outline:none}
 .sa-menu-item.is-danger{color:var(--color-error)}
@@ -305,13 +305,13 @@
 /* Desktop: the one page action sits top-right of the record card, not on a row of its own. */
 @media (min-width:761px){
   .sa-page .pm-record{position:relative}
-  .sa-page .pm-record > .sa-record-actions{position:absolute;top:24px;right:24px;margin:0}
+  .sa-page .pm-record > .sa-record-actions{position:absolute;top:var(--qs-card-pad,24px);right:var(--qs-card-pad,24px);margin:0}
   .sa-page .pm-record:has(> .sa-record-actions) .pm-record-id{padding-right:200px}
 }
 .sa-tabrow{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .sa-tabrow > .pm-tabs{flex:1 1 auto;min-width:0;margin-bottom:0}
 .sa-people{list-style:none;margin:0;padding:0}
-.sa-people li{display:flex;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--line-soft);flex-wrap:wrap}
+.sa-people li{display:flex;align-items:center;gap:12px;padding:16px var(--qs-card-pad,24px);border-top:1px solid var(--line-soft);flex-wrap:wrap}
 .sa-people li:first-child{border-top:0}
 .sa-people-main{flex:1 1 200px;min-width:0;display:flex;flex-direction:column}
 .sa-people-main b{font-size:14px;line-height:22px;font-weight:500}
@@ -327,7 +327,7 @@
   .sa-page .sp-table-wrap > table.sa-stack{min-width:0}
   .sa-stack thead{display:none}
   .sa-stack,.sa-stack tbody,.sa-stack tr,.sa-stack td{display:block;width:100%}
-  .sa-stack tr{padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+  .sa-stack tr{padding:16px;border-bottom:1px solid var(--line-soft)}
   .sa-stack tr:last-child{border-bottom:0}
   .sa-stack td{padding:4px 0 !important;border:0 !important;text-align:left}
   .sa-stack td:first-child{padding-bottom:8px !important}
@@ -340,17 +340,17 @@
   .sa-stack tr.sa-err-detail td{padding:0 !important}
   .sa-filter-select,.sa-filter-select--sm{flex:1 1 100%;min-width:0}
   .sa-range{width:100%}
-  .sa-panel-state,.sa-pad{padding:12px 16px}
-  .sa-people li{padding:12px 16px}
+  .sa-panel-state,.sa-pad{padding:var(--qs-card-pad,16px)}
+  .sa-people li{padding:12px var(--qs-card-pad,16px)}
   .sa-svc-errs{min-width:0}
-  .sa-page .sp-rows .sp-row{flex-wrap:wrap;padding:14px 16px}
+  .sa-page .sp-rows .sp-row{flex-wrap:wrap;padding:16px}
   .sa-page .sd-kpis.sa-kpis--5{grid-template-columns:repeat(2,minmax(0,1fr))}
   .sa-page .sd-kpis.sa-kpis--5 > :last-child{grid-column:1 / -1}
 }
 /* ===== end recipe v2 ===== */
 .sa-meta-loc{display:inline-flex;align-items:center;gap:4px}
-.dv-empty.sa-pad{padding:16px 24px}
-@media (max-width:760px){.dv-empty.sa-pad{padding:12px 16px}}
+.dv-empty.sa-pad{padding:var(--qs-card-pad,24px)}
+@media (max-width:760px){.dv-empty.sa-pad{padding:var(--qs-card-pad,16px)}}
 .sa-inst > .sp-pill{align-self:flex-start}
 @media (max-width:760px){.sa-stack td[data-label] .sa-inst > .sp-pill{align-self:flex-end}}
 .sa-page .sa-attn-none{margin:0;font-size:14px;line-height:22px;color:var(--ink-2)}
@@ -361,41 +361,40 @@
 .sa-filter-select--wide{flex:1 1 220px;min-width:200px;max-width:300px}
 @media (max-width:760px){.sa-filter-select--wide{max-width:none}}
 /* ===== quirri-b2c-student-ui deep audit (15 Oct 2026) — Super Admin only, scoped to .sa-shell ===== */
-/* Dialogs + drawers: white, 8px, black 50% overlay, danger #d34141, one orange primary */
-.sa-shell .overlay.show,.sa-shell .un-drawer-wrap{background:rgba(0,0,0,.5)}
-.sa-shell .overlay .modal{border-radius:8px}
-.sa-shell :is(.un-btn-danger,.sd-btn--danger:not(.sd-btn--sm)){background:var(--sb-danger);color:#fff;border-color:transparent}
-.sa-shell.q-app-shell .un-drawer .sd-btn--teal{background:var(--sb-orange);color:#fff}
-.sa-shell.q-app-shell .un-drawer .sd-btn--teal:hover{background:var(--sb-orange-hover)}
+/* Dialogs + drawers: tokens, 16px panels, Ink overlay, one orange primary (amber, not teal) */
+.sa-shell .overlay.show,.sa-shell .un-drawer-wrap{background:rgba(16,34,40,.48)}
+.sa-shell .overlay .modal{border-radius:var(--radius-panel,16px)}
+.sa-shell :is(.un-btn-danger,.sd-btn--danger:not(.sd-btn--sm)){background:var(--color-error);color:var(--neutral-0);border-color:transparent}
 /* Dashboard comparison switch: text tabs, teal text + 2px teal underline (not a segmented pill) */
 .sa-shell .sa-compare .sp-panel-h .sp-tabs{background:transparent;border:0;padding:0;gap:4px;box-shadow:none;border-radius:0}
-.sa-shell .sa-compare .sp-panel-h .sp-tab{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--sb-muted);font-weight:500;min-height:36px;padding:0 10px;box-shadow:none}
-.sa-shell .sa-compare .sp-panel-h .sp-tab:hover{background:transparent;color:var(--sb-teal)}
-.sa-shell .sa-compare .sp-panel-h .sp-tab[aria-selected="true"]{background:transparent;color:var(--sb-teal);font-weight:600;border-bottom-color:var(--sb-teal)}
-.sa-shell .sa-compare .sp-panel-h .sp-tab:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+.sa-shell .sa-compare .sp-panel-h .sp-tab{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--muted-2);font-weight:500;min-height:44px;padding:0 12px;box-shadow:none}
+.sa-shell .sa-compare .sp-panel-h .sp-tab:hover{background:transparent;color:var(--teal-500)}
+.sa-shell .sa-compare .sp-panel-h .sp-tab[aria-selected="true"]{background:transparent;color:var(--teal-500);font-weight:500;border-bottom-color:var(--teal-500)}
+.sa-shell .sa-compare .sp-panel-h .sp-tab:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
 @media (max-width:640px){
   .sa-shell .sa-compare .sp-panel-h .sp-tabs{display:flex;flex-wrap:nowrap;width:100%;overflow-x:auto;grid-template-columns:none}
   .sa-shell .sa-compare .sp-panel-h .sp-tab{flex:none;min-height:44px}
 }
 /* Health status strip: a plain white card, the icon carries the state (no coloured left bar) */
-.sa-shell .sa-strip{border-left:0;box-shadow:var(--sb-shadow);border-radius:6px}
+.sa-shell .sa-strip{border-left:0;box-shadow:var(--shadow-card);border-radius:var(--radius-card)}
 /* Lists: status is text + a 6px dot, role is plain text (no rainbow pills) */
 .sa-shell .sp-table .sp-pill:has(> .un-dot){background:transparent;border:0;padding:0;height:auto;gap:6px;font-size:14px;font-weight:500}
 .sa-shell .sp-table .sp-pill:has(> .un-dot) .un-dot{width:6px;height:6px}
-.sa-shell .sp-table .sp-pill--good:has(> .un-dot){color:#15803d}
-.sa-shell .sa-role{background:transparent;padding:0;height:auto;font-size:14px;color:var(--sb-ink)}
+.sa-shell .sp-table .sp-pill--good:has(> .un-dot){color:var(--progress-text)}
+.sa-shell .sp-table .sp-pill--off:has(> .un-dot){color:var(--band-none-text)}
+.sa-shell .sa-role{background:transparent;padding:0;height:auto;font-size:14px;color:var(--ink)}
 /* Add / edit forms: sections are flat groups split by a hairline, not grey cards inside the dialog card */
-.sa-shell .modal .un-form-sec{background:transparent;border:0;border-radius:0;padding:0 0 20px;border-bottom:1px solid var(--sb-hairline)}
+.sa-shell .modal .un-form-sec{background:transparent;border:0;border-radius:0;padding:0 0 24px;border-bottom:1px solid var(--line)}
 .sa-shell .modal .un-form-sec:last-of-type{border-bottom:0;padding-bottom:0}
-/* Row action menu (portalled to body, so not under .sa-shell; Super Admin only): skill popover */
-.sa-menu{border-radius:6px;border:1px solid rgba(20,96,110,.15);box-shadow:0 1px 2px rgba(0,0,0,.25);z-index:200}
-.sa-menu-item{min-height:44px;border-radius:6px}
-.sa-menu-item .sd-i{color:#14606e}
-.sa-menu-item:hover:not(:disabled),.sa-menu-item:focus-visible{background:#e8f2f4}
-.sa-menu-item:focus-visible{outline:2px solid #14606e;outline-offset:-2px}
-.sa-menu-item.is-danger,.sa-menu-item.is-danger .sd-i{color:#d34141}
+/* Row action menu (portalled to body, so not under .sa-shell; Super Admin only) */
+.sa-menu{border-radius:var(--radius-card);border:1px solid var(--line);box-shadow:var(--shadow-1),var(--shadow-3);z-index:200}
+.sa-menu-item{min-height:44px;border-radius:var(--radius-control)}
+.sa-menu-item .sd-i{color:var(--teal-500)}
+.sa-menu-item:hover:not(:disabled),.sa-menu-item:focus-visible{background:var(--surface-tint)}
+.sa-menu-item:focus-visible{outline:2px solid var(--teal-500);outline-offset:-2px}
+.sa-menu-item.is-danger,.sa-menu-item.is-danger .sd-i{color:var(--color-error)}
 /* College page danger zone: a normal white card; the red lives on the Deactivate button only */
-.sa-shell .pm-danger{background:#fff;border:0;border-radius:6px;box-shadow:var(--sb-shadow)}
+.sa-shell .pm-danger{background:var(--panel);border:0;border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
 @media (max-width:640px){
   /* Drawer footers with 3 actions wrapped off-screen at 390: wrap, full-width rows, primary first */
   .sa-shell .un-drawer-foot{flex-wrap:wrap;padding:12px 16px}

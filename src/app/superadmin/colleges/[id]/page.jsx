@@ -49,7 +49,6 @@ function CollegeView() {
   const [tab] = useTabParam(TAB_KEYS, 'overview');
   const [url, setUrl] = useUrlState({ range: 'last_30_days' });
   const range = RANGES.some((r) => r.value === url.range) ? url.range : 'last_30_days';
-  const rangeLabel = RANGES.find((r) => r.value === range).label;
   const [editOpen, setEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -225,9 +224,9 @@ function CollegeView() {
         <KpiRow
           label="Learning summary"
           items={[
-            { icon: 'tick', label: 'Completion', value: learning ? (completion == null ? '—' : `${completion}%`) : null, sub: learning ? <BandPill score={completion} /> : rangeLabel },
-            { icon: 'chart', label: 'Quiz average', value: learning ? (avgScore == null ? '—' : `${avgScore}%`) : null, sub: learning ? <BandPill score={avgScore} /> : rangeLabel },
-            { icon: 'clock', label: 'Watch time', value: learning ? formatMinutes(learning.watch_minutes || 0) : null, sub: rangeLabel },
+            { icon: 'tick', label: 'Completion', value: learning ? (completion == null ? '—' : `${completion}%`) : null, sub: learning ? <BandPill score={completion} /> : null },
+            { icon: 'chart', label: 'Quiz average', value: learning ? (avgScore == null ? '—' : `${avgScore}%`) : null, sub: learning ? <BandPill score={avgScore} /> : null },
+            { icon: 'clock', label: 'Watch time', value: learning ? formatMinutes(learning.watch_minutes || 0) : null },
             { icon: 'chat', label: 'Q&A turns', value: learning ? formatCount(learning.qa || 0) : null, sub: `${formatCount(learning?.assessments || 0)} ${Number(learning?.assessments) === 1 ? 'quiz' : 'quizzes'} taken` },
           ]}
         />
@@ -246,7 +245,6 @@ function CollegeView() {
           </Panel>
           <Panel
             title="Seat usage"
-            sub="Students enrolled against the seat cap."
             className="mdc-card"
             action={s.cap ? <div className="mdc-chip"><small>Seat cap</small><b>{formatCount(s.cap)}</b></div> : null}
           >
@@ -280,7 +278,6 @@ function CollegeView() {
         {studentsByDept.length > 1 ? (
           <ModernDonutCard
             title="Students by department"
-            sub="Active departments, most students first."
             totalLabel="Total students"
             unit="Students"
             parts={studentsByDept}
@@ -328,7 +325,6 @@ function CollegeView() {
       <TabPanel value="admins" current={tab} idBase="college">
         <Panel
           title="College administrators"
-          sub="Each admin signs in with an activation link. Resend it if it has expired."
           bodyClassName={null}
         >
           {admins.length ? (
@@ -368,10 +364,10 @@ function CollegeView() {
       <TabPanel value="learning" current={tab} idBase="college">
         {deptReportLoading && !deptReport ? <SectionState title="Loading learning data…" /> : (
           <div className="dv-grid">
-            <MetricListCard title="Completion by department" sub={`Assigned chapters fully watched · ${rangeLabel.toLowerCase()}`} items={learningBars((r) => r.completion)} colorBy="band" format={formatPct} empty="No departments with published chapters yet." />
-            <MetricListCard title="Quiz average by department" sub={`Chapter quizzes · ${rangeLabel.toLowerCase()}`} items={learningBars(quizScore)} colorBy="band" format={formatPct} empty="No scored attempts in this range." />
-            <MetricListCard title="Q&A by department" sub={`Questions asked to the AI tutor · ${rangeLabel.toLowerCase()}`} items={learningBars((r) => r.qa)} empty="No questions in this range." />
-            <MetricListCard title="Watch time by department" sub={rangeLabel} items={learningBars((r) => r.watch_minutes)} format={formatMinutes} empty="No watch time in this range." />
+            <MetricListCard title="Completion by department" items={learningBars((r) => r.completion)} colorBy="band" format={formatPct} empty="No departments with published chapters yet." />
+            <MetricListCard title="Quiz average by department" items={learningBars(quizScore)} colorBy="band" format={formatPct} empty="No scored attempts in this range." />
+            <MetricListCard title="Q&A by department" items={learningBars((r) => r.qa)} empty="No questions in this range." />
+            <MetricListCard title="Watch time by department" items={learningBars((r) => r.watch_minutes)} format={formatMinutes} empty="No watch time in this range." />
           </div>
         )}
       </TabPanel>

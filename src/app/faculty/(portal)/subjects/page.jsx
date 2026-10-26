@@ -36,11 +36,11 @@ function Pill({ status }) {
 }
 
 const pipelineParts = (s) => [
-  // Tones (not CSS vars) so the SVG donut gets real colours. In progress = neutral grey (like "Generating" on SA content); No video = lighter grey so the two read apart.
+  // Tones (not CSS vars) so the SVG donut gets real colours. In progress = teal; no video = cyan so the two still read apart.
   { key: 'published', label: 'Published', value: s.published || 0, tone: 'good' },
   { key: 'in_review', label: 'In review', value: s.in_review || 0, tone: 'warn' },
   { key: 'in_progress', label: 'In progress', value: s.in_progress || 0, tone: 'neutral' },
-  { key: 'no_content', label: 'No video', value: s.no_content || 0, color: '#DDE2E5' },
+  { key: 'no_content', label: 'No video', value: s.no_content || 0, tone: 'cyan' },
 ];
 
 /** Subjects in scope with each chapter's content status and learning numbers (analytics, joined by id). */
@@ -195,7 +195,6 @@ export default function FacultySubjectsPage() {
       {unlinked.length ? (
         <Panel
           title="Not linked to a subject"
-          sub="Department content your College Admin hasn't placed under a subject yet."
           action={<Link className="sp-link" href="/faculty/videos">Open in Video review</Link>}
           bodyClassName=""
         >

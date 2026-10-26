@@ -190,7 +190,7 @@ export default function RolePortalSidebar({
               {menuLinks.map((it) => (
                 <Link key={it.href} href={it.href} role="menuitem" onClick={() => setMenuOpen(false)}>{it.label}</Link>
               ))}
-              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); handleLogout(); }}>Log out</button>
+              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); handleLogout(); }}>Sign out</button>
             </div>
           ) : null}
           <div className={`av${pending ? ' rps-sk' : ''}`}>{pending ? '' : initials}</div>
@@ -207,18 +207,21 @@ export default function RolePortalSidebar({
               </>
             )}
           </div>
-          <button
-            type="button"
-            className="logout"
-            onClick={handleLogout}
-            aria-label="Log out"
-            {...tipHandlers('Log out', sidebarOpen ? 'top' : 'right')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <path d="M16 17l5-5-5-5M21 12H9" />
-            </svg>
-          </button>
+          {/* One sign-out control: with an account menu, Sign out lives in the menu. */}
+          {menuLinks.length ? null : (
+            <button
+              type="button"
+              className="logout"
+              onClick={handleLogout}
+              aria-label="Sign out"
+              {...tipHandlers('Sign out', sidebarOpen ? 'top' : 'right')}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5M21 12H9" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

@@ -9,7 +9,7 @@
   --band-strong:#5CB414; --band-strong-soft:#EEF7E6; --band-strong-text:#46921A;
   --band-ok:#2C74E0;     --band-ok-soft:#E9F1FC;     --band-ok-text:#2C74E0;
   --band-focus:#F5821F;  --band-focus-soft:#FEF0E3;  --band-focus-text:var(--accent-text);
-  --band-none:#BCC1C3;   --band-none-soft:#F1F2F3;   --band-none-text:#536064;
+  --band-none:#4D8691;   --band-none-soft:#F1F5F6;   --band-none-text:#0B4B58;
   --rank-1:#F5821F; --rank-2:#2C74E0; --rank-3:#6C3CD8;
 }
 
@@ -53,7 +53,7 @@
 .stats > .stat:nth-child(6n+6) .k svg{background:var(--cat-6-soft);color:var(--cat-6);stroke:var(--cat-6)}
 
 /* ---------- Two-column analytics grid ---------- */
-.dv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
 .dv-grid--3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .dv-grid > .dv-span-2{grid-column:span 2}
 @media (max-width:1024px){
@@ -186,9 +186,9 @@
    .mdc = donut + legend (inside a panel body) · .mdc-card = full card (sp-panel chrome)
    Each legend row sets --mdc-c (slice colour); pills tint it at ~12%.
    ========================================================================== */
-.mdc{display:grid;gap:var(--qs-head-gap,20px);min-width:0;container-type:inline-size}
-.mdc-body{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:32px;min-width:0}
-.mdc:not(.mdc--compact) .mdc-body{grid-template-columns:auto minmax(0,520px);justify-content:start;column-gap:48px}
+.mdc{display:flex;flex-direction:column;gap:var(--qs-head-gap,20px);min-width:0;width:100%;container-type:inline-size}
+.mdc-body{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:32px;min-width:0;width:100%}
+.mdc:not(.mdc--compact) .mdc-body{grid-template-columns:auto minmax(0,1fr);justify-content:stretch;column-gap:48px}
 .mdc-ring{position:relative;flex:none;justify-self:center}
 .mdc-ring svg{display:block;width:100%;height:100%}
 .mdc-ring circle{transition:none}
@@ -197,19 +197,20 @@
 .mdc-ring-t small{font-size:13px;line-height:18px;color:var(--qs-muted,var(--muted))}
 
 /* Legend rows: dot · label · count · tinted % pill */
-.mdc-legend{display:grid;gap:10px;margin:0;padding:0;list-style:none;min-width:0}
-.mdc-legend li{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;align-items:center;gap:12px;min-height:48px;padding:10px 14px;border:1px solid var(--line,#e3e7ee);border-radius:var(--radius-card,6px);background:#fff;min-width:0}
+.mdc-legend{display:grid;gap:10px;margin:0;padding:0;list-style:none;min-width:0;width:100%}
+.mdc-legend li{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;align-items:center;gap:12px;min-height:48px;padding:10px 14px;border:1px solid var(--line,#e3e7ee);border-radius:var(--radius-card,8px);background:#fff;min-width:0;width:100%}
 .mdc-dot{width:10px;height:10px;border-radius:50%;background:var(--mdc-c);flex:none}
 .mdc-label{min-width:0;font-size:14px;line-height:20px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mdc-label a{color:inherit;text-decoration:none}
 .mdc-label a:hover{color:var(--teal-500);text-decoration:underline}
-.mdc-count{font-size:15px;line-height:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;min-width:32px}
-.mdc-pill{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;
+.mdc-count{font-size:15px;line-height:20px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;min-width:32px}
+.mdc-pill{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;
   background:color-mix(in srgb,var(--mdc-c) 13%,#fff);color:color-mix(in srgb,var(--mdc-c) 72%,#000)}
 .mdc-empty{margin:0;font-size:14px;color:var(--qs-muted,var(--muted))}
 .mdc-empty--list{padding:12px 0}
 
 /* Metric rows: label + optional sub, value pill only */
+.mdc-metrics{display:flex;flex-direction:column;gap:10px}
 .mdc-metrics li{grid-template-columns:10px minmax(0,1fr) auto}
 .mdc-metrics .mdc-label{display:grid;gap:2px}
 .mdc-metrics .mdc-label-t,.mdc-metrics .mdc-label small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -219,13 +220,13 @@
 /* Head chip: "Total departments  4" */
 .mdc-chip{display:grid;justify-items:end;gap:2px;flex:none;padding:8px 14px;border-radius:var(--radius-card,6px);background:var(--neutral-50,#F8F8F9);box-shadow:inset 0 0 0 1px var(--line,#e3e7ee);text-align:right}
 .mdc-chip small{font-size:12px;line-height:16px;color:var(--qs-muted,var(--muted));white-space:nowrap}
-.mdc-chip b{font-size:20px;line-height:24px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.mdc-chip b{font-size:22px;line-height:30px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* Info note strip + teal links */
-.mdc-note{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--radius-card,6px);background:var(--sb-wash,#e8f2f4);color:var(--teal-500,#0E5C6B)}
+.mdc-note{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--radius-card,8px);background:var(--sb-wash,#e8f2f4);color:var(--teal-500,#0E5C6B)}
 .mdc-note-i{flex:none;margin-top:1px}
 .mdc-note p{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;flex:1 1 auto;min-width:0;font-size:14px;line-height:20px;color:var(--ink-2,var(--ink))}
-.mdc-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;line-height:20px;font-weight:600;color:var(--teal-500,#0E5C6B);text-decoration:none;white-space:nowrap}
+.mdc-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;line-height:20px;font-weight:500;color:var(--teal-500,#0E5C6B);text-decoration:none;white-space:nowrap}
 .mdc-link:hover{text-decoration:underline}
 .mdc-link:focus-visible{outline:2px solid var(--teal-500,#0E5C6B);outline-offset:2px;border-radius:2px}
 .mdc-foot{display:flex;justify-content:flex-end}
@@ -235,12 +236,12 @@
 .mdc--compact .mdc-body{gap:24px}
 .mdc--compact .mdc-ring-t b{font-size:22px;line-height:26px}
 .mdc--compact .mdc-ring-t small{font-size:12px;line-height:16px}
-.mdc--compact .mdc-legend{gap:6px;max-width:360px}
+.mdc--compact .mdc-legend{gap:6px;max-width:none;width:100%}
 .mdc--compact .mdc-legend li{grid-template-columns:10px minmax(0,1fr) auto;min-height:32px;padding:4px 0;border:0;border-radius:0;background:none}
 .mdc--compact .mdc-count{font-size:14px}
 .mdc--compact .mdc-pct-txt{font-weight:400;color:var(--qs-muted,var(--muted))}
 
-/* Empty state keeps the grey ring and puts the message where the legend goes */
+/* Empty state keeps the canvas ring track and puts the message where the legend goes */
 .mdc--empty .mdc-ring-t b{color:var(--qs-muted,var(--muted))}
 
 /* Narrow cards (half-width at 1024–1280): smaller ring; very narrow cards and phones stack the ring on top */

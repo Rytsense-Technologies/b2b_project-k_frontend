@@ -649,7 +649,7 @@ function StaffWorkspace() {
           </SectionState>
         ) : null}
         <div className="dv-grid ad-cover-grid">
-          <Panel title="Subjects with a teacher" sub="Share of each department's subjects that have at least one staff member">
+          <Panel title="Subjects with a teacher">
             {coverage ? (
               <MetricList
                 label="Subjects with a teacher by department"
@@ -666,7 +666,6 @@ function StaffWorkspace() {
           </Panel>
           <Panel
             title="Subjects without a teacher"
-            sub="On the Staff tab, use Assign subjects on a staff member's row or record"
             bodyClassName={null}
           >
             {!coverage ? (

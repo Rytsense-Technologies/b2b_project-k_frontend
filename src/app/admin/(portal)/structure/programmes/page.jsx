@@ -28,8 +28,10 @@ function Workspace() {
 /** College Admin: programmes, semesters, subjects and chapters of their own college. */
 export default function CollegeProgrammesPage() {
   return (
-    <Suspense fallback={<SectionState title="Loading academic structure…" />}>
-      <Workspace />
-    </Suspense>
+    <div className="ad-page">
+      <Suspense fallback={<SectionState title="Loading academic structure…" />}>
+        <Workspace />
+      </Suspense>
+    </div>
   );
 }

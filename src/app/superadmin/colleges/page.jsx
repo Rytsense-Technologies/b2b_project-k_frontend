@@ -16,7 +16,7 @@ import { collegesApi, universitiesApi, departmentsApi, fetchData } from '@/lib/a
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
-import { useUrlState } from '@/hooks/useUrlState';
+import { useUrlState, writeAppUrl } from '@/hooks/useUrlState';
 import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
 } from '@/lib/superadmin/listState';
@@ -122,7 +122,7 @@ function CollegesView() {
     openCreate(params.get('university') || '');
     params.delete('new');
     const rest = params.toString();
-    window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`);
+    writeAppUrl(`${window.location.pathname}${rest ? `?${rest}` : ''}`);
   }, [openCreate]);
 
   const openEdit = (college) => {
@@ -267,12 +267,11 @@ function CollegesView() {
 
       {studentBars.length > 1 ? (
         <div className="dv-grid">
-          <Panel title="Students by college" sub="Active colleges, most students first. Open one for its page.">
+          <Panel title="Students by college">
             <MetricList label="Students by college" items={studentBars} />
           </Panel>
           <Panel
             title="Seat usage"
-            sub={`Students enrolled against seat caps · ${scope}`}
             className="mdc-card"
             action={seat.cap ? <div className="mdc-chip"><small>Total seats</small><b>{num(seat.cap)}</b></div> : null}
           >
@@ -292,7 +291,7 @@ function CollegesView() {
 
       <Panel
         title={url.status === 'true' ? 'Active colleges' : url.status === 'false' ? 'Inactive colleges' : 'All colleges'}
-        sub={data ? `${num(shownCount)} ${shownCount === 1 ? 'college' : 'colleges'}${filtersOn ? ' match these filters' : ''}${nearCap && total > pageRows.length ? ' on this page' : ''}` : null}
+        sub={data ? `${num(shownCount)} ${shownCount === 1 ? 'college' : 'colleges'}` : null}
         bodyClassName={null}
         toolbar={(
           <>

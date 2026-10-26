@@ -8,20 +8,20 @@
    ========================================================================= */
 
 .app.q-app-shell:not(.q-student){
-  --sb-teal:#14606e; --sb-teal-deep:#0e5c6b; --sb-orange:#f5821f; --sb-orange-hover:#e2761c;
-  --sb-ink:#102228; --sb-muted:#707a7e; --sb-wash:#e8f2f4; --sb-search:#dde8ea;
-  --sb-secondary:#5a7c85; --sb-hairline:#e3e7ee; --sb-danger:#d34141; --sb-canvas:#efefef;
-  --sb-shadow:0 1px 2px rgba(0,0,0,.25); --sb-shadow-row:0 1px 2px rgba(0,0,0,.12);
+  --sb-teal:var(--teal-500); --sb-teal-deep:var(--teal-500); --sb-orange:var(--accent); --sb-orange-hover:var(--accent-hover);
+  --sb-ink:var(--ink); --sb-muted:var(--neutral-500); --sb-wash:var(--teal-50); --sb-search:var(--teal-100);
+  --sb-secondary:var(--teal-400); --sb-hairline:var(--neutral-200); --sb-danger:var(--color-error); --sb-canvas:var(--canvas);
+  --sb-shadow:var(--shadow-1); --sb-shadow-row:var(--shadow-1);
 
-  --canvas:var(--sb-canvas); --bg:var(--sb-canvas); --ink:var(--sb-ink); --muted-2:var(--sb-muted);
-  --line:var(--sb-hairline); --accent:var(--sb-orange); --accent-hover:var(--sb-orange-hover);
-  --radius-card:6px; --radius:6px; --radius-md:6px; --radius-control:6px;
-  --shadow-1:var(--sb-shadow); --shadow-card:var(--sb-shadow);
+  --canvas:var(--neutral-100); --bg:var(--neutral-100); --ink:var(--neutral-900); --muted-2:var(--neutral-500);
+  --line:var(--neutral-200);
+  --radius-card:8px; --radius:8px; --radius-md:8px; --radius-control:6px;
+  --shadow-1:0 1px 2px rgba(16,34,40,.06); --shadow-card:var(--shadow-1),0 4px 12px rgba(16,34,40,.08);
   --sidebar:286px; --sidebar-collapsed:69px;
   /* Selected tab / filter / segment: teal text, teal underline, wash block */
-  --select:var(--sb-wash); --select-hover:#dbe9ec; --select-on:var(--sb-teal);
+  --select:var(--sb-wash); --select-hover:var(--teal-100); --select-on:var(--sb-teal);
   --select-line:var(--sb-teal); --select-soft:var(--sb-wash); --select-text:var(--sb-teal);
-  --font:var(--font-student),"Noto Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --font:var(--font-portal),Poppins,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --font-display:var(--font);
   background:var(--sb-canvas); color:var(--sb-ink); font-family:var(--font);
 }
@@ -33,7 +33,7 @@
 .q-app-shell:not(.q-student) .sidebar.is-collapsed .nav{padding-left:8px;padding-right:8px}
 .q-app-shell:not(.q-student) .nav a{color:var(--sb-ink);font-weight:500;font-size:15px;padding:8px 20px;min-height:44px;border-radius:6px}
 .q-app-shell:not(.q-student) .nav a:hover{background:var(--sb-wash);color:var(--sb-teal)}
-.q-app-shell:not(.q-student) .nav a.active{background:var(--sb-wash);color:var(--sb-teal);font-weight:600}
+.q-app-shell:not(.q-student) .nav a.active{background:var(--sb-wash);color:var(--sb-teal);font-weight:500}
 .q-app-shell:not(.q-student) .nav a.active svg{stroke:var(--sb-teal)}
 .q-app-shell:not(.q-student) .nav a .nav-ico svg{width:16px;height:16px}
 .q-app-shell:not(.q-student) .nav-label{color:var(--sb-muted)}
@@ -42,20 +42,20 @@
   border-radius:0;background:transparent;box-shadow:none;
 }
 .q-app-shell:not(.q-student) .sidebar .tenant-box .mark{background:var(--sb-wash);color:var(--sb-teal);border-radius:50%}
-.q-app-shell:not(.q-student) .sidebar .tenant-box .nm{font-weight:600}
+.q-app-shell:not(.q-student) .sidebar .tenant-box .nm{font-weight:500}
 .q-app-shell:not(.q-student) .sidebar.is-collapsed .tenant-box{margin:0 8px 8px;padding:8px 0 12px}
 .q-app-shell:not(.q-student) .sidebar .side-foot{border-top:1.5px solid rgba(20,96,110,.25)}
 .q-app-shell:not(.q-student) .sidebar .who{border:0;box-shadow:none;background:transparent;padding:8px 4px}
 .q-app-shell:not(.q-student) .sidebar .who:hover{background:var(--sb-wash)}
 .q-app-shell:not(.q-student) .sidebar .who .av{background:var(--sb-teal);color:#fff}
-.q-app-shell:not(.q-student) .sidebar .who .n{font-weight:600;color:var(--sb-ink)}
+.q-app-shell:not(.q-student) .sidebar .who .n{font-weight:500;color:var(--sb-ink)}
 .q-app-shell:not(.q-student) .sidebar .who .r{color:var(--sb-muted);font-size:12px}
 
 /* ---------- Page header on the canvas ---------- */
 /* QA clean pass (20 Oct 2026): 1280 max, 32 / 20 / 16 side padding, title 26/32, 28 above, 24 below */
-.q-app-shell:not(.q-student) .topbar{position:sticky;top:0;z-index:30;background:var(--sb-canvas);max-width:var(--qs-page-max);padding:28px var(--qs-page-x) 24px;align-items:center}
-.q-app-shell:not(.q-student) .topbar h1{font-size:26px;line-height:32px;font-weight:700;color:#1e293b}
-.q-app-shell:not(.q-student) .topbar p{font-size:15px;line-height:22px;color:#64748b;margin-top:4px}
+.q-app-shell:not(.q-student) .topbar{position:sticky;top:0;z-index:30;background:var(--sb-canvas);max-width:var(--qs-page-max);padding:32px var(--qs-page-x) 24px;align-items:flex-start}
+.q-app-shell:not(.q-student) .topbar h1{font-size:22px;line-height:30px;font-weight:500;color:var(--ink)}
+.q-app-shell:not(.q-student) .topbar p{font-size:14px;line-height:22px;color:var(--muted-2);margin-top:4px}
 .q-app-shell:not(.q-student) .content{max-width:var(--qs-page-max);padding:0 var(--qs-page-x) 56px}
 @media (max-width:1023px){
   .q-app-shell:not(.q-student) .topbar{padding:20px var(--qs-page-x) 20px}
@@ -69,20 +69,20 @@
 
 /* ---------- Cards: white, 6px, 1px shadow, no border; no orange title bars ---------- */
 .q-app-shell:not(.q-student) :is(.card,.sp-panel,.pm-panel,.sp-card,.stat,.kpi,.an-card,.dv-card){
-  background:#fff;border:0;border-radius:6px;box-shadow:var(--sb-shadow);
+  background:#fff;border:0;border-radius:var(--radius-card);box-shadow:var(--shadow-card);
 }
 /* Card head hairline only above a table (see "Clean & spacious pass" at the end) */
 .q-app-shell:not(.q-student) .sp-panel-h{border-bottom:0}
-.q-app-shell:not(.q-student) .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:600;color:var(--sb-ink)}
+.q-app-shell:not(.q-student) .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
 .q-app-shell:not(.q-student) .sp-panel-h h3::before,
 .q-app-shell:not(.q-student) :is(.card-title,.section-head .t,.pm-panel h3)::before{content:none;display:none}
 
 /* Heroes / banners: one flat teal-deep band, no gradients. The side panel next to it is a WHITE card
    (QA clean pass 20 Oct 2026: at most one solid teal block per screen) — rules at the end of the file. */
-.q-app-shell:not(.q-student) .banner{background:var(--sb-teal-deep);border-radius:6px}
+.q-app-shell:not(.q-student) .banner{background:var(--sb-teal-deep);border-radius:var(--radius-card)}
 
 /* ---------- Buttons: one orange primary, white or slate secondary ---------- */
-.q-app-shell:not(.q-student) .btn{border-radius:6px;font-weight:600}
+.q-app-shell:not(.q-student) .btn{border-radius:6px;font-weight:500}
 .q-app-shell:not(.q-student) .btn-primary{background:var(--sb-orange);color:#fff;border-color:transparent}
 .q-app-shell:not(.q-student) .btn-primary:hover{background:var(--sb-orange-hover)}
 .q-app-shell:not(.q-student) :is(.btn-ghost,.btn-secondary,.sd-btn--ghost,.sd-btn--light,.sd-btn--outline){background:#fff;color:var(--sb-ink);border:1px solid rgba(0,0,0,.15)}
@@ -91,49 +91,72 @@
 .q-app-shell:not(.q-student) :is(.btn,.sd-btn):disabled{opacity:.5;cursor:not-allowed}
 
 /* ---------- Tabs: teal text + 2px teal underline ---------- */
-.q-app-shell:not(.q-student) :is(.tab.active,.pm-route-tabs a.tab.active){color:var(--sb-teal);border-bottom-color:var(--sb-teal);font-weight:600}
+.q-app-shell:not(.q-student) :is(.tab.active,.pm-route-tabs a.tab.active){color:var(--sb-teal);border-bottom-color:var(--sb-teal);font-weight:500}
 .q-app-shell:not(.q-student) .tab{color:var(--sb-muted)}
 .q-app-shell:not(.q-student) .tab .ct{background:transparent;color:inherit;padding:0 0 0 2px}
 
 /* ---------- Teal filter bar ABOVE the list (Panel toolbar → .pm-filterbar) ---------- */
 .q-app-shell:not(.q-student) .pm-panel-stack{display:flex;flex-direction:column;gap:16px;min-width:0}
 .q-app-shell:not(.q-student) .pm-panel-tools.pm-filterbar{
-  background:var(--sb-teal);border:0;border-radius:6px;padding:16px;gap:12px;color:#fff;
+  background:var(--sb-teal);border:0;border-radius:var(--radius-card);padding:16px;gap:12px 16px;color:#fff;
 }
-@media (min-width:1024px){.q-app-shell:not(.q-student) .pm-panel-tools.pm-filterbar{padding:20px;gap:12px}}
+@media (min-width:1024px){.q-app-shell:not(.q-student) .pm-panel-tools.pm-filterbar{padding:20px;gap:12px 16px}}
+
+/* Dense bars (notifications): a 12px caption above every control so Event / Channel / Period / Status read as themselves */
+.q-app-shell:not(.q-student) .pm-filterbar:has(.nf-field){align-items:flex-end}
+.q-app-shell:not(.q-student) .nf-field{
+  display:flex;flex-direction:column;justify-content:flex-end;gap:6px;
+  min-width:168px;flex:0 1 200px;
+}
+.q-app-shell:not(.q-student) .nf-field--search{flex:1 1 260px;min-width:200px}
+.q-app-shell:not(.q-student) .nf-field--status{flex:1 1 100%;min-width:0}
+.q-app-shell:not(.q-student) .nf-field--clear{flex:0 0 auto;min-width:0}
+.q-app-shell:not(.q-student) .nf-field-l{font-size:12px;line-height:18px;font-weight:500;color:#fff}
+.q-app-shell:not(.q-student) .nf-field :is(.search,.quirri-dd,.sp-tabs){width:100%;flex:none;min-width:0;max-width:none}
+.q-app-shell:not(.q-student) :is(.ad-page,.sa-page,.fa-page) .pm-filterbar .nf-field .quirri-dd{
+  flex:none;width:100%;min-width:0;max-width:none;
+}
+.q-app-shell:not(.q-student) .nf-field--clear .sd-btn{min-height:44px}
+.q-app-shell:not(.q-student) .nf-field--status .sp-tab{min-height:44px}
+.q-app-shell:not(.q-student) .nf-field .pm-count{margin-left:6px}
+@media (max-width:640px){
+  .q-app-shell:not(.q-student) .nf-field,
+  .q-app-shell:not(.q-student) .nf-field--search,
+  .q-app-shell:not(.q-student) .nf-field--clear{flex:1 1 100%;min-width:0}
+}
 .q-app-shell:not(.q-student) .pm-filterbar :is(label,.lbl,.muted,small,span.sd-i){color:#fff}
 .q-app-shell:not(.q-student) .pm-filterbar :is(.search,.un-search,.sd-search) input,
 .q-app-shell:not(.q-student) .pm-filterbar input[type="search"],
 .q-app-shell:not(.q-student) .pm-filterbar input[type="text"]{
-  background:var(--sb-search);border:0;border-radius:6px;min-height:42px;color:var(--sb-ink);
+  background:var(--sb-search);border:0;border-radius:var(--radius-control);min-height:44px;color:var(--sb-ink);
 }
 .q-app-shell:not(.q-student) .pm-filterbar input::placeholder{color:var(--sb-muted)}
 .q-app-shell:not(.q-student) .pm-filterbar :is(.search,.un-search,.sd-search) svg{stroke:var(--sb-muted)}
-.q-app-shell:not(.q-student) .pm-filterbar :is(.quirri-dd__trigger,select){background-color:#fff;border:0;border-radius:6px;min-height:42px;font-weight:500;color:var(--sb-ink)}
+.q-app-shell:not(.q-student) .pm-filterbar :is(.quirri-dd__trigger,select){background-color:#fff;border:0;border-radius:var(--radius-control);min-height:44px;font-weight:500;color:var(--sb-ink)}
 .q-app-shell:not(.q-student) .pm-filterbar :is(.btn-ghost,.btn-secondary,.sd-btn--ghost,.sd-btn--light,.sd-btn--outline,.btn-link,.link-btn){
-  background:var(--sb-secondary);color:#fff;border:0;min-height:42px;
+  background:var(--sb-secondary);color:#fff;border:0;min-height:44px;
 }
-.q-app-shell:not(.q-student) .pm-filterbar :is(.btn-primary,.sd-btn--amber){background:var(--sb-orange);color:#fff;min-height:42px}
+.q-app-shell:not(.q-student) .pm-filterbar :is(.btn-primary,.sd-btn--amber){background:var(--sb-orange);color:#fff;min-height:44px}
 .q-app-shell:not(.q-student) .pm-filterbar :is(.seg-btn,.sp-tab){color:#fff}
 .q-app-shell:not(.q-student) .pm-filterbar :is(.seg-btn.is-active,.seg-btn[aria-selected="true"],.sp-tab[aria-selected="true"]){background:#fff;color:var(--sb-teal)}
 .q-app-shell:not(.q-student) .pm-filterbar :focus-visible{outline:2px solid #fff;outline-offset:2px}
 .q-app-shell:not(.q-student) .pm-filterbar input[type="checkbox"]{accent-color:var(--sb-orange)}
 
 /* ---------- Tables: light rows, no heavy grid ---------- */
-.q-app-shell:not(.q-student) .sp-table th{background:#fff;color:var(--sb-muted);font-size:12px;font-weight:600;border-bottom:1px solid var(--sb-hairline)}
+.q-app-shell:not(.q-student) .sp-table th{background:#fff;color:var(--sb-muted);font-size:12px;font-weight:500;border-bottom:1px solid var(--sb-hairline)}
 .q-app-shell:not(.q-student) .sp-table td{border-bottom:1px solid var(--sb-hairline);color:var(--sb-ink)}
 .q-app-shell:not(.q-student) .sp-table tbody tr:hover td{background:#fafafa}
 
 /* ---------- Pager under lists ---------- */
-.q-app-shell:not(.q-student) :is(.pager,.sp-pager,.pagination) button{height:32px;min-height:32px;background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:6px;font-size:12px;font-weight:600;color:var(--sb-ink)}
+.q-app-shell:not(.q-student) :is(.pager,.sp-pager,.pagination) button{height:32px;min-height:32px;background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:6px;font-size:12px;font-weight:500;color:var(--sb-ink)}
 .q-app-shell:not(.q-student) :is(.pager,.sp-pager,.pagination) button:disabled{opacity:.5}
 
 /* Links and scores in teal */
-.q-app-shell:not(.q-student) :is(a.link,.link-btn,.text-link){color:var(--sb-teal);font-weight:600}
+.q-app-shell:not(.q-student) :is(a.link,.link-btn,.text-link){color:var(--sb-teal);font-weight:500}
 
 /* Scrollbars without end caps */
 .q-app-shell:not(.q-student) ::-webkit-scrollbar{width:6px;height:6px}
-.q-app-shell:not(.q-student) ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+.q-app-shell:not(.q-student) ::-webkit-scrollbar-thumb{background:var(--neutral-300);border-radius:6px}
 .q-app-shell:not(.q-student) ::-webkit-scrollbar-button{display:none;width:0;height:0}
 .q-app-shell:not(.q-student) ::-webkit-scrollbar-track{background:transparent}
 
@@ -221,7 +244,7 @@
 body > :is(.overlay.show,.un-drawer-wrap){background:rgba(0,0,0,.5)}
 .q-app-shell:not(.q-student) .modal,
 body > .overlay .modal{border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.q-app-shell:not(.q-student) .modal-h h3{font-weight:600}
+.q-app-shell:not(.q-student) .modal-h h3{font-weight:500}
 .q-app-shell:not(.q-student) .modal-f{background:#fff}
 .q-app-shell:not(.q-student) .un-drawer{box-shadow:0 2px 8px rgba(0,0,0,.12)}
 
@@ -232,8 +255,8 @@ body > .overlay .modal{border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 /* Pager (module-ui Pager): caption left, Previous / n / Next right, 32px white buttons */
 .q-app-shell:not(.q-student) .un-pager{font-size:12px;color:var(--sb-muted)}
 .q-app-shell:not(.q-student) .un-pager > div{align-items:center}
-.q-app-shell:not(.q-student) .un-pager .sd-btn{height:32px;min-height:32px;padding:0 12px;background:#fff;border:1px solid rgba(0,0,0,.15);color:var(--sb-ink);font-size:12px;font-weight:600}
-.q-app-shell:not(.q-student) .pm-pager-n{font-size:12px;font-weight:600;color:var(--sb-ink);font-variant-numeric:tabular-nums;padding:0 4px}
+.q-app-shell:not(.q-student) .un-pager .sd-btn{height:32px;min-height:32px;padding:0 12px;background:#fff;border:1px solid rgba(0,0,0,.15);color:var(--sb-ink);font-size:12px;font-weight:500}
+.q-app-shell:not(.q-student) .pm-pager-n{font-size:12px;font-weight:500;color:var(--sb-ink);font-variant-numeric:tabular-nums;padding:0 4px}
 @media (pointer:coarse){.q-app-shell:not(.q-student) .un-pager .sd-btn{min-height:44px}}
 
 /* Drawers: white panel, flat sections (no cards inside the drawer card) */
@@ -241,7 +264,7 @@ body > .overlay .modal{border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 body > .un-drawer-wrap .un-drawer{background:#fff}
 .q-app-shell:not(.q-student) .un-drawer-sec{box-shadow:none;border-radius:0;padding:16px 0 0;border-top:1px solid var(--sb-hairline)}
 .q-app-shell:not(.q-student) .un-drawer-body > .un-drawer-sec:first-child{border-top:0;padding-top:0}
-.q-app-shell:not(.q-student) .un-drawer-sec h3{font-weight:600}
+.q-app-shell:not(.q-student) .un-drawer-sec h3{font-weight:500}
 .q-app-shell:not(.q-student) .un-drawer-stats > div{background:var(--sb-wash);box-shadow:none;border-radius:6px}
 .q-app-shell:not(.q-student) .un-drawer-stats > div b,
 .q-app-shell:not(.q-student) .un-drawer-stats > div:nth-child(2) b{color:var(--sb-teal)}
@@ -286,12 +309,12 @@ body > .un-drawer-wrap .un-drawer{background:#fff}
 .q-app-shell:not(.q-student) .pm-filterbar .sp-tab{background:transparent;color:rgba(255,255,255,.78);border-radius:0;box-shadow:inset 0 -2px 0 transparent;font-weight:500;min-height:42px;padding:0 12px}
 .q-app-shell:not(.q-student) .pm-filterbar .sp-tab:hover{background:transparent;color:#fff}
 .q-app-shell:not(.q-student) .pm-filterbar .sp-tab[aria-selected="true"],
-.q-app-shell:not(.q-student) .pm-filterbar .sp-tab[aria-selected="true"]:hover{background:transparent;color:#fff;font-weight:600;box-shadow:inset 0 -2px 0 #fff}
+.q-app-shell:not(.q-student) .pm-filterbar .sp-tab[aria-selected="true"]:hover{background:transparent;color:#fff;font-weight:500;box-shadow:inset 0 -2px 0 #fff}
 
 /* Selected list item inside a card: wash only, no border box */
 .q-app-shell:not(.q-student) .pm-list-btn[aria-current="true"]{border-color:transparent}
 /* Locked (read-only) fields: faint slate fill, ink-2 text */
-.q-app-shell:not(.q-student) :is(input,select,textarea):disabled:not([type="checkbox"]):not([type="radio"]){background:#f8fafc;color:#475569}
+.q-app-shell:not(.q-student) :is(input,select,textarea):disabled:not([type="checkbox"]):not([type="radio"]){background:var(--neutral-50);color:var(--neutral-600)}
 
 /* Danger button = #d34141 everywhere in the admin portals */
 .q-app-shell:not(.q-student) .un-btn-danger,
@@ -314,26 +337,33 @@ body > :is(.overlay,.un-drawer-wrap) .un-btn-danger{background:var(--sb-danger,#
   --qs-section:32px;     /* vertical gap between page sections: 32 desktop / 20 phone */
   --qs-gap:24px;         /* gap between cards in a grid: 24 desktop / 16 phone */
   --qs-card-pad:24px;    /* card padding: 24 desktop / 18 phone */
-  --qs-head-gap:20px;    /* card head to body */
-  --qs-kpi-pad:22px;
+  --qs-head-gap:16px;    /* card head to body — 4px scale */
+  --qs-kpi-pad:16px;
   --qs-row-gap:12px;     /* stacked list rows */
-  --qs-muted:#64748b;
-  font-size:15px;line-height:1.55;
+  --qs-muted:var(--neutral-500);
+  font-size:14px;line-height:22px;
 }
 @media (max-width:1023px){.app.q-app-shell{--qs-page-x:20px}}
-@media (max-width:640px){.app.q-app-shell{--qs-page-x:16px;--qs-section:20px;--qs-gap:16px;--qs-card-pad:18px;--qs-kpi-pad:16px}}
+@media (max-width:640px){.app.q-app-shell{--qs-page-x:16px;--qs-section:16px;--qs-gap:16px;--qs-card-pad:16px;--qs-kpi-pad:16px}}
 
 /* ---------- Page rhythm: sections 32 apart, card grids 24 apart ---------- */
 .app.q-app-shell :is(.sp,.pm-page,.pm-tabpanel){gap:var(--qs-section)}
 .app.q-app-shell :is(.sd-kpis,.pm-kpis,.dv-grid,.sa-cols,.pm-grid-2,.cols,.q-hero-split,.stats){gap:var(--qs-gap)}
 .app.q-app-shell .q-hero-split{margin-bottom:0}
 
-/* ---------- Cards: 24 padding, title 18/26 600, subtitle 14/20 muted, 20 to the body ---------- */
-.app.q-app-shell .sp-panel-h{padding:var(--qs-card-pad) var(--qs-card-pad) var(--qs-head-gap);gap:16px;border-bottom:0}
-.app.q-app-shell .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:600;color:var(--sb-ink)}
+/* ---------- Cards: 24 padding, title 18/26 Medium, subtitle 14/20 muted, 16 to the body ---------- */
+.app.q-app-shell .sp-panel{display:flex;flex-direction:column;min-width:0}
+.app.q-app-shell .sp-panel-h{flex:none;padding:var(--qs-card-pad) var(--qs-card-pad) var(--qs-head-gap);gap:16px;border-bottom:0}
+.app.q-app-shell .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
 .app.q-app-shell .sp-panel-h p{font-size:14px;line-height:20px;color:var(--sb-muted);margin-top:4px}
-.app.q-app-shell .sp-panel-b{padding:var(--qs-card-pad)}
+.app.q-app-shell .sp-panel-b{flex:1 1 auto;display:flex;flex-direction:column;min-width:0;width:100%;padding:var(--qs-card-pad)}
 .app.q-app-shell .sp-panel-h + .sp-panel-b{padding-top:0}
+.app.q-app-shell .sp-panel-b > *{width:100%;max-width:100%;min-width:0}
+
+/* Equal-column cards stay full width; short lists hug their content (no stretched empty interiors) */
+.app.q-app-shell :is(.dv-grid,.sa-cols,.pm-grid-2,.pm-grid-3,.fa-dash-cols,.ad-cover-grid,.ad-viz-row){
+  align-items:start;
+}
 /* Hairline under the head only when the body is a table */
 .app.q-app-shell .sp-panel-h:has(+ :is(.sp-table-wrap,table,.un-table)){border-bottom:1px solid var(--sb-hairline)}
 .app.q-app-shell .card-h{padding:var(--qs-card-pad) var(--qs-card-pad) 4px}
@@ -341,18 +371,18 @@ body > :is(.overlay,.un-drawer-wrap) .un-btn-danger{background:var(--sb-danger,#
 .app.q-app-shell .card-p{padding:var(--qs-card-pad)}
 
 /* ---------- KPI tiles: 22 padding, value 28/34 600, label 14, caption 13, equal height ---------- */
-.app.q-app-shell .sd-kpi{padding:var(--qs-kpi-pad);gap:6px;height:100%}
-.app.q-app-shell .sd-kpi-h{font-size:14px;line-height:20px;color:var(--qs-muted)}
-.app.q-app-shell .sd-kpi-v{font-size:28px;line-height:34px;font-weight:600;margin-top:4px}
-.app.q-app-shell .sd-kpi-v:is(.is-text,.is-amber){font-size:17px;line-height:26px}
-.app.q-app-shell .sd-kpi-s{font-size:13px;line-height:18px}
+.app.q-app-shell .sd-kpi{padding:var(--qs-kpi-pad);gap:8px;height:100%}
+.app.q-app-shell .sd-kpi-h{font-size:14px;line-height:22px;color:var(--qs-muted)}
+.app.q-app-shell .sd-kpi-v{font-size:22px;line-height:30px;font-weight:500;margin-top:4px}
+.app.q-app-shell .sd-kpi-v:is(.is-text,.is-amber){font-size:16px;line-height:26px}
+.app.q-app-shell .sd-kpi-s{font-size:12px;line-height:18px}
 .app.q-app-shell .stat{padding:var(--qs-kpi-pad)}
-.app.q-app-shell .stat .v{font-size:28px;line-height:34px;font-weight:600}
-.app.q-app-shell .stat .s{font-size:13px;line-height:18px}
+.app.q-app-shell .stat .v{font-size:22px;line-height:30px;font-weight:500}
+.app.q-app-shell .stat .s{font-size:12px;line-height:18px}
 
 /* ---------- Tables: header 12 600 muted, cells 15, rows 56+, cells 16 x 20, hairline dividers ---------- */
-.app.q-app-shell .sp-table th{font-size:12px;line-height:18px;font-weight:600;color:var(--sb-muted);background:#fff;padding-top:14px;padding-bottom:14px;border-bottom:1px solid var(--sb-hairline)}
-.app.q-app-shell .sp-table td{font-size:15px;line-height:22px;padding-top:16px;padding-bottom:16px;border-bottom:1px solid var(--sb-hairline)}
+.app.q-app-shell .sp-table th{font-size:12px;line-height:18px;font-weight:500;color:var(--sb-muted);background:#fff;padding-top:14px;padding-bottom:14px;border-bottom:1px solid var(--sb-hairline)}
+.app.q-app-shell .sp-table td{font-size:14px;line-height:22px;padding-top:16px;padding-bottom:16px;border-bottom:1px solid var(--sb-hairline)}
 /* 56px row minimum only while it is a real table row (phones stack rows as blocks below 761px) */
 @media (min-width:761px){.app.q-app-shell .sp-table td{height:56px}}
 .app.q-app-shell .sp-table tbody tr:last-child td{border-bottom:0}
@@ -371,14 +401,14 @@ body > :is(.overlay,.un-drawer-wrap) .un-btn-danger{background:var(--sb-danger,#
 .app.q-app-shell :is(.banner-cta,.pm-head-actions,.pm-topbar-actions,.modal-f){gap:12px}
 
 /* ---------- Hero: one teal block; the side panel is a WHITE card ---------- */
-.app.q-app-shell .banner{padding:32px;border-radius:6px}
+.app.q-app-shell .banner{padding:32px;border-radius:var(--radius-card)}
 .app.q-app-shell .banner-eyebrow{background:transparent;padding:0;border-radius:0;color:rgba(255,255,255,.78);letter-spacing:.08em}
-.app.q-app-shell .q-hero-side{background:#fff;color:var(--sb-ink);border-radius:6px;box-shadow:var(--sb-shadow);padding:var(--qs-card-pad);gap:var(--qs-head-gap)}
+.app.q-app-shell .q-hero-side{background:#fff;color:var(--sb-ink);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:var(--qs-card-pad);gap:var(--qs-head-gap)}
 .app.q-app-shell .q-hero-side__h{padding-bottom:0;border-bottom:0}
-.app.q-app-shell .q-hero-side__h h3{color:var(--sb-ink);font-weight:600;font-size:18px;line-height:26px}
-.app.q-app-shell .q-hero-side__body{color:var(--sb-muted);font-size:15px;line-height:1.55}
-.app.q-app-shell .q-hero-side__t{color:var(--sb-ink);font-size:15px;line-height:22px}
-.app.q-app-shell .q-hero-side__b{color:var(--sb-muted);font-size:13px;line-height:18px}
+.app.q-app-shell .q-hero-side__h h3{color:var(--sb-ink);font-weight:500;font-size:18px;line-height:26px}
+.app.q-app-shell .q-hero-side__body{color:var(--sb-muted);font-size:14px;line-height:22px}
+.app.q-app-shell .q-hero-side__t{color:var(--sb-ink);font-size:14px;line-height:22px}
+.app.q-app-shell .q-hero-side__b{color:var(--sb-muted);font-size:12px;line-height:18px}
 .app.q-app-shell .q-hero-side__dot{background:var(--sb-teal)}
 .app.q-app-shell .q-hero-side__dot:is(.is-error,.is-warning){background:var(--sb-orange)}
 .app.q-app-shell .q-hero-side__badge{background:transparent;border:0;padding:0;color:var(--sb-muted);font-weight:500}
@@ -395,12 +425,12 @@ body > :is(.overlay,.un-drawer-wrap) .un-btn-danger{background:var(--sb-danger,#
 
 /* ---------- Module head row (lede / chips / actions) ---------- */
 .app.q-app-shell .pm-head{gap:16px}
-.app.q-app-shell .pm-head-copy p{font-size:15px;line-height:22px;color:var(--qs-muted)}
+.app.q-app-shell .pm-head-copy p{font-size:14px;line-height:22px;color:var(--qs-muted)}
 
 /* ---------- Empty / loading / error: inside the card, centred, 32 padding ---------- */
-.app.q-app-shell :is(.sp-panel,.card,.sp-card) .sd-state:not(.sd-state--err){justify-content:center;align-items:center;padding:32px;text-align:center;font-size:15px;line-height:1.55}
+.app.q-app-shell :is(.sp-panel,.card,.sp-card) .sd-state:not(.sd-state--err){justify-content:center;align-items:center;padding:32px;text-align:center;font-size:14px;line-height:22px}
 .app.q-app-shell :is(.sp-panel,.card,.sp-card) .sd-state:not(.sd-state--err) .sd-state-body{align-items:center}
-.app.q-app-shell .dv-empty{padding:32px 0;text-align:center;font-size:15px;line-height:1.55;color:var(--qs-muted)}
+.app.q-app-shell .dv-empty{padding:32px 0;text-align:center;font-size:14px;line-height:22px;color:var(--qs-muted)}
 
 /* ---------- Sidebar: 44px items 4 apart, labels 20 above / 8 below, no visible track ---------- */
 .app.q-app-shell .sidebar .nav a{min-height:44px;margin:0 0 4px}
@@ -410,11 +440,11 @@ body > :is(.overlay,.un-drawer-wrap) .un-btn-danger{background:var(--sb-danger,#
   scrollbar-width:thin;scrollbar-color:transparent transparent;scrollbar-gutter:auto;
   background:#fff; /* plain white: the scroll-shadow gradients painted a grey strip down the edge */
 }
-.app.q-app-shell .sidebar .nav:hover{scrollbar-color:#cbd5e1 transparent}
+.app.q-app-shell .sidebar .nav:hover{scrollbar-color:var(--neutral-300) transparent}
 .app.q-app-shell .sidebar .nav::-webkit-scrollbar{width:6px;background:transparent}
 .app.q-app-shell .sidebar .nav::-webkit-scrollbar-track{background:transparent}
 .app.q-app-shell .sidebar .nav::-webkit-scrollbar-thumb{background:transparent;border:0;border-radius:3px}
-.app.q-app-shell .sidebar .nav:hover::-webkit-scrollbar-thumb{background:#cbd5e1}
+.app.q-app-shell .sidebar .nav:hover::-webkit-scrollbar-thumb{background:var(--neutral-300)}
 @media (max-height:940px){
   .app.q-app-shell .sidebar .nav a{min-height:44px;padding-top:10px;padding-bottom:10px;margin-bottom:4px}
   .app.q-app-shell .sidebar .nav-label{padding:16px 20px 8px}
@@ -463,5 +493,134 @@ body > .un-drawer-wrap .un-drawer-hero .sp-pill--glass{background:none;border:0;
 .app.q-app-shell .un-drawer-hero .un-mono--lg,
 body > .un-drawer-wrap .un-drawer-hero .un-mono--lg{
   width:56px;height:56px;border-radius:50%;border:0;background:#fff;color:var(--sb-teal,#14606e);
-  font-size:20px;line-height:1;font-weight:600;letter-spacing:.02em;
+  font-size:18px;line-height:1;font-weight:500;letter-spacing:.02em;
+}
+
+/* =========================================================================
+   Dashboard extra-effort (24 Oct 2026) — one page grid for SA / CA / Faculty.
+   Hero, KPI strip and every card pair sit on the same 2fr + 1fr tracks so
+   left/right edges line up. Nested .dv-grid / .sa-cols dissolve (display:contents)
+   so paired cards share a row and a bottom edge. Compact donuts stay ring|legend
+   so a narrow 1fr column does not balloon the row and leave a hollow neighbour.
+   ========================================================================= */
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page){
+  --dash-grid:minmax(0,2fr) minmax(0,1fr);
+  display:grid;
+  grid-template-columns:var(--dash-grid);
+  gap:var(--qs-section,32px) var(--qs-gap,24px);
+  align-items:stretch;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > :is(.q-hero-split,.sd-kpis,.sd-state,.pm-head){
+  grid-column:1/-1;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .sp-panel{
+  grid-column:1/-1;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split{
+  display:grid;
+  grid-template-columns:var(--dash-grid);
+  column-gap:var(--qs-gap,24px);
+  align-items:stretch;
+  margin-bottom:0;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split > .banner{
+  grid-column:auto;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-height:0;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split > .q-hero-side{
+  min-height:0;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > :is(.dv-grid,.sa-cols){
+  display:contents;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > :is(.dv-grid,.sa-cols) > .sp-panel{
+  min-width:0;
+  min-height:0;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .banner h2{margin-bottom:8px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .banner p{margin:0}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .banner-cta{margin-top:24px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpis{align-items:stretch}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi{
+  min-height:108px;
+  display:flex;
+  flex-direction:column;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi-v{margin-top:4px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi-s{
+  margin-top:auto;
+  min-height:18px;
+  font-size:12px;
+  line-height:18px;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sp-panel-b{
+  justify-content:flex-start;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .mdc--compact .mdc-body{
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:16px;
+}
+
+/* Attention rows: teal number · 14/22 label · chevron. Health-only rows use a teal mark. */
+.app.q-app-shell .q-attn{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.app.q-app-shell .q-attn li{display:block}
+.app.q-app-shell .q-attn li + li{border-top:1px solid var(--line)}
+.app.q-app-shell .q-attn a{
+  display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 0;
+  color:var(--sb-ink);text-decoration:none;border-radius:var(--radius-control);
+  transition:background-color .2s ease-out;
+}
+.app.q-app-shell .q-attn a:hover{background:var(--surface-tint)}
+.app.q-app-shell .q-attn a:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
+.app.q-app-shell .q-attn b{
+  flex:none;min-width:32px;font-size:22px;line-height:30px;font-weight:500;
+  color:var(--sb-teal);font-variant-numeric:tabular-nums;text-align:right;
+}
+.app.q-app-shell .q-attn span{flex:1;min-width:0;font-size:14px;line-height:22px;color:var(--sb-ink)}
+.app.q-app-shell .q-attn .sd-i{flex:none;color:var(--sb-muted)}
+.app.q-app-shell .q-attn-note{margin:0;font-size:14px;line-height:22px;color:var(--sb-muted)}
+.app.q-app-shell .q-attn-mark{
+  flex:none;width:32px;height:8px;position:relative;
+}
+.app.q-app-shell .q-attn-mark::before{
+  content:"";position:absolute;right:8px;top:0;width:8px;height:8px;
+  border-radius:50%;background:var(--sb-teal);
+}
+
+/* Queue / at-risk rows: 14/22 title, 12/18 meta, 16px air, no stretched interiors */
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) :is(.ad-queue,.fa-queue,.fa-risk) b,
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) :is(.ad-queue,.fa-queue,.fa-risk) .sp-row-main b{
+  font-size:14px;line-height:22px;font-weight:500;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) :is(.ad-queue small,.fa-queue .sp-row-meta){
+  font-size:12px;line-height:18px;color:var(--muted-2);
+}
+.app.q-app-shell .fa-page :is(.fa-queue a,.fa-risk a,.fa-risk button){
+  gap:12px;padding:12px var(--qs-card-pad,24px);min-height:56px;
+}
+.app.q-app-shell .ad-dash .ad-queue li{padding:12px 0;min-height:56px}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .ad-empty{
+  flex:1 1 auto;padding:8px 0;align-items:center;
+}
+.app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .ad-empty b{font-size:14px;line-height:22px}
+
+@media (max-width:960px){
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page){
+    grid-template-columns:minmax(0,1fr);
+  }
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) > .q-hero-split > .banner{grid-column:auto}
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .mdc--compact .mdc-body{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+}
+@media (max-width:760px){
+  .app.q-app-shell :is(.sa-dash,.ad-dash,.fa-page) .sd-kpi{min-height:0}
+  .app.q-app-shell .fa-page :is(.fa-queue a,.fa-risk a,.fa-risk button){padding:12px 16px}
 }

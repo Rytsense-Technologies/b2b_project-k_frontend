@@ -2,27 +2,26 @@
 export const PAGE_META = {
   '/student/home': {
     title: 'Dashboard',
-    subtitle: 'Track your learning and improve every day.',
+    subtitle: 'Your lectures and assessments.',
   },
   '/student/subjects': {
     title: 'My subjects',
-    subtitle: 'Watch lectures, take chapter assessments and ask your AI tutor.',
+    subtitle: 'Lectures, chapter quizzes and the AI tutor.',
   },
   '/student/leaderboard': {
     title: 'Leaderboard',
-    subtitle: 'See where you rank among classmates on chapter assessments.',
+    subtitle: 'Ranked by chapter assessment scores.',
   },
   '/student/assessment': {
     title: 'Assessment',
-    subtitle: 'Chapter assessment — one attempt, scored by Quirri.',
+    subtitle: 'One attempt, scored by Quirri.',
   },
-
   '/student/progress': {
     title: 'My progress',
-    subtitle: 'Understand your learning, not just your completion.',
+    subtitle: 'Completion and scores by subject.',
   },
   '/student/settings': {
     title: 'Settings',
-    subtitle: 'Your profile and account security.',
+    subtitle: 'Profile, sign-in and email.',
   },
 };

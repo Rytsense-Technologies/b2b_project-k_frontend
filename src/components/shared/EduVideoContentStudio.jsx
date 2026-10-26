@@ -144,7 +144,7 @@ const STAGE_LABEL = {
 };
 
 // One colour per stage, shared with the "Where chapters are" donut (modern-cards-plan):
-// Generating grey · Ready to send blue · With HOD orange · Published green · Failed red.
+// Generating teal · Ready to send blue · With HOD orange · Published green · Failed red.
 function statusBadge(job) {
   const stage = computeStage(job);
   switch (stage) {

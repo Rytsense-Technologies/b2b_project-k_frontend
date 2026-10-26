@@ -86,7 +86,7 @@
 .un-card-stats > div:nth-child(2) b,
 .co-card-stats > div:nth-child(2) b{color:var(--accent-text)}
 .un-card.is-inactive .un-card-stats > div:nth-child(2),
-.un-card.is-inactive .co-card-stats > div:nth-child(2){background:var(--neutral-100)}
+.un-card.is-inactive .co-card-stats > div:nth-child(2){background:var(--teal-50)}
 .un-card.is-inactive .un-card-stats > div:nth-child(2) b,
 .un-card.is-inactive .co-card-stats > div:nth-child(2) b{color:var(--teal-700)}
 .un-drawer-stats > div:nth-child(2) b{color:var(--accent-text)}

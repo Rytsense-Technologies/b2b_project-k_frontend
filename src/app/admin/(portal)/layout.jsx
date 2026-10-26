@@ -12,6 +12,7 @@ import CollegeAdminSidebar from '@/components/admin/CollegeAdminSidebar';
 import { PageHeaderProvider, PortalTopbar, resolvePageMeta } from '@/components/shared/PageHeader';
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
+import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 
 export default function CollegeAdminLayout({ children }) {
   const pathname = usePathname();
@@ -41,6 +42,7 @@ export default function CollegeAdminLayout({ children }) {
   }, [dispatch]);
 
   const meta = resolvePageMeta(PAGE_META, pathname, { title: 'College Admin', subtitle: '' });
+  usePortalDocumentTitle(meta.title, 'College Admin');
 
   return (
     <div className={`app q-app-shell ${mobileNavShellClass(navOpen)}`}>

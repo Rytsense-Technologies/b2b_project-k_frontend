@@ -112,7 +112,7 @@ function ScoreCell({ value, pill = true }) {
 }
 
 function RiskList({ rows, limit, onMore, showDepartment = true }) {
-  if (!rows.length) return <Empty icon="tick" title="Nobody flagged">Every active student is keeping up in this period.</Empty>;
+  if (!rows.length) return <Empty icon="tick" title="Nobody flagged" />;
   return (
     <ul className="ad-risk">
       {rows.slice(0, limit).map((s) => (
@@ -320,18 +320,18 @@ export default function InsightsView({
         <KpiRow
           label="Learning summary"
           items={[
-            { icon: 'users', label: 'Active students', value: kpi(t ? countLabel(t.students) : '—'), sub: t?.pending_students ? `${countLabel(t.pending_students)} still to activate` : 'Signed in at least once' },
-            { icon: 'playCircle', label: 'Chapter completion', value: kpi(pct(t?.completion)), sub: t ? `${countLabel(t.chapters_completed)} of ${countLabel(t.chapters_available)} chapter views done · to date` : 'Published chapters watched to the end · to date' },
-            { icon: 'target', label: 'Quiz average', value: kpi(pct(t?.quiz_avg)), sub: t ? (t.quiz_avg == null ? 'No quizzes in this period' : `Pass rate ${pct(t.pass_rate)} (60%+)`) : 'Chapter quizzes' },
+            { icon: 'users', label: 'Active students', value: kpi(t ? countLabel(t.students) : '—'), sub: t?.pending_students ? `${countLabel(t.pending_students)} still to activate` : null },
+            { icon: 'playCircle', label: 'Chapter completion', value: kpi(pct(t?.completion)), sub: t ? `${countLabel(t.chapters_completed)} of ${countLabel(t.chapters_available)} chapters` : null },
+            { icon: 'target', label: 'Quiz average', value: kpi(pct(t?.quiz_avg)), sub: t ? (t.quiz_avg == null ? 'No quizzes yet' : `Pass rate ${pct(t.pass_rate)}`) : null },
           ]}
         />
         {loadingState}
         {data ? (
           <div className="dv-grid an-grid-start">
-            <Panel title="Students by quiz score" sub={`Each student's quiz average · ${rangeLabel}`}>
+            <Panel title="Students by quiz score">
               <ModernDonut compact title="Students by score band" unit="Students" parts={bandParts} empty="No students yet." />
             </Panel>
-            <Panel title="Activity" sub={rangeLabel}>
+            <Panel title="Activity">
               <div className="an-facts">
                 <div><small>Watch time</small><b>{minutesLabel(t?.watch_minutes)}</b></div>
                 <div><small>Tutor questions</small><b>{countLabel(t?.qa)}</b></div>
@@ -340,12 +340,6 @@ export default function InsightsView({
             </Panel>
             <Panel
               title={college && !department ? 'Completion by department' : 'Completion by subject'}
-              sub={`Published chapters watched to the end · to date · ${college && !department ? 'departments' : 'subjects'} without chapters are left out`}
-              action={(
-                <button type="button" className="sp-link an-linkbtn" onClick={() => setTab(college && !department ? 'departments' : 'subjects')}>
-                  Details <Icon name="arrow" size={14} />
-                </button>
-              )}
             >
               {college && !department ? (
                 <MetricList
@@ -367,7 +361,6 @@ export default function InsightsView({
             </Panel>
             <Panel
               title="Students who need attention"
-              sub="Low scores, behind on chapters, or no activity in this period"
               action={atRisk.length ? <span className="an-count" aria-label={`${countLabel(atRisk.length)} students`}>{countLabel(atRisk.length)}</span> : null}
             >
               <RiskList rows={atRisk} limit={5} showDepartment={college} onMore={() => { setRiskOnly('risk'); setTab('students'); }} />
@@ -385,18 +378,18 @@ export default function InsightsView({
           {deptRows.length ? (
             <>
               <div className="dv-grid">
-                <Panel title="Completion" sub="Published chapters watched to the end · to date">
+                <Panel title="Completion">
                   <MetricList label="Completion by department" suffix="%" format={oneDecimal}
                     items={deptRows.filter((d) => d.completion != null).map((d) => ({ key: String(d.department_id), label: d.department, value: d.completion }))}
                     empty="No department has published chapters yet." />
                 </Panel>
-                <Panel title="Quiz average" sub={`Chapter quizzes · ${rangeLabel}`}>
+                <Panel title="Quiz average">
                   <MetricList label="Quiz average by department" suffix="%" colorBy="band" format={oneDecimal}
                     items={deptRows.filter((d) => d.quiz_avg != null).map((d) => ({ key: String(d.department_id), label: d.department, value: d.quiz_avg, sub: d.pass_rate != null ? `Pass rate ${pct(d.pass_rate)}` : undefined }))}
                     empty="No quizzes in this period." />
                 </Panel>
               </div>
-              <Panel title="Department performance" sub={`${rangeLabel} · completion is to date`} bodyClassName={null}>
+              <Panel title="Department performance" bodyClassName={null}>
                 <div className="sp-table-wrap">
                   <table className="sp-table un-table ad-stack">
                     <thead>
@@ -443,12 +436,12 @@ export default function InsightsView({
         {subjects.length ? (
           <>
             <div className="dv-grid">
-              <Panel title="Completion by subject" sub="Published chapters watched to the end · to date">
+              <Panel title="Completion by subject">
                 <MetricList label="Completion by subject" suffix="%" format={oneDecimal}
                   items={subjects.filter((s) => s.completion != null).map((s) => ({ key: String(s.subject_id), label: s.subject, value: s.completion }))}
                     empty="No subject has published chapters yet." />
               </Panel>
-              <Panel title="Average quiz score" sub={`Chapter quizzes · ${rangeLabel}`}>
+              <Panel title="Average quiz score">
                 <ColumnChart
                   data={subjects.filter((s) => s.avg_score != null).map((s) => ({ label: s.code || s.subject, value: Math.round(s.avg_score) }))}
                   name="Avg score"
@@ -459,7 +452,7 @@ export default function InsightsView({
                 />
               </Panel>
             </div>
-            <Panel title="Subjects" sub="Select a row to open that subject's top tutor questions (Q&A demand)" bodyClassName={null}>
+            <Panel title="Subjects" bodyClassName={null}>
               <div className="sp-table-wrap">
                 <table className="sp-table un-table ad-stack an-click">
                   <thead>
@@ -504,15 +497,11 @@ export default function InsightsView({
       <TabPanel value="qa" current={tab} idBase="an">
         {loadingState}
         {data && !qaSubjects.length ? (
-          <SectionState title="No tutor questions to group yet">
-            {t?.qa
-              ? `Students asked the tutor ${countLabel(t.qa)} question${t.qa === 1 ? '' : 's'} this period, but none were about lecture content. Small talk and off-topic questions are left out.`
-              : 'Top questions appear once students ask the AI tutor about lecture content in this period.'}
-          </SectionState>
+          <SectionState title="No tutor questions yet" />
         ) : null}
         {qaSubjects.length ? (
           <div className="dv-grid an-qa">
-            <Panel title="Questions by subject" sub={`Tutor questions about lecture content · ${rangeLabel}`}>
+            <Panel title="Questions by subject">
               <ModernDonut
                 title="Questions by subject"
                 unit="Questions"
@@ -521,7 +510,7 @@ export default function InsightsView({
             </Panel>
             <Panel
               title="Top 10 questions"
-              sub={qa ? qaSubjectLabel(qa.subject) : ''}
+              sub={qaSubjects.length > 1 ? (qa ? qaSubjectLabel(qa.subject) : '') : null}
               toolbar={qaSubjects.length > 1 ? (
                 <QuirriSelect
                   ariaLabel="Subject"
@@ -548,7 +537,7 @@ export default function InsightsView({
         {data ? (
           <>
             <div className="dv-grid">
-              <Panel title="Top 10 by quiz average" sub={`Chapter quizzes · ${rangeLabel}`}>
+              <Panel title="Top 10 by quiz average">
                 <MetricList
                   label="Top students"
                   suffix="%"
@@ -558,10 +547,7 @@ export default function InsightsView({
                   empty="No scores in this period."
                 />
               </Panel>
-              <Panel
-                title="Lowest quiz averages"
-                sub={bottom.length ? `Bottom ${countLabel(bottom.length)} of ${countLabel(scoredStudents.length)} scored students` : 'Shown once more than 10 students have taken quizzes'}
-              >
+              <Panel title="Lowest quiz averages">
                 <MetricList
                   label="Lowest scores"
                   suffix="%"
@@ -573,7 +559,6 @@ export default function InsightsView({
               </Panel>
               <Panel
                 title="Students who need attention"
-                sub="Low scores, behind on chapters, or no activity"
                 className="an-span"
                 action={atRisk.length ? <span className="an-count" aria-label={`${countLabel(atRisk.length)} students`}>{countLabel(atRisk.length)}</span> : null}
               >
@@ -582,7 +567,7 @@ export default function InsightsView({
             </div>
             <Panel
               title="Student performance"
-              sub={`${countLabel(students.length)} ${students.length === 1 ? 'student' : 'students'} · ${rangeLabel} · ranked by quiz average`}
+              sub={`${countLabel(students.length)} ${students.length === 1 ? 'student' : 'students'}`}
               bodyClassName={null}
               toolbar={(
                 <>

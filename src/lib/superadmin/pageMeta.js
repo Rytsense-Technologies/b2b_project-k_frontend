@@ -1,52 +1,51 @@
 /** Page titles/subtitles (sentence case — docs/agent/design-system.md §5). */
 export const PAGE_META = {
-  // Detail routes first: the lookup takes the first prefix that matches.
   '/superadmin/colleges/': {
     title: 'College',
-    subtitle: 'Details, departments, admins and learning for one college.',
+    subtitle: 'Details, departments and admins.',
   },
   '/superadmin/dashboard': {
     title: 'Dashboard',
-    subtitle: 'Platform-wide adoption, learning activity, and system health.',
+    subtitle: 'Adoption and learning across the platform.',
   },
   '/superadmin/universities': {
     title: 'Universities',
-    subtitle: 'Affiliated universities and their member colleges.',
+    subtitle: 'Affiliated universities and their colleges.',
   },
   '/superadmin/colleges': {
     title: 'Colleges',
-    subtitle: 'Onboard colleges, provision admins, and set student seat caps.',
+    subtitle: 'Onboard colleges and set seat caps.',
   },
   '/superadmin/departments': {
     title: 'Departments',
-    subtitle: 'Departments across every college, with their HODs and enrolment.',
+    subtitle: 'Departments, HODs and enrolment.',
   },
   '/superadmin/academics': {
     title: 'Academic structure',
-    subtitle: 'Programmes, semesters, subjects and chapters under each department.',
+    subtitle: 'Programmes, semesters, subjects and chapters.',
   },
   '/superadmin/users': {
     title: 'Platform users',
-    subtitle: 'Every user across every institution. Only Super Admins see this view.',
+    subtitle: 'Every account across every institution.',
   },
   '/superadmin/content': {
     title: 'Upload & content',
-    subtitle: 'Upload academic material and trigger AI course generation for any college.',
+    subtitle: 'Chapter uploads and generated lectures.',
   },
   '/superadmin/reports': {
     title: 'Reports',
-    subtitle: 'Search, preview, and export platform data.',
+    subtitle: 'Search, preview and export.',
   },
   '/superadmin/health': {
     title: 'Platform health',
-    subtitle: 'System status, uptime, pipeline throughput, and errors.',
+    subtitle: 'Status, pipeline and errors.',
   },
   '/superadmin/notifications': {
     title: 'Notifications',
-    subtitle: 'Activation, content, assignment and pipeline events, and their deliveries.',
+    subtitle: 'Events and deliveries.',
   },
   '/superadmin/settings': {
     title: 'Settings',
-    subtitle: 'Your profile and account security.',
+    subtitle: 'Profile, sign-in and email.',
   },
 };

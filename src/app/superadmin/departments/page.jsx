@@ -553,12 +553,11 @@ function DepartmentsView() {
 
       {activeAll.length > 1 ? (
         <div className="dv-grid">
-          <Panel title="Students by department" sub={collegeName ? `Departments of ${collegeName}` : 'Largest departments across the platform'}>
+          <Panel title="Students by department">
             <MetricList label="Students by department" items={studentBars} />
           </Panel>
           <Panel
             title="HOD coverage"
-            sub="Active departments with and without a head of department."
             className="mdc-card"
             action={<div className="mdc-chip"><small>Total departments</small><b>{countLabel(activeAll.length)}</b></div>}
           >

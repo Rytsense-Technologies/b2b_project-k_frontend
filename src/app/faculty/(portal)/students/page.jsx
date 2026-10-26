@@ -254,7 +254,7 @@ export default function FacultyStudentsPage() {
         ) : null}
         <Panel
           title={!scope ? 'Students' : limited ? 'Your students' : 'Department students'}
-          sub={!data ? null : limited && data.summary?.unplaced ? `Includes ${countLabel(data.summary.unplaced)} not yet placed in a programme.` : `${countLabel(total)} student${total === 1 ? '' : 's'} · open a row for the full learning and quiz record`}
+          sub={!data ? null : `${countLabel(total)} student${total === 1 ? '' : 's'}`}
           bodyClassName={null}
           toolbar={(
             <>
@@ -385,7 +385,7 @@ export default function FacultyStudentsPage() {
           ]}
         />
         <div className="dv-grid fa-grid-top">
-          <Panel title="Top students" sub="By chapter quiz average, last 30 days.">
+          <Panel title="Top students">
             {aFirst ? <SectionState title="Loading…" /> : (
               <MetricList
                 label="Top students by quiz average"
@@ -398,13 +398,12 @@ export default function FacultyStudentsPage() {
             )}
           </Panel>
           {aFirst ? (
-            <Panel title="Quiz score bands" sub="Each student's chapter quiz average.">
+            <Panel title="Quiz score bands">
               <SectionState title="Loading…" />
             </Panel>
           ) : (
             <ModernDonutCard
               title="Quiz score bands"
-              sub="Each student's chapter quiz average."
               totalLabel="Total students"
               unit="Students"
               parts={bandParts}
@@ -417,18 +416,14 @@ export default function FacultyStudentsPage() {
       </TabPanel>
 
       <TabPanel value="risk" current={tab} idBase="fa-students">
-        <Panel
-          title="Students who need attention"
-          sub="Low scores, behind on chapters or no learning activity in the last 30 days. Most reasons first."
-          bodyClassName=""
-        >
+        <Panel title="Students who need attention" bodyClassName="">
           {aFirst ? <div className="sp-panel-b"><SectionState title="Loading…" /></div> : null}
           {insights.error ? (
             <div className="sp-panel-b"><SectionState tone="err" title="Could not load">{apiErrorMessage(insights.error, 'Please try again.')}</SectionState></div>
           ) : null}
           {a && !atRisk.length ? (
             <div className="sp-panel-b">
-              <SectionState title="No one flagged">Students with low scores or no learning activity show up here.</SectionState>
+              <SectionState title="No one flagged" />
             </div>
           ) : null}
           {atRisk.length ? (

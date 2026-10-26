@@ -12,6 +12,7 @@ import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { loadStudentHomeData } from '@/components/student/studentHome';
 import { assessmentHref, classroomHref, SUBJECTS_PATH } from '@/lib/student/learning';
+import { BAND_NONE, BRAND_PRIMARY } from '@/lib/constants/theme';
 import '@/styles/student-dashboard.css';
 import '@/styles/student-progress.css';
 
@@ -26,11 +27,10 @@ import '@/styles/student-progress.css';
  * Live student APIs only. While loading: skeletons — no CTAs or "nothing yet" copy.
  */
 
-const TEAL = '#14606e';
-const GREY_HEX = '#BCC1C3';
+const TEAL = BRAND_PRIMARY;
 const PAGE_SIZE = 10;
-/** Same hue as subjectColor(), as hex for the chart. */
-const subjectHex = (key) => (String(key || '').startsWith('subject:') ? dataColor(String(key).slice(8), { hex: true }) : GREY_HEX);
+/** Same hue as subjectColor(), as hex for the chart. Unlinked lectures use teal, never grey. */
+const subjectHex = (key) => (String(key || '').startsWith('subject:') ? dataColor(String(key).slice(8), { hex: true }) : BAND_NONE);
 const TAB_VALUES = ['overview', 'subject', 'assessments'];
 
 const pct = (n) => (n != null && n !== '' && Number.isFinite(Number(n)) ? `${Math.round(Number(n))}%` : '—');
@@ -310,7 +310,7 @@ function ProgressView() {
 
           <div className="spg-grid">
             <div className="spg-col">
-              <Card title="Completion by subject" sub="Lectures watched in each subject">
+              <Card title="Completion by subject">
                 {isLoading ? <Skeleton rows={2} h={52} /> : subjects.length ? (
                   <MetricList
                     label="Completion by subject"
@@ -326,7 +326,7 @@ function ProgressView() {
                   />
                 ) : <p className="sb-empty">Your subjects appear once lectures are published for your department.</p>}
               </Card>
-              <Card title="Assessment scores" sub="Your latest chapter assessments over time">
+              <Card title="Assessment scores">
                 {isLoading ? <Skeleton rows={1} h={120} /> : quizTrend.length >= 2 ? (
                   <TrendChart data={quizTrend} series={quizSeries} height={200} suffix="%" />
                 ) : (
@@ -425,7 +425,7 @@ function ProgressView() {
               </section>
 
               <section className="spg-sec" aria-label="Chapter performance">
-                <SecHead title="Chapter performance" sub="Your progress for each published chapter. Click a row to open it." />
+                <SecHead title="Chapter performance" />
                 <form className="sb-filterbar" role="search" aria-label="Filter chapters" onSubmit={applyFilters}>
                   <label className="sb-search">
                     <Icon name="search" size={18} />
@@ -476,7 +476,7 @@ function ProgressView() {
               </section>
 
               <section className="spg-sec" aria-label="Learning record">
-                <SecHead title="Learning record" sub="A chronological record of your learning activity" />
+                <SecHead title="Learning record" />
                 {record.length ? (
                   <>
                     <div className="sb-rows">
@@ -519,7 +519,7 @@ function ProgressView() {
             <Card title="Score bands" sub={m ? plural(done.length, 'completed assessment') : ' '}>
               {isLoading ? <Skeleton rows={1} h={40} /> : <ModernDonut parts={bandParts} total={done.length} unit={done.length === 1 ? 'Assessment' : 'Assessments'} title="Assessment score bands" empty="No completed assessments yet." />}
             </Card>
-            <Card title="Assessment summary" sub="Each assessment allows one attempt." className="spg-assess-sum">
+            <Card title="Assessment summary" className="spg-assess-sum">
               {isLoading ? <Skeleton rows={3} h={56} /> : (
                 <div className="spg-sum">
                   <div className="spg-metric"><span>Total</span><b>{done.length}</b></div>
@@ -530,7 +530,7 @@ function ProgressView() {
             </Card>
           </div>
           <section className="spg-sec" aria-label="Assessment history">
-            <SecHead title="Assessment history" sub="Newest first. Click a row to review the answers." />
+            <SecHead title="Assessment history" />
             {isLoading ? <Skeleton rows={3} /> : done.length ? (
               <>
                 <div className="sb-rows">

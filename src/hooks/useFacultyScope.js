@@ -41,6 +41,9 @@ export function useFacultyScope() {
   return { scope, error, reload: () => load(true).then((d) => { setScope(d); return d; }) };
 }
 
+/** Shared, cached GET /faculty/me loader (same cache as the hook). */
+export const loadFacultyScope = load;
+
 export function clearFacultyScopeCache() {
   cached = null;
   inflight = null;

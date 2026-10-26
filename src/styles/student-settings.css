@@ -1,82 +1,46 @@
 /*
- * Student Settings (/student/settings) — quirri-b2c-student-ui "Settings" (owner, 15 Oct 2026).
- * The page re-exports the shared AccountSettings (used by every portal), so the student
- * look is applied ONLY through `.q-student .sa-settings` selectors here.
- * Stacked white sections, one per card; Save orange at the card's right edge on desktop;
- * secondary buttons white with a rgba(0,0,0,.15) border; text tabs with a teal underline.
+ * Student Settings (/student/settings).
+ * Layout + spacing live in account-settings.css; this file tunes the student palette.
+ * White 8px cards; Save is the one orange action; tabs use a teal underline.
  */
 
-.q-student .sa-settings .tabs{margin-bottom:0;border-bottom-color:var(--sb-hairline,#e3e7ee)}
-.q-student .sa-settings .tab{min-height:44px;font-size:15px;color:var(--sb-muted,#707a7e)}
-.q-student .sa-settings .tab:focus-visible{outline:2px solid var(--sb-teal,#14606e);outline-offset:2px}
+.q-student .sa-settings .tabs{margin-bottom:0;border-bottom-color:var(--sb-hairline)}
+.q-student .sa-settings .tab{min-height:44px;font-size:15px;line-height:22px;font-weight:500;color:var(--sb-muted)}
+.q-student .sa-settings .tab:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
 
-/* one column of cards */
-.q-student .sa-settings .pm-settings{grid-template-columns:minmax(0,1fr);gap:16px;max-width:none}
-@media (min-width:1024px){.q-student .sa-settings .pm-settings{gap:20px}}
-
-/* cards: white, 6px, 1px shadow, no borders */
-.q-student .sa-settings .sp-panel{border:0;border-radius:6px;box-shadow:var(--sb-shadow,0 1px 2px rgba(0,0,0,.25))}
+.q-student .sa-settings .sp-panel{border:0;border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow))}
 .q-student .sa-settings .sp-panel-h{padding:16px;border-bottom:0}
-.q-student .sa-settings .sp-panel-h h3{font-size:18px;line-height:24px;font-weight:600;color:var(--sb-ink,#102228)}
+.q-student .sa-settings .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
 .q-student .sa-settings .sp-panel-h h3::before{display:none}
-.q-student .sa-settings .sp-panel-h p{font-size:12px;color:var(--sb-muted,#707a7e)}
+.q-student .sa-settings .sp-panel-h p{font-size:12px;line-height:18px;color:var(--sb-muted)}
 .q-student .sa-settings .sp-panel-b{padding:0 16px 16px}
 @media (min-width:1024px){
-  .q-student .sa-settings .sp-panel-h{padding:20px 20px 12px}
-  .q-student .sa-settings .sp-panel-b{padding:0 20px 20px}
+  .q-student .sa-settings .sp-panel-h{padding:24px 24px 12px}
+  .q-student .sa-settings .sp-panel-b{padding:0 24px 24px}
 }
 
-/* account head + body */
-.q-student .sa-settings .sa-account-h{padding:16px;border-bottom:1px solid #eef1f3}
-.q-student .sa-settings .sa-account-b{padding:16px}
-@media (min-width:1024px){
-  .q-student .sa-settings .sa-account-h{padding:20px}
-  .q-student .sa-settings .sa-account-b{padding:20px}
-}
-.q-student .sa-settings .pm-av-lg{width:56px;height:56px;font-size:20px;background:var(--sb-teal,#14606e)}
-.q-student .sa-settings .pm-account b{font-weight:600;color:var(--sb-ink,#102228)}
-.q-student .sa-settings .pm-account small{color:var(--sb-muted,#707a7e)}
-.q-student .sa-settings .sp-pill--teal{background:var(--sb-wash,#e8f2f4);color:var(--sb-teal,#14606e)}
-.q-student .sa-settings .sa-account-sec h3{font-size:18px;line-height:24px;font-weight:600;color:var(--sb-ink,#102228)}
-.q-student .sa-settings .sa-account-sec p{font-size:13px;line-height:20px;color:var(--sb-muted,#707a7e)}
-
-/* inputs: 6px, hairline border, teal focus; locked fields visibly read-only */
 .q-student .sa-settings .field input,
-.q-student .sa-settings .field select{border-radius:6px;border-color:var(--sb-hairline,#e3e7ee);min-height:42px;color:var(--sb-ink,#102228)}
-.q-student .sa-settings .field input:focus{border-color:var(--sb-teal,#14606e);box-shadow:0 0 0 3px rgba(20,96,110,.12);outline:none}
-.q-student .sa-settings .field input:disabled,
-.q-student .sa-settings .sa-locked{background:#f8fafc;color:var(--sb-muted,#707a7e)}
-.q-student .sa-settings .field label{font-weight:500;color:var(--sb-ink,#102228)}
-.q-student .sa-settings .field .hint{color:var(--sb-muted,#707a7e)}
+.q-student .sa-settings .field select{border-radius:var(--radius-control,6px);border-color:var(--sb-hairline);min-height:44px;color:var(--sb-ink)}
+.q-student .sa-settings .field input:focus{border-color:var(--sb-teal);box-shadow:0 0 0 3px var(--teal-100);outline:none}
+.q-student .sa-settings .field input[aria-invalid="true"],
+.q-student .sa-settings .field input[aria-invalid="true"]:focus{border-color:var(--color-error)}
+.q-student .sa-settings .field input:disabled{background:var(--mist,#F8F8F9);color:var(--sb-muted)}
+.q-student .sa-settings .field label{font-weight:500;color:var(--sb-ink)}
+.q-student .sa-settings .field .hint{color:var(--sb-muted);font-size:12px;line-height:18px}
 
-/* security rows: plain rows split by a hairline, not boxed cards inside the card */
-.q-student .sa-settings .sa-sec-row{border:0;border-radius:0;padding:14px 0;border-top:1px solid #eef1f3}
-.q-student .sa-settings .sa-account-sec + .sa-sec-row{border-top:0;padding-top:0}
-.q-student .sa-settings .sp-row-ic{background:var(--sb-wash,#e8f2f4);color:var(--sb-teal,#14606e)}
-.q-student .sa-settings .sp-row-main b{font-weight:600;color:var(--sb-ink,#102228)}
+.q-student .sa-settings .sd-btn{min-height:44px;border-radius:var(--radius-control,6px);font-size:15px;line-height:20px;font-weight:500}
+.q-student .sa-settings .sd-btn--sm{min-height:40px}
+.q-student .sa-settings .sd-btn--amber{background:var(--sb-orange);color:#fff}
+.q-student .sa-settings .sd-btn--amber:hover{background:var(--sb-orange-hover);box-shadow:none}
+.q-student .sa-settings .sd-btn--amber:disabled{background:var(--sb-orange);color:#fff;opacity:.5}
+.q-student .sa-settings .sd-btn--ghost{background:var(--panel,#fff);color:var(--sb-ink);border-color:rgba(16,34,40,.15)}
+.q-student .sa-settings .sd-btn--ghost:hover{background:var(--mist,#F8F8F9);border-color:rgba(16,34,40,.15)}
+.q-student .sa-settings .sd-btn:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
 
-/* buttons: 46px page actions, 6px; orange = the card's one primary, secondary white */
-.q-student .sa-settings .sd-btn{min-height:46px;border-radius:6px;font-size:14px;font-weight:600}
-.q-student .sa-settings .sd-btn--sm{min-height:42px}
-.q-student .sa-settings .sd-btn--amber{background:var(--sb-orange,#f5821f);color:#fff}
-.q-student .sa-settings .sd-btn--amber:hover{background:var(--sb-orange-hover,#e2761c);box-shadow:none}
-.q-student .sa-settings .sd-btn--amber:disabled{background:var(--sb-orange,#f5821f);color:#fff;opacity:.5}
-.q-student .sa-settings .sd-btn--ghost{background:#fff;color:var(--sb-ink,#102228);border-color:rgba(0,0,0,.15)}
-.q-student .sa-settings .sd-btn--ghost:hover{background:#fafafa;border-color:rgba(0,0,0,.15)}
-.q-student .sa-settings .sd-btn:focus-visible{outline:2px solid var(--sb-teal,#14606e);outline-offset:2px}
-.q-student .sa-settings .sa-account-f{justify-content:flex-end;border-top-color:#eef1f3}
-
-/* about card list */
-.q-student .sa-settings .sa-side-list{border-top-color:#eef1f3}
-.q-student .sa-settings .sa-side-list li{color:var(--sb-ink,#102228)}
-.q-student .sa-settings .sa-side-list .sd-i{color:var(--sb-teal,#14606e)}
-
-/* mobile: full-width two-up buttons */
-@media (max-width:1023px){
-  .q-student .sa-settings .sa-account-f{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .q-student .sa-settings .sa-account-f .sd-btn{width:100%;padding:0 12px}
-}
-@media (max-width:420px){
-  .q-student .sa-settings .sa-account-f{grid-template-columns:minmax(0,1fr)}
-  .q-student .sa-settings .sa-sec-row .sd-btn{width:100%}
-}
+.q-student .sa-settings .as-avatar{background:var(--sb-teal)}
+.q-student .sa-settings .as-row-ic{background:var(--sb-wash);color:var(--sb-teal)}
+.q-student .sa-settings .as-card-h p{font-size:14px;line-height:22px}
+.q-student .sa-settings .as-grid{gap:16px 24px}
+.q-student .sa-settings .as-grid .field{margin-bottom:0}
+.q-student .sa-settings .as-actions{padding-top:16px}
+.q-student .sa-settings .nr-card{border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow))}

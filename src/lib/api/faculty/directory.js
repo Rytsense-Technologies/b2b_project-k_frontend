@@ -5,6 +5,8 @@ import { buildParams, unwrap } from '@/lib/api/superadmin/http';
 export const facultyDirectoryApi = {
   /** Role, department, assigned subjects, read-only flag, HOD capabilities. */
   me: async () => unwrap(await api.get('/faculty/me')),
+  /** Alias of me() for Settings (contract name). */
+  facultyMe: async () => unwrap(await api.get('/faculty/me')),
   overview: async () => unwrap(await api.get('/faculty/overview')),
   students: async ({ q = '', status = '', programId = '', semesterId = '', yearOfStudy = '', page = 1, pageSize = 25 } = {}) => {
     const res = await api.get(
@@ -25,6 +27,9 @@ export const facultyDirectoryApi = {
   /** HOD only. */
   staff: async () => unwrap(await api.get('/faculty/staff')),
 };
+
+/** GET /faculty/me (HOD / Faculty): department_name, college_name, is_hod, subjects. */
+export const facultyMe = () => facultyDirectoryApi.me();
 
 /**
  * Inbox: messages Quirri sent to the signed-in person (GET /notifications/mine).

@@ -139,6 +139,36 @@ export const settingsApi = {
       new_password: payload.new_password,
       confirm_password: payload.confirm_password,
     }),
+  /**
+   * POST /auth/logout — revokes this device's refresh token and clears the
+   * auth cookies. Callers still clear local state (see useAuth().logout).
+   */
+  logout: () => api.post('/auth/logout'),
+  /**
+   * Super Admin only. Last 10 "Signed in" audit rows for `email`, newest first:
+   * [{ at: ISO string, ip: string | null, detail: string }].
+   * GET /audit-logs takes search (ILIKE on action/actor/module/resource),
+   * module and range (today | last_7_days | last_30_days, max 30 days).
+   */
+  recentSignIns: async (email) => {
+    const target = String(email || '').trim().toLowerCase();
+    if (!target) return [];
+    const res = await api.get(
+      `/audit-logs?${buildParams({ search: target, module: 'Authentication', range: 'last_30_days' })}`,
+    );
+    const body = unwrap(res);
+    const items = Array.isArray(body) ? body : body?.items ?? [];
+    return items
+      .filter((row) => row?.action === 'Signed in'
+        && String(row?.actor ?? row?.user ?? '').toLowerCase() === target)
+      .map((row) => ({
+        at: row.created_at ?? row.datetime ?? null,
+        ip: row.ip && row.ip !== '—' ? row.ip : null,
+        detail: 'Signed in',
+      }))
+      .sort((a, b) => String(b.at ?? '').localeCompare(String(a.at ?? '')))
+      .slice(0, 10);
+  },
 };
 
 /** Live: /api/v1/roles */

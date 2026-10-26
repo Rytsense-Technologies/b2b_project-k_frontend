@@ -26,8 +26,11 @@ const portalFont = Poppins({
 });
 
 export const metadata = {
-  title: 'Quirri – Super Admin Portal',
-  description: 'Super Admin workspace for institutions, content, reports, and platform health.',
+  title: {
+    default: 'Quirri',
+    template: '%s · Quirri',
+  },
+  description: 'Quirri workspace for institutions, learning, and platform operations.',
 };
 
 export default function RootLayout({ children }) {

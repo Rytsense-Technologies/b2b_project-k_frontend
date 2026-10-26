@@ -2,13 +2,11 @@
 
 import '@/styles/student-settings.css';
 import AccountSettings from '@/components/shared/AccountSettings';
-import NotificationRules from '@/components/shared/NotificationRules';
+import SettingsNotificationsTab from '@/components/shared/SettingsNotificationsTab';
 
-/** Student settings: Profile, Security, Notifications (personal email preferences). */
-const EXTRA_TABS = [
-  { id: 'notifications', label: 'Notifications', render: () => <NotificationRules /> },
-];
+/** Student settings: Profile, Security, Notifications (personal email preferences). Role comes from AccountSettings (useAccountScope). */
+const renderNotifications = ({ role }) => <SettingsNotificationsTab role={role} />;
 
 export default function StudentSettingsPage() {
-  return <AccountSettings extraTabs={EXTRA_TABS} />;
+  return <AccountSettings notificationsTab={renderNotifications} />;
 }

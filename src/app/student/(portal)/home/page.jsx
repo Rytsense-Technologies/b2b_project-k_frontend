@@ -3,25 +3,22 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Icon, SectionState } from '@/components/student/ui';
-import { BandPill, MetricList, bandFor } from '@/components/shared/data-viz';
+import { BandPill, MetricList } from '@/components/shared/data-viz';
 import ScoreRing from '@/components/shared/ScoreRing';
 import { subjectColor } from '@/components/student/subjectColor';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { loadStudentHomeData } from '@/components/student/studentHome';
+import { BRAND_PRIMARY } from '@/lib/constants/theme';
 import '@/styles/student-dashboard.css';
 
 /**
- * Student Dashboard — quirri-b2c-student-ui skill "Dashboard" (owner, 15 Oct 2026).
- * Top to bottom on the grey canvas:
- *   greeting line · performance card (text tabs: overall / highest / recent) + your next step
- *   (the one orange action) · subjects as skill rows + study focus · up next as stacked white
- *   rows (each links to its target) · leaderboard snapshot.
- * No teal hero, no filter bar. Live student APIs only (lib/student/dashboardModel.js).
+ * Student Dashboard — Prep signed-in chrome inside Phase 1 B2B.
+ * Stack: teal welcome hero · KPI / lists in the main column · white side cards
+ * (one orange next-step action). Live student APIs only (lib/student/dashboardModel.js).
  */
 
 const SUBJECTS = '/student/subjects';
-const TEAL = '#14606e';
 
 const PERF_TABS = [
   { value: 'overall', label: 'Overall score' },
@@ -41,10 +38,9 @@ function nextStep(m) {
     return {
       icon: 'play',
       title: cl.title,
-      lead: cl.watchPercent > 0 ? `You are ${cl.watchPercent}% through this lecture` : 'Your next lecture is ready',
+      lead: cl.watchPercent > 0 ? `${cl.watchPercent}% watched` : 'Ready to start',
       meta: ['Video lecture', cl.subject, cl.duration],
       cta: { label: cl.watchPercent > 0 ? 'Resume lecture' : 'Start lecture', href: cl.href || SUBJECTS, icon: 'play' },
-      alt: { label: 'Browse subjects', href: SUBJECTS },
     };
   }
   const ready = m?.assessmentsReady?.[0];
@@ -52,19 +48,17 @@ function nextStep(m) {
     return {
       icon: 'check',
       title: ready.title,
-      lead: 'Your chapter assessment is unlocked',
+      lead: 'Assessment unlocked',
       meta: ['Assessment', ready.subject, 'One attempt'],
       cta: { label: 'Take assessment', href: ready.href, icon: 'check' },
-      alt: { label: 'Browse subjects', href: SUBJECTS },
     };
   }
   return {
     icon: 'play',
     title: 'Pick up a lecture',
-    lead: 'Review your subjects and keep your chapters moving',
+    lead: null,
     meta: ['My subjects', m?.deptName],
     cta: { label: 'Go to my subjects', href: SUBJECTS, icon: 'play' },
-    alt: { label: 'See my progress', href: '/student/progress' },
   };
 }
 
@@ -77,11 +71,7 @@ function studyFocus(m) {
     return {
       title: 'Review your latest assessment',
       // One line: the score itself is on the performance card (Recent score tab).
-      lines: [
-        bandFor(latest.score) === 'strong'
-          ? `You scored ${latest.score}% — keep going with the next chapter while it is fresh.`
-          : `You scored ${latest.score}%. Revisit the chapter or ask the AI tutor before your next assessment.`,
-      ],
+      lines: [`You scored ${latest.score}%.`],
       primary: { label: 'Review chapter', href: row?.href || SUBJECTS, icon: 'playFill' },
       tutor: row?.tutorHref || fallbackTutor,
     };
@@ -90,7 +80,7 @@ function studyFocus(m) {
   if (ready) {
     return {
       title: 'Take your next assessment',
-      lines: [`${ready.title} is unlocked.`, 'One attempt, scored by Quirri. Ask the AI tutor first if anything is unclear.'],
+      lines: [`${ready.title} is unlocked.`],
       primary: { label: 'Take assessment', href: ready.href, icon: 'check' },
       tutor: m?.chapterWatch?.find((c) => c.jobId === ready.jobId)?.tutorHref || fallbackTutor,
     };
@@ -99,14 +89,14 @@ function studyFocus(m) {
   if (cl) {
     return {
       title: `Finish ${cl.title}`,
-      lines: [`You are at ${cl.watchPercent}%.`, 'Watch the lecture to 100% to unlock its assessment.'],
+      lines: [`${cl.watchPercent}% watched.`],
       primary: { label: cl.watchPercent > 0 ? 'Resume lecture' : 'Start lecture', href: cl.href || SUBJECTS, icon: 'playFill' },
       tutor: cl.tutorHref || fallbackTutor,
     };
   }
   return {
     title: 'Nothing due right now',
-    lines: ['New lectures and assessments appear here when your department publishes them.'],
+    lines: [],
     primary: { label: 'Browse subjects', href: SUBJECTS, icon: 'book' },
     tutor: fallbackTutor,
   };
@@ -150,14 +140,6 @@ function performance(m, tab) {
   };
 }
 
-function perfNote(p) {
-  if (p.quiz == null) return 'Finish a lecture and take its assessment to see your score here.';
-  const band = bandFor(p.quiz);
-  if (band === 'strong') return 'Strong work. Keep the streak going with your next chapter.';
-  if (band === 'ok') return 'You are on track. One more strong assessment lifts this further.';
-  return 'Needs focus. Aim for 60% or more on your next assessment.';
-}
-
 function RowsSkeleton({ rows = 3, h = 72 }) {
   return (
     <div className="shb-skel" aria-hidden="true">
@@ -177,10 +159,6 @@ function SectionHead({ id, title, sub, action }) {
     </div>
   );
 }
-
-const more = (label, href) => (
-  <Link className="shb-more" href={href}>{label} <Icon name="chev" size={14} /></Link>
-);
 
 const Chev = () => (
   <svg className="sb-row__chev" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
@@ -216,14 +194,14 @@ export default function StudentHomePage() {
 
   return (
     <div className={`shb animate-fade-in${isLoading ? ' is-loading' : ''}`} aria-busy={isLoading}>
-      <p className="shb-greet">
+      <section className="shb-hero" aria-labelledby="shb-welcome">
         {ready ? (
           <>
-            <b>{m.name ? `Hi ${m.name},` : 'Hi,'}</b> here is where you stand today.
-            {m.deptName || m.collegeName ? <span>{[m.deptName, m.collegeName].filter(Boolean).join(' · ')}</span> : null}
+            <h2 id="shb-welcome">{m.name ? `Welcome back, ${m.name}` : 'Welcome back'}</h2>
+            {m.deptName || m.collegeName ? <p className="shb-hero-meta">{[m.deptName, m.collegeName].filter(Boolean).join(' · ')}</p> : null}
           </>
         ) : <span className="sb-skel shb-greet-skel" aria-hidden="true" />}
-      </p>
+      </section>
 
       {error && !m ? (
         <SectionState
@@ -267,12 +245,10 @@ export default function StudentHomePage() {
                 <>
                   <div className="shb-perf-main">
                     <div className="shb-ring">
-                      <ScoreRing score={perf.quiz ?? 0} size={112} strokeWidth={9} color={TEAL} suffix={perf.quiz != null ? '%' : ''} label={perf.quiz != null ? `Assessment score ${perf.quiz}%` : 'No assessment score yet'} />
+                      <ScoreRing score={perf.quiz ?? 0} size={112} strokeWidth={9} color={BRAND_PRIMARY} suffix={perf.quiz != null ? '%' : ''} label={perf.quiz != null ? `Assessment score ${perf.quiz}%` : 'No assessment score yet'} />
                       <span>Assessment score</span>
                     </div>
                     <div className="shb-perf-copy">
-                      <p className="shb-perf-note">{perfNote(perf)}</p>
-                      {/* The ring already shows the score; only say what it is based on. */}
                       <p className="shb-perf-basis">{perf.quizNote}</p>
                     </div>
                   </div>
@@ -290,7 +266,7 @@ export default function StudentHomePage() {
 
           {/* Subjects as skill rows */}
           <section className="shb-card shb-subj" aria-labelledby="shb-subj-h">
-            <SectionHead id="shb-subj-h" title="My subjects" sub="Lectures watched and your average assessment score" action={ready && m.subjects?.length ? more('All subjects', SUBJECTS) : null} />
+            <SectionHead id="shb-subj-h" title="My subjects" />
             {isLoading ? <RowsSkeleton rows={2} h={52} /> : m?.subjects?.length ? (
               <MetricList
                 label="My subjects: lectures watched"
@@ -312,7 +288,7 @@ export default function StudentHomePage() {
 
           {/* Up next: stacked white rows on the canvas */}
           <section className="shb-sec shb-upnext" aria-labelledby="shb-next-h">
-            <SectionHead id="shb-next-h" title="Up next" sub="Assessments and lectures waiting for you" />
+            <SectionHead id="shb-next-h" title="Up next" />
             {isLoading ? <RowsSkeleton rows={2} /> : next.length ? (
               <div className="sb-rows">
                 {next.map((x) => (
@@ -350,7 +326,7 @@ export default function StudentHomePage() {
                   <span className="shb-circle" aria-hidden="true"><Icon name={step.icon} size={20} /></span>
                   <div>
                     <h3 id="shb-step-h">{step.title}</h3>
-                    <p>{step.lead}</p>
+                    {step.lead ? <p>{step.lead}</p> : null}
                   </div>
                 </div>
                 <p className="shb-meta">{step.meta.filter(Boolean).join(' · ')}</p>
@@ -358,7 +334,6 @@ export default function StudentHomePage() {
                   <Link className="shb-btn shb-btn--primary" href={step.cta.href}>
                     <Icon name={step.cta.icon} size={16} /> {step.cta.label}
                   </Link>
-                  <Link className="shb-btn" href={step.alt.href}>{step.alt.label}</Link>
                 </div>
               </>
             ) : <RowsSkeleton rows={3} h={20} />}
@@ -388,7 +363,7 @@ export default function StudentHomePage() {
           </section>
 
           <section className="shb-card shb-lb" aria-labelledby="shb-lb-h">
-            <SectionHead id="shb-lb-h" title={lbScope} sub="Ranked by average assessment score" action={ready ? more('Full board', '/student/leaderboard') : null} />
+            <SectionHead id="shb-lb-h" title={lbScope} />
             {isLoading ? <RowsSkeleton rows={3} h={44} /> : lbRows.length ? (
               <ol className="shb-rank" aria-label="Leaderboard snapshot">
                 {lbRows.map((r) => (

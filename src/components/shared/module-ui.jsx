@@ -112,6 +112,26 @@ export function FilterBar({ children, label = 'Filters' }) {
   );
 }
 
+/**
+ * One labelled control in a teal filter bar. Use when several similar dropdowns
+ * sit together (notifications: Event / Channel / Period / Status) so each field
+ * has a visible name, not only an aria-label. `grow`: search | status | clear.
+ */
+export function FilterField({ label, htmlFor, grow, className = '', children }) {
+  const extra = grow === 'search' ? ' nf-field--search'
+    : grow === 'status' ? ' nf-field--status'
+      : grow === 'clear' ? ' nf-field--clear'
+        : '';
+  return (
+    <div className={`nf-field${extra}${className ? ` ${className}` : ''}`}>
+      {label
+        ? <label className="nf-field-l" htmlFor={htmlFor}>{label}</label>
+        : <span className="nf-field-l" aria-hidden="true">&nbsp;</span>}
+      {children}
+    </div>
+  );
+}
+
 /** Segmented control. options: [{ value, label, count? }] */
 export function SegTabs({ options, value, onChange, label = 'Filter' }) {
   const ref = useRef(null);
@@ -223,7 +243,7 @@ export function Panel({ title, sub, action = null, toolbar = null, children, cla
 }
 
 export function StatusPill({ active, on = 'Active', off = 'Inactive', tone }) {
-  // Inactive is a state, not an error: neutral pill (design-system §0b rule 3).
+  // Inactive is a state, not an error: teal pill (never grey).
   const t = tone || (active ? 'good' : 'off');
   return (
     <span className={`sp-pill sp-pill--${t}`}>
