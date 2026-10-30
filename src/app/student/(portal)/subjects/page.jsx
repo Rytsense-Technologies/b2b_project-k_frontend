@@ -34,16 +34,26 @@ import '@/styles/student-learning.css';
  *               (redesign: docs/agent/redesign/student-subjects-redesign.md)
  *   classroom → player, chapter info, chapter list, lecture status, AI tutor card
  *   tutor     → VoiceQnaPanel (voice session, history, transcript)
- * Watch-progress rules are unchanged: no seeking past the furthest point watched,
- * progress saved to the server, assessment unlocks at 100%.
+ * Watch progress is whatever the server counted (PUT .../watch-progress). The
+ * assessment unlocks from watch_complete, not from a local 100%.
  */
 
+const WATCH_HEARTBEAT_MS = 12000;
+const WATCH_VERIFY_MS = 15000;
+
 /** Quiz states from GET /mcq/my-attempts (+ availability for watched, unattempted chapters) — no per-chapter N+1, no cap. */
-function useQuizStatuses(videos) {
-  const key = useMemo(() => videos.map((v) => `${v.job_id}:${v.watch_percent ?? ''}`).join(','), [videos]);
+function useQuizStatuses(videos, watchCompleteByJob = {}) {
+  const key = useMemo(
+    () => videos.map((v) => `${v.job_id}:${watchCompleteByJob[v.job_id] ?? v.watch_complete ?? ''}`).join(','),
+    [videos, watchCompleteByJob],
+  );
   const { data } = useAsyncResource(async () => {
     if (!videos.length) return {};
-    const map = await loadQuizStates(videos);
+    const chapters = videos.map((v) => ({
+      ...v,
+      watch_complete: Boolean(watchCompleteByJob[v.job_id] ?? v.watch_complete),
+    }));
+    const map = await loadQuizStates(chapters);
     return Object.fromEntries(map);
   }, [key]);
   // `ready` keeps loading states honest: no "Locked" / "Not published" before the lookups land.
@@ -63,11 +73,12 @@ const HOW_STEPS = [
 const subjectHref = (key) => `${SUBJECTS_PATH}?s=${encodeURIComponent(key)}`;
 
 /** The one next action for a subject, in priority order (Up next card + subject card hint). */
-function recommend(chapters, subjectKeyValue, watchByJob, quizzes) {
+function recommend(chapters, subjectKeyValue, watchByJob, quizzes, watchCompleteByJob = {}) {
   const w = (c) => watchByJob[c.job_id] ?? 0;
+  const doneWatch = (c) => Boolean(watchCompleteByJob[c.job_id]);
   const q = (c) => quizzes[c.job_id];
   const name = (c) => c.chapter_title || 'this chapter';
-  const resuming = chapters.find((c) => w(c) > 0 && w(c) < 100);
+  const resuming = chapters.find((c) => w(c) > 0 && !doneWatch(c));
   if (resuming) {
     return {
       kind: 'resume', icon: 'playCircle',
@@ -113,9 +124,9 @@ function recommend(chapters, subjectKeyValue, watchByJob, quizzes) {
 }
 
 /** Lectures watched, assessments done and average score for one subject (or every subject). */
-function progressOf(chapters, watchByJob, quizzes) {
+function progressOf(chapters, watchByJob, quizzes, watchCompleteByJob = {}) {
   const total = chapters.length;
-  const watched = chapters.filter((c) => (watchByJob[c.job_id] ?? 0) >= 100).length;
+  const watched = chapters.filter((c) => Boolean(watchCompleteByJob[c.job_id])).length;
   const done = chapters.map((c) => quizzes[c.job_id]).filter((q) => q?.state === 'done');
   const avg = done.length ? done.reduce((a, q) => a + Number(q.percentage || 0), 0) / done.length : null;
   return { total, watched, done: done.length, avg, watchedPct: total ? Math.round((watched / total) * 100) : null };
@@ -132,22 +143,22 @@ const CHAPTER_FILTERS = [
 ];
 
 /** One status per chapter (S7), so the filter counts add up to All. */
-function chapterStatus(w, q) {
+function chapterStatus(w, q, complete) {
   if (q?.state === 'done') return 'done';
   if (q?.state === 'open') return 'ready';
-  if (w >= 100) return 'watched';
+  if (complete) return 'watched';
   if (w > 0) return 'progress';
   return 'new';
 }
 
-function chapterMatches(filter, w, q) {
-  return filter === 'all' || chapterStatus(w, q) === filter;
+function chapterMatches(filter, w, q, complete) {
+  return filter === 'all' || chapterStatus(w, q, complete) === filter;
 }
 
 /** Status chip (text + dot) and the one action for a chapter row — same vocabulary as the filter. */
-function chapterView(c, subjectKeyValue, w, q, ready) {
+function chapterView(c, subjectKeyValue, w, q, ready, complete) {
   const open = classroomHref(subjectKeyValue, c.job_id);
-  const status = chapterStatus(w, q);
+  const status = chapterStatus(w, q, complete);
   if (status === 'done') {
     const band = bandFor(q.percentage);
     return { chip: `Completed · ${pct(q.percentage)}`, dot: `sl-dot--${band}`, note: BAND_TEXT[band] || null, action: { label: 'View result', href: assessmentHref(c, subjectKeyValue) } };
@@ -204,9 +215,9 @@ function SubjectProgress({ p, ready, className = '' }) {
 }
 
 /** Level 1 card: whole card opens the subject (stretched title link); the button is the primary. */
-function SubjectCard({ subject, watchByJob, quizzes, ready }) {
-  const p = progressOf(subject.chapters, watchByJob, quizzes);
-  const next = ready ? recommend(subject.chapters, subject.key, watchByJob, quizzes) : null;
+function SubjectCard({ subject, watchByJob, quizzes, ready, watchCompleteByJob }) {
+  const p = progressOf(subject.chapters, watchByJob, quizzes, watchCompleteByJob);
+  const next = ready ? recommend(subject.chapters, subject.key, watchByJob, quizzes, watchCompleteByJob) : null;
   const go = next?.cta ? { label: next.cta.label, href: next.cta.href, primary: true } : { label: 'Open subject', href: subjectHref(subject.key), primary: false };
   return (
     <article className="sl-card sl-scard" aria-labelledby={`sl-sc-${subject.key}`}>
@@ -230,8 +241,8 @@ function SubjectCard({ subject, watchByJob, quizzes, ready }) {
   );
 }
 
-function ChapterRow({ c, n, subjectKeyValue, w, q, ready }) {
-  const v = chapterView(c, subjectKeyValue, w, q, ready);
+function ChapterRow({ c, n, subjectKeyValue, w, q, ready, complete }) {
+  const v = chapterView(c, subjectKeyValue, w, q, ready, complete);
   const title = c.chapter_title || 'Untitled chapter';
   return (
     <li className="sl-crow">
@@ -257,10 +268,10 @@ function ChapterRow({ c, n, subjectKeyValue, w, q, ready }) {
 }
 
 /** Level 2 — /student/subjects?s=<key>: header card, Up next, chapters. */
-function SubjectPage({ subject, watchByJob, quizzes, ready, url, setUrl, onHow }) {
+function SubjectPage({ subject, watchByJob, watchCompleteByJob, quizzes, ready, url, setUrl, onHow }) {
   const chapters = subject.chapters;
-  const p = progressOf(chapters, watchByJob, quizzes);
-  const next = ready ? recommend(chapters, subject.key, watchByJob, quizzes) : null;
+  const p = progressOf(chapters, watchByJob, quizzes, watchCompleteByJob);
+  const next = ready ? recommend(chapters, subject.key, watchByJob, quizzes, watchCompleteByJob) : null;
 
   // Search applies on Enter; the status select applies on change. Drafts mirror the URL on Back / Forward.
   const [draftQ, setDraftQ] = useState(url.q || '');
@@ -273,10 +284,10 @@ function SubjectPage({ subject, watchByJob, quizzes, ready, url, setUrl, onHow }
   };
 
   const term = (url.q || '').trim().toLowerCase();
-  const counts = Object.fromEntries(CHAPTER_FILTERS.map((f) => [f.value, chapters.filter((c) => chapterMatches(f.value, watchByJob[c.job_id] ?? 0, quizzes[c.job_id])).length]));
+  const counts = Object.fromEntries(CHAPTER_FILTERS.map((f) => [f.value, chapters.filter((c) => chapterMatches(f.value, watchByJob[c.job_id] ?? 0, quizzes[c.job_id], watchCompleteByJob[c.job_id])).length]));
   const shown = chapters
     .map((c, i) => ({ c, n: i + 1 }))
-    .filter(({ c }) => chapterMatches(url.f, watchByJob[c.job_id] ?? 0, quizzes[c.job_id]))
+    .filter(({ c }) => chapterMatches(url.f, watchByJob[c.job_id] ?? 0, quizzes[c.job_id], watchCompleteByJob[c.job_id]))
     .filter(({ c }) => !term || String(c.chapter_title || '').toLowerCase().includes(term));
   const filtered = url.f !== 'all' || Boolean(term);
   // Toolbar only for long lists — or when a filter arrived in the URL, so it can always be cleared.
@@ -344,7 +355,7 @@ function SubjectPage({ subject, watchByJob, quizzes, ready, url, setUrl, onHow }
         {pageRows.length ? (
           <ul className="sl-crows">
             {pageRows.map(({ c, n }) => (
-              <ChapterRow key={c.job_id} c={c} n={n} subjectKeyValue={subject.key} w={watchByJob[c.job_id] ?? 0} q={quizzes[c.job_id]} ready={ready} />
+              <ChapterRow key={c.job_id} c={c} n={n} subjectKeyValue={subject.key} w={watchByJob[c.job_id] ?? 0} q={quizzes[c.job_id]} ready={ready} complete={Boolean(watchCompleteByJob[c.job_id])} />
             ))}
           </ul>
         ) : (
@@ -371,11 +382,11 @@ function SubjectPage({ subject, watchByJob, quizzes, ready, url, setUrl, onHow }
 }
 
 /** Level 1 — /student/subjects: summary strip + subject cards. Level 2 when ?s= names a subject. */
-function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, error, reload, deptName, url, setUrl }) {
+function SubjectList({ subjects, watchByJob, watchCompleteByJob, quizzes, quizzesReady, loading, error, reload, deptName, url, setUrl }) {
   const [howOpen, setHowOpen] = useState(false);
   const subject = url.s ? subjects.find((s) => s.key === url.s) || null : null;
   const all = useMemo(() => subjects.flatMap((s) => s.chapters), [subjects]);
-  const sum = progressOf(all, watchByJob, quizzes);
+  const sum = progressOf(all, watchByJob, quizzes, watchCompleteByJob);
 
   return (
     <div className="sl sl-ov animate-fade-in">
@@ -415,6 +426,7 @@ function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, err
         <SubjectPage
           subject={subject}
           watchByJob={watchByJob}
+          watchCompleteByJob={watchCompleteByJob}
           quizzes={quizzes}
           ready={quizzesReady}
           url={url}
@@ -440,7 +452,7 @@ function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, err
             <ul className={`sl-sgrid sl-sgrid--n${Math.min(subjects.length, 3)}`}>
               {subjects.map((s) => (
                 <li key={s.key}>
-                  <SubjectCard subject={s} watchByJob={watchByJob} quizzes={quizzes} ready={quizzesReady} />
+                  <SubjectCard subject={s} watchByJob={watchByJob} watchCompleteByJob={watchCompleteByJob} quizzes={quizzes} ready={quizzesReady} />
                 </li>
               ))}
             </ul>
@@ -469,8 +481,10 @@ function SubjectList({ subjects, watchByJob, quizzes, quizzesReady, loading, err
 }
 
 /* ============================================================= classroom */
-function LectureStatus({ job, subjectKeyValue, watchPercent, quiz, onPlay }) {
-  const complete = watchPercent >= 100;
+function LectureStatus({
+  job, subjectKeyValue, watchPercent, watchComplete, limited, verifying, quiz, onPlay,
+}) {
+  const complete = Boolean(watchComplete);
   if (quiz?.state === 'done') {
     return (
       <section className="sl-card sl-status" aria-labelledby="sl-st-h">
@@ -501,7 +515,7 @@ function LectureStatus({ job, subjectKeyValue, watchPercent, quiz, onPlay }) {
           <span className="sl-status-ic is-good" aria-hidden="true"><Icon name="tick" size={22} /></span>
           <div>
             <h3 id="sl-st-h">Lecture complete</h3>
-            <p>100% watched</p>
+            <p>{watchPercent}% watched</p>
             <p>{notReady ? 'Your faculty is still preparing this chapter’s questions.' : 'Your assessment is unlocked.'}</p>
           </div>
         </div>
@@ -521,9 +535,15 @@ function LectureStatus({ job, subjectKeyValue, watchPercent, quiz, onPlay }) {
       <div className="sl-status-h">
         <span className="sl-status-ic" aria-hidden="true"><Icon name="play" size={22} /></span>
         <div>
-          <h3 id="sl-st-h">{watchPercent > 0 ? 'Keep watching' : 'Start this lecture'}</h3>
+          <h3 id="sl-st-h">{verifying ? 'Verifying your progress…' : watchPercent > 0 ? 'Keep watching' : 'Start this lecture'}</h3>
           <p>{watchPercent}% watched</p>
-          <p>Watch to 100% to unlock the assessment.</p>
+          <p>
+            {verifying
+              ? 'Keep this page open while we confirm you finished the lecture.'
+              : limited
+                ? 'Keep watching — skipped sections don’t count.'
+                : 'Watch to 100% to unlock the assessment.'}
+          </p>
         </div>
       </div>
       {/* White secondary: the play disc on the stage is this view's one orange action (S18). */}
@@ -537,98 +557,118 @@ function LectureStatus({ job, subjectKeyValue, watchPercent, quiz, onPlay }) {
   );
 }
 
-function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes }) {
+function SubjectView({
+  subject, url, setUrl, watchByJob, applyWatch, watchCompleteByJob, watchLimitedByJob, quizzes,
+}) {
   const chapters = subject.chapters;
   const activeJob = chapters.find((c) => c.job_id === url.chapter) || chapters[0] || null;
   const activeIndex = activeJob ? chapters.findIndex((c) => c.job_id === activeJob.job_id) : -1;
   const tab = url.tab === 'tutor' ? 'tutor' : 'classroom';
   const watchPercent = activeJob ? (watchByJob[activeJob.job_id] ?? 0) : 0;
-  const complete = watchPercent >= 100;
+  const complete = Boolean(activeJob && watchCompleteByJob[activeJob.job_id]);
+  const limited = Boolean(activeJob && watchLimitedByJob[activeJob.job_id]);
   const quiz = activeJob ? quizzes[activeJob.job_id] : null;
 
   const [watching, setWatching] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const videoRef = useRef(null);
   const stageRef = useRef(null);
   const maxWatchedRef = useRef(0);
-  const lastSavedPctRef = useRef(0);
-  const saveTimerRef = useRef(null);
+  const lastClaimRef = useRef({ percent: 0, maxPos: 0 });
+  const verifyRef = useRef(null);
 
   const persistProgress = useCallback(async (jobId, percent, maxPos) => {
-    if (!jobId) return;
-    const p = clampPct(percent);
-    if (p <= lastSavedPctRef.current && p < 100) return;
+    if (!jobId) return null;
     try {
       const res = await eduVideoApi.putWatchProgress(jobId, {
-        percent: p,
+        percent: clampPct(percent),
         max_position_seconds: Math.max(0, Math.round(maxPos || 0)),
       });
-      const saved = Math.max(p, Number(res?.percent) || 0);
-      lastSavedPctRef.current = saved;
-      setWatchByJob((prev) => ({ ...prev, [jobId]: Math.max(prev[jobId] ?? 0, saved) }));
+      const body = res?.percent != null || res?.watch_complete != null ? res : (res?.data || res);
+      applyWatch(jobId, body);
+      return body;
     } catch {
-      /* Keep local progress; the next heartbeat retries. */
+      return null;
     }
-  }, [setWatchByJob]);
+  }, [applyWatch]);
 
-  const schedulePersist = useCallback((jobId, percent, maxPos) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => persistProgress(jobId, percent, maxPos), 800);
-  }, [persistProgress]);
+  const claimFromPlayer = useCallback(() => {
+    const el = videoRef.current;
+    const d = el?.duration;
+    const t = el?.currentTime || 0;
+    if (t > maxWatchedRef.current) maxWatchedRef.current = t;
+    const dur = Number.isFinite(d) && d > 0 ? d : 0;
+    const maxPos = Math.max(maxWatchedRef.current, t, lastClaimRef.current.maxPos || 0);
+    const percent = dur ? Math.min(100, Math.round((maxPos / dur) * 100)) : lastClaimRef.current.percent;
+    lastClaimRef.current = { percent, maxPos };
+    return lastClaimRef.current;
+  }, []);
+
+  const stopVerify = useCallback(() => {
+    if (verifyRef.current) {
+      clearInterval(verifyRef.current);
+      verifyRef.current = null;
+    }
+    setVerifying(false);
+  }, []);
+
+  const startVerify = useCallback((jobId) => {
+    stopVerify();
+    setVerifying(true);
+    verifyRef.current = setInterval(async () => {
+      const { percent, maxPos } = lastClaimRef.current;
+      const res = await persistProgress(jobId, percent, maxPos);
+      if (res?.watch_complete) stopVerify();
+    }, WATCH_VERIFY_MS);
+  }, [persistProgress, stopVerify]);
 
   /* Changing chapter or tab stops the inline player. */
   useEffect(() => {
     setWatching(false);
+    stopVerify();
     maxWatchedRef.current = 0;
-    lastSavedPctRef.current = activeJob ? (watchByJob[activeJob.job_id] ?? 0) : 0;
-  }, [activeJob?.job_id, tab]); // eslint-disable-line react-hooks/exhaustive-deps
+    lastClaimRef.current = { percent: 0, maxPos: 0 };
+  }, [activeJob?.job_id, tab, stopVerify]);
 
-  useEffect(() => () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); }, []);
+  useEffect(() => () => {
+    stopVerify();
+  }, [stopVerify]);
+
+  useEffect(() => {
+    if (complete) stopVerify();
+  }, [complete, stopVerify]);
+
+  /* Heartbeat while the lecture is playing — counted percent only rises on the next PUT. */
+  useEffect(() => {
+    if (!watching || !activeJob?.job_id) return undefined;
+    const tick = () => {
+      const { percent, maxPos } = claimFromPlayer();
+      persistProgress(activeJob.job_id, percent, maxPos);
+    };
+    tick();
+    const id = setInterval(tick, WATCH_HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [watching, activeJob?.job_id, claimFromPlayer, persistProgress]);
 
   const play = () => {
     setWatching(true);
+    stopVerify();
     stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  const onTimeUpdate = (e) => {
+  const onTimeUpdate = () => {
+    claimFromPlayer();
+  };
+
+  const onEnded = async () => {
     if (!activeJob) return;
-    const el = e.currentTarget;
-    const d = el.duration;
-    if (!Number.isFinite(d) || d <= 0) return;
-    const t = el.currentTime || 0;
-    if (t > maxWatchedRef.current) maxWatchedRef.current = t;
-    const p = Math.min(100, Math.floor((maxWatchedRef.current / d) * 100));
-    setWatchByJob((prev) => {
-      const cur = prev[activeJob.job_id] ?? 0;
-      return p <= cur ? prev : { ...prev, [activeJob.job_id]: p };
-    });
-    schedulePersist(activeJob.job_id, p, maxWatchedRef.current);
-  };
-
-  const restoreMaxWatched = (el) => {
-    if (!el || !activeJob) return;
-    const d = el.duration;
-    if (!Number.isFinite(d) || d <= 0) return;
-    const savedPct = watchByJob[activeJob.job_id] ?? lastSavedPctRef.current ?? 0;
-    const fromSaved = (Math.min(100, Math.max(0, Number(savedPct) || 0)) / 100) * d;
-    maxWatchedRef.current = Math.max(maxWatchedRef.current, fromSaved);
-  };
-
-  const onLoadedMetadata = (e) => {
-    restoreMaxWatched(e.currentTarget);
-  };
-
-  const onSeeking = (e) => {
-    const el = e.currentTarget;
-    restoreMaxWatched(el);
-    if (el.currentTime > maxWatchedRef.current + 1.25) el.currentTime = maxWatchedRef.current;
-  };
-
-  const onEnded = () => {
-    if (!activeJob) return;
-    maxWatchedRef.current = Math.max(maxWatchedRef.current, videoRef.current?.duration || 0);
-    setWatchByJob((prev) => ({ ...prev, [activeJob.job_id]: 100 }));
-    persistProgress(activeJob.job_id, 100, maxWatchedRef.current);
+    const duration = videoRef.current?.duration || 0;
+    maxWatchedRef.current = Math.max(maxWatchedRef.current, duration);
+    lastClaimRef.current = { percent: 100, maxPos: maxWatchedRef.current };
     setWatching(false);
+    const res = await persistProgress(activeJob.job_id, 100, maxWatchedRef.current);
+    if (res && !res.watch_complete) startVerify(activeJob.job_id);
+    else stopVerify();
   };
 
   const tabs = [
@@ -695,8 +735,6 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes 
                   playsInline
                   src={eduVideoApi.getDownloadUrl(activeJob.job_id)}
                   onTimeUpdate={onTimeUpdate}
-                  onSeeking={onSeeking}
-                  onLoadedMetadata={onLoadedMetadata}
                   onEnded={onEnded}
                 >
                   Your browser does not support embedded video playback.
@@ -765,7 +803,7 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes 
                         <span className="sl-chapter-t">
                           <b>{c.chapter_title || 'Untitled chapter'}</b>
                           <small>
-                            <ChapterChip v={chapterView(c, subject.key, watchByJob[c.job_id] ?? 0, quizzes[c.job_id], true)} />
+                            <ChapterChip v={chapterView(c, subject.key, watchByJob[c.job_id] ?? 0, quizzes[c.job_id], true, Boolean(watchCompleteByJob[c.job_id]))} />
                             <span aria-hidden="true">·</span>
                             {formatDuration(c.video_duration_seconds) || 'Video lecture'}
                           </small>
@@ -782,6 +820,9 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes 
                 job={activeJob}
                 subjectKeyValue={subject.key}
                 watchPercent={watchPercent}
+                watchComplete={complete}
+                limited={limited}
+                verifying={verifying}
                 quiz={quiz}
                 onPlay={play}
               />
@@ -807,6 +848,7 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes 
             jobId={activeJob?.job_id}
             chapterTitle={activeJob?.chapter_title || ''}
             subjectName={subject.name}
+            sourceFilename={activeJob?.source_filename || ''}
             chapters={chapters}
             onSelectChapter={(id) => setUrl({ chapter: id })}
           />
@@ -820,6 +862,15 @@ function SubjectView({ subject, url, setUrl, watchByJob, setWatchByJob, quizzes 
 function SubjectsInner() {
   const [url, setUrl] = useUrlState({ subject: '', chapter: '', tab: 'classroom', s: '', f: 'all', q: '', p: '1' });
   const [watchByJob, setWatchByJob] = useState({});
+  const [watchCompleteByJob, setWatchCompleteByJob] = useState({});
+  const [watchLimitedByJob, setWatchLimitedByJob] = useState({});
+
+  const applyWatch = useCallback((jobId, res) => {
+    if (!jobId || !res) return;
+    setWatchByJob((prev) => ({ ...prev, [jobId]: clampPct(res.percent) }));
+    setWatchCompleteByJob((prev) => ({ ...prev, [jobId]: Boolean(res.watch_complete) }));
+    setWatchLimitedByJob((prev) => ({ ...prev, [jobId]: Boolean(res.limited) }));
+  }, []);
 
   const { data: meData } = useAsyncResource(() => fetchData(() => settingsApi.get()), []);
   const { data, loading, error, reload } = useAsyncResource(() => eduVideoApi.listStudentVideos({ pageSize: 100 }), []);
@@ -828,17 +879,24 @@ function SubjectsInner() {
   const me = meData?.user || meData || null;
   const deptName = me?.department_name || me?.department || null;
   const subjects = useMemo(() => buildSubjects(videos), [videos]);
-  const { quizzes, ready: quizzesReady } = useQuizStatuses(videos);
+  const { quizzes, ready: quizzesReady } = useQuizStatuses(videos, watchCompleteByJob);
 
-  /* Seed / refresh watch map from the API (never lower a live value). A submitted
-     assessment means the lecture was watched to 100% (the quiz only opens then). */
+  /* Seed from the list API without overwriting a live heartbeat. */
   useEffect(() => {
     setWatchByJob((prev) => {
       const next = { ...prev };
       videos.forEach((job) => {
+        if (!job.job_id || next[job.job_id] != null) return;
+        next[job.job_id] = clampPct(job.watch_percent);
+      });
+      return next;
+    });
+    setWatchCompleteByJob((prev) => {
+      const next = { ...prev };
+      videos.forEach((job) => {
         if (!job.job_id) return;
-        const attempted = quizzes[job.job_id]?.state === 'done';
-        next[job.job_id] = Math.max(next[job.job_id] ?? 0, clampPct(job.watch_percent), attempted ? 100 : 0);
+        if (quizzes[job.job_id]?.state === 'done') next[job.job_id] = true;
+        else if (next[job.job_id] == null) next[job.job_id] = Boolean(job.watch_complete);
       });
       return next;
     });
@@ -871,7 +929,9 @@ function SubjectsInner() {
         url={url}
         setUrl={setUrl}
         watchByJob={watchByJob}
-        setWatchByJob={setWatchByJob}
+        applyWatch={applyWatch}
+        watchCompleteByJob={watchCompleteByJob}
+        watchLimitedByJob={watchLimitedByJob}
         quizzes={quizzes}
       />
     );
@@ -881,6 +941,7 @@ function SubjectsInner() {
     <SubjectList
       subjects={subjects}
       watchByJob={watchByJob}
+      watchCompleteByJob={watchCompleteByJob}
       quizzes={quizzes}
       quizzesReady={quizzesReady || (!loading && !videos.length)}
       loading={loading && !data}

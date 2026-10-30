@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
+  ConfirmNote,
   DetailDrawer,
   DrawerSection,
   IconButton,
@@ -21,12 +22,14 @@ import {
 } from '@/components/shared/module-ui';
 import { BANDS, BandPill, MetricList, ModernDonutCard, bandFor } from '@/components/shared/data-viz';
 import ScoreRing from '@/components/shared/ScoreRing';
-import { QuirriSelect } from '@/components/superadmin/quirri-ui';
+import QuirriModal from '@/components/superadmin/QuirriModal';
+import { QuirriControlledField, QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { minutesLabel } from '@/components/admin/insights';
 import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
 import { academicsApi } from '@/lib/api/superadmin/academics';
 import { analyticsApi } from '@/lib/api/analytics';
-import { mcqApi } from '@/lib/api/mcq';
+import { mcqApi, mcqErrorMessage } from '@/lib/api/mcq';
+import { mcqResetReasonSchema } from '@/lib/validation';
 import { apiErrorMessage, asList, unwrap } from '@/lib/api/superadmin/http';
 import { userStatusLabel } from '@/lib/admin/userStatus';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
@@ -59,8 +62,8 @@ function Score({ value }) {
   );
 }
 
-function StudentDrawer({ id, onClose, subjectLimited = false }) {
-  const { data, loading, error } = useAsyncResource(
+function StudentDrawer({ id, onClose, subjectLimited = false, canReset = false }) {
+  const { data, loading, error, reload } = useAsyncResource(
     // A malformed ?student= (old or hand-edited link) is "not found" without a request.
     () => (!id ? Promise.resolve(null)
       : /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? facultyDirectoryApi.student(id)
@@ -68,6 +71,10 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
     [id],
   );
   const [downloading, setDownloading] = useState(null);
+  const [resetQuiz, setResetQuiz] = useState(null);
+  const [resetReason, setResetReason] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetting, setResetting] = useState(false);
   const download = async (jobId) => {
     setDownloading(jobId);
     try {
@@ -78,8 +85,37 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
       setDownloading(null);
     }
   };
+  const closeReset = () => {
+    if (resetting) return;
+    setResetQuiz(null);
+    setResetReason('');
+    setResetError('');
+  };
+  const confirmReset = async () => {
+    const jobId = resetQuiz?.job_id || resetQuiz?.jobId;
+    if (!jobId || !id || resetting) return;
+    const parsed = mcqResetReasonSchema.safeParse({ reason: resetReason });
+    if (!parsed.success) {
+      setResetError(parsed.error.issues?.[0]?.message || 'Keep the reason to 300 characters or fewer.');
+      return;
+    }
+    setResetting(true);
+    try {
+      await mcqApi.resetAttempt(jobId, id, { reason: parsed.data.reason });
+      toast.success('Attempt reset. The student can take this quiz again.');
+      setResetQuiz(null);
+      setResetReason('');
+      setResetError('');
+      await reload({ silent: true }).catch(() => {});
+    } catch (err) {
+      toast.error(mcqErrorMessage(err, 'Could not reset this attempt.'));
+    } finally {
+      setResetting(false);
+    }
+  };
   const m = data?.metrics;
   return (
+    <>
     <DetailDrawer
       open={Boolean(id)}
       onClose={onClose}
@@ -139,9 +175,18 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
                         <IconButton
                           icon="download"
                           label={`Download ${q.chapter || 'quiz'} report`}
-                          disabled={downloading === q.job_id}
-                          onClick={() => download(q.job_id)}
+                          disabled={downloading === (q.job_id || q.jobId)}
+                          onClick={() => download(q.job_id || q.jobId)}
                         />
+                      ) : null}
+                      {canReset && (q.job_id || q.jobId) ? (
+                        <button
+                          type="button"
+                          className="sd-btn sd-btn--ghost sd-btn--sm"
+                          onClick={() => { setResetQuiz(q); setResetReason(''); setResetError(''); }}
+                        >
+                          Reset attempt
+                        </button>
                       ) : null}
                     </span>
                   </li>
@@ -152,6 +197,42 @@ function StudentDrawer({ id, onClose, subjectLimited = false }) {
         </>
       ) : null}
     </DetailDrawer>
+    <QuirriModal
+      open={Boolean(resetQuiz)}
+      onClose={closeReset}
+      title="Reset this attempt?"
+      crumb={resetQuiz?.chapter || 'Chapter quiz'}
+      busy={resetting}
+      footer={(
+        <>
+          <button type="button" className="sd-btn sd-btn--ghost" onClick={closeReset} disabled={resetting}>Keep score</button>
+          <div className="right">
+            <button type="button" className="sd-btn sd-btn--amber" onClick={confirmReset} disabled={resetting}>
+              {resetting ? 'Resetting…' : 'Reset attempt'}
+            </button>
+          </div>
+        </>
+      )}
+    >
+      <ConfirmNote danger icon="alert" title="The current score is deleted">
+        This student can take the quiz again. The previous result is removed from rankings.
+      </ConfirmNote>
+      <div className="fa-reset-reason">
+        <QuirriControlledField
+          fieldType="resetReason"
+          name="reason"
+          label="Reason (optional)"
+          hint="Kept in the audit log. Up to 300 characters."
+          value={resetReason}
+          onChange={(v) => { setResetReason(v); setResetError(''); }}
+          error={resetError}
+          multiline
+          rows={3}
+          full
+        />
+      </div>
+    </QuirriModal>
+    </>
   );
 }
 
@@ -451,7 +532,12 @@ export default function FacultyStudentsPage() {
         </Panel>
       </TabPanel>
 
-      <StudentDrawer id={url.student || null} onClose={() => setUrl({ student: '' })} subjectLimited={limited} />
+      <StudentDrawer
+        id={url.student || null}
+        onClose={() => setUrl({ student: '' })}
+        subjectLimited={limited}
+        canReset={Boolean(scope) && scope.read_only !== true}
+      />
     </ModulePage>
   );
 }

@@ -416,7 +416,8 @@ export const eduVideoApi = {
 
   /**
    * PUT /edu_video/student/watch-progress/{job_id}
-   * Heartbeat — server keeps the max percent only (never decreases).
+   * Heartbeat. The response percent is the counted value (may be lower than
+   * what was sent). Trust `watch_complete` — not a local 100%.
    */
   putWatchProgress(jobId, { percent = 0, max_position_seconds = 0 } = {}) {
     const origin = getEduVideoOrigin();
