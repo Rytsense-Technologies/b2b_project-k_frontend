@@ -17,6 +17,7 @@ import {
   countLabel,
 } from '@/components/shared/module-ui';
 import NotificationRules from '@/components/shared/NotificationRules';
+import SystemNotificationInbox from '@/components/shared/SystemNotificationInbox';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { notificationsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { usersApi } from '@/lib/api/superadmin/users';
@@ -27,6 +28,7 @@ import { useUrlState, useTabParam } from '@/hooks/useUrlState';
 const PAGE_SIZE = 10; // quirri-b2c-student-ui: lists page at 10
 const TABS = [
   { value: 'rules', label: 'Rules' },
+  { value: 'alerts', label: 'Your alerts' },
   { value: 'deliveries', label: 'Deliveries' },
 ];
 const TONE = { sent: 'sp-pill--good', failed: 'sp-pill--err', log_only: 'sp-pill--off', skipped: 'sp-pill--off' };
@@ -36,11 +38,19 @@ const EVENT_OPTIONS = [
   { value: '', label: 'All events' },
   { value: 'account_activation', label: 'Account activation invite' },
   { value: 'password_reset', label: 'Password reset link' },
+  { value: 'verification_code', label: 'Verification code' },
+  { value: 'password_changed', label: 'Password changed' },
+  { value: 'account_status_changed', label: 'Account status changed' },
+  { value: 'hod_assigned', label: 'HOD assigned' },
+  { value: 'subjects_assigned', label: 'Subjects assigned' },
+  { value: 'student_placement_changed', label: 'Student placement changed' },
+  { value: 'pipeline_completed', label: 'Video pipeline finished' },
   { value: 'content_ready_for_review', label: 'Content ready for review' },
   { value: 'changes_requested', label: 'Changes requested' },
   { value: 'content_published', label: 'Chapter published' },
+  { value: 'mcq_ready_for_review', label: 'Assessment ready for review' },
   { value: 'assessment_available', label: 'Assessment available' },
-  { value: 'pipeline_completed', label: 'Video pipeline finished' },
+  { value: 'assessment_result', label: 'Assessment result' },
 ];
 const CHANNEL_OPTIONS = [
   { value: '', label: 'All channels' },
@@ -173,6 +183,10 @@ function NotificationsLog() {
 
       <TabPanel value="rules" current={tab} idBase="ad-notif">
         <NotificationRules canTest />
+      </TabPanel>
+
+      <TabPanel value="alerts" current={tab} idBase="ad-notif">
+        <SystemNotificationInbox portal="admin" />
       </TabPanel>
 
       <TabPanel value="deliveries" current={tab} idBase="ad-notif">

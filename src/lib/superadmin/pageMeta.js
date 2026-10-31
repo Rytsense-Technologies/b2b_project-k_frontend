@@ -42,7 +42,7 @@ export const PAGE_META = {
   },
   '/superadmin/notifications': {
     title: 'Notifications',
-    subtitle: 'Events and deliveries.',
+    subtitle: 'Your alerts, rules, events and deliveries.',
   },
   '/superadmin/settings': {
     title: 'Settings',

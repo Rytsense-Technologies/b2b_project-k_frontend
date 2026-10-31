@@ -20,6 +20,10 @@ export const PAGE_META = {
     title: 'My progress',
     subtitle: 'Completion and scores by subject.',
   },
+  '/student/notifications': {
+    title: 'Notifications',
+    subtitle: 'Messages sent to you.',
+  },
   '/student/settings': {
     title: 'Settings',
     subtitle: 'Profile, sign-in and email.',

@@ -30,7 +30,7 @@ export const PAGE_META = {
   },
   '/faculty/notifications': {
     title: 'Notifications',
-    subtitle: 'Review alerts and messages.',
+    subtitle: 'Alerts and email switches.',
   },
   '/faculty/settings': {
     title: 'Settings',

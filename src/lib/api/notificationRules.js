@@ -1,5 +1,5 @@
 import api from '@/lib/axios';
-import { unwrap } from '@/lib/api/superadmin/http';
+import { buildParams, unwrap } from '@/lib/api/superadmin/http';
 
 /**
  * Live: /api/v1/notifications/rules (docs/agent/redesign/notifications-plan.md § Contract).
@@ -34,4 +34,13 @@ export const notificationRulesApi = {
     if (scopeId) body.scope_id = scopeId;
     return unwrap(await api.post(`/notifications/rules/${encodeURIComponent(eventId)}/test`, body));
   },
+};
+
+/**
+ * Inbox: messages Quirri sent to the signed-in person (GET /notifications/mine).
+ * Rows: { id, event, event_label, channel, subject, status, created_at }. No read_at.
+ */
+export const myNotificationsApi = {
+  list: async ({ page = 1, pageSize = 25, days = 30 } = {}) =>
+    unwrap(await api.get(`/notifications/mine?${buildParams({ page, page_size: pageSize, days })}`)),
 };

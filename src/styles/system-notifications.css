@@ -1,0 +1,264 @@
+/* In-app alert bell — every portal top bar. Tokens only. 6px control / 8px panel. */
+
+.sn-bell {
+  position: relative;
+  flex: none;
+}
+
+.sn-bell-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--radius-control);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--teal-500);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-1);
+}
+
+.sn-bell-btn:hover {
+  background: var(--surface-tint);
+}
+
+.sn-bell-btn:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
+}
+
+.sn-bell-btn[aria-expanded="true"] {
+  background: var(--teal-50);
+  border-color: var(--teal-200);
+}
+
+.sn-bell-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--highlight);
+  pointer-events: none;
+}
+
+.sn-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(480px, calc(100dvh - 96px));
+  overflow: hidden;
+  background: var(--panel);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+}
+
+.sn-panel-h {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  flex: none;
+}
+
+.sn-panel-h b {
+  display: block;
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.sn-panel-h span {
+  display: block;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--muted-2);
+}
+
+.sn-panel-h a {
+  flex: none;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--teal-500);
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.sn-panel-h a:hover,
+.sn-panel-h a:focus-visible {
+  text-decoration: underline;
+}
+
+.sn-grant {
+  flex: none;
+  margin: 0 16px 12px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--teal-500);
+  background: transparent;
+  color: var(--teal-500);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.sn-grant:hover {
+  background: var(--surface-tint);
+}
+
+.sn-grant:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
+}
+
+.sn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px;
+  border-top: 1px solid var(--line);
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.sn-list li {
+  margin: 0;
+}
+
+.sn-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+}
+
+.sn-list li:first-child .sn-row {
+  border-top: 0;
+}
+
+.sn-row:hover,
+.sn-row:focus-visible {
+  background: var(--surface-tint);
+}
+
+.sn-row:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: -2px;
+}
+
+.sn-row.is-unread .sn-ic {
+  color: var(--accent-text);
+}
+
+.sn-ic {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-control);
+  background: var(--surface-tint);
+  color: var(--teal-500);
+  display: grid;
+  place-items: center;
+}
+
+.sn-row-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.sn-row-main b {
+  display: block;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.sn-row-main small {
+  display: block;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--muted-2);
+  margin-top: 4px;
+}
+
+.sn-empty {
+  padding: 24px 16px;
+  text-align: left;
+}
+
+.sn-empty b,
+.sn-empty p {
+  display: block;
+}
+
+.sn-empty b {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.sn-empty p {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--muted-2);
+  margin-top: 4px;
+}
+
+.sn-inbox .fa-notes .sp-link {
+  flex: none;
+}
+
+.topbar-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  margin-left: auto;
+}
+
+.pm-topbar-slot:empty {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sn-panel {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100dvh - 24px);
+  }
+}

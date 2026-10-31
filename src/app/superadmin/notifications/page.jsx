@@ -20,6 +20,7 @@ import {
 import { MetricListCard, ModernDonut } from '@/components/shared/data-viz';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import NotificationRules from '@/components/shared/NotificationRules';
+import SystemNotificationInbox from '@/components/shared/SystemNotificationInbox';
 import { notificationsApi, collegesApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
@@ -35,6 +36,7 @@ const RETRY_DAYS = 7;
 
 const TABS = [
   { value: 'rules', label: 'Rules' },
+  { value: 'alerts', label: 'Your alerts' },
   { value: 'deliveries', label: 'Deliveries' },
   { value: 'events', label: 'Events' },
 ];
@@ -257,6 +259,10 @@ function NotificationsView() {
 
       <TabPanel value="rules" current={tab} idBase="notif">
         <RulesTab collegeId={url.college} onCollege={(id) => setUrl({ college: id })} />
+      </TabPanel>
+
+      <TabPanel value="alerts" current={tab} idBase="notif">
+        <SystemNotificationInbox portal="superadmin" />
       </TabPanel>
 
       <TabPanel value="deliveries" current={tab} idBase="notif">

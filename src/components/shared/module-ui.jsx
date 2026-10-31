@@ -43,7 +43,8 @@ export function ModuleHead({ lede, chips = null, actions = null }) {
   const [bar, setBar] = useState(null);
   useEffect(() => {
     if (!actions) return undefined;
-    const el = document.querySelector('.q-app-shell:not(.q-student) .topbar');
+    const el = document.querySelector('.q-app-shell:not(.q-student) .topbar .pm-topbar-slot')
+      || document.querySelector('.q-app-shell:not(.q-student) .topbar');
     setBar(el || null);
     return () => setBar(null);
   }, [actions ? 1 : 0]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -533,11 +534,12 @@ export function TabNav({ tabs, value, onChange, label = 'Sections', idBase = 'ta
           className={`tab${value === t.value ? ' active' : ''}`}
           aria-selected={value === t.value}
           aria-controls={`${idBase}-panel-${t.value}`}
+          aria-label={t.count != null ? `${t.label}, ${t.count}` : undefined}
           tabIndex={value === t.value ? 0 : -1}
           onClick={() => onChange(t.value)}
         >
           {t.label}
-          {t.count != null ? <span className="ct">{t.count}</span> : null}
+          {t.count != null ? <span className="ct" aria-hidden="true">{t.count}</span> : null}
         </button>
       ))}
     </div>
@@ -557,10 +559,16 @@ export function ModuleTabs({ tabs, label = 'Module sections' }) {
       {tabs.map((t) => {
         const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`);
         return (
-          <Link key={t.href} href={t.href} className={`tab${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
+          <Link
+            key={t.href}
+            href={t.href}
+            className={`tab${active ? ' active' : ''}`}
+            aria-current={active ? 'page' : undefined}
+            aria-label={t.count != null ? `${t.label}, ${t.count}` : undefined}
+          >
             {t.icon ? <Icon name={t.icon} size={16} /> : null}
             {t.label}
-            {t.count != null ? <span className="ct">{t.count}</span> : null}
+            {t.count != null ? <span className="ct" aria-hidden="true">{t.count}</span> : null}
           </Link>
         );
       })}

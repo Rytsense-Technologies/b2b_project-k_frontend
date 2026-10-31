@@ -14,6 +14,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/student/ui';
+import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
 
 const PageHeaderContext = createContext({ header: null, setHeader: () => {} });
 
@@ -72,7 +73,7 @@ export function Breadcrumbs({ items }) {
  * Top bar for a portal layout.
  * @param {{ meta: {title, subtitle, crumbs?}, home?: {label, href} }} props
  */
-export function PortalTopbar({ meta, home, leading = null }) {
+export function PortalTopbar({ meta, home, leading = null, portal = 'admin' }) {
   const { header } = useContext(PageHeaderContext);
   const title = header?.title ?? meta?.title;
   const subtitle = header?.subtitle ?? meta?.subtitle;
@@ -85,12 +86,16 @@ export function PortalTopbar({ meta, home, leading = null }) {
   return (
     <header className={`topbar pm-topbar${crumbs ? ' has-crumbs' : ''}`}>
       {leading}
-      <div className="pm-topbar-main">
+      <div className="pm-topbar-main topbar-copy">
         {crumbs ? <Breadcrumbs items={crumbs} /> : null}
         <h1>{title}</h1>
         {subtitle ? <p>{subtitle}</p> : null}
       </div>
-      {actions ? <div className="pm-topbar-actions">{actions}</div> : null}
+      <div className="topbar-right">
+        {actions ? <div className="pm-topbar-actions">{actions}</div> : null}
+        <div className="pm-topbar-slot" />
+        <SystemNotificationBell portal={portal} />
+      </div>
     </header>
   );
 }

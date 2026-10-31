@@ -6,6 +6,7 @@ import Switch from '@/components/shared/Switch';
 import { Icon } from '@/components/student/ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { notificationRulesApi } from '@/lib/api/notificationRules';
+import { requestAlertsRefresh } from '@/lib/notifications/scenarios';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { isInterviewOff } from '@/lib/product/interviewOff';
 import '@/styles/notification-rules.css';
@@ -120,6 +121,7 @@ export default function NotificationRules({ scope, scopeId, canTest = false }) {
       else if (status === 'skipped') toast.error(row?.error || 'The test was skipped because this email is turned off.');
       else if (status === 'log_only') toast.success('Test recorded — email sending is not connected yet');
       else toast.success(`Test “${ev.name}” email sent to you`);
+      requestAlertsRefresh();
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Could not send the test email.'));
     } finally {

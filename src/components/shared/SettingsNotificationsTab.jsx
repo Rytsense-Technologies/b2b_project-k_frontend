@@ -43,8 +43,20 @@ export default function SettingsNotificationsTab({ role }) {
 
   const managed = MANAGED[role];
   if (!managed) {
+    const inbox = role === 'student' ? '/student/notifications' : '/faculty/notifications?tab=messages';
     return (
       <div className="as-stack">
+        <section className="sp-panel as-card" aria-labelledby="as-alerts-h">
+          <div className="as-card-h">
+            <h2 id="as-alerts-h">Your alerts</h2>
+            <p>Messages Quirri emails you also appear in the top-bar bell.</p>
+          </div>
+          <div className="as-actions as-actions--start">
+            <Link className="sd-btn sd-btn--teal" href={inbox}>
+              Open your alerts <Icon name="arrow" size={16} />
+            </Link>
+          </div>
+        </section>
         <NotificationRules scope="personal" />
       </div>
     );

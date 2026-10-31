@@ -31,11 +31,4 @@ export const facultyDirectoryApi = {
 /** GET /faculty/me (HOD / Faculty): department_name, college_name, is_hod, subjects. */
 export const facultyMe = () => facultyDirectoryApi.me();
 
-/**
- * Inbox: messages Quirri sent to the signed-in person (GET /notifications/mine).
- * Personal email switches are /notifications/rules, not /mine and not /preferences.
- */
-export const myNotificationsApi = {
-  list: async ({ page = 1, pageSize = 25, days = 30 } = {}) =>
-    unwrap(await api.get(`/notifications/mine?${buildParams({ page, page_size: pageSize, days })}`)),
-};
+export { myNotificationsApi } from '@/lib/api/notificationRules';
