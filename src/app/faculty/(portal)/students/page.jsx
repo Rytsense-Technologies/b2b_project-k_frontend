@@ -268,7 +268,7 @@ export default function FacultyStudentsPage() {
     }),
     [url.q, status, url.program, url.semester, url.year, page],
   );
-  const insights = useAsyncResource(() => analyticsApi.department({}), []);
+  const insights = useAsyncResource(() => analyticsApi.department({ range: 'all_time' }), []);
 
   const rows = useMemo(() => asList(data, []), [data]);
   const total = data?.total ?? 0;

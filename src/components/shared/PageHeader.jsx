@@ -15,6 +15,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/student/ui';
 import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
+import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
+
+const PORTAL_TAB = { admin: 'College Admin' };
 
 const PageHeaderContext = createContext({ header: null, setHeader: () => {} });
 
@@ -77,6 +80,7 @@ export function PortalTopbar({ meta, home, leading = null, portal = 'admin' }) {
   const { header } = useContext(PageHeaderContext);
   const title = header?.title ?? meta?.title;
   const subtitle = header?.subtitle ?? meta?.subtitle;
+  usePortalDocumentTitle(title, PORTAL_TAB[portal] || 'College Admin');
   const baseCrumbs = header?.crumbs ?? meta?.crumbs ?? null;
   const crumbs = baseCrumbs
     ? [...(home ? [home] : []), ...baseCrumbs, ...(header?.crumbs ? [] : [{ label: title }])]

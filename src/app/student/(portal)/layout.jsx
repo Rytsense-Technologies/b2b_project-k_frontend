@@ -13,7 +13,6 @@ import { PAGE_META } from '@/lib/student/pageMeta';
 import StudentSidebar from '@/components/student/StudentSidebar';
 import '@/styles/student-portal.css';
 import '@/styles/student-b2c.css';
-import { dmSans } from '@/lib/student/fonts';
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
 
@@ -56,7 +55,7 @@ export default function StudentLayout({ children }) {
   usePortalDocumentTitle(meta.title, 'Student');
 
   return (
-    <div className={`app q-app-shell q-student ${dmSans.variable} ${mobileNavShellClass(navOpen)}`}>
+    <div className={`app q-app-shell q-student ${mobileNavShellClass(navOpen)}`}>
       <StudentSidebar />
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>

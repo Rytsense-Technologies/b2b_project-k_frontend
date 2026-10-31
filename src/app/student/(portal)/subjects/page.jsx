@@ -13,6 +13,7 @@ import { settingsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState } from '@/hooks/useUrlState';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { loadQuizStates } from '@/components/student/quizStates';
 import {
   SUBJECTS_PATH,
@@ -344,9 +345,12 @@ function SubjectPage({ subject, watchByJob, watchCompleteByJob, quizzes, ready, 
               <Icon name="search" size={18} />
               <input type="search" placeholder="Search chapters" value={draftQ} onChange={(e) => setDraftQ(e.target.value)} />
             </label>
-            <select className="sb-select" aria-label="Chapter status" value={url.f || 'all'} onChange={(e) => setUrl({ f: e.target.value, p: '1' })}>
-              {CHAPTER_FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label} ({counts[f.value]})</option>)}
-            </select>
+            <QuirriSelect
+              ariaLabel="Chapter status"
+              value={url.f || 'all'}
+              onChange={(e) => setUrl({ f: e.target.value, p: '1' })}
+              options={CHAPTER_FILTERS.map((f) => ({ value: f.value, label: `${f.label} (${counts[f.value]})` }))}
+            />
             {filtered && pageRows.length ? <button type="button" className="sb-btn sb-btn--clear" onClick={clear}>Clear</button> : null}
             <button type="submit" className="sr-only" tabIndex={-1}>Search</button>
           </form>

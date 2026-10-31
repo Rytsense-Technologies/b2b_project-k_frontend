@@ -9,6 +9,7 @@ import ScoreRing from '@/components/shared/ScoreRing';
 import { subjectColor, subjectTileStyle } from '@/components/student/subjectColor';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { loadStudentHomeData } from '@/components/student/studentHome';
 import { assessmentHref, classroomHref, SUBJECTS_PATH } from '@/lib/student/learning';
@@ -431,9 +432,12 @@ function ProgressView() {
                     <Icon name="search" size={18} />
                     <input type="search" value={draft.q} onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))} placeholder="Search chapters" aria-label="Search chapters" />
                   </label>
-                  <select className="sb-select" aria-label="Chapter status" value={draft.f} onChange={(e) => setDraft((d) => ({ ...d, f: e.target.value }))}>
-                    {CHAPTER_FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label} ({counts[f.value]})</option>)}
-                  </select>
+                  <QuirriSelect
+                    ariaLabel="Chapter status"
+                    value={draft.f}
+                    onChange={(e) => setDraft((d) => ({ ...d, f: e.target.value }))}
+                    options={CHAPTER_FILTERS.map((f) => ({ value: f.value, label: `${f.label} (${counts[f.value]})` }))}
+                  />
                   <div className="sb-actions">
                     <button type="button" className="sb-btn sb-btn--clear" onClick={clearFilters}>Clear</button>
                     <button type="submit" className="sb-btn sb-btn--go">Search</button>

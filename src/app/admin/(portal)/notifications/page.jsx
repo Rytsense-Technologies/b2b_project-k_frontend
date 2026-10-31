@@ -24,6 +24,7 @@ import { usersApi } from '@/lib/api/superadmin/users';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState, useTabParam } from '@/hooks/useUrlState';
+import { emailChannelQuery, isWhatsApp, withoutWhatsApp } from '@/lib/product/whatsappOff';
 
 const PAGE_SIZE = 10; // quirri-b2c-student-ui: lists page at 10
 const TABS = [
@@ -32,7 +33,7 @@ const TABS = [
   { value: 'deliveries', label: 'Deliveries' },
 ];
 const TONE = { sent: 'sp-pill--good', failed: 'sp-pill--err', log_only: 'sp-pill--off', skipped: 'sp-pill--off' };
-const CHANNEL = { email: 'Email', whatsapp: 'WhatsApp' };
+const CHANNEL = { email: 'Email' };
 /** Events a college can receive (backend notification_service.EVENTS; GET /notifications/deliveries?event=). */
 const EVENT_OPTIONS = [
   { value: '', label: 'All events' },
@@ -55,7 +56,6 @@ const EVENT_OPTIONS = [
 const CHANNEL_OPTIONS = [
   { value: '', label: 'All channels' },
   { value: 'email', label: 'Email' },
-  { value: 'whatsapp', label: 'WhatsApp' },
 ];
 const RANGE_OPTIONS = [
   { value: '7', label: 'Last 7 days' },
@@ -100,7 +100,7 @@ function NotificationsLog() {
     () => fetchData(() => notificationsApi.listDeliveries({
       status: url.status,
       event: url.event,
-      channel: url.channel,
+      channel: emailChannelQuery(url.channel),
       q: url.q,
       page,
       page_size: PAGE_SIZE,
@@ -108,7 +108,7 @@ function NotificationsLog() {
     })),
     [url.status, url.event, url.channel, url.q, page, days],
   );
-  const rows = useMemo(() => asList(data, []), [data]);
+  const rows = useMemo(() => withoutWhatsApp(asList(data, []), (r) => r.channel), [data]);
   // `summary` covers the whole range only (the API ignores event / channel / search for it), so the
   // Retry action uses it. The status tab counts follow every filter: with a narrowing filter set we
   // ask for the total of each status (page_size 1) with the same filters.
@@ -118,7 +118,7 @@ function NotificationsLog() {
   const { data: filteredCounts } = useAsyncResource(async () => {
     if (!narrowed) return null;
     const one = (status) => fetchData(() => notificationsApi.listDeliveries({
-      status, event: url.event, channel: url.channel, q: url.q, page: 1, page_size: 1, days: Number(days),
+      status, event: url.event, channel: emailChannelQuery(url.channel), q: url.q, page: 1, page_size: 1, days: Number(days),
     })).then((r) => (typeof r?.total === 'number' ? r.total : 0));
     const [sent, failed, logOnly, skipped] = await Promise.all([one('sent'), one('failed'), one('log_only'), one('skipped')]);
     return { sent, failed, log_only: logOnly, skipped, key: [url.event, url.channel, url.q, days].join('|') };
@@ -227,7 +227,7 @@ function NotificationsLog() {
             <FilterField label="Channel">
               <QuirriSelect
                 ariaLabel="Channel"
-                value={url.channel}
+                value={isWhatsApp(url.channel) ? '' : url.channel}
                 onChange={(e) => setUrl({ channel: e.target.value, page: '1' })}
                 options={CHANNEL_OPTIONS}
               />

@@ -6,6 +6,7 @@ import { selectUser } from '@/store/slices/authSlice';
 import { myNotificationsApi } from '@/lib/api/notificationRules';
 import { asList } from '@/lib/api/superadmin/http';
 import { isInterviewOff } from '@/lib/product/interviewOff';
+import { isWhatsApp } from '@/lib/product/whatsappOff';
 import { ALERTS_REFRESH, eventLabel } from '@/lib/notifications/scenarios';
 
 const POLL_MS = 45000;
@@ -35,7 +36,7 @@ function writeSeen(userId, iso) {
 
 function isInboxRow(row) {
   if (!row) return false;
-  if (String(row.channel || '').toLowerCase() === 'whatsapp') return false;
+  if (isWhatsApp(row.channel)) return false;
   return !isInterviewOff(`${row.event || ''} ${row.event_label || ''} ${row.subject || ''}`);
 }
 

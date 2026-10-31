@@ -5,6 +5,7 @@
  */
 import { formatCount } from './format';
 import { isInterviewOff } from '@/lib/product/interviewOff';
+import { isWhatsApp } from '@/lib/product/whatsappOff';
 
 /** Uptime below this needs a look; below UPTIME_BAD it is an outage. */
 export const UPTIME_OK = 99.5;
@@ -61,7 +62,9 @@ export function readHealthSignals(statusData) {
  */
 export function overallHealth(statusData) {
   const services = list(statusData?.services).filter(
-    (svc) => !isInterviewOff(`${svc.name || ''} ${svc.service || ''}`),
+    (svc) => !isInterviewOff(`${svc.name || ''} ${svc.service || ''}`)
+      && !isWhatsApp(svc.name)
+      && !isWhatsApp(svc.service),
   );
   const signals = readHealthSignals(statusData);
   const items = [];

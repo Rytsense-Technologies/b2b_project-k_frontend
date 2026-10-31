@@ -9,6 +9,7 @@ import { leaderboardApi } from '@/lib/api/leaderboard';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState } from '@/hooks/useUrlState';
+import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import '@/styles/student-leaderboard.css';
 
 /*
@@ -255,10 +256,16 @@ function LeaderboardInner() {
           <Icon name="search" size={18} />
           <input ref={searchRef} type="search" value={draft.q} onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))} placeholder="Search classmates" aria-label="Search classmates" />
         </label>
-        <select className="sb-select slb-select" aria-label="Assessment" value={draft.job} onChange={(e) => setDraft((d) => ({ ...d, job: e.target.value }))} disabled={!assessments.length}>
-          <option value="">All assessments</option>
-          {assessments.map((a) => <option key={a.job_id} value={a.job_id}>{a.title || 'Chapter assessment'}</option>)}
-        </select>
+        <QuirriSelect
+          ariaLabel="Assessment"
+          value={draft.job}
+          disabled={!assessments.length}
+          onChange={(e) => setDraft((d) => ({ ...d, job: e.target.value }))}
+          options={[
+            { value: '', label: 'All assessments' },
+            ...assessments.map((a) => ({ value: a.job_id, label: a.title || 'Chapter assessment' })),
+          ]}
+        />
         <div className="sb-actions">
           <button type="button" className="sb-btn sb-btn--clear" onClick={clearFilters}>Clear</button>
           <button type="submit" className="sb-btn sb-btn--go">Search</button>

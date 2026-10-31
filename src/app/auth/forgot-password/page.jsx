@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
               <p className="sub">
                 Enter your institutional email and we&apos;ll send a reset link.
               </p>
-              <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate>
                 <Controller
                   control={control}
                   name="email"

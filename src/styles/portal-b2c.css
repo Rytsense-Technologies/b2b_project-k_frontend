@@ -235,8 +235,8 @@
 .q-app-shell:not(.q-student) .fa-note.is-warn > .sd-i{color:var(--accent-text)}
 .q-app-shell:not(.q-student) .fa-note.is-err > .sd-i{color:var(--sb-danger)}
 
-/* Disabled primary keeps its colour at 50% (skill), not a grey slab */
-.q-app-shell:not(.q-student) :is(.sd-btn--amber,.btn-primary):is(:disabled,[aria-disabled="true"]){background:var(--sb-orange);color:#fff;opacity:.5;box-shadow:none}
+/* Disabled primary: Neutral 200 fill, Neutral 400 label (Brand v1.0) — not orange at 50% */
+.q-app-shell:not(.q-student) :is(.sd-btn--amber,.btn-primary):is(:disabled,[aria-disabled="true"]){background:var(--neutral-200);color:var(--neutral-400);opacity:1;box-shadow:none;cursor:not-allowed}
 .q-app-shell:not(.q-student) .sd-btn--amber:hover:not(:disabled){box-shadow:none;background:var(--sb-orange-hover)}
 
 /* Dialogs and drawers: white, 8px, black 50% overlay, light shadow, white footer */

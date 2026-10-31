@@ -258,7 +258,7 @@ function LoginForm() {
               </a>
             </>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate>
               <Controller
                 control={control}
                 name="email"

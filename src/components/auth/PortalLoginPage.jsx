@@ -199,7 +199,7 @@ function LoginForm({ expectedRole, homePath, lockoutKey, footCopy, bypassUser })
               </button>
             </>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate>
               <Controller
                 control={control}
                 name="email"

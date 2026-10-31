@@ -29,6 +29,7 @@ import { useUrlState, useTabParam } from '@/hooks/useUrlState';
 import { useDebouncedUrlSearch, pageParam } from '@/lib/superadmin/listState';
 import { formatIndianPhone } from '@/lib/superadmin/format';
 import { withoutInterview } from '@/lib/product/interviewOff';
+import { emailChannelQuery, isWhatsApp, withoutWhatsApp } from '@/lib/product/whatsappOff';
 
 const PAGE_SIZE = 10;
 /** POST /notifications/deliveries/retry-failed resends failures of the last 7 days only. */
@@ -59,7 +60,6 @@ const RANGE_SHORT = { 7: '7 days', 30: '30 days', 90: '90 days' };
 const CHANNELS = [
   { value: '', label: 'All channels' },
   { value: 'email', label: 'Email' },
-  { value: 'whatsapp', label: 'WhatsApp' },
 ];
 
 /** Delivered = green, Failed = red (a real failure), Log-only / not configured = neutral. */
@@ -74,7 +74,7 @@ const STATE_TONE = {
   'Not configured': 'sp-pill--off',
 };
 
-const CHANNEL_LABEL = { email: 'Email', whatsapp: 'WhatsApp' };
+const CHANNEL_LABEL = { email: 'Email' };
 
 function formatWhen(iso) {
   const d = new Date(iso || '');
@@ -148,7 +148,7 @@ function NotificationsView() {
     () => fetchOptional(() => notificationsApi.listDeliveries({
       status: url.status || undefined,
       event: url.event || undefined,
-      channel: url.channel || undefined,
+      channel: emailChannelQuery(url.channel),
       q: url.q || undefined,
       days,
       page,
@@ -169,7 +169,10 @@ function NotificationsView() {
     [eventsData],
   );
   const deliveries = useMemo(
-    () => withoutInterview(asList(deliveriesData, []), (row) => `${row.event || ''} ${row.event_label || ''}`),
+    () => withoutWhatsApp(
+      withoutInterview(asList(deliveriesData, []), (row) => `${row.event || ''} ${row.event_label || ''}`),
+      (row) => row.channel,
+    ),
     [deliveriesData],
   );
   const provider = eventsData?.provider || {};
@@ -215,7 +218,6 @@ function NotificationsView() {
           {eventsData ? (
             <>
               Email {emailReady ? `· ${provider.email || 'connected'}` : 'is recorded only, not sent yet'}
-              {' · '}WhatsApp {provider.whatsapp ? `· ${provider.whatsapp}` : 'is not configured'}
               {' · '}
             </>
           ) : null}
@@ -317,7 +319,7 @@ function NotificationsView() {
               <FilterField label="Channel">
                 <QuirriSelect
                   ariaLabel="Channel"
-                  value={url.channel}
+                  value={isWhatsApp(url.channel) ? '' : url.channel}
                   onChange={(e) => setUrl({ channel: e.target.value, page: '1' })}
                   options={CHANNELS}
                 />
@@ -435,7 +437,7 @@ function NotificationsView() {
                       <td data-label="Audience">{row.audience}</td>
                       <td data-label="Channels">
                         <div className="sa-chips">
-                          {(row.channels || []).map((ch) => (
+                          {withoutWhatsApp(row.channels || [], (ch) => ch.channel).map((ch) => (
                             <Pill key={ch.channel} tone={STATE_TONE[ch.state]}>
                               {CHANNEL_LABEL[ch.channel] || ch.channel} · {ch.state}
                             </Pill>

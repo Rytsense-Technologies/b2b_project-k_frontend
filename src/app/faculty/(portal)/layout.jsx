@@ -47,7 +47,9 @@ export default function FacultyLayout({ children }) {
     .filter((k) => pathname?.startsWith(k))
     .sort((a, b) => b.length - a.length)[0];
   const meta = matchedRoute ? facultyPageMeta(matchedRoute, scope) : { title: 'Page not found', subtitle: 'This address does not match a page in your portal.' };
-  usePortalDocumentTitle(meta.title, scope?.is_hod ? 'HOD' : (scope ? 'Faculty' : 'HOD / Faculty'));
+  // Omit the portal label until GET /faculty/me lands so Faculty never flashes "HOD".
+  const portalLabel = !scope ? '' : (scope.is_hod ? 'HOD' : 'Faculty');
+  usePortalDocumentTitle(meta.title, portalLabel);
 
   return (
     <div className={`app q-app-shell q-faculty ${mobileNavShellClass(navOpen)}`}>

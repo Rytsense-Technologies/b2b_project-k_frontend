@@ -164,6 +164,9 @@
   padding:0 12px 0 38px;font-size:14px;color:var(--sb-ink);
 }
 .q-student .sb-search input::placeholder{color:var(--sb-muted)}
+.q-student .sb-filterbar .quirri-dd{
+  flex:0 1 240px;min-width:168px;
+}
 .q-student .sb-select{
   height:44px;border:0;border-radius:var(--radius-control);background:#fff;padding:0 34px 0 12px;
   font-size:14px;font-weight:500;color:var(--sb-ink);appearance:none;-webkit-appearance:none;min-width:127px;

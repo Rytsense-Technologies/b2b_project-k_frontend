@@ -24,6 +24,7 @@ import {
   UPTIME_OK, UPTIME_BAD, serviceTone, toNumber, groupNumbers, overallHealth,
 } from '@/lib/superadmin/health';
 import { withoutInterview } from '@/lib/product/interviewOff';
+import { isWhatsApp, withoutWhatsApp } from '@/lib/product/whatsappOff';
 
 const METRIC_ICONS = ['activity', 'clock', 'layers', 'alert'];
 const METRIC_PLACEHOLDERS = ['Uptime · 30d', 'API p95 latency', 'Jobs in queue', 'Failed jobs · 24h'];
@@ -119,10 +120,19 @@ function HealthView() {
 
   const unavailable = !statusLoading && statusData == null && !statusError;
   const health = overallHealth(statusData);
-  const services = withoutInterview(asList(statusData?.services, []), (svc) => `${svc.name || ''} ${svc.service || ''}`);
+  const services = withoutWhatsApp(
+    withoutInterview(asList(statusData?.services, []), (svc) => `${svc.name || ''} ${svc.service || ''}`),
+    (svc) => svc.name || svc.service,
+  );
   const latency = asList(statusData?.pipeline_latency, []);
-  const errorsByService = withoutInterview(asList(statusData?.errors_by_service, []), (e) => e.service);
-  const errors = withoutInterview(asList(errorsData, []), (row) => `${row.service || ''} ${row.path || ''} ${row.error || ''}`);
+  const errorsByService = withoutWhatsApp(
+    withoutInterview(asList(statusData?.errors_by_service, []), (e) => e.service),
+    (e) => e.service,
+  );
+  const errors = withoutWhatsApp(
+    withoutInterview(asList(errorsData, []), (row) => `${row.service || ''} ${row.path || ''} ${row.error || ''}`),
+    (row) => row.service,
+  );
   // Skill: lists show 10 rows with "Showing X–Y of Z" + Previous / Next under them.
   const errPageCount = Math.max(1, Math.ceil(errors.length / ERR_PAGE_SIZE));
   const errPageNow = Math.min(errPage, errPageCount);
@@ -174,8 +184,8 @@ function HealthView() {
   }));
 
   const serviceOptions = useMemo(() => {
-    const names = new Set(errorsByService.map((e) => e.service));
-    if (url.service) names.add(url.service);
+    const names = new Set(errorsByService.map((e) => e.service).filter((n) => !isWhatsApp(n)));
+    if (url.service && !isWhatsApp(url.service)) names.add(url.service);
     return [{ value: '', label: 'All services' }, ...[...names].map((n) => ({ value: n, label: n }))];
   }, [errorsByService, url.service]);
 

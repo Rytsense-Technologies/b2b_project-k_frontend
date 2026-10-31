@@ -33,7 +33,7 @@ export default function FacultyDashboardPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const { data, loading, error, reload } = useAsyncResource(() => facultyDirectoryApi.overview(), []);
-  const insights = useAsyncResource(() => analyticsApi.department({}), []);
+  const insights = useAsyncResource(() => analyticsApi.department({ range: 'all_time' }), []);
   const subjects = useFacultySubjects();
   const colorFor = useSubjectColor();
 
