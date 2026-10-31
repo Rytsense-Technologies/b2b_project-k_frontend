@@ -20,6 +20,7 @@ import {
   assessmentHref,
   buildSubjects,
   classroomHref,
+  subjectKey,
   clampPct,
   formatDate,
   formatDuration,
@@ -906,7 +907,35 @@ function SubjectsInner() {
     });
   }, [videos, quizzes]);
 
+  const chapterJob = url.chapter ? videos.find((v) => v.job_id === url.chapter) : null;
+
+  useEffect(() => {
+    if (url.subject || !chapterJob) return;
+    setUrl({ subject: subjectKey(chapterJob) });
+  }, [url.subject, chapterJob, setUrl]);
+
   const active = url.subject ? subjects.find((s) => s.key === url.subject) : null;
+
+  if (url.chapter && !url.subject) {
+    if (loading && !data) return <SectionState title="Loading your classroom…" />;
+    if (!chapterJob) {
+      return (
+        <div className="sl">
+          <nav className="sl-crumbs" aria-label="Breadcrumb">
+            <ol><li><Link href={SUBJECTS_PATH}>My subjects</Link></li><li aria-current="page">Not found</li></ol>
+          </nav>
+          <SectionState
+            tone={error ? 'err' : 'info'}
+            title={error ? 'Could not load this chapter' : 'This chapter isn’t available'}
+            action={<Link className="sd-btn sd-btn--ghost sd-btn--sm" href={SUBJECTS_PATH}><Icon name="back" size={16} /> All subjects</Link>}
+          >
+            {error ? apiErrorMessage(error, 'Please try again.') : 'It may have been unpublished, or it belongs to another department.'}
+          </SectionState>
+        </div>
+      );
+    }
+    return <SectionState title="Loading your classroom…" />;
+  }
 
   if (url.subject && !active) {
     if (loading && !data) return <SectionState title="Loading your classroom…" />;

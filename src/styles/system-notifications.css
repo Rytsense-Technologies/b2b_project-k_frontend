@@ -85,7 +85,16 @@
   color: var(--muted-2);
 }
 
-.sn-panel-h a {
+.sn-panel-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  flex: none;
+}
+
+.sn-panel-h a,
+.sn-panel-h .sn-mark {
   flex: none;
   font-size: 14px;
   line-height: 22px;
@@ -96,11 +105,24 @@
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .sn-panel-h a:hover,
-.sn-panel-h a:focus-visible {
+.sn-panel-h a:focus-visible,
+.sn-panel-h .sn-mark:hover,
+.sn-panel-h .sn-mark:focus-visible {
   text-decoration: underline;
+}
+
+.sn-panel-h .sn-mark:focus-visible,
+.sn-panel-h a:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
 }
 
 .sn-grant {
@@ -233,6 +255,11 @@
 
 .sn-inbox .fa-notes .sp-link {
   flex: none;
+}
+
+.sn-inbox .fa-notes li.is-unread .sp-row-ic,
+.sn-inbox .fa-notes li.is-unread .fa-kind {
+  color: var(--accent-text);
 }
 
 .topbar-copy {

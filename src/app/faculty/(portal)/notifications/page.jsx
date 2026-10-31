@@ -15,7 +15,7 @@ import SystemNotificationInbox from '@/components/shared/SystemNotificationInbox
 const SECTIONS = ['messages', 'rules'];
 
 /**
- * Messages Quirri sent this HOD / Faculty member (all 15 catalogue events),
+ * In-app inbox for this HOD / Faculty member (pipeline and assessment events),
  * plus the email switches: HOD = their department's rules, Faculty = their own preferences.
  */
 function FacultyNotificationsView() {

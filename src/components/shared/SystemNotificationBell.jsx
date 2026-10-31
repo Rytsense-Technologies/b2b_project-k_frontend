@@ -6,17 +6,18 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/student/ui';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useSystemNotifications } from '@/hooks/useSystemNotifications';
-import { alertHref, eventLabel, inboxHref, timeOf } from '@/lib/notifications/scenarios';
+import { inboxHref, inboxItemHref, timeOf } from '@/lib/notifications/scenarios';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import '@/styles/system-notifications.css';
 
-function createdMs(row) {
-  const t = Date.parse(row?.created_at || '');
-  return Number.isNaN(t) ? 0 : t;
+function loadError(err) {
+  if (err?.response?.status === 404) return 'Could not load alerts. Please try again.';
+  return apiErrorMessage(err, 'Please try again.');
 }
 
 /**
- * Top-bar inbox for every portal. Polls GET /notifications/mine.
+ * Top-bar inbox for every portal.
+ * Badge: GET /notifications/inbox/unread-count. List loads when the panel opens.
  * Desktop alerts require an in-UI grant (the OS permission dialog cannot be skipped).
  */
 export default function SystemNotificationBell({ portal = 'superadmin' }) {
@@ -24,18 +25,25 @@ export default function SystemNotificationBell({ portal = 'superadmin' }) {
   const panelId = useId();
   const wrapRef = useRef(null);
   const [open, setOpen] = useState(false);
-  const seenAtOpen = useRef('');
-  const { items, unread, seenAt, loading, error, desktop, reload, markSeen, requestDesktop } = useSystemNotifications();
+  const {
+    items,
+    unread,
+    loading,
+    error,
+    desktop,
+    loadInbox,
+    markRead,
+    markAllRead,
+    requestDesktop,
+  } = useSystemNotifications();
   const { show, hide, TipLayer } = useQuirriTip();
   const inbox = inboxHref(portal);
-  const preview = items.slice(0, 8);
-  const seenCut = Date.parse((open ? seenAtOpen.current : seenAt) || '') || 0;
 
   useEffect(() => {
     if (!open) return undefined;
     hide();
-    seenAtOpen.current = seenAt;
-    markSeen();
+    const openedAt = new Date().toISOString();
+    loadInbox({ openedAt }).catch(() => {});
     const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
     const onClick = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
@@ -46,12 +54,19 @@ export default function SystemNotificationBell({ portal = 'superadmin' }) {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onClick);
     };
-  }, [open, markSeen, hide]);
+  }, [open, loadInbox, hide]);
 
-  const go = (row) => {
-    const href = alertHref(row.event, portal) || inbox;
+  const go = async (row) => {
     setOpen(false);
+    if (row?.id && !row.is_read) {
+      try { await markRead(row.id); } catch { /* still open the page */ }
+    }
+    const href = inboxItemHref(row, portal);
     if (href) router.push(href);
+  };
+
+  const markAll = async () => {
+    try { await markAllRead(); } catch { /* panel keeps current rows */ }
   };
 
   return (
@@ -81,7 +96,14 @@ export default function SystemNotificationBell({ portal = 'superadmin' }) {
               <b>Alerts</b>
               <span>{unread ? `${unread} new` : 'Caught up'}</span>
             </div>
-            {inbox ? <Link href={inbox} onClick={() => setOpen(false)}>Open all</Link> : null}
+            <div className="sn-panel-actions">
+              {unread ? (
+                <button type="button" className="sn-mark" onClick={markAll}>
+                  Mark all as read
+                </button>
+              ) : null}
+              {inbox ? <Link href={inbox} onClick={() => setOpen(false)}>Open all</Link> : null}
+            </div>
           </div>
           {desktop === 'default' ? (
             <button type="button" className="sn-grant" onClick={() => requestDesktop()}>
@@ -91,46 +113,37 @@ export default function SystemNotificationBell({ portal = 'superadmin' }) {
           {error ? (
             <div className="sn-empty" role="alert">
               <b>Could not load alerts</b>
-              <p>{apiErrorMessage(error, 'Please try again.')}</p>
-              <button type="button" className="sn-grant" onClick={() => reload().catch(() => {})}>Try again</button>
+              <p>{loadError(error)}</p>
+              <button type="button" className="sn-grant" onClick={() => loadInbox().catch(() => {})}>Try again</button>
             </div>
           ) : null}
           {!error && loading && !items.length ? (
             <div className="sn-empty" role="status"><b>Loading…</b></div>
           ) : null}
-          {!error && !loading && !preview.length ? (
+          {!error && !loading && !items.length ? (
             <div className="sn-empty" role="status">
               <b>No alerts yet</b>
-              <p>Messages Quirri emails you also appear here.</p>
+              <p>You’ll see one when a chapter is ready, published, or an assessment opens.</p>
             </div>
           ) : null}
-          {preview.length ? (
+          {items.length ? (
             <ul className="sn-list">
-              {preview.map((row) => {
-                const href = alertHref(row.event, portal) || inbox;
-                const unreadRow = !seenCut || createdMs(row) > seenCut;
-                const label = eventLabel(row.event, row.event_label);
-                const meta = [timeOf(row.created_at), row.subject].filter(Boolean).join(' · ');
-                const inner = (
-                  <>
-                    <span className="sn-ic" aria-hidden="true"><Icon name="bell" size={16} /></span>
-                    <span className="sn-row-main">
-                      <b>{label}</b>
-                      {meta ? <small>{meta}</small> : null}
-                    </span>
-                  </>
-                );
+              {items.map((row) => {
+                const unreadRow = !row.is_read;
+                const meta = [timeOf(row.created_at), row.body].filter(Boolean).join(' · ');
                 return (
                   <li key={row.id}>
-                    {href ? (
-                      <Link className={`sn-row${unreadRow ? ' is-unread' : ''}`} href={href} onClick={() => setOpen(false)}>
-                        {inner}
-                      </Link>
-                    ) : (
-                      <button type="button" className={`sn-row${unreadRow ? ' is-unread' : ''}`} onClick={() => go(row)}>
-                        {inner}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className={`sn-row${unreadRow ? ' is-unread' : ''}`}
+                      onClick={() => go(row)}
+                    >
+                      <span className="sn-ic" aria-hidden="true"><Icon name="bell" size={16} /></span>
+                      <span className="sn-row-main">
+                        <b>{row.title || row.event_label || 'Alert'}</b>
+                        {meta ? <small>{meta}</small> : null}
+                      </span>
+                    </button>
                   </li>
                 );
               })}

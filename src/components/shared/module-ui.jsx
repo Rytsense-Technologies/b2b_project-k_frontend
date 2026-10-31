@@ -51,16 +51,22 @@ export function ModuleHead({ lede, chips = null, actions = null }) {
   const lifted = Boolean(bar && actions);
   // Nothing to show (e.g. a scope chip that was dropped): no empty band eating a section gap.
   if (!lede && !chips && !actions) return null;
+  // One control only: portal into the top bar on desktop, keep in-flow below 1024px.
+  // Rendering both (and hiding one with CSS) duplicated the date-range combobox.
+  const actionRow = <div className="pm-head-actions">{actions}</div>;
+  if (lifted && solo) {
+    return createPortal(<div className="pm-head-actions pm-topbar-actions pm-topbar-actions--lifted">{actions}</div>, bar);
+  }
   return (
     <>
-      <section className={`pm-head${solo ? ' pm-head--solo' : ''}${lifted ? ' pm-head--lifted' : ''}`}>
+      <section className={`pm-head${solo ? ' pm-head--solo' : ''}`}>
         {solo ? null : (
           <div className="pm-head-copy">
             {lede ? <p>{lede}</p> : null}
             {chips ? <div className="pm-head-chips">{chips}</div> : null}
           </div>
         )}
-        {actions ? <div className="pm-head-actions">{actions}</div> : null}
+        {actions && !lifted ? actionRow : null}
       </section>
       {lifted ? createPortal(<div className="pm-head-actions pm-topbar-actions pm-topbar-actions--lifted">{actions}</div>, bar) : null}
     </>

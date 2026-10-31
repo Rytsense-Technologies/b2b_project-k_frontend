@@ -31,4 +31,4 @@ export const facultyDirectoryApi = {
 /** GET /faculty/me (HOD / Faculty): department_name, college_name, is_hod, subjects. */
 export const facultyMe = () => facultyDirectoryApi.me();
 
-export { myNotificationsApi } from '@/lib/api/notificationRules';
+export { inboxNotificationsApi, myNotificationsApi } from '@/lib/api/notificationRules';

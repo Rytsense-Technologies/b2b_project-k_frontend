@@ -1,43 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAppSelector } from '@/store/hooks';
-import { selectUser } from '@/store/slices/authSlice';
-import { myNotificationsApi } from '@/lib/api/notificationRules';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { inboxNotificationsApi } from '@/lib/api/notificationRules';
 import { asList } from '@/lib/api/superadmin/http';
 import { isInterviewOff } from '@/lib/product/interviewOff';
-import { isWhatsApp } from '@/lib/product/whatsappOff';
-import { ALERTS_REFRESH, eventLabel } from '@/lib/notifications/scenarios';
+import { ALERTS_REFRESH } from '@/lib/notifications/scenarios';
 
 const POLL_MS = 45000;
 const PAGE_SIZE = 25;
 
-function seenKey(userId) {
-  return `quirri.alerts.seen.${userId || 'anon'}`;
-}
-
-function readSeen(userId) {
-  if (typeof window === 'undefined') return '';
-  try {
-    return window.localStorage.getItem(seenKey(userId)) || '';
-  } catch {
-    return '';
-  }
-}
-
-function writeSeen(userId, iso) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(seenKey(userId), iso);
-  } catch {
-    /* quota / private mode */
-  }
-}
-
 function isInboxRow(row) {
   if (!row) return false;
-  if (isWhatsApp(row.channel)) return false;
-  return !isInterviewOff(`${row.event || ''} ${row.event_label || ''} ${row.subject || ''}`);
+  return !isInterviewOff(`${row.event || ''} ${row.event_label || ''} ${row.title || ''}`);
 }
 
 function createdMs(row) {
@@ -45,30 +19,26 @@ function createdMs(row) {
   return Number.isNaN(t) ? 0 : t;
 }
 
+function unreadOf(data, fallback = 0) {
+  const n = Number(data?.unread_count);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
 /**
- * Polls GET /notifications/mine for the signed-in person.
- * Unread is local (API has no read_at): anything newer than last-seen counts.
+ * Bell + desktop alerts from GET /notifications/inbox*.
+ * Badge polls unread-count; the list loads when the panel opens.
  * Desktop alerts use the browser Notification API after an in-UI grant.
  */
 export function useSystemNotifications() {
-  const user = useAppSelector(selectUser);
-  const userId = user?.id || '';
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [seenAt, setSeenAt] = useState('');
   const [desktop, setDesktop] = useState('unsupported');
-  const knownIds = useRef(new Set());
+  const openedAtRef = useRef('');
+  const lastUnread = useRef(0);
   const primed = useRef(false);
-  const userIdRef = useRef(userId);
-  userIdRef.current = userId;
-
-  useEffect(() => {
-    setSeenAt(readSeen(userId));
-    knownIds.current = new Set();
-    primed.current = false;
-  }, [userId]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof Notification === 'undefined') {
@@ -87,8 +57,8 @@ export function useSystemNotifications() {
     if (Notification.permission !== 'granted') return;
     if (document.visibilityState === 'visible') return;
     rows.slice(0, 3).forEach((row) => {
-      const title = eventLabel(row.event, row.event_label);
-      const body = row.subject ? String(row.subject) : 'Open Quirri to read this message.';
+      const title = row.title || row.event_label || 'Quirri alert';
+      const body = row.body ? String(row.body) : 'Open Quirri to read this message.';
       try {
         const n = new Notification(title, { body, tag: `quirri-${row.id}`, silent: false });
         n.onclick = () => {
@@ -101,43 +71,61 @@ export function useSystemNotifications() {
     });
   }, []);
 
-  const load = useCallback(async ({ silent = false } = {}) => {
+  const pollBadge = useCallback(async () => {
+    try {
+      const data = await inboxNotificationsApi.unreadCount();
+      const n = unreadOf(data, 0);
+      if (primed.current && n > lastUnread.current) {
+        try {
+          const fresh = await inboxNotificationsApi.list({ page: 1, pageSize: 3, unreadOnly: true });
+          notifyNew(asList(fresh, []).filter(isInboxRow));
+        } catch {
+          /* badge still updates */
+        }
+      }
+      lastUnread.current = n;
+      primed.current = true;
+      setUnread(n);
+    } catch {
+      /* keep the last badge; the panel shows load errors */
+    }
+  }, [notifyNew]);
+
+  const loadInbox = useCallback(async ({ silent = false, openedAt } = {}) => {
     if (!silent) setLoading(true);
     try {
-      const data = await myNotificationsApi.list({ page: 1, pageSize: PAGE_SIZE, days: 90 });
+      const data = await inboxNotificationsApi.list({ page: 1, pageSize: PAGE_SIZE });
       const rows = asList(data, []).filter(isInboxRow);
-      const nextIds = new Set(rows.map((r) => r.id).filter(Boolean));
-      if (primed.current) {
-        const fresh = rows.filter((r) => r.id && !knownIds.current.has(r.id));
-        if (fresh.length) notifyNew(fresh);
-      }
-      knownIds.current = nextIds;
-      primed.current = true;
       setItems(rows);
       setTotal(typeof data?.total === 'number' ? data.total : rows.length);
+      setUnread(unreadOf(data, lastUnread.current));
+      lastUnread.current = unreadOf(data, lastUnread.current);
+      primed.current = true;
+      if (openedAt) openedAtRef.current = openedAt;
+      else if (!openedAtRef.current) openedAtRef.current = new Date().toISOString();
       setError(null);
-      return rows;
+      return data;
     } catch (err) {
       if (!silent) setError(err);
       throw err;
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [notifyNew]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    load().catch(() => {});
+    pollBadge();
     const tick = () => {
       if (cancelled) return;
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
-      load({ silent: true }).catch(() => {});
+      pollBadge();
     };
     const id = window.setInterval(tick, POLL_MS);
     const onVis = () => {
       if (document.visibilityState === 'visible') tick();
     };
-    const onRefresh = () => { load({ silent: true }).catch(() => {}); };
+    const onRefresh = () => { pollBadge(); };
     document.addEventListener('visibilitychange', onVis);
     window.addEventListener(ALERTS_REFRESH, onRefresh);
     return () => {
@@ -146,19 +134,30 @@ export function useSystemNotifications() {
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener(ALERTS_REFRESH, onRefresh);
     };
-  }, [load, userId]);
+  }, [pollBadge]);
 
-  const unread = useMemo(() => {
-    if (!seenAt) return items.length;
-    const cut = Date.parse(seenAt);
-    if (Number.isNaN(cut)) return items.length;
-    return items.filter((r) => createdMs(r) > cut).length;
-  }, [items, seenAt]);
+  const markRead = useCallback(async (id) => {
+    if (!id) return null;
+    const data = await inboxNotificationsApi.markRead(id);
+    setItems((prev) => prev.map((row) => (
+      row.id === id ? { ...row, is_read: true, read_at: data?.read_at || row.read_at } : row
+    )));
+    setUnread(unreadOf(data, Math.max(0, lastUnread.current - 1)));
+    lastUnread.current = unreadOf(data, Math.max(0, lastUnread.current - 1));
+    return data;
+  }, []);
 
-  const markSeen = useCallback(() => {
-    const iso = new Date().toISOString();
-    writeSeen(userIdRef.current, iso);
-    setSeenAt(iso);
+  const markAllRead = useCallback(async () => {
+    const before = openedAtRef.current || new Date().toISOString();
+    const data = await inboxNotificationsApi.markAllRead({ before });
+    const cut = Date.parse(before);
+    setItems((prev) => prev.map((row) => (
+      !Number.isNaN(cut) && createdMs(row) <= cut ? { ...row, is_read: true } : row
+    )));
+    const n = unreadOf(data, 0);
+    lastUnread.current = n;
+    setUnread(n);
+    return data;
   }, []);
 
   const requestDesktop = useCallback(async () => {
@@ -180,12 +179,14 @@ export function useSystemNotifications() {
     items,
     total,
     unread,
-    seenAt,
     loading,
     error,
     desktop,
-    reload: load,
-    markSeen,
+    openedAt: openedAtRef.current,
+    pollBadge,
+    loadInbox,
+    markRead,
+    markAllRead,
     requestDesktop,
   };
 }

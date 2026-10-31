@@ -42,8 +42,6 @@ export const PAGE_META = {
   },
 };
 
-const GATED = 'Available to your head of department.';
-
 /** Role-neutral wording while GET /faculty/me is loading (no HOD-only phrasing flashes for Faculty). */
 const NEUTRAL = {
   '/faculty/dashboard': { title: 'Dashboard', subtitle: 'Review queues in your scope.' },
@@ -72,9 +70,13 @@ export function facultyPageMeta(route, scope) {
           : 'Completion, quizzes and tutor questions (view only).',
       };
     case '/faculty/staff':
-      return scope.can_see_staff ? base : { ...base, subtitle: GATED };
+      return scope.can_see_staff
+        ? base
+        : { title: 'Page not found', subtitle: 'This address does not match a page in your portal.' };
     case '/faculty/reports':
-      return scope.can_export_reports ? base : { ...base, subtitle: GATED };
+      return scope.can_export_reports
+        ? base
+        : { title: 'Page not found', subtitle: 'This address does not match a page in your portal.' };
     default:
       return base;
   }

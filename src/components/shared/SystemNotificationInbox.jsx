@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FilterField,
   Icon,
@@ -11,14 +11,18 @@ import {
   SegTabs,
   countLabel,
 } from '@/components/shared/module-ui';
-import { myNotificationsApi } from '@/lib/api/notificationRules';
+import { inboxNotificationsApi } from '@/lib/api/notificationRules';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
+
+function loadError(err) {
+  if (err?.response?.status === 404) return 'Could not load alerts. Please try again.';
+  return apiErrorMessage(err, 'Please try again.');
+}
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import {
   ALERTS_REFRESH,
-  alertHref,
-  eventLabel,
   groupAlertsByDay,
+  inboxItemHref,
   timeOf,
 } from '@/lib/notifications/scenarios';
 
@@ -37,14 +41,15 @@ function isReview(event) {
 }
 
 const EMPTY = {
-  superadmin: ['No alerts yet', 'Test sends and messages addressed to you appear here.'],
-  admin: ['No alerts yet', 'Test sends and messages addressed to you appear here.'],
+  superadmin: ['No alerts yet', 'You’ll see one when a video finishes or a review needs you.'],
+  admin: ['No alerts yet', 'You’ll see one when a video finishes or a review needs you.'],
   faculty: ['No messages yet', 'You’ll get one when a chapter in your scope is sent for review.'],
   student: ['No messages yet', 'You’ll get one when a chapter is published or an assessment opens.'],
 };
 
 /**
- * Personal inbox from GET /notifications/mine — Super Admin, College Admin, HOD/Faculty, Student.
+ * Personal in-app inbox from GET /notifications/inbox —
+ * Super Admin, College Admin, HOD/Faculty, Student.
  */
 export default function SystemNotificationInbox({
   portal = 'faculty',
@@ -52,10 +57,12 @@ export default function SystemNotificationInbox({
   emptyBody,
   showReviewFilter = false,
 }) {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [kind, setKind] = useState('all');
-  const { data, loading, error, reload } = useAsyncResource(
-    () => myNotificationsApi.list({ page, pageSize: PAGE_SIZE, days: 90 }),
+  const openedAtRef = useRef(new Date().toISOString());
+  const { data, setData, loading, error, reload } = useAsyncResource(
+    () => inboxNotificationsApi.list({ page, pageSize: PAGE_SIZE }),
     [page],
   );
   const rows = useMemo(() => asList(data, []), [data]);
@@ -67,14 +74,10 @@ export default function SystemNotificationInbox({
   const kindCount = { all: rows.length, review: reviewCount, other: rows.length - reviewCount };
   const groups = useMemo(() => groupAlertsByDay(shown), [shown]);
   const [emptyH, emptyP] = EMPTY[portal] || EMPTY.faculty;
-
-  return (
-    <Panel
-      className="sn-inbox"
-      title="Your alerts"
-      sub={data ? `${countLabel(data.total ?? rows.length)} in the last 90 days · newest first` : 'Newest first'}
-      bodyClassName={null}
-      toolbar={showReviewFilter ? (
+  const unreadCount = Number(data?.unread_count) || 0;
+  const tools = (showReviewFilter || unreadCount > 0) ? (
+    <>
+      {showReviewFilter ? (
         <FilterField label="Show" grow="status">
           <SegTabs
             label="Show"
@@ -84,6 +87,59 @@ export default function SystemNotificationInbox({
           />
         </FilterField>
       ) : null}
+      {unreadCount > 0 ? (
+        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={markAll}>
+          Mark all as read
+        </button>
+      ) : null}
+    </>
+  ) : null;
+
+  const openRow = async (row) => {
+    if (row?.id && !row.is_read) {
+      try {
+        const next = await inboxNotificationsApi.markRead(row.id);
+        setData((prev) => {
+          if (!prev) return prev;
+          const items = asList(prev, []).map((r) => (
+            r.id === row.id ? { ...r, is_read: true, read_at: next?.read_at || r.read_at } : r
+          ));
+          return { ...prev, items, unread_count: Number(next?.unread_count) ?? Math.max(0, unreadCount - 1) };
+        });
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(ALERTS_REFRESH));
+      } catch {
+        /* still open the page */
+      }
+    }
+    const href = inboxItemHref(row, portal);
+    if (href) router.push(href);
+  };
+
+  const markAll = async () => {
+    try {
+      const next = await inboxNotificationsApi.markAllRead({ before: openedAtRef.current });
+      const cut = Date.parse(openedAtRef.current);
+      setData((prev) => {
+        if (!prev) return prev;
+        const items = asList(prev, []).map((r) => {
+          const t = Date.parse(r.created_at || '');
+          return !Number.isNaN(cut) && !Number.isNaN(t) && t <= cut ? { ...r, is_read: true } : r;
+        });
+        return { ...prev, items, unread_count: Number(next?.unread_count) || 0 };
+      });
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(ALERTS_REFRESH));
+    } catch {
+      /* keep current rows */
+    }
+  };
+
+  return (
+    <Panel
+      className="sn-inbox"
+      title="Your alerts"
+      sub={data ? `${countLabel(data.total ?? rows.length)} · newest first` : 'Newest first'}
+      bodyClassName={null}
+      toolbar={tools}
     >
       {error ? (
         <div className="sp-panel-b">
@@ -92,7 +148,7 @@ export default function SystemNotificationInbox({
             title="Could not load notifications"
             action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reload()}>Try again</button>}
           >
-            {apiErrorMessage(error, 'Please try again.')}
+            {loadError(error)}
           </SectionState>
         </div>
       ) : null}
@@ -105,7 +161,7 @@ export default function SystemNotificationInbox({
       {rows.length && !shown.length ? (
         <div className="sp-panel-b">
           <SectionState title={kind === 'review' ? 'No review alerts' : 'No other messages'}>
-            {kind === 'review' ? 'Nothing was sent for your review in the last 90 days.' : 'Only review alerts arrived in the last 90 days.'}
+            {kind === 'review' ? 'Nothing was sent for your review.' : 'Only review alerts are in this inbox.'}
           </SectionState>
         </div>
       ) : null}
@@ -115,29 +171,21 @@ export default function SystemNotificationInbox({
           <ul className="fa-notes">
             {g.rows.map((r) => {
               const review = isReview(r.event);
-              const href = alertHref(r.event, portal);
-              const label = eventLabel(r.event, r.event_label);
+              const href = inboxItemHref(r, portal);
               return (
-                <li key={r.id}>
+                <li key={r.id} className={r.is_read ? undefined : 'is-unread'}>
                   <span className={`sp-row-ic fa-kind fa-kind--${review ? 'video' : 'other'}`} aria-hidden="true">
                     <Icon name={review ? 'video' : 'bell'} size={18} />
                   </span>
                   <div className="fa-note-main">
-                    <b>{label}</b>
-                    {r.subject ? <small>{r.subject}</small> : null}
-                    <small className="fa-note-meta">
-                      {[timeOf(r.created_at), r.channel === 'email' ? 'Email' : null].filter(Boolean).join(' · ')}
-                      {r.status_key === 'failed' || r.status === 'failed' ? (
-                        <span className="sp-pill sp-pill--off"><i className="un-dot" aria-hidden="true" />Not delivered</span>
-                      ) : null}
-                    </small>
+                    <b>{r.title || r.event_label || 'Alert'}</b>
+                    {r.body ? <small>{r.body}</small> : null}
+                    <small className="fa-note-meta">{timeOf(r.created_at)}</small>
                   </div>
                   {href ? (
-                    <Link className="sp-link" href={href} onClick={() => {
-                      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(ALERTS_REFRESH));
-                    }}>
+                    <button type="button" className="sp-link" onClick={() => openRow(r)}>
                       Open <Icon name="arrow" size={14} />
-                    </Link>
+                    </button>
                   ) : null}
                 </li>
               );

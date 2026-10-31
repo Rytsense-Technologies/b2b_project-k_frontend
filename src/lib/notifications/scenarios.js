@@ -1,10 +1,22 @@
 /**
- * The 15 catalogue events (docs/agent/redesign/notifications-plan.md).
- * Same triggers as email. In-app / desktop alerts open the matching portal page.
+ * Catalogue events (docs/agent/redesign/notifications-plan.md) + in-app bell.
+ * Email still covers all 15. The bell only lists the seven pipeline / assessment
+ * events the backend writes to GET /notifications/inbox.
  * Interview events are never listed (INTERVIEWS_ENABLED=false).
  */
 
 export const ALERTS_REFRESH = 'quirri:alerts-refresh';
+
+/** Events that appear under the bell (backend user_notifications). */
+export const IN_APP_EVENTS = [
+  'pipeline_completed',
+  'content_ready_for_review',
+  'changes_requested',
+  'content_published',
+  'mcq_ready_for_review',
+  'assessment_available',
+  'assessment_result',
+];
 
 export function requestAlertsRefresh() {
   if (typeof window === 'undefined') return;
@@ -133,6 +145,45 @@ export function alertHref(event, portal) {
 export function inboxHref(portal) {
   const key = portal === 'college_admin' ? 'admin' : portal;
   return PORTAL_INBOX[key] || '';
+}
+
+function portalKey(portal) {
+  return portal === 'college_admin' ? 'admin' : portal;
+}
+
+/** Relative product paths only — never an open redirect from `link`. */
+export function safeInboxLink(link) {
+  const path = String(link || '').trim();
+  if (!path.startsWith('/') || path.startsWith('//')) return '';
+  if (!/^\/(superadmin|admin|faculty|student)(\/|\?|$)/.test(path)) return '';
+  return path;
+}
+
+/**
+ * Where a bell row should open. Prefer resource_type + resource_id by role;
+ * `link` is only the email-button hint (null for student events).
+ */
+export function inboxItemHref(row, portal) {
+  const key = portalKey(portal);
+  const event = row?.event;
+  const jobId = row?.resource_id;
+  if ((row?.resource_type === 'edu_video_job' || !row?.resource_type) && jobId) {
+    const q = encodeURIComponent(jobId);
+    if (key === 'student') {
+      if (event === 'assessment_result') return `/student/assessment?job=${q}&view=review`;
+      return `/student/subjects?chapter=${q}`;
+    }
+    if (key === 'faculty') {
+      if (event === 'mcq_ready_for_review') return `/faculty/mcq?job=${q}`;
+      return `/faculty/videos?job=${q}`;
+    }
+    if (key === 'admin') {
+      if (event === 'mcq_ready_for_review') return `/admin/mcq?job=${q}`;
+      return '/admin/content';
+    }
+    if (key === 'superadmin') return '/superadmin/content';
+  }
+  return safeInboxLink(row?.link) || alertHref(event, key) || inboxHref(key);
 }
 
 const TZ = 'Asia/Kolkata';
