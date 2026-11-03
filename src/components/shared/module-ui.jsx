@@ -25,9 +25,22 @@ export function countLabel(n) {
   return n == null || n === '' ? '—' : Number(n).toLocaleString('en-IN');
 }
 
-/** Module page wrapper — vertical 24px rhythm. */
-export function ModulePage({ className = '', children }) {
-  return <div className={`animate-fade-in sp pm-page ${className}`.trim()}>{children}</div>;
+/**
+ * Module page wrapper — vertical 24px rhythm.
+ * Pass `fill` only when nested panes clearly help; prefer mild `.content` scroll for multi-block cards.
+ */
+export function ModulePage({ className = '', fill = false, children }) {
+  return (
+    <div className={`animate-fade-in sp pm-page${fill ? ' pm-page--fill' : ''} ${className}`.trim()}>
+      {children}
+    </div>
+  );
+}
+
+/** Nested scroll for long lists / wide tables — not multi-section detail cards. */
+export function ScrollPane({ className = '', axis = 'both', children }) {
+  const axisClass = axis === 'x' ? ' pm-scroll-pane--x' : axis === 'y' ? ' pm-scroll-pane--y' : '';
+  return <div className={`pm-scroll-pane${axisClass} ${className}`.trim()}>{children}</div>;
 }
 
 /**

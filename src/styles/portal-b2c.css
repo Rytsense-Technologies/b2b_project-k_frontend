@@ -10,7 +10,7 @@
 .app.q-app-shell:not(.q-student){
   --sb-teal:var(--teal-500); --sb-teal-deep:var(--teal-500); --sb-orange:var(--accent); --sb-orange-hover:var(--accent-hover);
   --sb-ink:var(--ink); --sb-muted:var(--neutral-500); --sb-wash:var(--teal-50); --sb-search:var(--teal-100);
-  --sb-secondary:var(--teal-400); --sb-hairline:var(--neutral-200); --sb-danger:var(--color-error); --sb-canvas:var(--canvas);
+  --sb-secondary:var(--teal-500); --sb-hairline:var(--neutral-200); --sb-danger:var(--color-error); --sb-canvas:var(--canvas);
   --sb-shadow:var(--shadow-1); --sb-shadow-row:var(--shadow-1);
 
   --canvas:var(--neutral-100); --bg:var(--neutral-100); --ink:var(--neutral-900); --muted-2:var(--neutral-500);
@@ -53,9 +53,13 @@
 
 /* ---------- Page header on the canvas ---------- */
 /* QA clean pass (20 Oct 2026): 1280 max, 32 / 20 / 16 side padding, title 26/32, 28 above, 24 below */
-.q-app-shell:not(.q-student) .topbar{position:sticky;top:0;z-index:30;background:var(--sb-canvas);max-width:var(--qs-page-max);padding:32px var(--qs-page-x) 24px;align-items:flex-start}
+.q-app-shell:not(.q-student) .topbar{
+  position:sticky;top:0;z-index:30;background:var(--sb-canvas);max-width:var(--qs-page-max);
+  padding:28px var(--qs-page-x) 20px;align-items:center;overflow:visible;gap:16px;
+}
 .q-app-shell:not(.q-student) .topbar h1{font-size:22px;line-height:30px;font-weight:500;color:var(--ink)}
 .q-app-shell:not(.q-student) .topbar p{font-size:14px;line-height:22px;color:var(--muted-2);margin-top:4px}
+.q-app-shell:not(.q-student) .topbar .pm-topbar-actions .sd-btn{min-height:44px}
 .q-app-shell:not(.q-student) .content{max-width:var(--qs-page-max);padding:0 var(--qs-page-x) 56px}
 @media (max-width:1023px){
   .q-app-shell:not(.q-student) .topbar{padding:20px var(--qs-page-x) 20px}
@@ -73,8 +77,8 @@
 }
 /* Card head hairline only above a table (see "Clean & spacious pass" at the end) */
 .q-app-shell:not(.q-student) .sp-panel-h{border-bottom:0}
-.q-app-shell:not(.q-student) .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
-.q-app-shell:not(.q-student) .sp-panel-h h3::before,
+.q-app-shell:not(.q-student) .sp-panel-h :is(h2,h3){font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-app-shell:not(.q-student) .sp-panel-h :is(h2,h3)::before,
 .q-app-shell:not(.q-student) :is(.card-title,.section-head .t,.pm-panel h3)::before{content:none;display:none}
 
 /* Heroes / banners: one flat teal-deep band, no gradients. The side panel next to it is a WHITE card
@@ -98,9 +102,31 @@
 /* ---------- Teal filter bar ABOVE the list (Panel toolbar → .pm-filterbar) ---------- */
 .q-app-shell:not(.q-student) .pm-panel-stack{display:flex;flex-direction:column;gap:16px;min-width:0}
 .q-app-shell:not(.q-student) .pm-panel-tools.pm-filterbar{
+  display:flex;flex-wrap:wrap;align-items:center;
   background:var(--sb-teal);border:0;border-radius:var(--radius-card);padding:16px;gap:12px 16px;color:#fff;
 }
 @media (min-width:1024px){.q-app-shell:not(.q-student) .pm-panel-tools.pm-filterbar{padding:20px;gap:12px 16px}}
+/* Even control rhythm inside teal filter bars (Students / Staff / Users / …) */
+.q-app-shell:not(.q-student) .pm-filterbar > .search{
+  flex:1 1 220px;min-width:200px;max-width:none;
+}
+.q-app-shell:not(.q-student) .pm-filterbar > .quirri-dd{
+  flex:0 1 168px;min-width:168px;width:auto;
+}
+.q-app-shell:not(.q-student) .pm-filterbar > .sp-tabs,
+.q-app-shell:not(.q-student) .pm-filterbar > .un-seg,
+.q-app-shell:not(.q-student) .pm-filterbar > .seg{
+  flex:1 1 100%;min-width:0;
+}
+.q-app-shell:not(.q-student) .pm-filterbar > .sd-btn{
+  flex:none;min-height:44px;
+}
+@media (max-width:768px){
+  .q-app-shell:not(.q-student) .pm-filterbar > .search,
+  .q-app-shell:not(.q-student) .pm-filterbar > .quirri-dd{
+    flex:1 1 100%;min-width:0;
+  }
+}
 
 /* Dense bars (notifications): a 12px caption above every control so Event / Channel / Period / Status read as themselves */
 .q-app-shell:not(.q-student) .pm-filterbar:has(.nf-field){align-items:flex-end}
@@ -175,21 +201,31 @@
    Shared workspaces deep audit (15 Oct 2026) — kit-level fixes
    ========================================================================= */
 
-/* Page actions on the title row (ModuleHead mirrors them into .topbar on desktop) */
-.q-app-shell:not(.q-student) .topbar > div:not(.pm-topbar-actions){flex:1 1 auto;min-width:0}
-.q-app-shell:not(.q-student) .pm-topbar-actions{margin-left:auto;flex:none;justify-content:flex-end;gap:12px}
-.q-app-shell:not(.q-student) .pm-topbar-actions .quirri-dd{min-width:180px}
+/* Page actions + Alerts bell share .topbar-right (never stretch the right cluster). */
+.q-app-shell:not(.q-student) .topbar > :is(.topbar-copy,.pm-topbar-main){flex:1 1 auto;min-width:0}
+.q-app-shell:not(.q-student) .topbar > .topbar-right{
+  display:flex;flex-direction:row;flex:0 0 auto;align-items:center;justify-content:flex-end;
+  gap:12px;margin-left:auto;min-width:0;
+}
+.q-app-shell:not(.q-student) .pm-topbar-actions{margin-left:0;flex:none;justify-content:flex-end;gap:12px}
+.q-app-shell:not(.q-student) .topbar-right .pm-topbar-actions{margin-left:0}
+.q-app-shell:not(.q-student) .pm-topbar-actions .quirri-dd{min-width:180px;width:auto}
 @media (min-width:1024px){
   .q-app-shell:not(.q-student) .pm-head--lifted > .pm-head-actions{display:none}
   .q-app-shell:not(.q-student) .pm-head--lifted.pm-head--solo{display:none}
 }
 @media (max-width:1023px){
-  .q-app-shell:not(.q-student) .pm-topbar-actions--lifted{display:none}
-  /* Phone/tablet top bar: hamburger row, then the title block full width, then page actions full width */
-  .q-app-shell:not(.q-student) .topbar{flex-wrap:wrap;align-items:flex-start;row-gap:10px}
-  .q-app-shell:not(.q-student) .topbar > div:not(.pm-topbar-actions){flex:1 1 100%}
-  .q-app-shell:not(.q-student) .topbar > .pm-topbar-actions:not(.pm-topbar-actions--lifted){flex:1 1 100%;justify-content:stretch}
-  .q-app-shell:not(.q-student) .topbar > .pm-topbar-actions:not(.pm-topbar-actions--lifted) > *{flex:1 1 auto;justify-content:center}
+  /* Keep the lifted date range in .topbar-right — ModuleHead no longer renders an in-flow copy. */
+  /* Phone/tablet: title row, then date range + Alerts on the right. */
+  .q-app-shell:not(.q-student) .topbar{flex-wrap:wrap;align-items:center;row-gap:12px}
+  .q-app-shell:not(.q-student) .topbar > :is(.topbar-copy,.pm-topbar-main){flex:1 1 auto;min-width:0}
+  .q-app-shell:not(.q-student) .topbar > .topbar-right{flex:1 1 100%;justify-content:flex-end}
+  .q-app-shell:not(.q-student) .topbar > .pm-topbar-actions:not(.pm-topbar-actions--lifted){flex:1 1 100%;justify-content:flex-end}
+}
+@media (max-width:767px){
+  /* Lifted selects share the phone row instead of running off its left edge. */
+  .q-app-shell:not(.q-student) .topbar-right :is(.pm-topbar-slot,.pm-topbar-actions){flex:1 1 auto;min-width:0}
+  .q-app-shell:not(.q-student) .topbar-right .pm-topbar-actions .quirri-dd{flex:1 1 140px;min-width:0}
 }
 
 /* Dropdowns in the teal bar / head: 14px ink text; "All …" is a real choice, not a faded placeholder */
@@ -301,7 +337,7 @@ body > .un-drawer-wrap .un-drawer{background:#fff}
 .q-app-shell:not(.q-student) .sidebar .nav{scrollbar-gutter:auto}
 
 /* Card head/body rhythm — superseded by the "Clean & spacious pass" block at the end (24 / 18 padding) */
-.q-app-shell:not(.q-student) .sp-panel-h{align-items:flex-start}
+.q-app-shell:not(.q-student) .sp-panel-h{align-items:center}
 .q-app-shell:not(.q-student) .sp-panel-h p{font-size:14px;line-height:20px;color:var(--sb-muted);margin-top:4px}
 
 /* Segmented switches inside the teal bar become text tabs: white text, 2px white underline when on */
@@ -354,14 +390,26 @@ body > :is(.overlay,.un-drawer-wrap) .un-btn-danger{background:var(--sb-danger,#
 /* ---------- Cards: 24 padding, title 18/26 Medium, subtitle 14/20 muted, 16 to the body ---------- */
 .app.q-app-shell .sp-panel{display:flex;flex-direction:column;min-width:0}
 .app.q-app-shell .sp-panel-h{flex:none;padding:var(--qs-card-pad) var(--qs-card-pad) var(--qs-head-gap);gap:16px;border-bottom:0}
-.app.q-app-shell .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.app.q-app-shell .sp-panel-h :is(h2,h3){font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
 .app.q-app-shell .sp-panel-h p{font-size:14px;line-height:20px;color:var(--sb-muted);margin-top:4px}
 .app.q-app-shell .sp-panel-b{flex:1 1 auto;display:flex;flex-direction:column;min-width:0;width:100%;padding:var(--qs-card-pad)}
 .app.q-app-shell .sp-panel-h + .sp-panel-b{padding-top:0}
 .app.q-app-shell .sp-panel-b > *{width:100%;max-width:100%;min-width:0}
 
-/* Equal-column cards stay full width; short lists hug their content (no stretched empty interiors) */
-.app.q-app-shell :is(.dv-grid,.sa-cols,.pm-grid-2,.pm-grid-3,.fa-dash-cols,.ad-cover-grid,.ad-viz-row){
+/* Paired KPI / viz / two-col cards share a bottom edge (design-system §3). */
+.app.q-app-shell :is(.dv-grid,.ad-viz-row,.sa-cols,.pm-grid-2,.pm-grid-3,.fa-dash-cols,.ad-cover-grid){
+  align-items:stretch;
+}
+.app.q-app-shell :is(.dv-grid,.ad-viz-row) > .sp-panel,
+.app.q-app-shell :is(.dv-grid,.ad-viz-row) > .mdc-card{
+  height:100%;
+  min-height:0;
+}
+.app.q-app-shell :is(.dv-grid,.ad-viz-row) > .sp-panel > .sp-panel-b{
+  flex:1 1 auto;
+}
+/* Split workspaces stay start-aligned so short lists do not balloon */
+.app.q-app-shell :is(.pm-split,.sa-acad-grid,.mq-split,.fa-review-grid){
   align-items:start;
 }
 /* Hairline under the head only when the body is a table */
@@ -391,6 +439,12 @@ body > :is(.overlay,.un-drawer-wrap) .un-btn-danger{background:var(--sb-danger,#
 :where(.app.q-app-shell) .sp-table :is(th,td){padding-left:20px;padding-right:20px}
 :where(.app.q-app-shell) .sp-table :is(th,td):first-child{padding-left:var(--qs-card-pad)}
 :where(.app.q-app-shell) .sp-table :is(th,td):last-child{padding-right:var(--qs-card-pad)}
+.app.q-app-shell .sp-table td:last-child :is(.ad-actions,.un-actions,.fa-actions){
+  display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:nowrap;
+}
+.app.q-app-shell .sp-table .sp-pill:not(:has(> .un-dot)){
+  display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 10px;
+}
 
 /* ---------- Pager under a list: clear of the rows ---------- */
 .app.q-app-shell .un-pager{padding:16px var(--qs-card-pad)}

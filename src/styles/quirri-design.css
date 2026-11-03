@@ -45,7 +45,7 @@
   --progress:#5CB414;        /* positive progress: rings, bars, improving score */
   --select:#DEE0E1;          /* selected filter / tab / segment (owner, 15 Oct 2026): neutral block, no colour */
   --select-hover:#D2D6D7; --select-on:var(--ink); --select-line:var(--ink); --select-soft:var(--neutral-100,#EEF0F0); --select-text:var(--ink);
-  --progress-text:#46921A;
+  --progress-text:#387614;   /* 4.9:1 on canvas, 5.6:1 on white (UIX-003) */
   --progress-soft:#EEF7E6;
   --surface-brand:#0E5C6B;   /* hero banner, insight side panel, score panel */
   --surface-tint:#F1F6F7;    /* item cards inside a white panel */
@@ -68,7 +68,7 @@
   --neutral-200:#DEE0E1;
   --neutral-300:#BCC1C3;
   --neutral-400:#939C9E;
-  --neutral-500:#707A7E;
+  --neutral-500:#626D71;
   --neutral-600:#536064;
   --neutral-700:#536064;
   --neutral-900:#102228;
@@ -499,13 +499,6 @@ textarea{resize:vertical;min-height:92px}
 .notice b{font-weight:500}
 .notice b:first-child{display:block;margin-bottom:2px}
 
-/* OTP */
-.otp-row{display:flex;gap:9px;margin-bottom:6px}
-.otp-row input{
-  width:48px;height:56px;text-align:center;font-size:21px;font-weight:700;
-  padding:0;font-variant-numeric:tabular-nums;
-}
-
 /* ---------- Buttons ---------- */
 /* Quirri Prep pattern: 6px radius, 44px tall, Medium 15/20.
    primary  = Amber 700 + white (ONE per view)
@@ -548,11 +541,18 @@ textarea{resize:vertical;min-height:92px}
 
 /* ==========================================================================
    APP SHELL — white sidebar (Brand Guidelines v1.0 + owner lock)
+   Viewport lock applies ONLY to post-login .q-app-shell (auth pages never use it).
    ========================================================================== */
 .app{display:flex;min-height:100vh;min-height:100dvh}
 .app.q-app-shell,
 .q-app-shell{
   background:var(--canvas);
+  height:100vh;
+  height:100dvh;
+  max-height:100vh;
+  max-height:100dvh;
+  overflow:hidden;
+  min-height:0;
 }
 
 .sidebar{
@@ -610,16 +610,18 @@ textarea{resize:vertical;min-height:92px}
 .sidebar-toggle{
   position:absolute;
   right:0;
-  top:28px;
+  top:32px;
   transform:translateX(50%);
   z-index:60;
-  width:28px;
-  height:28px;
+  width:32px;
+  height:32px;
+  min-width:32px;
+  min-height:32px;
   border-radius:50%;
   background:#fff;
   border:1px solid var(--line);
-  box-shadow:var(--shadow-xs);
-  color:var(--muted);
+  box-shadow:var(--shadow-1);
+  color:var(--teal-500);
   font-size:16px;
   line-height:1;
   display:grid;
@@ -631,7 +633,7 @@ textarea{resize:vertical;min-height:92px}
   isolation:isolate;
 }
 .sidebar.is-collapsed .sidebar-toggle{
-  top:18px;
+  top:20px;
 }
 .sidebar-toggle:hover{color:var(--teal-500);border-color:var(--teal-200);box-shadow:var(--shadow-card)}
 .sidebar-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
@@ -889,10 +891,38 @@ textarea{resize:vertical;min-height:92px}
 
 .main{margin-left:var(--sidebar);flex:1;min-width:0;transition:margin-left .22s ease;background:transparent}
 .main.is-collapsed{margin-left:var(--sidebar-collapsed)}
+/* Viewport column: topbar fixed in the shell; .content is the scrollport */
+.app.q-app-shell > .main,
+.q-app-shell > .main{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  height:100%;
+  max-height:100%;
+  overflow:hidden;
+}
+.app.q-app-shell > .main > .topbar,
+.q-app-shell > .main > .topbar{
+  flex:none;
+}
+.app.q-app-shell > .main > .content,
+.q-app-shell > .main > .content{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+/* First tab stop in every portal; off-screen until focused. */
+.skip-link{position:fixed;top:8px;left:-9999px;z-index:1000;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:var(--radius-control);background:var(--neutral-0);color:var(--teal-500);font-size:14px;line-height:22px;font-weight:500;text-decoration:none;box-shadow:var(--shadow-3)}
+.skip-link:focus{left:8px}
+main.content:focus,main.content:focus-visible{outline:none}
 /* Page header (Prep): H3 22/30 Medium Ink + Body S subtitle, actions right */
 .topbar{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
-  padding:32px 32px 24px;background:transparent;position:relative;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:32px 32px 24px;background:transparent;position:relative;overflow:visible;
   width:100%;max-width:1440px;margin:0 auto;
 }
 .topbar h1{font-size:22px;line-height:30px;font-weight:500;letter-spacing:0;color:var(--ink)}
@@ -917,6 +947,13 @@ textarea{resize:vertical;min-height:92px}
   background:var(--highlight);border:2px solid #fff;
 }
 .content{padding:0 32px 48px;width:100%;max-width:1440px;margin:0 auto}
+
+/* Auth / marketing pages use .app without .q-app-shell — never lock overflow there. */
+.app:not(.q-app-shell){
+  height:auto;
+  max-height:none;
+  overflow:visible;
+}
 
 /* pages */
 .page{display:none}
@@ -1778,6 +1815,7 @@ a.rowcard:hover,button.rowcard:hover{box-shadow:var(--shadow-1),var(--shadow-3)}
 /* ---------- Login freeze guard (quirri-login-freeze.mdc) ----------
    Product-wide control/type changes above must not alter the frozen login card.
    Remove this block only when the owner unfreezes the login design. */
+.auth{--neutral-500:#707A7E;--muted-2:#707A7E}
 .auth .btn-primary{background:var(--amber-700)}
 .auth .btn-primary:hover{background:var(--amber-600)}
 .auth .btn-warn{color:var(--amber-700)}

@@ -17,9 +17,39 @@ import { getPostLoginPath } from '@/lib/auth/rbac';
  * Account activation (invite e-mail → {FRONTEND_URL}/activate?token=…).
  * Same auth card as reset password; sets the first password and signs the user in.
  */
+function readActivationToken(searchParams) {
+  const raw = searchParams.get('token') ?? searchParams.get('activation_token') ?? '';
+  const token = String(raw).trim();
+  // Guard against mangled email hrefs (FRONTEND_URL=null → ?token=null / href="null").
+  if (!token || /^(null|undefined|none)$/i.test(token)) return '';
+  return token;
+}
+
+function safePostLoginPath(role) {
+  const path = role ? getPostLoginPath(role) : '/auth/login';
+  if (typeof path === 'string' && path.startsWith('/')) return path;
+  return '/auth/login';
+}
+
+function ActivateLoading() {
+  return (
+    <div className="auth">
+      <div className="auth-shell">
+        <div className="auth-card" aria-busy="true">
+          <div className="auth-brand">
+            <QuirriLogo size="lg" priority />
+          </div>
+          <h1>Activate your account</h1>
+          <p className="sub">Loading your invite…</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ActivatePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ActivateLoading />}>
       <ActivateForm />
     </Suspense>
   );
@@ -27,7 +57,7 @@ export default function ActivatePage() {
 
 function ActivateForm() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token') || '';
+  const token = readActivationToken(searchParams);
   const [loading, setLoading] = useState(false);
 
   const {
@@ -52,7 +82,7 @@ function ActivateForm() {
       }
       toast.success('Your account is ready.');
       // Full navigation so the portal layout hydrates the new session from the cookies.
-      window.location.assign(session?.role ? getPostLoginPath(session.role) : '/auth/login');
+      window.location.assign(safePostLoginPath(session?.role));
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'This link has expired or was already used. Ask your administrator to resend the invite.'));
       setLoading(false);

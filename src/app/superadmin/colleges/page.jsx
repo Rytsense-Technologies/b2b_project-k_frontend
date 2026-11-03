@@ -21,6 +21,7 @@ import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
 } from '@/lib/superadmin/listState';
 import { INDIA_COUNTRY } from '@/lib/india';
+import { nextCodeFromList, nextCodeFor } from '@/lib/ids/uniqueSeries';
 import { ROLES } from '@/lib/permissions';
 
 /** 2 of 6,700 -> "<1%" (a used seat never reads as 0%). */
@@ -108,9 +109,21 @@ function CollegesView() {
     reloadTotals().catch(() => {});
   };
 
-  const openCreate = useCallback((universityId = '') => {
+  const openCreate = useCallback(async (universityId = '') => {
     setEditingId(null);
-    setFormDefaults({ ...EMPTY_FORM, university_id: universityId ? String(universityId) : '' });
+    let code = nextCodeFor('college', []);
+    try {
+      code = await nextCodeFromList('college', (page, pageSize) => (
+        fetchData(() => collegesApi.list({ page, page_size: pageSize }))
+      ));
+    } catch {
+      /* the API still issues the next free COL-0001 if this preview is stale */
+    }
+    setFormDefaults({
+      ...EMPTY_FORM,
+      university_id: universityId ? String(universityId) : '',
+      code,
+    });
     setCollegeModal(true);
   }, []);
 
@@ -369,7 +382,7 @@ function CollegesView() {
         ) : null}
 
         {colleges.length ? (
-          <div className="sp-table-wrap">
+          <div className="sp-table-wrap pm-scroll-pane--x">
             <table className="sp-table un-table sa-table-tight sa-stack">
               <thead>
                 <tr>

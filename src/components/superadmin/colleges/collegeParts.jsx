@@ -11,7 +11,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import { QuirriRHFField, QuirriSelect, IndiaLocationFields } from '@/components/superadmin/quirri-ui';
+import { QuirriRHFField, QuirriSelect, AssignedCodeField, IndiaLocationFields } from '@/components/superadmin/quirri-ui';
 import { Icon, SectionState } from '@/components/shared/module-ui';
 import ScoreRing from '@/components/shared/ScoreRing';
 import { collegesApi } from '@/lib/api/superadmin/modules';
@@ -19,6 +19,7 @@ import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { collegeCreateSchema, collegeUpdateSchema } from '@/lib/validation';
 import { INDIA_COUNTRY, withIndiaPhoneDefault } from '@/lib/india';
 import { formatIndianPhone } from '@/lib/superadmin/format';
+import { createOmittingCode } from '@/lib/ids/uniqueSeries';
 
 export const EMPTY_FORM = {
   name: '',
@@ -137,17 +138,16 @@ export function CollegeFormModal({
           student_seat_cap: values.student_seat_cap,
         });
       } else {
-        await collegesApi.create({
+        await createOmittingCode(() => collegesApi.create({
           university_id: values.university_id,
           name: values.name,
-          code: values.code,
           ...locationPayload(values),
           student_seat_cap: values.student_seat_cap,
           admins: values.admins.map((a) => ({
             ...a,
             mobile: withIndiaPhoneDefault(a.mobile),
           })),
-        });
+        }));
       }
       toast.success(editingId ? 'College updated' : 'College created');
       onSaved();
@@ -184,7 +184,7 @@ export function CollegeFormModal({
             <span className="un-form-n">1</span>
             <div>
               <b>College details</b>
-              <small>The university it belongs to, its name and a unique code.</small>
+              <small>The university it belongs to, its name, and a unique ID assigned automatically.</small>
             </div>
           </div>
           <div className="grid2">
@@ -213,14 +213,10 @@ export function CollegeFormModal({
               label="College name"
               placeholder="Enter college name"
             />
-            <QuirriRHFField
+            <AssignedCodeField
               control={control}
-              name="code"
-              fieldType="code"
-              label="College code"
-              placeholder="COL-0004"
-              disabled={Boolean(editingId)}
-              hint={editingId ? 'Code cannot be changed after create.' : 'Must be unique.'}
+              label="College ID"
+              editing={Boolean(editingId)}
             />
           </div>
         </section>

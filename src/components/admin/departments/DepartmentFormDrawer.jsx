@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { QuirriRHFField, QuirriCombobox } from '@/components/superadmin/quirri-ui';
+import { QuirriRHFField, QuirriCombobox, AssignedCodeField } from '@/components/superadmin/quirri-ui';
 import { Icon, FormDrawer, FormSection } from '@/components/shared/module-ui';
-import { departmentsApi } from '@/lib/api/superadmin/modules';
+import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { tenantDepartmentCreateSchema, departmentUpdateSchema } from '@/lib/validation';
+import { nextCodeFromList, nextCodeFor } from '@/lib/ids/uniqueSeries';
 import { loadHodOptions } from './departmentModel';
 
 const EMPTY = { name: '', code: '', hod_user_id: '' };
@@ -30,18 +31,36 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
     defaultValues: EMPTY,
     mode: 'onBlur',
   });
+  const assignedCode = useWatch({ control, name: 'code' });
   const [saving, setSaving] = useState(false);
   const [hodOptions, setHodOptions] = useState([]);
   const [hodState, setHodState] = useState('idle');
 
   useEffect(() => {
-    if (!open) return;
-    reset(editing ? {
-      name: department.name ?? '',
-      code: department.code ?? '',
-      hod_user_id: department.hod_user_id ? String(department.hod_user_id) : '',
-    } : EMPTY);
-  }, [open, editing, department, reset]);
+    if (!open) return undefined;
+    if (editing) {
+      reset({
+        name: department.name ?? '',
+        code: department.code ?? '',
+        hod_user_id: department.hod_user_id ? String(department.hod_user_id) : '',
+      });
+      return undefined;
+    }
+    let cancelled = false;
+    reset(EMPTY);
+    (async () => {
+      let code = nextCodeFor('department', []);
+      try {
+        code = await nextCodeFromList('department', (page, pageSize) => (
+          fetchData(() => departmentsApi.list({ college_id: tenantId, page, pageSize }))
+        ));
+      } catch {
+        /* API still issues the next free DEP-0001 */
+      }
+      if (!cancelled) reset({ ...EMPTY, code });
+    })();
+    return () => { cancelled = true; };
+  }, [open, editing, department, reset, tenantId]);
 
   useEffect(() => {
     if (!open || !editing) return undefined;
@@ -71,7 +90,6 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
       if (editing) {
         saved = unwrap(await departmentsApi.update(department.id, {
           name: values.name,
-          code: values.code || null,
           hod_user_id: hod,
         }));
         toast.success('Department updated');
@@ -79,12 +97,15 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
         saved = unwrap(await departmentsApi.create({
           college_id: tenantId,
           name: values.name,
-          code: values.code || undefined,
           hod_user_id: hod || undefined,
         }));
         toast.success('Department created');
       }
-      onSaved?.({ ...(editing ? department : {}), ...values, ...(saved && typeof saved === 'object' ? saved : {}) });
+      onSaved?.({
+        ...(editing ? department : {}),
+        ...values,
+        ...(saved && typeof saved === 'object' ? saved : {}),
+      });
     } catch (err) {
       toast.error(apiErrorMessage(err, editing ? 'Could not save the department' : 'Could not create the department'));
     } finally {
@@ -101,8 +122,8 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
       busy={saving}
       title={editing ? `Edit ${department?.name || 'department'}` : 'New department'}
       description={editing
-        ? 'Change the name, code or head of department. Status changes live on the department page.'
-        : 'Add a department to your college. You can assign its HOD once staff are placed in it.'}
+        ? 'Change the name or head of department. The unique ID cannot be changed. Status changes live on the department page.'
+        : 'Add a department to your college. A unique ID is assigned automatically. You can assign its HOD once staff are placed in it.'}
       footer={(
         <>
           <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={saving}>Cancel</button>
@@ -110,7 +131,7 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
             type="submit"
             form="department-form"
             className="sd-btn sd-btn--amber"
-            disabled={saving || (editing && !isDirty)}
+            disabled={saving || (editing && !isDirty) || (!editing && !assignedCode)}
           >
             <Icon name="tick" size={16} />
             {saving ? 'Saving…' : editing ? 'Save changes' : 'Create department'}
@@ -119,7 +140,7 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
       )}
     >
       <form id="department-form" onSubmit={onSave} noValidate className="un-form">
-        <FormSection n={1} title="Department" sub="The name staff and students see, and an optional short code.">
+        <FormSection n={1} title="Department" sub="The name staff and students see. The unique ID is assigned automatically.">
           <QuirriRHFField
             control={control}
             name="name"
@@ -127,13 +148,10 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
             label="Department name"
             placeholder="e.g. Computer Science"
           />
-          <QuirriRHFField
+          <AssignedCodeField
             control={control}
-            name="code"
-            fieldType="code"
-            label="Department code"
-            placeholder="Optional, e.g. CSE"
-            hint="Short code used in lists and reports."
+            label="Department ID"
+            editing={editing}
           />
         </FormSection>
         {editing ? (

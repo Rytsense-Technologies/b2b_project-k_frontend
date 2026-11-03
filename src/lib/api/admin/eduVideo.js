@@ -447,6 +447,12 @@ export const eduVideoApi = {
     return `${origin}/edu_video/download/${encodeURIComponent(jobId)}`;
   },
 
+  /** Absolute URL for GET /edu_video/captions/{job_id} (WebVTT track). */
+  getCaptionsUrl(jobId) {
+    const origin = getEduVideoOrigin() || '';
+    return `${origin}/edu_video/captions/${encodeURIComponent(jobId)}`;
+  },
+
   /**
    * GET /edu_video/jobs/{job_id}/plan — the AI-drafted lesson plan (scene
    * list: topic + narration + visual spec per scene). This is what a

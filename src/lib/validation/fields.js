@@ -199,6 +199,20 @@ export const FIELD_RULES = {
     type: 'text',
     filter: (incoming) => String(incoming ?? '').slice(0, 4000),
   },
+  /**
+   * Voice Q&A type-instead question. Unicode on purpose (Tamil IME, Tanglish).
+   * Length only — do not restrict to ASCII.
+   */
+  voiceQuestion: {
+    id: 'voiceQuestion',
+    labelHint: 'English, Tamil or Tanglish',
+    min: 1,
+    max: 500,
+    inputMode: 'text',
+    autoComplete: 'off',
+    type: 'text',
+    filter: (incoming) => String(incoming ?? '').slice(0, 500),
+  },
   /** MCQ stem — unicode, 3–1000 chars (backend check_question). */
   mcqQuestion: {
     id: 'mcqQuestion',
@@ -240,6 +254,17 @@ export const FIELD_RULES = {
     autoComplete: 'off',
     type: 'text',
     filter: (incoming) => String(incoming ?? '').slice(0, 300),
+  },
+  /** Student-chosen conversation name; empty resets to the automatic title. */
+  conversationTitle: {
+    id: 'conversationTitle',
+    labelHint: 'Up to 120 characters',
+    min: 0,
+    max: 120,
+    inputMode: 'text',
+    autoComplete: 'off',
+    type: 'text',
+    filter: (incoming) => String(incoming ?? '').slice(0, 120),
   },
   positiveInt: {
     id: 'positiveInt',
@@ -535,6 +560,19 @@ export function academicLabelField(label = 'Title', { required = true } = {}) {
     .pipe(valid);
 }
 
+export function voiceQuestionField(label = 'Question') {
+  const rule = FIELD_RULES.voiceQuestion;
+  return z
+    .string({ required_error: `Enter a ${label.toLowerCase()}` })
+    .transform((v) => String(v ?? '').trim())
+    .pipe(
+      z
+        .string()
+        .min(1, `Enter a ${label.toLowerCase()}`)
+        .max(rule.max, `Keep your ${label.toLowerCase()} to ${rule.max} characters or fewer`),
+    );
+}
+
 export function mcqQuestionField(label = 'Question') {
   const rule = FIELD_RULES.mcqQuestion;
   return z
@@ -581,6 +619,17 @@ export function resetReasonField(label = 'Reason') {
     .string()
     .transform((v) => String(v ?? '').trim())
     .pipe(z.string().max(rule.max, `Keep the ${label.toLowerCase()} to ${rule.max} characters or fewer`));
+}
+
+/** Empty string is valid — the API then restores the automatic name. */
+export function conversationTitleField(label = 'Name') {
+  const rule = FIELD_RULES.conversationTitle;
+  return z
+    .string()
+    .transform((v) => String(v ?? '').trim())
+    .pipe(
+      z.string().max(rule.max, `Keep the ${label.toLowerCase()} to ${rule.max} characters or fewer`),
+    );
 }
 
 export function positiveIntField(label = 'Number', { required = false, max = 999999 } = {}) {

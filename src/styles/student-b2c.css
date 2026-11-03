@@ -2,8 +2,8 @@
    Student portal shell — quirri-b2c-student-ui skill (owner, 15 Oct 2026).
    Applies ONLY to the signed-in student portal (.app.q-student). Login stays frozen.
    Colour jobs: teal #14606e = active nav / titles / links / filter bar / scores,
-   orange #f5821f = the one primary action, ink #102228, muted #707a7e,
-   wash #e8f2f4, canvas #efefef, cards white 6px with a 1px shadow.
+   orange #f5821f = the one primary action, ink #102228, muted #626d71,
+   wash #e8f2f4, canvas #EEF0F0, cards white 6px with a 1px shadow.
    Loaded from the student layout, after student-portal.css. Page files keep their own
    page-scoped rules; shared student patterns (filter bar, list row, pager, text tabs,
    stat cluster) live here so every page uses the same ones.
@@ -18,11 +18,12 @@
   --sb-muted:var(--neutral-500);
   --sb-wash:var(--teal-50);
   --sb-search:var(--teal-100);
-  --sb-secondary:var(--teal-400);
+  --sb-secondary:var(--teal-500);
   --sb-hairline:var(--neutral-200);
   --sb-danger:var(--color-error);
   --sb-canvas:var(--canvas);
   --sb-index:var(--teal-400);
+  --sb-index-text:var(--teal-500); /* index teal is too light for text */
   --sb-shadow:0 1px 2px rgba(16,34,40,.06);
   --sb-shadow-row:0 1px 2px rgba(16,34,40,.06);
 
@@ -85,7 +86,11 @@
 /* ---------- Page header: bold title on the grey canvas, one muted line ---------- */
 .q-student .topbar{
   position:sticky;top:0;z-index:30;background:var(--sb-canvas);
-  max-width:var(--qs-page-max);padding:32px var(--qs-page-x) 24px;align-items:flex-start;
+  max-width:var(--qs-page-max);padding:32px var(--qs-page-x) 24px;align-items:center;overflow:visible;
+}
+.q-student .topbar-right{
+  display:flex;flex-direction:row;flex:0 0 auto;align-items:center;justify-content:flex-end;
+  gap:12px;margin-left:auto;min-width:0;
 }
 /* QA clean pass (20 Oct 2026): same header / page frame as the other portals (portal-b2c.css tokens) */
 .q-student .topbar h1{font-size:22px;line-height:30px;font-weight:500;color:var(--ink)}
@@ -93,7 +98,8 @@
 .q-student .content{max-width:var(--qs-page-max);padding:0 var(--qs-page-x) 56px}
 .q-student .content > *{min-width:0}
 @media (max-width:1023px){
-  .q-student .topbar{padding:20px var(--qs-page-x) 20px}
+  .q-student .topbar{padding:20px var(--qs-page-x) 20px;flex-wrap:wrap;align-items:center;row-gap:12px}
+  .q-student .topbar-right{flex:1 1 100%;justify-content:flex-end}
   .q-student .content{padding:0 var(--qs-page-x) 40px}
 }
 @media (max-width:640px){
@@ -113,7 +119,8 @@
   background:#fff;border:0;border-radius:var(--radius-card);box-shadow:var(--shadow-card);
   display:flex;flex-direction:column;min-width:0;
 }
-.q-student :is(.dv-grid,.spg-grid,.pm-grid-2){align-items:start}
+.q-student :is(.dv-grid,.spg-grid,.pm-grid-2){align-items:stretch}
+.q-student :is(.dv-grid,.spg-grid,.pm-grid-2) > :is(.sp-panel,.sp-card,.dv-card,.mdc-card){height:100%;min-height:0}
 .q-student .card .card,
 .q-student .pm-panel .card{box-shadow:none;border:1px solid var(--sb-hairline)}
 .q-student .card-title,
@@ -198,7 +205,7 @@
 }
 .q-student .sb-row:hover{background:#fafafa}
 .q-student .sb-row:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
-.q-student .sb-row__idx{font-size:14px;font-weight:500;color:var(--sb-index);font-variant-numeric:tabular-nums}
+.q-student .sb-row__idx{font-size:14px;font-weight:500;color:var(--sb-index-text);font-variant-numeric:tabular-nums}
 .q-student .sb-row__title{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .q-student .sb-row__sub{font-size:12px;color:var(--sb-muted);margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .q-student .sb-row__score{font-size:18px;font-weight:500;color:var(--sb-teal);font-variant-numeric:tabular-nums}

@@ -5,7 +5,7 @@ import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import { QuirriRHFField, QuirriSelect } from '@/components/superadmin/quirri-ui';
+import { QuirriRHFField, QuirriSelect, AssignedCodeField } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage,
   ModuleHead,
@@ -28,6 +28,7 @@ import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState } from '@/hooks/useUrlState';
+import { nextCodeFromList, nextCodeFor, codesOf, createOmittingCode } from '@/lib/ids/uniqueSeries';
 import {
   MAX_PROGRAMME_SEMESTERS,
   programmeCreateSchema,
@@ -83,7 +84,7 @@ function ProgrammeModal({ programme, colleges, defaults, fixedCollege = false, o
         college_id: defaults.college || '',
         department_id: defaults.department || '',
         name: '',
-        code: '',
+        code: nextCodeFor('programme', []),
         duration_years: '4',
         semesters_per_year: '2',
       },
@@ -94,6 +95,22 @@ function ProgrammeModal({ programme, colleges, defaults, fixedCollege = false, o
   const years = Number(useWatch({ control, name: 'duration_years' })) || 0;
   const perYear = Number(useWatch({ control, name: 'semesters_per_year' })) || 0;
   const total = years * perYear;
+
+  useEffect(() => {
+    if (editing) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const code = await nextCodeFromList('programme', (page, pageSize) => (
+          fetchData(() => academicsApi.listPrograms({ page, page_size: pageSize, include_inactive: true }))
+        ));
+        if (!cancelled) setValue('code', code);
+      } catch {
+        /* API still allocates PRG-0001 on create if the preview is stale */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [editing, setValue]);
 
   const { data: deptData, loading: deptLoading } = useAsyncResource(
     () => (!editing && collegeId
@@ -108,13 +125,12 @@ function ProgrammeModal({ programme, colleges, defaults, fixedCollege = false, o
     try {
       const body = {
         name: values.name,
-        code: values.code || null,
         duration_years: Number(values.duration_years),
         semesters_per_year: Number(values.semesters_per_year),
       };
       const saved = editing
         ? await fetchData(() => academicsApi.updateProgram(programme.id, body))
-        : await fetchData(() => academicsApi.createProgram({ ...body, department_id: values.department_id }));
+        : await createOmittingCode(() => fetchData(() => academicsApi.createProgram({ ...body, department_id: values.department_id })));
       toast.success(editing ? 'Programme updated' : `Programme created with ${plural(total, 'semester')}`);
       onSaved(saved);
     } catch (err) {
@@ -200,10 +216,10 @@ function ProgrammeModal({ programme, colleges, defaults, fixedCollege = false, o
           </FormSection>
         ) : null}
 
-        <FormSection n={editing ? 1 : 2} title="Programme" sub="The name students and staff will see, and an optional short code.">
+        <FormSection n={editing ? 1 : 2} title="Programme" sub="The name students and staff will see, and an auto-assigned code.">
           <div className="grid2">
             <QuirriRHFField control={control} name="name" fieldType="academicLabel" label="Programme name" placeholder="e.g. B.E. Computer Science" />
-            <QuirriRHFField control={control} name="code" fieldType="code" label="Programme code" placeholder="Optional, e.g. BE-CSE" hint="Letters, numbers, underscore, or hyphen." />
+            <AssignedCodeField control={control} name="code" label="Programme code" editing={editing} />
           </div>
         </FormSection>
 
@@ -263,7 +279,7 @@ const SIMPLE_FORMS = {
     schema: subjectSchema,
     fields: [
       { name: 'name', label: 'Subject name', placeholder: 'e.g. Engineering Mathematics I' },
-      { name: 'code', label: 'Subject code', placeholder: 'Optional, e.g. MA101', fieldType: 'code', hint: 'Letters, numbers, underscore, or hyphen.' },
+      { name: 'code', label: 'Subject code', assigned: true },
     ],
   },
   chapter: {
@@ -272,7 +288,7 @@ const SIMPLE_FORMS = {
   },
 };
 
-function SimpleFormModal({ kind, title, crumb, initial, submitLabel, onSubmit, onClose }) {
+function SimpleFormModal({ kind, title, crumb, initial, submitLabel, onSubmit, onClose, editing = false }) {
   const cfg = SIMPLE_FORMS[kind];
   const { control, handleSubmit } = useForm({
     resolver: zodResolver(cfg.schema),
@@ -280,6 +296,7 @@ function SimpleFormModal({ kind, title, crumb, initial, submitLabel, onSubmit, o
     mode: 'onBlur',
   });
   const [saving, setSaving] = useState(false);
+
   const save = handleSubmit(async (values) => {
     setSaving(true);
     try {
@@ -307,16 +324,20 @@ function SimpleFormModal({ kind, title, crumb, initial, submitLabel, onSubmit, o
     >
       <form onSubmit={save} noValidate className="un-form sa-form">
         {cfg.fields.map((f) => (
-          <QuirriRHFField
-            key={f.name}
-            control={control}
-            name={f.name}
-            fieldType={f.fieldType || 'academicLabel'}
-            label={f.label}
-            placeholder={f.placeholder}
-            hint={f.hint}
-            full
-          />
+          f.assigned ? (
+            <AssignedCodeField key={f.name} control={control} name={f.name} label={f.label} editing={editing} full />
+          ) : (
+            <QuirriRHFField
+              key={f.name}
+              control={control}
+              name={f.name}
+              fieldType={f.fieldType || 'academicLabel'}
+              label={f.label}
+              placeholder={f.placeholder}
+              hint={f.hint}
+              full
+            />
+          )
         ))}
       </form>
     </QuirriModal>
@@ -1031,10 +1052,13 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
           kind="subject"
           title="Add subject"
           crumb={`${programme?.name} · ${modal.semester.name}`}
-          initial={{ name: '', code: '' }}
+          initial={{ name: '', code: nextCodeFor('subject', codesOf(subjects)) }}
           submitLabel="Add subject"
           onClose={close}
-          onSubmit={submitSimple((v) => academicsApi.createSubject(modal.semester.id, { name: v.name, code: v.code || null }), 'Subject added')}
+          onSubmit={submitSimple(
+            (v) => createOmittingCode(() => academicsApi.createSubject(modal.semester.id, { name: v.name })),
+            'Subject added',
+          )}
         />
       ) : null}
       {modal?.type === 'subject-edit' ? (
@@ -1044,8 +1068,9 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
           crumb={`${programme?.name} · ${semester?.name}`}
           initial={{ name: modal.subject.name, code: modal.subject.code || '' }}
           submitLabel="Save"
+          editing
           onClose={close}
-          onSubmit={submitSimple((v) => academicsApi.updateSubject(modal.subject.id, { name: v.name, code: v.code || null }), 'Subject updated')}
+          onSubmit={submitSimple((v) => academicsApi.updateSubject(modal.subject.id, { name: v.name }), 'Subject updated')}
         />
       ) : null}
       {modal?.type === 'chapter-new' ? (

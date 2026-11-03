@@ -10,6 +10,7 @@ import {
   QuirriRHFField,
   QuirriSelect,
   QuirriCombobox,
+  AssignedCodeField,
 } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage,
@@ -37,6 +38,7 @@ import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { collegeOptionLabel } from '@/lib/superadmin/format';
+import { nextCodeFromList, nextCodeFor, codesOf } from '@/lib/ids/uniqueSeries';
 import { departmentCreateSchema, departmentUpdateSchema } from '@/lib/validation';
 import { ROLES } from '@/lib/permissions';
 import { MetricList, ModernDonut, dataColor } from '@/components/shared/data-viz';
@@ -151,18 +153,15 @@ function DepartmentFormModal({
     setSaving(true);
     try {
       const hod = values.hod_user_id || null;
-      const code = values.code || undefined;
       if (editingId) {
         await departmentsApi.update(editingId, {
           name: values.name,
-          code: code || null,
           hod_user_id: hod,
         });
       } else {
         await departmentsApi.create({
           college_id: values.college_id,
           name: values.name,
-          code,
           hod_user_id: hod || undefined,
         });
       }
@@ -220,7 +219,7 @@ function DepartmentFormModal({
           />
         </FormSection>
 
-        <FormSection n={2} title="Identity" sub="Name students and staff will see, and an optional short code.">
+        <FormSection n={2} title="Identity" sub="Name students and staff will see. The unique ID is assigned automatically.">
           <div className="grid2">
             <QuirriRHFField
               control={control}
@@ -229,13 +228,10 @@ function DepartmentFormModal({
               label="Department name"
               placeholder="e.g. Computer Science"
             />
-            <QuirriRHFField
+            <AssignedCodeField
               control={control}
-              name="code"
-              fieldType="code"
-              label="Department code"
-              placeholder="Optional"
-              hint="Letters, numbers, underscore, or hyphen."
+              label="Department ID"
+              editing={Boolean(editingId)}
             />
           </div>
         </FormSection>
@@ -453,9 +449,17 @@ function DepartmentsView() {
     reloadAll().catch(() => {});
   };
 
-  const openCreate = () => {
+  const openCreate = async () => {
     setEditingId(null);
-    setFormDefaults({ ...EMPTY_FORM, college_id: url.college || '' });
+    let code = nextCodeFor('department', codesOf(all));
+    try {
+      code = await nextCodeFromList('department', (page, pageSize) => (
+        fetchData(() => departmentsApi.list({ page, pageSize }))
+      ));
+    } catch {
+      /* preview from the loaded list; the API still issues the next free DEP-0001 */
+    }
+    setFormDefaults({ ...EMPTY_FORM, college_id: url.college || '', code });
     setModalOpen(true);
   };
 

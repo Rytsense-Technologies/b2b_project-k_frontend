@@ -3,6 +3,8 @@
 .sn-bell {
   position: relative;
   flex: none;
+  width: 44px;
+  height: 44px;
 }
 
 .sn-bell-btn {
@@ -50,8 +52,10 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
+  left: auto;
   z-index: 40;
   width: min(360px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
   max-height: min(480px, calc(100dvh - 96px));
   overflow: hidden;
   background: var(--panel);
@@ -267,25 +271,62 @@
   min-width: 0;
 }
 
-.topbar-right {
+/* One cluster on every portal: lifted page actions + 44px Alerts bell, 12px gap, right edge. */
+.q-app-shell .topbar-right {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
-  flex: none;
+  flex: 0 0 auto;
   margin-left: auto;
+  min-width: 0;
 }
 
-.pm-topbar-slot:empty {
+.q-app-shell .pm-topbar-slot {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.q-app-shell .pm-topbar-slot:empty {
   display: none;
 }
 
+.q-app-shell .topbar-right .pm-topbar-actions {
+  margin-left: 0;
+  flex: none;
+}
+
+.q-app-shell .topbar-right .quirri-dd {
+  width: auto;
+  min-width: 168px;
+}
+
+.q-app-shell .topbar-right .quirri-dd__trigger {
+  min-height: 44px;
+  height: 44px;
+}
+
+@media (max-width: 1023px) {
+  .q-app-shell .topbar-right {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 768px) {
+  /* Stay anchored to the bell — do not jump to a full-viewport overlay. */
   .sn-panel {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    left: 12px;
-    width: auto;
-    max-height: calc(100dvh - 24px);
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    width: min(360px, calc(100vw - 32px));
+    max-height: min(70dvh, calc(100dvh - 96px));
   }
 }

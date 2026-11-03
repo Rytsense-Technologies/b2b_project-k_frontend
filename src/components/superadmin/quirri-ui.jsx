@@ -2,6 +2,10 @@
 
 import { Controller } from 'react-hook-form';
 import { applyFieldFilter, getFieldRule } from '@/lib/validation';
+import {
+  ASSIGNED_CODE_HINT,
+  ASSIGNED_CODE_LOCKED_HINT,
+} from '@/lib/ids/uniqueSeries';
 import QuirriSelect from '@/components/superadmin/QuirriSelect';
 import QuirriCombobox from '@/components/superadmin/QuirriCombobox';
 import IndiaLocationFields from '@/components/superadmin/IndiaLocationFields';
@@ -197,6 +201,27 @@ export function QuirriControlledField({
         />
       )}
     </QuirriField>
+  );
+}
+
+/** Identity code assigned from the unique series — visible, not typed. */
+export function AssignedCodeField({
+  control,
+  name = 'code',
+  label,
+  editing = false,
+  full = false,
+}) {
+  return (
+    <QuirriRHFField
+      control={control}
+      name={name}
+      fieldType="code"
+      label={label}
+      disabled
+      full={full}
+      hint={editing ? ASSIGNED_CODE_LOCKED_HINT : ASSIGNED_CODE_HINT}
+    />
   );
 }
 

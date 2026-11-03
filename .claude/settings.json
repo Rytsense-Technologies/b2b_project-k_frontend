@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -m graphify update . --no-cluster",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

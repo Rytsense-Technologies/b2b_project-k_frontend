@@ -6,6 +6,11 @@ import toast from 'react-hot-toast';
 import { Icon, SectionState } from '@/components/student/ui';
 import { voiceQnaApi, voiceQnaCanRetry, voiceQnaErrorMessage } from '@/lib/api/voiceQna';
 import { formatLivekitError, livekitUrlFromApi } from '@/lib/livekitUrl';
+import { applyFieldFilter, FIELD_RULES } from '@/lib/validation';
+
+/** POST /voice_qna/chat accepts 1 to 500 characters (FIELD_RULES.voiceQuestion). */
+const TYPED_MAX = FIELD_RULES.voiceQuestion.max;
+const SLOW_JOIN_MS = 15000;
 
 function formatWhen(iso) {
   if (!iso) return '';
@@ -45,6 +50,19 @@ export default function VoiceQnaPanel({
   const [detailLoading, setDetailLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
+  // Type instead of speak: same tutor, same conversation (POST /voice_qna/chat).
+  const [typeChosen, setTypeChosen] = useState(false);
+  const [slowJoin, setSlowJoin] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [typeBusy, setTypeBusy] = useState(false);
+  const [typeError, setTypeError] = useState('');
+
+  const [renaming, setRenaming] = useState(null); // { id, value }
+  const renameCancelled = useRef(false);
+  // Keyboard users land back on the control that opened the input or box.
+  const renameFocusId = useRef(null);
+  const focusTypeBox = useRef(false);
+
   const detachAudio = useCallback(() => {
     audioEls.current.forEach((el) => {
       try { el.remove(); } catch { /* ignore */ }
@@ -82,8 +100,8 @@ export default function VoiceQnaPanel({
       setConversations(Array.isArray(rows) ? rows : []);
     } catch (err) {
       setConversations([]);
-      // 401/403 = no history access for this session yet — show the empty state, not an error.
-      if (err?.message === 'missing_token' || err?.status === 401 || err?.status === 403) {
+      // 401/403 = no history access for this session — show the empty state, not an error.
+      if (err?.status === 401 || err?.status === 403) {
         setListError('');
       } else {
         setListError(err?.message || 'Could not load past doubts.');
@@ -113,6 +131,17 @@ export default function VoiceQnaPanel({
   useEffect(() => {
     loadList();
   }, [loadList, jobId]);
+
+  // The tutor is slow to join: offer typing instead of a silent wait.
+  const waitingForTutor = phase === 'connecting' || (phase === 'live' && !tutorJoined);
+  useEffect(() => {
+    if (!waitingForTutor) {
+      setSlowJoin(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setSlowJoin(true), SLOW_JOIN_MS);
+    return () => clearTimeout(t);
+  }, [waitingForTutor]);
 
   const attachTrack = useCallback((track) => {
     if (track.kind !== Track.Kind.Audio) return;
@@ -274,6 +303,48 @@ export default function VoiceQnaPanel({
     }
   };
 
+  const sendTyped = async (e) => {
+    e.preventDefault();
+    const text = typed.trim();
+    const target = conversationId || selectedId;
+    if (!text || typeBusy || (!target && !jobId)) return;
+    setTypeBusy(true);
+    setTypeError('');
+    try {
+      const reply = await voiceQnaApi.chat({ jobId, conversationId: target, text });
+      setTyped('');
+      setConversationId(reply.conversation_id);
+      await loadDetail(reply.conversation_id, { quiet: true });
+      loadList();
+    } catch (err) {
+      setTypeError(err?.message || 'The tutor could not answer right now. Please try again.');
+    } finally {
+      setTypeBusy(false);
+    }
+  };
+
+  const saveRename = async () => {
+    const edit = renaming;
+    setRenaming(null);
+    if (!edit || renameCancelled.current) {
+      renameCancelled.current = false;
+      return;
+    }
+    try {
+      const row = await voiceQnaApi.rename(edit.id, edit.value);
+      setConversations((prev) => prev.map((c) => (c.id === edit.id ? { ...c, title: row?.title ?? c.title } : c)));
+      setDetail((prev) => (prev?.id === edit.id ? { ...prev, title: row?.title ?? prev.title } : prev));
+    } catch (err) {
+      toast.error(err?.message || 'Could not rename this conversation.');
+    }
+  };
+
+  useEffect(() => {
+    if (renaming || !renameFocusId.current) return;
+    document.getElementById(`sl-rename-btn-${renameFocusId.current}`)?.focus();
+    renameFocusId.current = null;
+  }, [renaming]);
+
   const turns = Array.isArray(detail?.turns) ? detail.turns : [];
   // Sessions where nothing was asked add noise - hide them (older API
   // responses without `has_questions` keep everything).
@@ -288,6 +359,14 @@ export default function VoiceQnaPanel({
 
   const isLive = phase === 'live';
   const isConnecting = phase === 'connecting';
+  // Hidden while a call is really running: the live tutor does not see typed messages.
+  const showTypeBox = !(isLive && tutorJoined) && (typeChosen || slowJoin || Boolean(callError));
+
+  useEffect(() => {
+    if (!showTypeBox || !focusTypeBox.current) return;
+    focusTypeBox.current = false;
+    document.getElementById('sl-type-q')?.focus();
+  }, [showTypeBox]);
 
   return (
     <div className="voice-qna sl-tutor">
@@ -310,13 +389,43 @@ export default function VoiceQnaPanel({
               const active = row.id === selectedId;
               return (
                 <li key={row.id} className={`sl-session${active ? ' is-active' : ''}`}>
-                  <button type="button" className="sl-session-open" onClick={() => loadDetail(row.id)} aria-pressed={active}>
-                    <b>{row.title || 'New conversation'}</b>
-                    <small>
-                      {row.document_title || 'Chapter'}
-                      {row.started_at ? ` · ${formatWhen(row.started_at)}` : ''}
-                    </small>
-                  </button>
+                  {renaming?.id === row.id ? (
+                    <div className="field">
+                      <label htmlFor={`sl-rename-${row.id}`}>Conversation name</label>
+                      <input
+                        id={`sl-rename-${row.id}`}
+                        value={renaming.value}
+                        maxLength={FIELD_RULES.conversationTitle.max}
+                        // eslint-disable-next-line jsx-a11y/no-autofocus
+                        autoFocus
+                        onChange={(e) => setRenaming({
+                          id: row.id,
+                          value: applyFieldFilter('conversationTitle', e.target.value, renaming.value),
+                        })}
+                        onBlur={saveRename}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            renameFocusId.current = row.id;
+                            e.currentTarget.blur();
+                          }
+                          if (e.key === 'Escape') {
+                            renameFocusId.current = row.id;
+                            renameCancelled.current = true;
+                            e.currentTarget.blur();
+                          }
+                        }}
+                      />
+                      <div className="hint">Enter saves, Esc cancels. Leave it empty for the automatic name.</div>
+                    </div>
+                  ) : (
+                    <button type="button" className="sl-session-open" onClick={() => loadDetail(row.id)} aria-pressed={active}>
+                      <b>{row.title || 'New conversation'}</b>
+                      <small>
+                        {row.document_title || 'Chapter'}
+                        {row.started_at ? ` · ${formatWhen(row.started_at)}` : ''}
+                      </small>
+                    </button>
+                  )}
                   <div className="sl-session-actions">
                     <button
                       type="button"
@@ -325,6 +434,15 @@ export default function VoiceQnaPanel({
                       disabled={phase !== 'idle'}
                     >
                       Continue
+                    </button>
+                    <button
+                      type="button"
+                      id={`sl-rename-btn-${row.id}`}
+                      className="sd-btn sd-btn--ghost sd-btn--sm"
+                      onClick={() => setRenaming({ id: row.id, value: row.title || '' })}
+                      aria-label={`Rename ${row.title || 'conversation'}`}
+                    >
+                      <Icon name="edit" size={14} />
                     </button>
                     {confirmDeleteId === row.id ? (
                       <button type="button" className="sd-btn sd-btn--danger sd-btn--sm" onClick={() => removeConversation(row.id)}>
@@ -395,7 +513,33 @@ export default function VoiceQnaPanel({
               </button>
             )}
             <p className="sl-voice-langs"><Icon name="chat" size={18} /> Speaks English, Tamil and Tanglish</p>
+            {!showTypeBox && !isLive ? (
+              <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => { focusTypeBox.current = true; setTypeChosen(true); }} disabled={!jobId}>
+                Type instead
+              </button>
+            ) : null}
           </div>
+
+          {showTypeBox ? (
+            <form className="sl-ask" onSubmit={sendTyped}>
+              <div className="field">
+                <label htmlFor="sl-type-q">Type your question</label>
+                <textarea
+                  id="sl-type-q"
+                  rows={3}
+                  maxLength={TYPED_MAX}
+                  value={typed}
+                  readOnly={typeBusy}
+                  onChange={(e) => setTyped(applyFieldFilter('voiceQuestion', e.target.value, typed))}
+                />
+                <div className="hint">{slowJoin ? 'The tutor is taking a while to join. You can type here meanwhile.' : `Up to ${TYPED_MAX} characters.`}</div>
+              </div>
+              {typeError ? <SectionState tone="err" title="No answer yet">{typeError}</SectionState> : null}
+              <button type="submit" className="sd-btn sd-btn--teal" aria-disabled={typeBusy || !typed.trim() || (!jobId && !selectedId && !conversationId)}>
+                <Icon name="send" size={16} /> {typeBusy ? 'Waiting for the tutor…' : 'Send question'}
+              </button>
+            </form>
+          ) : null}
 
           {isLive && needsAudioUnlock ? (
             <div className="sl-audio-unlock" role="status">

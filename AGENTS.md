@@ -6,11 +6,13 @@
 |------|-----|
 | [`docs/agent/task.md`](docs/agent/task.md) | **Mandatory** BEFORE · DURING · AFTER protocol |
 | [`docs/agent/memory.md`](docs/agent/memory.md) | Code Graph · hooks · context packing |
+| [`docs/agent/HANDOFF.md`](docs/agent/HANDOFF.md) | **Live session memory** — read § Current (2 Nov 2026) first |
 | [`docs/agent/prod.md`](docs/agent/prod.md) | SOW scope · exclusions · product must-haves |
 | [`docs/agent/architecture.md`](docs/agent/architecture.md) | Portals · folders · APIs · symbols |
 | [`docs/agent/rules.md`](docs/agent/rules.md) | Hard rules index (existing `.mdc` + pack) |
 | [`docs/agent/design.md`](docs/agent/design.md) | Brand · shell · components · Playwright (compressed) |
 | [`docs/agent/design-system.md`](docs/agent/design-system.md) | **UI source of truth** — Brand PDF + Quirri Prep analysis, owner overrides, component specs, BEFORE/AFTER design gates |
+| [`docs/knowledge/product.md`](docs/knowledge/product.md) | **How the product works** — then one file from [`docs/knowledge/index.md`](docs/knowledge/index.md) |
 
 Index: [`docs/agent/README.md`](docs/agent/README.md) · Always-apply rule: `.cursor/rules/quirri-agent-pack.mdc`
 
@@ -24,7 +26,7 @@ Prefer this pack + graphify over scanning the whole repo. **Existing** `.cursor/
 4. **Symbol-aware edits** — change by symbol; check dependents via graph
 5. **Enterprise Code Intelligence** — SOW + BE status + alignment before inventing features/APIs
 
-After code edits: `graphify update . --no-cluster` (hooks should also run).
+After code edits: `graphify update . --no-cluster` (Cursor hooks and `.claude/settings.json` should also run). If a product fact changed, update `docs/knowledge/` and run `node scripts/check-knowledge.mjs`.
 
 ## Always follow (detail lives in the pack)
 

@@ -6,7 +6,7 @@
    ========================================================================== */
 
 :root{
-  --band-strong:#5CB414; --band-strong-soft:#EEF7E6; --band-strong-text:#46921A;
+  --band-strong:#5CB414; --band-strong-soft:#EEF7E6; --band-strong-text:#387614;
   --band-ok:#2C74E0;     --band-ok-soft:#E9F1FC;     --band-ok-text:#2C74E0;
   --band-focus:#F5821F;  --band-focus-soft:#FEF0E3;  --band-focus-text:var(--accent-text);
   --band-none:#4D8691;   --band-none-soft:#F1F5F6;   --band-none-text:#0B4B58;
@@ -55,6 +55,7 @@
 /* ---------- Two-column analytics grid ---------- */
 .dv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
 .dv-grid--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dv-ph{min-height:552px} /* an eight-row metric card, the most these lists show */
 .dv-grid > .dv-span-2{grid-column:span 2}
 @media (max-width:1024px){
   .dv-grid--3{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -166,10 +167,11 @@
 
 /* Phone top bar: title block stays left-aligned and full width (drawer-shell rule centred short titles) */
 @media (max-width:1023px){
-  .q-drawer-shell .topbar > div:not(.pm-topbar-actions){flex:1 1 auto}
+  .q-drawer-shell .topbar > :is(.topbar-copy,.pm-topbar-main){flex:1 1 auto}
+  .q-drawer-shell .topbar > .topbar-right{flex:1 1 100%;justify-content:flex-end}
 }
 @media (max-width:760px){
-  .q-drawer-shell .topbar.pm-topbar{align-items:stretch}
+  .q-drawer-shell .topbar.pm-topbar{align-items:center}
 }
 
 /* Touch targets, final: portal stylesheets load after this file (student layout), so the
@@ -186,7 +188,10 @@
    .mdc = donut + legend (inside a panel body) · .mdc-card = full card (sp-panel chrome)
    Each legend row sets --mdc-c (slice colour); pills tint it at ~12%.
    ========================================================================== */
-.mdc{display:flex;flex-direction:column;gap:var(--qs-head-gap,20px);min-width:0;width:100%;container-type:inline-size}
+.mdc{display:flex;flex-direction:column;gap:var(--qs-head-gap,20px);min-width:0;width:100%;flex:1 1 auto;container-type:inline-size}
+.mdc-card.sp-panel,.sp-panel.mdc-card{height:100%;min-height:0}
+.mdc-card > .sp-panel-b{flex:1 1 auto;display:flex;flex-direction:column}
+.mdc-card > .sp-panel-b > .mdc{flex:1 1 auto}
 .mdc-body{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:32px;min-width:0;width:100%}
 .mdc:not(.mdc--compact) .mdc-body{grid-template-columns:auto minmax(0,1fr);justify-content:stretch;column-gap:48px}
 .mdc-ring{position:relative;flex:none;justify-self:center}
@@ -205,7 +210,7 @@
 .mdc-label a:hover{color:var(--teal-500);text-decoration:underline}
 .mdc-count{font-size:15px;line-height:20px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;min-width:32px}
 .mdc-pill{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;
-  background:color-mix(in srgb,var(--mdc-c) 13%,#fff);color:color-mix(in srgb,var(--mdc-c) 72%,#000)}
+  background:color-mix(in srgb,var(--mdc-c) 13%,#fff);color:color-mix(in srgb,var(--mdc-c) 62%,#000)}
 .mdc-empty{margin:0;font-size:14px;color:var(--qs-muted,var(--muted))}
 .mdc-empty--list{padding:12px 0}
 
@@ -218,7 +223,7 @@
 .mdc-metrics .mdc-pill{min-width:60px}
 
 /* Head chip: "Total departments  4" */
-.mdc-chip{display:grid;justify-items:end;gap:2px;flex:none;padding:8px 14px;border-radius:var(--radius-card,6px);background:var(--neutral-50,#F8F8F9);box-shadow:inset 0 0 0 1px var(--line,#e3e7ee);text-align:right}
+.mdc-chip{display:grid;justify-items:end;align-content:center;gap:2px;flex:none;min-height:52px;padding:8px 14px;border-radius:var(--radius-card,8px);background:var(--neutral-50,#F8F8F9);box-shadow:inset 0 0 0 1px var(--line,#e3e7ee);text-align:right}
 .mdc-chip small{font-size:12px;line-height:16px;color:var(--qs-muted,var(--muted));white-space:nowrap}
 .mdc-chip b{font-size:22px;line-height:30px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
 
