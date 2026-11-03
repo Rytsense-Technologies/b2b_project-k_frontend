@@ -50,10 +50,20 @@ yarn-error.log*
 # graphify (local only)
 graphify-out/
 
-# docs & guides (local reference only)
+# docs & guides (local reference only) — keep the agent pack + knowledge bundle in git
 docs/
+!docs/agent/
+!docs/agent/**
+!docs/knowledge/
+!docs/knowledge/**
 assets/*.md
 
 # project guide
 assets/PROJECT_K_DEVELOPMENT_GUIDE.md
-/.next-preview/
+/.next-*/
+
+# local verification output
+.playwright-mcp/
+/test-results/
+/playwright-report/
+.tmp-*

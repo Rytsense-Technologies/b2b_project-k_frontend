@@ -82,7 +82,7 @@
 /* ==========================================================================
    Page header, breadcrumbs and record patterns (docs/ux/ux-architecture.md §4)
    ========================================================================== */
-.pm-topbar{align-items:flex-end;gap:24px}
+.pm-topbar{align-items:center;gap:24px}
 .pm-topbar-main{min-width:0;flex:1}
 .pm-topbar.has-crumbs h1{margin-top:8px}
 .pm-topbar-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:12px;flex:none}
@@ -183,9 +183,9 @@
   .pm-record-facts > div:nth-child(3){padding-left:0;border-left:0}
 }
 @media (max-width:760px){
-  .pm-topbar{flex-direction:column;align-items:stretch;gap:16px}
-  .pm-topbar > .q-nav-btn{align-self:flex-start}
-  .pm-topbar-actions{justify-content:flex-start}
+  .pm-topbar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px;row-gap:12px}
+  .pm-topbar > .q-nav-btn{align-self:center}
+  .pm-topbar-actions{justify-content:flex-end}
   .pm-danger{flex-direction:column;align-items:stretch}
   .pm-hier-note{display:none}
   .pm-kv{grid-template-columns:1fr}
@@ -252,7 +252,7 @@
 .cs-where{display:flex;flex-direction:column;min-width:0;max-width:32ch}
 .cs-where span{font-size:14px;line-height:22px;color:var(--ink);overflow-wrap:anywhere}
 .cs-where small{font-size:12px;line-height:18px;color:var(--muted-2);overflow-wrap:anywhere}
-.cs-where small.is-muted{color:var(--neutral-400)}
+.cs-where small.is-muted{color:var(--neutral-500)}
 .cs-jobs .ad-actions{flex-wrap:nowrap}
 .cs-kebab{flex:none}
 .cs-menu{position:fixed;z-index:80;width:224px;padding:8px;display:flex;flex-direction:column;gap:2px;background:var(--neutral-0);border:1px solid var(--line);border-radius:var(--radius-control);box-shadow:var(--shadow-1),var(--shadow-3)}
@@ -313,7 +313,7 @@
 .as-semrow .as-sems{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;overflow:visible;padding-bottom:0}
 .as-sems .sa-acad-sem{min-width:0;width:100%;text-align:left}
 .as-sems .sa-acad-sem.is-empty:not(.is-on){background:var(--neutral-50);color:var(--muted-2)}
-.as-sems .sa-acad-sem.is-empty:not(.is-on) small{color:var(--neutral-400)}
+.as-sems .sa-acad-sem.is-empty:not(.is-on) small{color:var(--neutral-500)}
 .as-semrow > .sa-acad-sem--add{white-space:nowrap}
 @media (max-width:520px){
   .as-semrow .as-sems{grid-template-columns:repeat(2,minmax(0,1fr))}

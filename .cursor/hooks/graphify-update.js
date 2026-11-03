@@ -48,13 +48,19 @@ try {
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(lockFile, String(now));
 
-const child = spawn('graphify', ['update', '.', '--no-cluster'], {
-  cwd: process.cwd(),
-  detached: true,
-  stdio: 'ignore',
-  windowsHide: true,
-  shell: process.platform === 'win32',
-});
+const child = spawn(
+  process.platform === 'win32' ? 'py' : 'graphify',
+  process.platform === 'win32'
+    ? ['-m', 'graphify', 'update', '.', '--no-cluster']
+    : ['update', '.', '--no-cluster'],
+  {
+    cwd: process.cwd(),
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+    shell: process.platform === 'win32',
+  },
+);
 child.unref();
 
 process.stdout.write('{}\n');

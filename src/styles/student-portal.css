@@ -362,7 +362,7 @@ a.sd-chip:hover{border-color:var(--teal-500)}
 .sp-classroom{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:16px;align-items:start;min-width:0;max-width:100%}
 .sp-panel{display:flex;flex-direction:column;min-width:0;background:#fff;border:0;border-radius:var(--radius-card);overflow:hidden;box-shadow:var(--shadow-card)}
 .sp-panel-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;border-bottom:1px solid var(--line-soft)}
-.sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.sp-panel-h :is(h2,h3){font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
 .sp-panel-h p{font-size:12px;line-height:18px;color:var(--muted-2);margin-top:4px}
 .sp-panel-b{flex:1 1 auto;display:flex;flex-direction:column;min-width:0;width:100%;padding:16px 18px}
 .sp-chapters{list-style:none;margin:0;padding:8px;display:flex;flex-direction:column;gap:4px;max-height:560px;overflow:auto}
@@ -578,8 +578,9 @@ a.sd-btn{text-decoration:none}
 .sl-card-h h3::before,
 .spg-subj-h h2::before{content:"";flex:none;width:4px;height:18px;border-radius:var(--radius-full);background:var(--highlight)}
 
-/* QA 20 Oct 2026: phone header matches the other portals - menu button above the title (pm-topbar). */
+/* Phone header: title + Alerts on one wrapped row, never stretch the bell. */
 @media (max-width:760px){
-  .app.q-student .main > .topbar{flex-direction:column;align-items:stretch;gap:16px}
-  .app.q-student .main > .topbar > .q-nav-btn{align-self:flex-start}
+  .app.q-student .main > .topbar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px;row-gap:12px}
+  .app.q-student .main > .topbar > .q-nav-btn{align-self:center}
+  .app.q-student .main > .topbar > .topbar-right{flex:1 1 100%;justify-content:flex-end;align-self:center}
 }
