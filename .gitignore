@@ -51,7 +51,7 @@ yarn-error.log*
 graphify-out/
 
 # docs & guides (local reference only) — keep the agent pack + knowledge bundle in git
-docs/
+docs/*
 !docs/agent/
 !docs/agent/**
 !docs/knowledge/
