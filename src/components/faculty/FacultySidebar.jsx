@@ -125,7 +125,7 @@ export default function FacultySidebar() {
   // Until scope loads, show no links rather than the wrong menu (a definite 'hod' role is safe).
   const known = Boolean(scope) || role === 'hod';
   const isHod = scope ? Boolean(scope.is_hod) : role === 'hod';
-  const roleLabel = known ? (isHod ? 'Head of department' : 'Faculty') : 'HOD / Faculty';
+  const roleLabel = known ? (isHod ? 'Head of department' : 'Faculty') : '';
   return (
     <RolePortalSidebar
       nav={known ? buildNav(isHod) : []}

@@ -76,7 +76,7 @@ function ActivateForm() {
               </div>
             </div>
           ) : null}
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="field">
               <label htmlFor="password">Password</label>
               <PasswordInput

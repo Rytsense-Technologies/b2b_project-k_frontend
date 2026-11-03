@@ -90,6 +90,12 @@
 .fa-qcard .sp-explain{border-radius:var(--radius-control)}
 .fa-qcard .sp-explain > div{min-width:0}
 .fa-qcard .sp-mark{font-size:11px;line-height:16px}
+.fa-qcard-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.fa-qform{display:flex;flex-direction:column;gap:16px;text-align:left}
+.fa-correct{display:flex;flex-wrap:wrap;gap:8px}
+.fa-correct button{min-height:44px;padding:8px 16px;border:1px solid var(--neutral-200);border-radius:var(--radius-control);background:var(--neutral-0);color:var(--ink);font:inherit;font-size:14px;line-height:22px;font-weight:500}
+.fa-correct button.is-on{background:var(--teal-50);border-color:var(--teal-500);color:var(--teal-700)}
+.fa-correct button:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
 /* nested inside a white surface (modal / panel): line, no shadow */
 .modal .fa-qcard,.sp-panel .fa-qcard{box-shadow:none;border:1px solid var(--line)}
 
@@ -237,7 +243,8 @@
 .fa-review-note textarea{width:100%;min-height:64px;padding:10px 12px;border:1px solid var(--neutral-300);border-radius:var(--radius-control);font:inherit;font-size:14px;line-height:22px;resize:vertical;background:var(--neutral-0)}
 .fa-review-note textarea:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px var(--teal-50)}
 .fa-note--request{margin-bottom:16px;background:var(--warning-soft)}
-.fa-mini-actions{display:inline-flex;align-items:center;gap:8px;flex:none}
+.fa-mini-actions{display:inline-flex;align-items:center;gap:8px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+.fa-reset-reason{margin-top:16px;text-align:left}
 
 /* ---- Recipe v2 (14 Oct 2026): HOD / Faculty pages — dashboard, video tabs, students, subjects ---- */
 .fa-page .sd-kpi-v.is-focus{color:var(--accent-text)}

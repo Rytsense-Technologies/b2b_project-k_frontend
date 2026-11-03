@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import {
   Icon,
   KpiRow,
@@ -132,15 +131,7 @@ export default function FacultyStaffPage() {
   }
   if (!scope) return <ModulePage className="fa-page"><SectionState title="Loading…" /></ModulePage>;
   if (!scope.can_see_staff) {
-    return (
-      <ModulePage className="fa-page">
-        <section className="fa-missing" aria-labelledby="fa-staff-locked">
-          <b id="fa-staff-locked">This page is for your head of department</b>
-          <p>Your subjects and students are under Subjects and Students.</p>
-          <Link href="/faculty/dashboard"><Icon name="back" size={16} /> Back to dashboard</Link>
-        </section>
-      </ModulePage>
-    );
+    return null;
   }
   return <StaffList scope={scope} />;
 }

@@ -8,6 +8,10 @@ export const PAGE_META = {
     title: 'My subjects',
     subtitle: 'Lectures, chapter quizzes and the AI tutor.',
   },
+  '/student/classroom': {
+    title: 'My subjects',
+    subtitle: 'Lectures, chapter quizzes and the AI tutor.',
+  },
   '/student/leaderboard': {
     title: 'Leaderboard',
     subtitle: 'Ranked by chapter assessment scores.',
@@ -19,6 +23,10 @@ export const PAGE_META = {
   '/student/progress': {
     title: 'My progress',
     subtitle: 'Completion and scores by subject.',
+  },
+  '/student/notifications': {
+    title: 'Notifications',
+    subtitle: 'Messages sent to you.',
   },
   '/student/settings': {
     title: 'Settings',

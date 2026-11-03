@@ -120,5 +120,6 @@
 }
 @media (min-width:1024px){
   .q-student .spg .sb-filterbar .sb-search{flex:1 1 308px;max-width:420px}
-  .q-student .spg .sb-filterbar .sb-select{flex:0 1 240px}
+  .q-student .spg .sb-filterbar .sb-select,
+  .q-student .spg .sb-filterbar .quirri-dd{flex:0 1 240px}
 }

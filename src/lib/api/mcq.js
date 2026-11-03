@@ -3,7 +3,11 @@
  * Contract: docs/MCQ_API_FRONTEND_GUIDE.md
  */
 import api from '@/lib/axios';
-import { apiErrorMessage } from '@/lib/api/superadmin/http';
+import { apiErrorMessage, rateLimitInfo } from '@/lib/api/superadmin/http';
+
+function withUnapprove(path, unapprove) {
+  return unapprove ? `${path}?unapprove=true` : path;
+}
 
 function detailFromError(err, fallback) {
   return apiErrorMessage(err, fallback);
@@ -65,9 +69,51 @@ export const mcqApi = {
   },
 
   /** POST /mcq/jobs/{job_id}/approve — HOD / Faculty (or admin) releases the set to students. */
-  approve(jobId) {
+  approve(jobId, { setVersion } = {}) {
+    const body = setVersion != null && setVersion !== '' ? { set_version: Number(setVersion) } : {};
     return api
-      .post(`/mcq/jobs/${encodeURIComponent(jobId)}/approve`)
+      .post(`/mcq/jobs/${encodeURIComponent(jobId)}/approve`, Object.keys(body).length ? body : undefined)
+      .then((res) => res?.data);
+  },
+
+  /**
+   * PATCH /mcq/jobs/{job_id}/questions/{question_id}[?unapprove=true]
+   * Body: only the fields to change. Live (approved) sets need unapprove=true.
+   */
+  patchQuestion(jobId, questionId, body, { unapprove = false } = {}) {
+    const path = withUnapprove(
+      `/mcq/jobs/${encodeURIComponent(jobId)}/questions/${encodeURIComponent(questionId)}`,
+      unapprove,
+    );
+    return api.patch(path, body).then((res) => res?.data);
+  },
+
+  /** DELETE /mcq/jobs/{job_id}/questions/{question_id}[?unapprove=true] */
+  deleteQuestion(jobId, questionId, { unapprove = false } = {}) {
+    const path = withUnapprove(
+      `/mcq/jobs/${encodeURIComponent(jobId)}/questions/${encodeURIComponent(questionId)}`,
+      unapprove,
+    );
+    return api.delete(path).then((res) => res?.data);
+  },
+
+  /** POST /mcq/jobs/{job_id}/questions[?unapprove=true] */
+  addQuestion(jobId, body, { unapprove = false } = {}) {
+    const path = withUnapprove(`/mcq/jobs/${encodeURIComponent(jobId)}/questions`, unapprove);
+    return api.post(path, body).then((res) => res?.data);
+  },
+
+  /**
+   * POST /mcq/jobs/{job_id}/attempts/{student_user_id}/reset
+   * Optional `{ reason }` (max 300). Deletes that student's one attempt.
+   */
+  resetAttempt(jobId, studentUserId, { reason } = {}) {
+    const body = reason ? { reason } : {};
+    return api
+      .post(
+        `/mcq/jobs/${encodeURIComponent(jobId)}/attempts/${encodeURIComponent(studentUserId)}/reset`,
+        Object.keys(body).length ? body : undefined,
+      )
       .then((res) => res?.data);
   },
 
@@ -101,8 +147,26 @@ export function mcqGenerateErrorMessage(err) {
   if (status === 404) return 'Not available — this chapter could not be found.';
   if (status === 409) return 'MCQs are already being generated for this chapter. Please wait…';
   if (status === 400 && detail && !/\/mcq\/jobs|POST\s*\//i.test(detail)) return detail;
-  if (status === 429) return 'Please wait a moment and try again.';
+  if (status === 429) return rateLimitInfo(err)?.message || 'Please wait a moment and try again.';
   return mcqErrorMessage(err, 'Could not generate MCQs for this chapter.');
+}
+
+export function isQuizUpdatingError(err) {
+  const status = err?.response?.status;
+  const detail = String(err?.response?.data?.detail || '');
+  return status === 409 && /isn't ready|not ready yet|try again shortly/i.test(detail);
+}
+
+export function isLiveSetConfirmError(err) {
+  const status = err?.response?.status;
+  const detail = String(err?.response?.data?.detail || '');
+  return status === 409 && /unapprove=true|live for students/i.test(detail);
+}
+
+export function isApproveVersionConflict(err) {
+  const status = err?.response?.status;
+  const detail = String(err?.response?.data?.detail || '');
+  return status === 409 && /set_version|changed since|reviewed/i.test(detail);
 }
 
 /**
@@ -135,7 +199,7 @@ export function mcqErrorMessage(err, fallback = 'Something went wrong with this 
   );
 
   if (status === 429) {
-    return 'Please wait a moment and try again.';
+    return rateLimitInfo(err)?.message || 'Please wait a moment and try again.';
   }
   if (status === 404) {
     // Backend sometimes returns internal generate hints — never show those to students.
@@ -148,7 +212,10 @@ export function mcqErrorMessage(err, fallback = 'Something went wrong with this 
     );
   }
   if (status === 409) {
-    if (/already being generated|isn't ready|not ready/i.test(raw)) {
+    if (/isn't ready|not ready yet|try again shortly/i.test(raw)) {
+      return 'This quiz is being updated — try again in a minute.';
+    }
+    if (/already being generated/i.test(raw)) {
       return 'This quiz is still being prepared. Please try again shortly.';
     }
     if (/already submitted|already attempted|one attempt/i.test(raw)) {

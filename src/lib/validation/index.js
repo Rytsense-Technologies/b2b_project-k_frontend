@@ -24,6 +24,10 @@ export {
   searchField,
   urlField,
   academicLabelField,
+  mcqQuestionField,
+  mcqOptionField,
+  mcqExplanationField,
+  resetReasonField,
   positiveIntField,
 } from './fields';
 
@@ -87,4 +91,9 @@ export {
   settingsPasswordSchema,
 } from './schemas/settings';
 
-export { mcqSubmitSchema } from './schemas/mcq';
+export {
+  mcqSubmitSchema,
+  mcqQuestionEditSchema,
+  mcqQuestionCreateSchema,
+  mcqResetReasonSchema,
+} from './schemas/mcq';

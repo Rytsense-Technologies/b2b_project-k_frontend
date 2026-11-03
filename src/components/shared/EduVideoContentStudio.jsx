@@ -44,6 +44,7 @@ import {
 } from '@/lib/api/admin/eduVideo';
 import MultiDocumentPicker, { validateDocuments } from '@/components/shared/MultiDocumentPicker';
 import { mcqApi, mcqGenerateErrorMessage, mcqSetState, waitForMcqGeneration } from '@/lib/api/mcq';
+import { useRetryAfter } from '@/hooks/useRetryAfter';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
@@ -332,6 +333,7 @@ function ContentStudio({ platformScope = false }) {
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [confirmMcq, setConfirmMcq] = useState(null); // { job, state }
   const [checkingMcqId, setCheckingMcqId] = useState(null);
+  const generateRetry = useRetryAfter();
   const [openErrorId, setOpenErrorId] = useState(null);
   const [resumingId, setResumingId] = useState(null);
 
@@ -528,7 +530,7 @@ function ContentStudio({ platformScope = false }) {
 
   // A set that already exists is replaced (and its approval cleared) by generate: confirm first.
   const requestGenerateMcq = async (job) => {
-    if (generatingMcqId || checkingMcqId) return;
+    if (generatingMcqId || checkingMcqId || generateRetry.disabled) return;
     setCheckingMcqId(job.job_id);
     let state = 'none';
     try {
@@ -543,7 +545,7 @@ function ContentStudio({ platformScope = false }) {
   };
 
   const generateMcq = async (jobId) => {
-    if (generatingMcqId) return; // one request in flight at a time - no duplicate clicks
+    if (generatingMcqId || generateRetry.disabled) return;
     setConfirmMcq(null);
     setGeneratingMcqId(jobId);
     const readyToast = (doc) => {
@@ -566,6 +568,7 @@ function ContentStudio({ platformScope = false }) {
         else if (doc?.status === 'failed') toast.error(doc.error || 'MCQ generation failed for this chapter.');
         else toast('Still generating — check MCQ review in a few minutes.');
       } else {
+        generateRetry.arm(err);
         toast.error(mcqGenerateErrorMessage(err));
       }
     } finally {
@@ -721,9 +724,11 @@ function ContentStudio({ platformScope = false }) {
 
   /* ---------- Row actions: one visible action + a menu for the rest ---------- */
   const mcqItem = (job) => ({
-    label: generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs',
+    label: generateRetry.disabled
+      ? `Wait ${generateRetry.seconds}s`
+      : generatingMcqId === job.job_id ? 'Generating MCQs…' : 'Generate MCQs',
     icon: 'spark',
-    disabled: Boolean(generatingMcqId) || checkingMcqId === job.job_id,
+    disabled: Boolean(generatingMcqId) || checkingMcqId === job.job_id || generateRetry.disabled,
     onClick: () => requestGenerateMcq(job),
   });
   const slidesItem = (job) => ({ label: 'Edit slides', icon: 'edit', onClick: () => setEditJob(job) });
@@ -1445,9 +1450,10 @@ function ContentStudio({ platformScope = false }) {
               <button
                 type="button"
                 className="sd-btn sd-btn--teal"
+                disabled={generateRetry.disabled}
                 onClick={() => confirmMcq && generateMcq(confirmMcq.job.job_id)}
               >
-                <Icon name="spark" size={16} /> Generate new questions
+                <Icon name="spark" size={16} /> {generateRetry.disabled ? `Wait ${generateRetry.seconds}s` : 'Generate new questions'}
               </button>
             </div>
           </>

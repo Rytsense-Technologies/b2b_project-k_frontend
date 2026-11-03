@@ -12,6 +12,7 @@ import SuperAdminSidebar from '@/components/superadmin/SuperAdminSidebar';
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
+import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
 
 export default function SuperAdminLayout({ children }) {
   const pathname = usePathname();
@@ -51,9 +52,13 @@ export default function SuperAdminLayout({ children }) {
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
         <div className="topbar">
           <MobileNavButton navOpen={navOpen} onOpen={openNav} />
-          <div>
+          <div className="topbar-copy">
             <h1>{meta.title}</h1>
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}
+          </div>
+          <div className="topbar-right">
+            <div className="pm-topbar-slot" />
+            <SystemNotificationBell portal="superadmin" />
           </div>
         </div>
 

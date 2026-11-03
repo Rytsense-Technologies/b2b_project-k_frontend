@@ -190,7 +190,7 @@ export default function CollegeAdminSidebar() {
       <div className="brand">
         <div className="brand-mark">
           <QuirriLogo className="logo-full" size="sm" priority />
-          <QuirriLogo className="logo-mark" compact aria-hidden={!sidebarOpen} />
+          <QuirriLogo className="logo-mark" compact priority aria-hidden={!sidebarOpen} />
         </div>
       </div>
 

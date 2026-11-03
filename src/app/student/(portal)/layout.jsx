@@ -13,8 +13,8 @@ import { PAGE_META } from '@/lib/student/pageMeta';
 import StudentSidebar from '@/components/student/StudentSidebar';
 import '@/styles/student-portal.css';
 import '@/styles/student-b2c.css';
-import { dmSans } from '@/lib/student/fonts';
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
+import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
 
 /**
  * Redesign (14 Oct 2026): every student page keeps the shell top bar (spec X5).
@@ -55,15 +55,18 @@ export default function StudentLayout({ children }) {
   usePortalDocumentTitle(meta.title, 'Student');
 
   return (
-    <div className={`app q-app-shell q-student ${dmSans.variable} ${mobileNavShellClass(navOpen)}`}>
+    <div className={`app q-app-shell q-student ${mobileNavShellClass(navOpen)}`}>
       <StudentSidebar />
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
         <div className="topbar">
           <MobileNavButton navOpen={navOpen} onOpen={openNav} />
-          <div>
+          <div className="topbar-copy">
             <h1>{meta.title}</h1>
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}
+          </div>
+          <div className="topbar-right">
+            <SystemNotificationBell portal="student" />
           </div>
         </div>
         <main className="content" id="main-content"><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>

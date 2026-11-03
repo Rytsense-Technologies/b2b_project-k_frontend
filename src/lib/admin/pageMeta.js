@@ -24,7 +24,7 @@ export const PAGE_META = {
   },
   '/admin/notifications': {
     title: 'Notifications',
-    subtitle: 'Invites and alerts sent from your college.',
+    subtitle: 'Your alerts, college rules and deliveries.',
   },
   '/admin/content': {
     title: 'Upload & content',

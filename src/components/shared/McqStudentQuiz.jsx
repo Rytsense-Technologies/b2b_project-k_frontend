@@ -5,8 +5,9 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { Icon, SectionState } from '@/components/student/ui';
-import { mcqApi, mcqErrorMessage, optionEntries, isMultiSelect } from '@/lib/api/mcq';
+import { mcqApi, mcqErrorMessage, optionEntries, isMultiSelect, isQuizUpdatingError } from '@/lib/api/mcq';
 import { mcqSubmitSchema } from '@/lib/validation';
+import { useRetryAfter } from '@/hooks/useRetryAfter';
 import { formatDateTime } from '@/lib/student/learning';
 import { BandPill, ModernDonut, bandFor } from '@/components/shared/data-viz';
 
@@ -37,30 +38,58 @@ export default function McqStudentQuiz({
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [result, setResult] = useState(null);
+  const [updating, setUpdating] = useState(false);
+  const submitRetry = useRetryAfter();
 
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ silent = false } = {}) => {
     if (!jobId) return;
-    setLoading(true);
-    setLoadError('');
-    setResult(null);
+    if (!silent) {
+      setLoading(true);
+      setLoadError('');
+      setResult(null);
+    }
     try {
       const data = await mcqApi.get(jobId);
+      setUpdating(false);
       setView(data);
       if (data?.status === 'already_attempted' && data?.result) {
         setResult(data.result);
       } else {
+        setResult(null);
         setAnswers({});
         setIndex(0);
       }
+      setLoadError('');
     } catch (err) {
-      setView(null);
-      setLoadError(mcqErrorMessage(err, 'Could not load this assessment.'));
+      if (isQuizUpdatingError(err)) {
+        setView(null);
+        setResult(null);
+        setUpdating(true);
+        setLoadError('');
+      } else if (!silent) {
+        setView(null);
+        setUpdating(false);
+        setLoadError(mcqErrorMessage(err, 'Could not load this assessment.'));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [jobId]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (result || updating) load({ silent: true });
+    };
+    const onVis = () => { if (document.visibilityState === 'visible') refresh(); };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', refresh);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [load, result, updating]);
 
   const questions = useMemo(
     () => (Array.isArray(view?.questions)
@@ -79,7 +108,7 @@ export default function McqStudentQuiz({
   const allAnswered = questions.length > 0 && answeredCount === questions.length;
 
   const toggleOption = useCallback((letter, multi) => {
-    if (!current?.id || submitting) return;
+    if (!current?.id || submitting || submitRetry.disabled) return;
     setAnswers((prev) => {
       const cur = new Set(prev[current.id] || []);
       if (multi) {
@@ -90,7 +119,7 @@ export default function McqStudentQuiz({
       }
       return { ...prev, [current.id]: Array.from(cur) };
     });
-  }, [current, submitting]);
+  }, [current, submitting, submitRetry.disabled]);
 
   /* Keyboard: A–D picks an option, ←/→ move between questions. */
   useEffect(() => {
@@ -108,6 +137,7 @@ export default function McqStudentQuiz({
   }, [result, view, current, confirmOpen, questions.length, toggleOption]);
 
   const requestSubmit = () => {
+    if (submitRetry.disabled) return;
     if (!allAnswered) {
       const firstEmpty = questions.findIndex((q) => !(answers[q.id] || []).length);
       if (firstEmpty >= 0) setIndex(firstEmpty);
@@ -127,6 +157,7 @@ export default function McqStudentQuiz({
       setConfirmOpen(false);
       return;
     }
+    if (submitRetry.disabled) return;
     setSubmitting(true);
     try {
       const res = await mcqApi.submit(jobId, parsed.data);
@@ -143,11 +174,17 @@ export default function McqStudentQuiz({
       toast.success('Assessment submitted.');
       if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
+      submitRetry.arm(err);
       toast.error(mcqErrorMessage(err, 'Could not submit your answers.'));
     } finally {
       setSubmitting(false);
     }
   };
+
+  const submitBusy = submitting || submitRetry.disabled;
+  const submitLabel = submitRetry.disabled
+    ? `Wait ${submitRetry.seconds}s`
+    : submitting ? 'Submitting…' : 'Submit assessment';
 
   /* ------------------------------------------------------------- render */
   const crumbs = (last) => (
@@ -174,6 +211,27 @@ export default function McqStudentQuiz({
 
   if (loading) {
     return <div className="sl"><SectionState title="Loading assessment…" /></div>;
+  }
+
+  if (updating) {
+    return (
+      <div className="sl animate-fade-in">
+        {crumbs([{ label: 'Assessment' }])}
+        <header className="sl-page-h">
+          <h2>{title}</h2>
+          <p>Chapter assessment</p>
+        </header>
+        <section className="sl-card sl-gate">
+          <span className="sl-gate-ic" aria-hidden="true"><Icon name="refresh" size={28} /></span>
+          <h2>This quiz is being updated</h2>
+          <p>Your faculty is refreshing the questions. Try again in a minute — this is not an error.</p>
+          <button type="button" className="sd-btn sd-btn--amber" onClick={() => load()}>
+            <Icon name="refresh" size={18} /> Try again
+          </button>
+          <Link className="sd-btn sd-btn--outline" href={classroomHref}><Icon name="playFill" size={18} /> Back to classroom</Link>
+        </section>
+      </div>
+    );
   }
 
   if (loadError) {
@@ -292,7 +350,7 @@ export default function McqStudentQuiz({
                     role={multi ? 'checkbox' : 'radio'}
                     aria-checked={on}
                     className={`sl-option${on ? ' is-on' : ''}`}
-                    disabled={submitting}
+                    disabled={submitBusy}
                     onClick={() => toggleOption(opt.key, multi)}
                   >
                     <span className="sl-option-key">{opt.key}</span>
@@ -305,15 +363,15 @@ export default function McqStudentQuiz({
             <p className="sl-keys">Tip: press A–D to choose, ← → to move between questions.</p>
 
             <div className="sl-question-f">
-              <button type="button" className="sd-btn sd-btn--outline" disabled={index === 0 || submitting} onClick={() => setIndex((i) => Math.max(0, i - 1))}>
+              <button type="button" className="sd-btn sd-btn--outline" disabled={index === 0 || submitBusy} onClick={() => setIndex((i) => Math.max(0, i - 1))}>
                 <Icon name="back" size={18} /> Previous
               </button>
               {isLast ? (
-                <button type="button" className="sd-btn sd-btn--amber" disabled={submitting} onClick={requestSubmit}>
-                  Review &amp; submit <Icon name="send" size={16} />
+                <button type="button" className="sd-btn sd-btn--amber" disabled={submitBusy} onClick={requestSubmit}>
+                  {submitRetry.disabled ? submitLabel : <>Review &amp; submit <Icon name="send" size={16} /></>}
                 </button>
               ) : (
-                <button type="button" className="sd-btn sd-btn--teal" disabled={submitting} onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}>
+                <button type="button" className="sd-btn sd-btn--teal" disabled={submitBusy} onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}>
                   Next question <Icon name="arrow" size={18} />
                 </button>
               )}
@@ -343,8 +401,8 @@ export default function McqStudentQuiz({
                 );
               })}
             </ol>
-            <button type="button" className="sd-btn sd-btn--amber sd-btn--block" disabled={submitting} onClick={requestSubmit}>
-              Submit assessment
+            <button type="button" className="sd-btn sd-btn--amber sd-btn--block" disabled={submitBusy} onClick={requestSubmit}>
+              {submitLabel}
             </button>
             <p className="sl-note"><Icon name="info" size={16} /> Answer every question first. You can’t change answers after you submit.</p>
           </aside>
@@ -352,15 +410,15 @@ export default function McqStudentQuiz({
 
         <QuirriModal
           open={confirmOpen}
-          onClose={() => { if (!submitting) setConfirmOpen(false); }}
+          onClose={() => { if (!submitBusy) setConfirmOpen(false); }}
           title="Submit your assessment?"
           crumb={title}
           footer={(
             <>
-              <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setConfirmOpen(false)} disabled={submitting}>Keep reviewing</button>
+              <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setConfirmOpen(false)} disabled={submitBusy}>Keep reviewing</button>
               <div className="right">
-                <button type="button" className="sd-btn sd-btn--amber" onClick={handleSubmit} disabled={submitting}>
-                  {submitting ? 'Submitting…' : 'Submit assessment'}
+                <button type="button" className="sd-btn sd-btn--amber" onClick={handleSubmit} disabled={submitBusy}>
+                  {submitLabel}
                 </button>
               </div>
             </>

@@ -14,6 +14,7 @@ import FacultyAccessGate from '@/components/faculty/FacultyAccessGate';
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
+import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
 
 export default function FacultyLayout({ children }) {
   const pathname = usePathname();
@@ -46,7 +47,9 @@ export default function FacultyLayout({ children }) {
     .filter((k) => pathname?.startsWith(k))
     .sort((a, b) => b.length - a.length)[0];
   const meta = matchedRoute ? facultyPageMeta(matchedRoute, scope) : { title: 'Page not found', subtitle: 'This address does not match a page in your portal.' };
-  usePortalDocumentTitle(meta.title, scope?.is_hod ? 'HOD' : (scope ? 'Faculty' : 'HOD / Faculty'));
+  // Omit the portal label until GET /faculty/me lands so Faculty never flashes "HOD".
+  const portalLabel = !scope ? '' : (scope.is_hod ? 'HOD' : 'Faculty');
+  usePortalDocumentTitle(meta.title, portalLabel);
 
   return (
     <div className={`app q-app-shell q-faculty ${mobileNavShellClass(navOpen)}`}>
@@ -55,9 +58,13 @@ export default function FacultyLayout({ children }) {
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
         <div className="topbar">
           <MobileNavButton navOpen={navOpen} onOpen={openNav} />
-          <div>
+          <div className="topbar-copy">
             <h1>{meta.title}</h1>
             {meta.subtitle ? <p>{meta.subtitle}</p> : null}
+          </div>
+          <div className="topbar-right">
+            <div className="pm-topbar-slot" />
+            <SystemNotificationBell portal="faculty" />
           </div>
         </div>
         <main className="content" id="main-content"><FacultyAccessGate><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></FacultyAccessGate></main>

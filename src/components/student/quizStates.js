@@ -13,7 +13,7 @@
 import { mcqApi } from '@/lib/api/mcq';
 import { quizStatus } from '@/lib/student/dashboardModel';
 
-const watched = (job) => Boolean(job?.watch_complete) || Number(job?.watch_percent) >= 100;
+const watched = (job) => Boolean(job?.watch_complete);
 
 export async function loadQuizStates(chapters) {
   const list = (chapters || []).filter((j) => j?.job_id);

@@ -47,6 +47,28 @@ export function downloadCsv(filename, rows, columns) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * HTTP 429 body `{ detail, retry_after }` plus the Retry-After header.
+ * Same shape for login, MCQ, voice Q&A, and the rest of the app.
+ */
+export function rateLimitInfo(err) {
+  const status = err?.response?.status ?? err?.status;
+  if (status !== 429) return null;
+  const data = err?.response?.data || err?.data || {};
+  const header = Number.parseInt(
+    err?.response?.headers?.['retry-after'] || err?.response?.headers?.['Retry-After'] || '',
+    10,
+  );
+  const n = Number(data.retry_after) || (Number.isFinite(header) && header > 0 ? header : 0);
+  const detail = typeof data.detail === 'string' ? data.detail.trim() : '';
+  return {
+    retryAfter: Math.max(0, n),
+    message: detail || (n > 0
+      ? `Too many requests. Please wait ${n} second(s) and try again.`
+      : 'Too many requests. Please wait a moment and try again.'),
+  };
+}
+
 export function asList(data, fallback = []) {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.items)) return data.items;
@@ -88,7 +110,10 @@ export function apiErrorMessage(err, fallback = 'Something went wrong') {
   if (status === 401) return 'Your session has ended. Please sign in again.';
   if (status === 403) return "You don't have access to do this.";
   if (status === 404) return fallback !== 'Something went wrong' ? fallback : "We couldn't find that. It may have been removed.";
-  if (status === 429) return 'Too many attempts. Please wait a minute and try again.';
+  if (status === 429) {
+    const limited = rateLimitInfo(err);
+    return limited?.message || 'Too many requests. Please wait a moment and try again.';
+  }
   // Axios' own messages ("Request failed with status code …") are not for people.
   if (err?.message && !/status code|network error|timeout of/i.test(err.message) && !err?.isAxiosError) {
     return err.message;

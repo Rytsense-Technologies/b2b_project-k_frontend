@@ -43,23 +43,30 @@ export function ModuleHead({ lede, chips = null, actions = null }) {
   const [bar, setBar] = useState(null);
   useEffect(() => {
     if (!actions) return undefined;
-    const el = document.querySelector('.q-app-shell:not(.q-student) .topbar');
+    const el = document.querySelector('.q-app-shell:not(.q-student) .topbar .pm-topbar-slot')
+      || document.querySelector('.q-app-shell:not(.q-student) .topbar');
     setBar(el || null);
     return () => setBar(null);
   }, [actions ? 1 : 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const lifted = Boolean(bar && actions);
   // Nothing to show (e.g. a scope chip that was dropped): no empty band eating a section gap.
   if (!lede && !chips && !actions) return null;
+  // One control only: portal into the top bar on desktop, keep in-flow below 1024px.
+  // Rendering both (and hiding one with CSS) duplicated the date-range combobox.
+  const actionRow = <div className="pm-head-actions">{actions}</div>;
+  if (lifted && solo) {
+    return createPortal(<div className="pm-head-actions pm-topbar-actions pm-topbar-actions--lifted">{actions}</div>, bar);
+  }
   return (
     <>
-      <section className={`pm-head${solo ? ' pm-head--solo' : ''}${lifted ? ' pm-head--lifted' : ''}`}>
+      <section className={`pm-head${solo ? ' pm-head--solo' : ''}`}>
         {solo ? null : (
           <div className="pm-head-copy">
             {lede ? <p>{lede}</p> : null}
             {chips ? <div className="pm-head-chips">{chips}</div> : null}
           </div>
         )}
-        {actions ? <div className="pm-head-actions">{actions}</div> : null}
+        {actions && !lifted ? actionRow : null}
       </section>
       {lifted ? createPortal(<div className="pm-head-actions pm-topbar-actions pm-topbar-actions--lifted">{actions}</div>, bar) : null}
     </>
@@ -533,11 +540,12 @@ export function TabNav({ tabs, value, onChange, label = 'Sections', idBase = 'ta
           className={`tab${value === t.value ? ' active' : ''}`}
           aria-selected={value === t.value}
           aria-controls={`${idBase}-panel-${t.value}`}
+          aria-label={t.count != null ? `${t.label}, ${t.count}` : undefined}
           tabIndex={value === t.value ? 0 : -1}
           onClick={() => onChange(t.value)}
         >
           {t.label}
-          {t.count != null ? <span className="ct">{t.count}</span> : null}
+          {t.count != null ? <span className="ct" aria-hidden="true">{t.count}</span> : null}
         </button>
       ))}
     </div>
@@ -557,10 +565,16 @@ export function ModuleTabs({ tabs, label = 'Module sections' }) {
       {tabs.map((t) => {
         const active = t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`);
         return (
-          <Link key={t.href} href={t.href} className={`tab${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
+          <Link
+            key={t.href}
+            href={t.href}
+            className={`tab${active ? ' active' : ''}`}
+            aria-current={active ? 'page' : undefined}
+            aria-label={t.count != null ? `${t.label}, ${t.count}` : undefined}
+          >
             {t.icon ? <Icon name={t.icon} size={16} /> : null}
             {t.label}
-            {t.count != null ? <span className="ct">{t.count}</span> : null}
+            {t.count != null ? <span className="ct" aria-hidden="true">{t.count}</span> : null}
           </Link>
         );
       })}

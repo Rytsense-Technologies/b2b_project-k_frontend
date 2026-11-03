@@ -17,35 +17,45 @@ import {
   countLabel,
 } from '@/components/shared/module-ui';
 import NotificationRules from '@/components/shared/NotificationRules';
+import SystemNotificationInbox from '@/components/shared/SystemNotificationInbox';
 import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { notificationsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState, useTabParam } from '@/hooks/useUrlState';
+import { emailChannelQuery, isWhatsApp, withoutWhatsApp } from '@/lib/product/whatsappOff';
 
 const PAGE_SIZE = 10; // quirri-b2c-student-ui: lists page at 10
 const TABS = [
   { value: 'rules', label: 'Rules' },
+  { value: 'alerts', label: 'Your alerts' },
   { value: 'deliveries', label: 'Deliveries' },
 ];
 const TONE = { sent: 'sp-pill--good', failed: 'sp-pill--err', log_only: 'sp-pill--off', skipped: 'sp-pill--off' };
-const CHANNEL = { email: 'Email', whatsapp: 'WhatsApp' };
+const CHANNEL = { email: 'Email' };
 /** Events a college can receive (backend notification_service.EVENTS; GET /notifications/deliveries?event=). */
 const EVENT_OPTIONS = [
   { value: '', label: 'All events' },
   { value: 'account_activation', label: 'Account activation invite' },
   { value: 'password_reset', label: 'Password reset link' },
+  { value: 'verification_code', label: 'Verification code' },
+  { value: 'password_changed', label: 'Password changed' },
+  { value: 'account_status_changed', label: 'Account status changed' },
+  { value: 'hod_assigned', label: 'HOD assigned' },
+  { value: 'subjects_assigned', label: 'Subjects assigned' },
+  { value: 'student_placement_changed', label: 'Student placement changed' },
+  { value: 'pipeline_completed', label: 'Video pipeline finished' },
   { value: 'content_ready_for_review', label: 'Content ready for review' },
   { value: 'changes_requested', label: 'Changes requested' },
   { value: 'content_published', label: 'Chapter published' },
+  { value: 'mcq_ready_for_review', label: 'Assessment ready for review' },
   { value: 'assessment_available', label: 'Assessment available' },
-  { value: 'pipeline_completed', label: 'Video pipeline finished' },
+  { value: 'assessment_result', label: 'Assessment result' },
 ];
 const CHANNEL_OPTIONS = [
   { value: '', label: 'All channels' },
   { value: 'email', label: 'Email' },
-  { value: 'whatsapp', label: 'WhatsApp' },
 ];
 const RANGE_OPTIONS = [
   { value: '7', label: 'Last 7 days' },
@@ -90,7 +100,7 @@ function NotificationsLog() {
     () => fetchData(() => notificationsApi.listDeliveries({
       status: url.status,
       event: url.event,
-      channel: url.channel,
+      channel: emailChannelQuery(url.channel),
       q: url.q,
       page,
       page_size: PAGE_SIZE,
@@ -98,7 +108,7 @@ function NotificationsLog() {
     })),
     [url.status, url.event, url.channel, url.q, page, days],
   );
-  const rows = useMemo(() => asList(data, []), [data]);
+  const rows = useMemo(() => withoutWhatsApp(asList(data, []), (r) => r.channel), [data]);
   // `summary` covers the whole range only (the API ignores event / channel / search for it), so the
   // Retry action uses it. The status tab counts follow every filter: with a narrowing filter set we
   // ask for the total of each status (page_size 1) with the same filters.
@@ -108,7 +118,7 @@ function NotificationsLog() {
   const { data: filteredCounts } = useAsyncResource(async () => {
     if (!narrowed) return null;
     const one = (status) => fetchData(() => notificationsApi.listDeliveries({
-      status, event: url.event, channel: url.channel, q: url.q, page: 1, page_size: 1, days: Number(days),
+      status, event: url.event, channel: emailChannelQuery(url.channel), q: url.q, page: 1, page_size: 1, days: Number(days),
     })).then((r) => (typeof r?.total === 'number' ? r.total : 0));
     const [sent, failed, logOnly, skipped] = await Promise.all([one('sent'), one('failed'), one('log_only'), one('skipped')]);
     return { sent, failed, log_only: logOnly, skipped, key: [url.event, url.channel, url.q, days].join('|') };
@@ -175,6 +185,10 @@ function NotificationsLog() {
         <NotificationRules canTest />
       </TabPanel>
 
+      <TabPanel value="alerts" current={tab} idBase="ad-notif">
+        <SystemNotificationInbox portal="admin" />
+      </TabPanel>
+
       <TabPanel value="deliveries" current={tab} idBase="ad-notif">
       {data && summary.log_only && !summary.sent ? (
         <SectionState title="Emails are being recorded, not sent">
@@ -213,7 +227,7 @@ function NotificationsLog() {
             <FilterField label="Channel">
               <QuirriSelect
                 ariaLabel="Channel"
-                value={url.channel}
+                value={isWhatsApp(url.channel) ? '' : url.channel}
                 onChange={(e) => setUrl({ channel: e.target.value, page: '1' })}
                 options={CHANNEL_OPTIONS}
               />

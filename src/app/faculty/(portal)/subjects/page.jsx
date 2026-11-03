@@ -50,7 +50,7 @@ export default function FacultySubjectsPage() {
   const [url, setUrl] = useUrlState({ q: '', program: '' });
   const [open, setOpen] = useState(() => new Set());
   const { data, loading, error, reload } = useFacultySubjects();
-  const insights = useAsyncResource(() => analyticsApi.department({}), []);
+  const insights = useAsyncResource(() => analyticsApi.department({ range: 'all_time' }), []);
 
   const items = useMemo(() => data?.items || [], [data]);
   const learning = useMemo(() => {

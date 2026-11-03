@@ -199,6 +199,48 @@ export const FIELD_RULES = {
     type: 'text',
     filter: (incoming) => String(incoming ?? '').slice(0, 4000),
   },
+  /** MCQ stem — unicode, 3–1000 chars (backend check_question). */
+  mcqQuestion: {
+    id: 'mcqQuestion',
+    labelHint: 'Question text',
+    min: 3,
+    max: 1000,
+    inputMode: 'text',
+    autoComplete: 'off',
+    type: 'text',
+    filter: (incoming) => String(incoming ?? '').slice(0, 1000),
+  },
+  mcqOption: {
+    id: 'mcqOption',
+    labelHint: 'Answer option',
+    min: 1,
+    max: 500,
+    inputMode: 'text',
+    autoComplete: 'off',
+    type: 'text',
+    filter: (incoming) => String(incoming ?? '').slice(0, 500),
+  },
+  mcqExplanation: {
+    id: 'mcqExplanation',
+    labelHint: 'Explanation (optional)',
+    min: 0,
+    max: 1000,
+    inputMode: 'text',
+    autoComplete: 'off',
+    type: 'text',
+    filter: (incoming) => String(incoming ?? '').slice(0, 1000),
+  },
+  /** Staff reason when resetting a student quiz attempt. */
+  resetReason: {
+    id: 'resetReason',
+    labelHint: 'Why you are resetting this attempt',
+    min: 0,
+    max: 300,
+    inputMode: 'text',
+    autoComplete: 'off',
+    type: 'text',
+    filter: (incoming) => String(incoming ?? '').slice(0, 300),
+  },
   positiveInt: {
     id: 'positiveInt',
     labelHint: 'Whole number greater than zero',
@@ -491,6 +533,54 @@ export function academicLabelField(label = 'Title', { required = true } = {}) {
   return requiredString(`${label} is required`)
     .pipe(z.string().min(1, `${label} is required`))
     .pipe(valid);
+}
+
+export function mcqQuestionField(label = 'Question') {
+  const rule = FIELD_RULES.mcqQuestion;
+  return z
+    .string({ required_error: `${label} is required` })
+    .transform((v) => String(v ?? '').trim())
+    .pipe(
+      z
+        .string()
+        .min(1, `${label} is required`)
+        .min(rule.min, 'The question is too short.')
+        .max(rule.max, `Keep the ${label.toLowerCase()} to ${rule.max} characters or fewer`),
+    );
+}
+
+export function mcqOptionField(label = 'Option', { required = true } = {}) {
+  const rule = FIELD_RULES.mcqOption;
+  const valid = z
+    .string()
+    .min(1, `${label} is required`)
+    .max(rule.max, `Keep ${label} to ${rule.max} characters or fewer`);
+  if (!required) {
+    return z
+      .string()
+      .transform((v) => String(v ?? '').trim())
+      .pipe(z.union([z.literal(''), valid]));
+  }
+  return z
+    .string({ required_error: `${label} is required` })
+    .transform((v) => String(v ?? '').trim())
+    .pipe(valid);
+}
+
+export function mcqExplanationField(label = 'Explanation') {
+  const rule = FIELD_RULES.mcqExplanation;
+  return z
+    .string()
+    .transform((v) => String(v ?? '').trim())
+    .pipe(z.string().max(rule.max, `Keep the ${label.toLowerCase()} to ${rule.max} characters or fewer`));
+}
+
+export function resetReasonField(label = 'Reason') {
+  const rule = FIELD_RULES.resetReason;
+  return z
+    .string()
+    .transform((v) => String(v ?? '').trim())
+    .pipe(z.string().max(rule.max, `Keep the ${label.toLowerCase()} to ${rule.max} characters or fewer`));
 }
 
 export function positiveIntField(label = 'Number', { required = false, max = 999999 } = {}) {

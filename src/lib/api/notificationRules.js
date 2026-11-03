@@ -1,13 +1,12 @@
 import api from '@/lib/axios';
-import { unwrap } from '@/lib/api/superadmin/http';
+import { buildParams, unwrap } from '@/lib/api/superadmin/http';
 
 /**
  * Live: /api/v1/notifications/rules (docs/agent/redesign/notifications-plan.md § Contract).
  *
- * There is no `/notifications/preferences` route. Personal switches use this
- * client with the caller's default scope (Faculty / Student → personal).
- * GET /notifications/mine is the inbox (messages sent to the signed-in person),
- * not preference read/write.
+ * Personal switches use this client with the caller's default scope
+ * (Faculty / Student → personal). There is no `/notifications/preferences` route.
+ * GET /notifications/mine is email history. The bell uses GET /notifications/inbox.
  *
  * GET  /rules?scope=platform|tenant|department|personal&scope_id=<uuid?>
  *      → { scope, scope_id, scope_label, can_edit, groups: [{ id, name, description?, events: [
@@ -34,4 +33,32 @@ export const notificationRulesApi = {
     if (scopeId) body.scope_id = scopeId;
     return unwrap(await api.post(`/notifications/rules/${encodeURIComponent(eventId)}/test`, body));
   },
+};
+
+/**
+ * Email history: messages Quirri emailed the signed-in person (GET /notifications/mine).
+ * Rows: { id, event, event_label, channel, subject, status, created_at }. No read_at.
+ * Not the bell — that is inboxNotificationsApi.
+ */
+export const myNotificationsApi = {
+  list: async ({ page = 1, pageSize = 25, days = 30 } = {}) =>
+    unwrap(await api.get(`/notifications/mine?${buildParams({ page, page_size: pageSize, days })}`)),
+};
+
+/**
+ * In-app bell inbox (GET/POST /notifications/inbox*).
+ * Rows: { id, event, event_label, title, body, resource_type, resource_id, link,
+ *         is_read, read_at, created_at }. unread_count is always the full unread total.
+ */
+export const inboxNotificationsApi = {
+  list: async ({ page = 1, pageSize = 25, unreadOnly = false } = {}) =>
+    unwrap(await api.get(`/notifications/inbox?${buildParams({
+      page,
+      page_size: pageSize,
+      unread_only: unreadOnly || undefined,
+    })}`)),
+  unreadCount: async () => unwrap(await api.get('/notifications/inbox/unread-count')),
+  markRead: async (id) => unwrap(await api.post(`/notifications/inbox/${encodeURIComponent(id)}/read`)),
+  markAllRead: async ({ before } = {}) =>
+    unwrap(await api.post('/notifications/inbox/read-all', before ? { before } : {})),
 };

@@ -109,7 +109,7 @@ export function buildHomeModel({
     const quizzes = s.chapters.map((c) => quizByJob.get(c.job_id)).filter(Boolean);
     const available = quizzes.filter((q) => q.state === 'done' || q.state === 'open');
     const done = quizzes.filter((q) => q.state === 'done');
-    const watched = s.chapters.filter((c) => clampPct(c.watch_percent) >= 100).length;
+    const watched = s.chapters.filter((c) => Boolean(c.watch_complete)).length;
     return {
       key: s.key,
       name: s.name,
@@ -168,7 +168,7 @@ export function buildHomeModel({
   /* ---------- watch / continue learning ---------- */
   const chapterWatch = chapters.map((c) => {
     const watchPercent = clampPct(c.watch_percent);
-    const watchComplete = Boolean(c.watch_complete) || watchPercent >= 100;
+    const watchComplete = Boolean(c.watch_complete);
     return {
       jobId: c.job_id,
       title: c.chapter_title || 'Untitled chapter',
@@ -190,8 +190,8 @@ export function buildHomeModel({
     : 0;
 
   const continueLearning =
-    chapterWatch.find((c) => c.watchPercent > 0 && c.watchPercent < 100)
-    || chapterWatch.find((c) => c.watchPercent === 0)
+    chapterWatch.find((c) => c.watchPercent > 0 && !c.watchComplete)
+    || chapterWatch.find((c) => !c.watchComplete)
     || null;
 
   /* ---------- lectures ---------- */
@@ -229,7 +229,7 @@ export function buildHomeModel({
       publishedAt: c.published_at || null,
       submittedAt: q?.state === 'done' ? q.submittedAt || null : null,
       watchPercent,
-      watchComplete: watchPercent >= 100,
+      watchComplete: Boolean(c.watch_complete),
       quiz: q?.state || 'unchecked',
       score: q?.state === 'done' && Number.isFinite(q.percentage) ? Math.round(q.percentage) : null,
       correct: q?.state === 'done' && q.total ? `${q.correct}/${q.total}` : null,
