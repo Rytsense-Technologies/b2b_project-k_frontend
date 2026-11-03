@@ -541,11 +541,18 @@ textarea{resize:vertical;min-height:92px}
 
 /* ==========================================================================
    APP SHELL — white sidebar (Brand Guidelines v1.0 + owner lock)
+   Viewport lock applies ONLY to post-login .q-app-shell (auth pages never use it).
    ========================================================================== */
 .app{display:flex;min-height:100vh;min-height:100dvh}
 .app.q-app-shell,
 .q-app-shell{
   background:var(--canvas);
+  height:100vh;
+  height:100dvh;
+  max-height:100vh;
+  max-height:100dvh;
+  overflow:hidden;
+  min-height:0;
 }
 
 .sidebar{
@@ -603,16 +610,18 @@ textarea{resize:vertical;min-height:92px}
 .sidebar-toggle{
   position:absolute;
   right:0;
-  top:28px;
+  top:32px;
   transform:translateX(50%);
   z-index:60;
-  width:28px;
-  height:28px;
+  width:32px;
+  height:32px;
+  min-width:32px;
+  min-height:32px;
   border-radius:50%;
   background:#fff;
   border:1px solid var(--line);
-  box-shadow:var(--shadow-xs);
-  color:var(--muted);
+  box-shadow:var(--shadow-1);
+  color:var(--teal-500);
   font-size:16px;
   line-height:1;
   display:grid;
@@ -624,7 +633,7 @@ textarea{resize:vertical;min-height:92px}
   isolation:isolate;
 }
 .sidebar.is-collapsed .sidebar-toggle{
-  top:18px;
+  top:20px;
 }
 .sidebar-toggle:hover{color:var(--teal-500);border-color:var(--teal-200);box-shadow:var(--shadow-card)}
 .sidebar-toggle:focus-visible{outline:2px solid var(--teal-500);outline-offset:2px}
@@ -882,6 +891,30 @@ textarea{resize:vertical;min-height:92px}
 
 .main{margin-left:var(--sidebar);flex:1;min-width:0;transition:margin-left .22s ease;background:transparent}
 .main.is-collapsed{margin-left:var(--sidebar-collapsed)}
+/* Viewport column: topbar fixed in the shell; .content is the scrollport */
+.app.q-app-shell > .main,
+.q-app-shell > .main{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  height:100%;
+  max-height:100%;
+  overflow:hidden;
+}
+.app.q-app-shell > .main > .topbar,
+.q-app-shell > .main > .topbar{
+  flex:none;
+}
+.app.q-app-shell > .main > .content,
+.q-app-shell > .main > .content{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
 /* First tab stop in every portal; off-screen until focused. */
 .skip-link{position:fixed;top:8px;left:-9999px;z-index:1000;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:var(--radius-control);background:var(--neutral-0);color:var(--teal-500);font-size:14px;line-height:22px;font-weight:500;text-decoration:none;box-shadow:var(--shadow-3)}
 .skip-link:focus{left:8px}
@@ -914,6 +947,13 @@ main.content:focus,main.content:focus-visible{outline:none}
   background:var(--highlight);border:2px solid #fff;
 }
 .content{padding:0 32px 48px;width:100%;max-width:1440px;margin:0 auto}
+
+/* Auth / marketing pages use .app without .q-app-shell — never lock overflow there. */
+.app:not(.q-app-shell){
+  height:auto;
+  max-height:none;
+  overflow:visible;
+}
 
 /* pages */
 .page{display:none}

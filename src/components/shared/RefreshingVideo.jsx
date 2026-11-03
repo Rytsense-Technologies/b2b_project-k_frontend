@@ -17,7 +17,9 @@ function withBuster(src, n) {
   return `${src}${src.includes('?') ? '&' : '?'}r=${n}`;
 }
 
-const RefreshingVideo = forwardRef(function RefreshingVideo({ src, onError, onLoadedMetadata, ...props }, ref) {
+const RefreshingVideo = forwardRef(function RefreshingVideo({
+  src, onError, onLoadedMetadata, children, ...props
+}, ref) {
   const videoRef = useRef(null);
   const resume = useRef(null); // { time, playing }
   const [refreshes, setRefreshes] = useState(0);
@@ -47,6 +49,7 @@ const RefreshingVideo = forwardRef(function RefreshingVideo({ src, onError, onLo
   }, [onLoadedMetadata]);
 
   return (
+    // Captions <track> is passed as children when WebVTT exists for the job.
     // eslint-disable-next-line jsx-a11y/media-has-caption
     <video
       ref={videoRef}
@@ -57,7 +60,9 @@ const RefreshingVideo = forwardRef(function RefreshingVideo({ src, onError, onLo
       // Videos are watch-only (owner, 16 Oct 2026): no download in the player menu or right-click.
       controlsList="nodownload"
       onContextMenu={(e) => e.preventDefault()}
-    />
+    >
+      {children}
+    </video>
   );
 });
 

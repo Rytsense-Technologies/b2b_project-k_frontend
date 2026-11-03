@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import QuirriLogo from '@/components/superadmin/QuirriLogo';
@@ -39,10 +39,24 @@ function getInitials(name, email, fallback = 'U') {
 }
 
 /**
- * Shared dark-shell sidebar for HOD/Faculty and Student portals
- * (new_updated_design_four visual system).
+ * Shared white sidebar for HOD/Faculty and Student portals.
+ * `useSearchParams` must sit under Suspense so `next build` can prerender portal routes.
  */
-export default function RolePortalSidebar({
+export default function RolePortalSidebar(props) {
+  return (
+    <Suspense fallback={<RolePortalSidebarInner {...props} settingsTab="" />}>
+      <RolePortalSidebarWithParams {...props} />
+    </Suspense>
+  );
+}
+
+function RolePortalSidebarWithParams(props) {
+  const searchParams = useSearchParams();
+  const settingsTab = searchParams?.get('tab') || '';
+  return <RolePortalSidebarInner {...props} settingsTab={settingsTab} />;
+}
+
+function RolePortalSidebarInner({
   nav = [],
   ariaLabel = 'Portal',
   tenantTitle = 'Institution',
@@ -51,13 +65,12 @@ export default function RolePortalSidebar({
   loginPath = '/auth/login',
   /** Account menu items on the user row (quirri-b2c-student-ui: avatar row opens a menu). */
   menuLinks = [],
+  settingsTab = '',
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const settingsTab = searchParams?.get('tab') || '';
   const dispatch = useAppDispatch();
   const sidebarOpen = useAppSelector(selectSidebarOpen);
   const { user } = useAuth();

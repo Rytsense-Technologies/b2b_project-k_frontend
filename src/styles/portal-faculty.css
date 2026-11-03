@@ -41,7 +41,8 @@
 
 /* ---------- MCQ review: chapter list + review column ---------- */
 .fa-split{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);align-items:start}
-.fa-chapters .pm-list{max-height:min(70vh,720px);overflow-y:auto}
+/* Chapter picker only — review detail stays in the page scroll */
+.fa-chapters .pm-list{max-height:min(52vh,520px);overflow-y:auto;overscroll-behavior:contain}
 .fa-chapters .pm-list-btn{align-items:flex-start;padding:12px;min-height:44px}
 .fa-chapters .pm-list-btn .sp-chapter-n{margin-top:2px}
 .fa-chapters .pm-list-btn[aria-current="true"] .sp-chapter-n{background:var(--teal-500);color:var(--neutral-0)}

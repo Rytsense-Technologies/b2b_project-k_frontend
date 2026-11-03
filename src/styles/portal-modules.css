@@ -3,7 +3,77 @@
    Pairs with components/shared/module-ui.jsx. Spec: docs/agent/design-system.md §4b.
    Builds on .sp-* / .sd-* (student-portal.css) and .un-* (superadmin-universities.css).
    ========================================================================== */
-.pm-page{gap:24px}
+.pm-page{display:flex;flex-direction:column;gap:24px;min-width:0}
+/*
+  Optional fill mode — rare. Prefer mild .content scroll when multi-block cards
+  (Structure detail, forms) would clip. Use fill only when nested panes clearly help.
+*/
+.pm-page--fill{flex:1 1 auto;min-height:0;height:100%}
+.pm-page--fill > :not(.pm-scroll-pane):not(.pm-split){flex:none}
+.pm-page--fill > :is(.pm-scroll-pane,.pm-split){flex:1 1 auto;min-height:0;min-width:0}
+/*
+  Shared nested scroll pane — lists / wide tables only.
+  Do not wrap multi-section detail cards (clips mid-row). Parent needs min-height:0.
+*/
+.pm-scroll-pane{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.pm-scroll-pane--x{overflow-y:visible;overflow-x:auto}
+.pm-scroll-pane--y{overflow-x:hidden;overflow-y:auto}
+
+/* Sticky chrome inside the shell content scrollport (not auth) */
+.app.q-app-shell .content .pm-filterbar,
+.app.q-app-shell .content .pm-panel-tools.pm-filterbar{
+  position:sticky;
+  top:0;
+  z-index:5;
+}
+.app.q-app-shell .content .sp-table thead th,
+.app.q-app-shell .content table.sp-table > thead > tr > th,
+.app.q-app-shell .content .un-table thead th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:var(--neutral-50,var(--mist));
+}
+/* Filter bar already sticks; avoid a second sticky layer fighting it inside the stack */
+.app.q-app-shell .content .pm-panel-stack .sp-table thead th,
+.app.q-app-shell .content .pm-panel-stack .un-table thead th{
+  position:static;
+}
+/* Nested pane: sticky thead relative to the pane, not the page */
+.pm-scroll-pane .sp-table thead th,
+.pm-scroll-pane .un-table thead th,
+.pm-scroll-pane table > thead > tr > th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:var(--neutral-50,var(--mist));
+}
+
+/* Fill-mode (opt-in): content stops scrolling; panes own scroll. Prefer .content scroll by default. */
+@media (min-width:1024px){
+  .app.q-app-shell .content:has(> .pm-page--fill),
+  .app.q-app-shell .content:has(> * > .pm-page--fill){
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .app.q-app-shell .content:has(> .pm-page--fill) > .pm-page--fill,
+  .app.q-app-shell .content:has(> * > .pm-page--fill) > *{
+    flex:1 1 auto;
+    min-height:0;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+}
 .pm-banner{min-height:152px}
 .pm-banner-lede{margin-top:4px;max-width:64ch;font-size:16px;line-height:26px;color:var(--teal-50)}
 .pm-chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;font-size:12px;line-height:18px;color:var(--teal-100)}
@@ -287,7 +357,8 @@
    MCQ review (McqReviewWorkspace) — chapters grouped by subject
    ========================================================================== */
 .mq-chapters .pm-list{max-height:none;overflow:visible;padding-top:0}
-.mq-groups{max-height:min(72vh,760px);overflow-y:auto;padding:8px 0}
+/* Left column only — detail / page may scroll; avoid trapping the whole MCQ view */
+.mq-groups{max-height:min(52vh,520px);overflow-y:auto;padding:8px 0;overscroll-behavior:contain}
 .mq-group + .mq-group{border-top:1px solid var(--line-soft,var(--line));margin-top:4px;padding-top:4px}
 .mq-group-h{display:flex;align-items:center;gap:8px;margin:0;padding:8px 20px 4px;font-size:12px;line-height:18px;font-weight:500;color:var(--neutral-600)}
 .mq-group-h span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -309,12 +380,16 @@
    Academic structure (AcademicStructureWorkspace) — filter row + semester grid
    ========================================================================== */
 .as-filters{border:0;border-radius:var(--radius-card);background:var(--neutral-0);box-shadow:var(--shadow-card);padding:16px}
-.as-semrow{align-items:flex-start}
-.as-semrow .as-sems{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;overflow:visible;padding-bottom:0}
+.as-page .sa-acad-detail{overflow:visible}
+.as-page .sa-acad-grid > .sp-panel{overflow:visible}
+.as-semrow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;min-width:0}
+.as-semrow .as-sems{flex:1 1 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;overflow:visible;padding-bottom:0;min-width:0}
 .as-sems .sa-acad-sem{min-width:0;width:100%;text-align:left}
 .as-sems .sa-acad-sem.is-empty:not(.is-on){background:var(--neutral-50);color:var(--muted-2)}
 .as-sems .sa-acad-sem.is-empty:not(.is-on) small{color:var(--neutral-500)}
-.as-semrow > .sa-acad-sem--add{white-space:nowrap}
+.as-semrow > .sa-acad-sem--add{flex:none;white-space:nowrap}
+.as-page .sa-acad-subjects{padding-bottom:4px}
+.as-page .sa-acad-subject{overflow:visible}
 @media (max-width:520px){
   .as-semrow .as-sems{grid-template-columns:repeat(2,minmax(0,1fr))}
   .as-filters{padding:12px}

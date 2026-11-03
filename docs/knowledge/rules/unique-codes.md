@@ -17,11 +17,15 @@ generated:
 
 | Record | Code | After create |
 |---|---|---|
-| University | optional (blank gets the next `UNI-` code), unique case-insensitive | **immutable** (shown disabled) |
-| College (`tenants.code`) | optional (blank gets the next `COL-` code), unique case-insensitive | **immutable** |
-| Department / programme / subject | optional | editable |
+| University | next `UNI-####` (preview in form; create omits `code`, API allocates) | **immutable** (`AssignedCodeField` disabled) |
+| College (`tenants.code`) | next `COL-####` | **immutable** |
+| Department | next `DEP-####` | **immutable** |
+| Programme | next `PRG-####` | **immutable** |
+| Subject | next `SUB-####` | **immutable** |
 
-A typed code already in use is refused with 409 ("The code X is already in use…"); the form shows it under the Code field. It is never silently swapped.
+Create UIs use `AssignedCodeField` + `src/lib/ids/uniqueSeries.js`. The API still accepts a blank/taken value and issues the next free series ID. Legacy free-text codes stay as stored; only new rows get series IDs.
+
+A rare allocation failure is 409 ("could not allocate…"); otherwise unique conflicts on university/college codes are handled by allocation, not a typed-code fight.
 
 People sign in with **email**, not a student/staff code. Do not invent a second ID scheme (roll number, employee ID, QR) unless the owner asks. Seat cap is not an ID.
 

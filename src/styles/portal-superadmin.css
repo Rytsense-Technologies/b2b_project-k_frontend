@@ -142,8 +142,9 @@
 .sa-bars .cmp.sa-topq .nm{width:100%;white-space:normal;overflow:visible;line-height:20px}
 .sa-bars .cmp.sa-topq .nm small{display:block;font-size:12px;line-height:18px;color:var(--muted-2)}
 /* Academic structure (/superadmin/academics) */
-.sa-acad-grid{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:var(--qs-gap,24px);align-items:start}
-.sa-acad-list{list-style:none;margin:0;padding:8px;display:flex;flex-direction:column;gap:4px;max-height:640px;overflow:auto}
+.sa-acad-grid{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:var(--qs-gap,24px);align-items:start;min-width:0}
+/* Left list may scroll alone; detail grows with content — page .content scrolls (no clipped subject rows). */
+.sa-acad-list{list-style:none;margin:0;padding:8px;display:flex;flex-direction:column;gap:4px;max-height:min(52vh,520px);overflow:auto;min-height:0;overscroll-behavior:contain}
 .sa-acad-prog{width:100%;text-align:left;display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:var(--radius-control);border:1px solid transparent;background:none;cursor:pointer;font:inherit;color:var(--ink)}
 .sa-acad-prog:hover{background:var(--surface-tint)}
 .sa-acad-prog.is-on{background:var(--teal-50);border-color:var(--teal-200)}
@@ -151,7 +152,7 @@
 .sa-acad-prog b{font-size:14px;line-height:22px;font-weight:500;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .sa-acad-prog small{font-size:12px;line-height:18px;color:var(--muted-2)}
 .sa-acad-prog .sp-pill{align-self:flex-start;margin-top:4px}
-.sa-acad-detail{padding:var(--qs-card-pad,24px);display:flex;flex-direction:column;gap:16px}
+.sa-acad-detail{padding:var(--qs-card-pad,24px);display:flex;flex-direction:column;gap:16px;min-width:0;overflow:visible}
 .sa-acad-sems{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
 .sa-acad-sem{flex:none;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:0;min-height:44px;padding:8px 16px;border-radius:var(--radius-control);border:1px solid var(--line);background:var(--panel);cursor:pointer;font:inherit;font-size:14px;line-height:22px;font-weight:500;color:var(--ink)}
 .sa-acad-sem small{font-size:11px;line-height:16px;font-weight:400;color:var(--muted-2)}

@@ -119,7 +119,8 @@
   background:#fff;border:0;border-radius:var(--radius-card);box-shadow:var(--shadow-card);
   display:flex;flex-direction:column;min-width:0;
 }
-.q-student :is(.dv-grid,.spg-grid,.pm-grid-2){align-items:start}
+.q-student :is(.dv-grid,.spg-grid,.pm-grid-2){align-items:stretch}
+.q-student :is(.dv-grid,.spg-grid,.pm-grid-2) > :is(.sp-panel,.sp-card,.dv-card,.mdc-card){height:100%;min-height:0}
 .q-student .card .card,
 .q-student .pm-panel .card{box-shadow:none;border:1px solid var(--sb-hairline)}
 .q-student .card-title,

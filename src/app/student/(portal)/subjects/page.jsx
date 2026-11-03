@@ -1,8 +1,8 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import VoiceQnaPanel from '@/components/student/VoiceQnaPanel';
 import RefreshingVideo from '@/components/shared/RefreshingVideo';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import ScoreRing from '@/components/shared/ScoreRing';
@@ -26,7 +26,14 @@ import {
   formatDuration,
   pct,
 } from '@/lib/student/learning';
+import { applyCaptionsMode, probeCaptions } from '@/lib/student/captions';
 import '@/styles/student-learning.css';
+
+// LiveKit is heavy: load it only when the AI tutor tab opens.
+const VoiceQnaPanel = dynamic(() => import('@/components/student/VoiceQnaPanel'), {
+  ssr: false,
+  loading: () => <SectionState title="Loading your AI tutor…" />,
+});
 
 /**
  * Student · My subjects (owner mock-ups, Oct 2026)
@@ -578,6 +585,23 @@ function SubjectView({
   const [verifying, setVerifying] = useState(false);
   const videoRef = useRef(null);
   const stageRef = useRef(null);
+  // Captions (WebVTT): offered only when GET /edu_video/captions/{id} answers 200.
+  const [captions, setCaptions] = useState({ jobId: null, ok: false });
+  const [captionsOn, setCaptionsOn] = useState(false);
+  const activeJobId = activeJob?.job_id || null;
+  useEffect(() => {
+    if (!activeJobId) return undefined;
+    let alive = true;
+    setCaptions({ jobId: activeJobId, ok: false });
+    probeCaptions(eduVideoApi.getCaptionsUrl(activeJobId)).then((ok) => {
+      if (alive) setCaptions({ jobId: activeJobId, ok });
+    });
+    return () => { alive = false; };
+  }, [activeJobId]);
+  const hasCaptions = captions.ok && captions.jobId === activeJobId;
+  useEffect(() => {
+    applyCaptionsMode(videoRef.current, hasCaptions && captionsOn);
+  }, [hasCaptions, captionsOn, watching]);
   const maxWatchedRef = useRef(0);
   const lastClaimRef = useRef({ percent: 0, maxPos: 0 });
   const verifyRef = useRef(null);
@@ -741,7 +765,17 @@ function SubjectView({
                   src={eduVideoApi.getDownloadUrl(activeJob.job_id)}
                   onTimeUpdate={onTimeUpdate}
                   onEnded={onEnded}
+                  onLoadedData={() => applyCaptionsMode(videoRef.current, hasCaptions && captionsOn)}
                 >
+                  {hasCaptions ? (
+                    <track
+                      kind="captions"
+                      srcLang="en"
+                      label="English"
+                      src={eduVideoApi.getCaptionsUrl(activeJob.job_id)}
+                      default={captionsOn}
+                    />
+                  ) : null}
                   Your browser does not support embedded video playback.
                 </RefreshingVideo>
               ) : (
@@ -783,6 +817,16 @@ function SubjectView({
                     {duration ? <span><Icon name="clock" size={16} /> {duration}</span> : null}
                   </div>
                 </div>
+                {hasCaptions ? (
+                  <button
+                    type="button"
+                    className="sd-btn sd-btn--ghost sd-btn--sm"
+                    aria-pressed={captionsOn}
+                    onClick={() => setCaptionsOn((v) => !v)}
+                  >
+                    {captionsOn ? 'Captions on' : 'Captions off'}
+                  </button>
+                ) : null}
               </section>
             ) : null}
           </div>

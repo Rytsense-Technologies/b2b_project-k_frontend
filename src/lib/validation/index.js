@@ -24,10 +24,12 @@ export {
   searchField,
   urlField,
   academicLabelField,
+  voiceQuestionField,
   mcqQuestionField,
   mcqOptionField,
   mcqExplanationField,
   resetReasonField,
+  conversationTitleField,
   positiveIntField,
 } from './fields';
 
@@ -97,3 +99,8 @@ export {
   mcqQuestionCreateSchema,
   mcqResetReasonSchema,
 } from './schemas/mcq';
+
+export {
+  voiceChatSchema,
+  conversationRenameSchema,
+} from './schemas/voiceQna';

@@ -507,7 +507,12 @@ a.sd-chip:hover{border-color:var(--teal-500)}
 .sp-table tr:last-child td{border-bottom:0}
 .sp-table td b{font-weight:500;color:var(--ink)}
 .sp-table .num{text-align:right}
-.sp-table-wrap{overflow-x:auto}
+.sp-table-wrap{
+  overflow-x:auto;
+  overflow-y:visible;
+  min-width:0;
+  -webkit-overflow-scrolling:touch;
+}
 .sp-empty-hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap;padding:28px 32px;border-radius:var(--radius-card);background:#fff;border:0;box-shadow:var(--shadow-card)}
 .sp-empty-hero svg.sp-empty-art{width:200px;height:150px;flex:none}
 .sp-empty-hero h2{font-size:22px;line-height:30px;font-weight:500;color:var(--ink)}

@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import QuirriModal from '@/components/superadmin/QuirriModal';
-import { SearchBox, QuirriRHFField, IndiaLocationFields } from '@/components/superadmin/quirri-ui';
+import { SearchBox, QuirriRHFField, AssignedCodeField, IndiaLocationFields } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage, ModuleHead, KpiRow, Panel, SegTabs, StatusPill, IconButton, Mono, Pager, Icon, SectionState,
 } from '@/components/shared/module-ui';
@@ -24,6 +24,7 @@ import {
   universityUpdateSchema,
 } from '@/lib/validation';
 import { INDIA_COUNTRY } from '@/lib/india';
+import { nextCodeFromList, nextCodeFor, codesOf, createOmittingCode } from '@/lib/ids/uniqueSeries';
 
 const EMPTY_FORM = {
   name: '',
@@ -93,11 +94,10 @@ function UniversityFormModal({
         });
         toast.success('University updated');
       } else {
-        await universitiesApi.create({
+        await createOmittingCode(() => universitiesApi.create({
           name: values.name,
-          code: values.code,
           ...location,
-        });
+        }));
         toast.success('University created');
       }
       onSaved();
@@ -134,7 +134,7 @@ function UniversityFormModal({
             <span className="un-form-n">1</span>
             <div>
               <b>Identity</b>
-              <small>Name students and colleges will see, and a unique code.</small>
+              <small>Name students and colleges will see. The unique ID is assigned automatically.</small>
             </div>
           </div>
           <div className="grid2">
@@ -145,18 +145,10 @@ function UniversityFormModal({
               label="University name"
               placeholder="e.g. Anna University"
             />
-            <QuirriRHFField
+            <AssignedCodeField
               control={control}
-              name="code"
-              fieldType="code"
-              label="University code"
-              placeholder="UNI-0004"
-              disabled={Boolean(editingId)}
-              hint={
-                editingId
-                  ? 'Code cannot be changed after create (colleges reference it).'
-                  : 'Must be unique.'
-              }
+              label="University ID"
+              editing={Boolean(editingId)}
             />
           </div>
         </section>
@@ -423,9 +415,17 @@ function UniversitiesView() {
     reloadAll().catch(() => {});
   };
 
-  const openCreate = () => {
+  const openCreate = async () => {
     setEditingId(null);
-    setFormDefaults(EMPTY_FORM);
+    let code = nextCodeFor('university', codesOf(all));
+    try {
+      code = await nextCodeFromList('university', (page, pageSize) => (
+        fetchData(() => universitiesApi.list({ page, page_size: pageSize }))
+      ));
+    } catch {
+      /* preview from the loaded list; the API still issues the next free UNI-0001 */
+    }
+    setFormDefaults({ ...EMPTY_FORM, code });
     setModalOpen(true);
   };
 
@@ -593,7 +593,7 @@ function UniversitiesView() {
         ) : null}
 
         {rows.length ? (
-          <div className="sp-table-wrap">
+          <div className="sp-table-wrap pm-scroll-pane--x">
             <table className="sp-table un-table sa-table-tight sa-stack">
               <thead>
                 <tr>
