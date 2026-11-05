@@ -6,13 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { clearCredentials } from '@/store/slices/authSlice';
 import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
-import { queryClient } from '@/lib/queryClient';
-import { authApi } from '@/lib/api/auth';
-import { clearTokens } from '@/lib/tokens';
+import { signOut } from '@/lib/auth/signOut';
 import { useAuth } from '@/hooks/useAuth';
-import toast from 'react-hot-toast';
 
 const NAV = [
   {
@@ -165,18 +161,7 @@ export default function CollegeAdminSidebar() {
   const universityName = u?.university_name || '';
   const tenantInitials = getInitials(collegeName, displayEmail);
 
-  const handleLogout = async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      /* ignore */
-    }
-    clearTokens();
-    dispatch(clearCredentials());
-    queryClient.clear();
-    toast.success('Logged out successfully');
-    router.push('/auth/login');
-  };
+  const handleLogout = () => signOut({ dispatch, router });
 
   const tipHandlers = (label, placement = 'right') => ({
     onMouseEnter: (e) => showTip(e, label, placement),
@@ -186,7 +171,7 @@ export default function CollegeAdminSidebar() {
   });
 
   return (
-    <aside className={`sidebar${sidebarOpen ? '' : ' is-collapsed'}`}>
+    <aside className={`sidebar${sidebarOpen ? '' : ' is-collapsed'}`} aria-label="Sidebar">
       <div className="brand">
         <div className="brand-mark">
           <QuirriLogo className="logo-full" size="sm" priority />

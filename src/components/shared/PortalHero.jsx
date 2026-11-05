@@ -41,7 +41,7 @@ export default function PortalHero({
       </div>
 
       {hasSide ? (
-        <aside className="q-hero-side">
+        <aside className="q-hero-side" aria-label={sideTitle || 'Highlights'}>
           {sideTitle ? (
             <div className="q-hero-side__h">
               <h3>{sideTitle}</h3>

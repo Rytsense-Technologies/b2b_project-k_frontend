@@ -23,7 +23,7 @@ const TONE = { active: 'sp-pill--good', pending_activation: 'sp-pill--low', deac
 
 function day(iso) {
   const d = new Date(iso || '');
-  return Number.isNaN(d.getTime()) ? 'Never' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return Number.isNaN(d.getTime()) ? 'Never' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 function StaffList({ scope }) {

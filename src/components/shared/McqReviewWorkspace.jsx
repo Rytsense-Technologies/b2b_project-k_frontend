@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import McqDocumentReview from '@/components/shared/McqDocumentReview';
 import {
   ModulePage,
@@ -119,6 +120,18 @@ function McqReview({ notice = null, chips: chipsProp = null, colorFor = null }) 
         - (Date.parse(a.updated_at || a.created_at || '') || 0)),
     [jobs],
   );
+
+  // Deep link (alert, dashboard) to a chapter that is gone or has no questions yet: say so, same as Video review.
+  const checkedJob = useRef('');
+  useEffect(() => {
+    if (!url.job || !data || checkedJob.current === url.job) return;
+    checkedJob.current = url.job;
+    if (chapters.some((c) => String(c.job_id) === url.job)) return;
+    toast.error('That chapter could not be found. It may have been removed.');
+    setSelectedId('');
+    setUrl({ job: '' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url.job, data, chapters]);
 
   // Question-set state per chapter: from the list when present, otherwise looked up a few at a time.
   const lookupRun = useRef(0);
@@ -325,7 +338,7 @@ function McqReview({ notice = null, chips: chipsProp = null, colorFor = null }) 
             <div className="mq-groups">
               {groups.map((g) => (
                 <section key={g.key} className="mq-group" aria-label={g.label}>
-                  <h4 className="mq-group-h">
+                  <h3 className="mq-group-h">
                     <i
                       className="mq-dot"
                       style={{ background: g.key === NO_SUBJECT ? 'var(--neutral-300)' : g.color }}
@@ -333,7 +346,7 @@ function McqReview({ notice = null, chips: chipsProp = null, colorFor = null }) 
                     />
                     <span>{g.label}</span>
                     <small>{g.rows.length}</small>
-                  </h4>
+                  </h3>
                   <ul className="pm-list">
                     {g.rows.map((job) => {
                       const active = job.job_id === selected?.job_id;

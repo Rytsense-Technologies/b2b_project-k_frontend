@@ -11,13 +11,14 @@ import { asList } from '@/lib/api/superadmin/http';
 import { buildHomeModel } from '@/lib/student/dashboardModel';
 import { loadQuizStates } from '@/components/student/quizStates';
 import { subjectKey } from '@/lib/student/learning';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 
 const toTime = (iso) => Date.parse(iso || '') || 0;
 
 export async function loadStudentHomeData() {
   const [meRes, videosRes, lbRes] = await Promise.allSettled([
     fetchData(() => settingsApi.get()),
-    eduVideoApi.listStudentVideos({ pageSize: 100 }),
+    fetchAllPages((p) => eduVideoApi.listStudentVideos(p)),
     leaderboardApi.get({ limit: 8 }),
   ]);
 
@@ -25,7 +26,7 @@ export async function loadStudentHomeData() {
   let videosSettled = videosRes;
   if (videosSettled.status === 'rejected') {
     try {
-      videosSettled = { status: 'fulfilled', value: await eduVideoApi.listStudentVideos({ pageSize: 100 }) };
+      videosSettled = { status: 'fulfilled', value: await fetchAllPages((p) => eduVideoApi.listStudentVideos(p)) };
     } catch (err) {
       videosSettled = { status: 'rejected', reason: err };
     }

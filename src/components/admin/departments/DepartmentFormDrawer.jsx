@@ -171,7 +171,7 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
                 disabled={hodState === 'loading'}
                 placeholder={hodState === 'loading' ? 'Loading staff…' : 'Optional — type to search'}
                 options={hodOptions}
-                emptyMessage={`Nobody is placed in ${department?.name || 'this department'} yet`}
+                emptyMessage={`No HOD is placed in ${department?.name || 'this department'} yet`}
                 hint={hodState === 'error'
                   ? 'Could not load staff. You can assign an HOD later.'
                   : hodState === 'ready' && hodOptions.length === 0

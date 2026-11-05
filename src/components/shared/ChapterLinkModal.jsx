@@ -23,7 +23,7 @@ export default function ChapterLinkModal({ job, onClose, onSaved }) {
   const [chapterId, setChapterId] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { data: programData, loading: programsLoading } = useAsyncResource(
+  const { data: programData, loading: programsLoading, error: programsError } = useAsyncResource(
     () => (job?.department_id
       ? fetchData(() => academicsApi.listPrograms({ department_id: job.department_id }))
       : Promise.resolve(null)),
@@ -33,16 +33,19 @@ export default function ChapterLinkModal({ job, onClose, onSaved }) {
   const { data: programDetail } = useAsyncResource(
     () => (programId ? fetchData(() => academicsApi.getProgram(programId)) : Promise.resolve(null)),
     [programId],
+    { lookup: 'semesters' },
   );
   const semesters = (programDetail?.semesters || []).filter((s) => s.is_active !== false);
   const { data: subjectData } = useAsyncResource(
     () => (semesterId ? fetchData(() => academicsApi.listSubjects(semesterId)) : Promise.resolve(null)),
     [semesterId],
+    { lookup: 'subjects' },
   );
   const subjects = asList(subjectData, []);
   const { data: chapterData } = useAsyncResource(
     () => (subjectId ? fetchData(() => academicsApi.listChapters(subjectId)) : Promise.resolve(null)),
     [subjectId],
+    { lookup: 'chapters' },
   );
   const chapters = asList(chapterData, []);
 
@@ -59,7 +62,7 @@ export default function ChapterLinkModal({ job, onClose, onSaved }) {
     }
   };
 
-  const noProgrammes = !programsLoading && !programs.length;
+  const noProgrammes = !programsLoading && !programsError && !programs.length;
 
   return (
     <QuirriModal
@@ -91,6 +94,8 @@ export default function ChapterLinkModal({ job, onClose, onSaved }) {
         </p>
         {!job.department_id ? (
           <p className="ad-muted">This upload has no department, so it can&apos;t be linked. Re-upload it with a department.</p>
+        ) : programsError ? (
+          <p className="ad-muted" role="alert">Could not load this department&apos;s programmes. Close this window and try again.</p>
         ) : noProgrammes ? (
           <p className="ad-muted">This department has no programmes yet. Add them under Academic structure first.</p>
         ) : (

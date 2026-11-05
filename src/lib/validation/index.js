@@ -19,7 +19,6 @@ export {
   passwordField,
   PASSWORD_RULE_MESSAGE,
   isStrongPassword,
-  otpField,
   addressField,
   searchField,
   urlField,
@@ -46,7 +45,6 @@ export {
 export {
   loginSchema,
   signupSchema,
-  otpSchema,
   profileSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

@@ -62,7 +62,7 @@
 /* ---------- McqDocumentReview + McqQuestionBlock (shared) ---------- */
 .fa-mcq{display:flex;flex-direction:column;gap:16px;text-align:left}
 .fa-mcq-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:var(--qs-card-pad,24px);background:var(--neutral-0);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
-.fa-mcq-head h3{margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
+.fa-mcq-head :is(h2,h3){margin:0;font-size:18px;line-height:26px;font-weight:500;color:var(--ink)}
 .fa-mcq-head p{margin:2px 0 0;font-size:14px;line-height:22px;color:var(--muted-2)}
 .fa-mcq-head-side{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .fa-mcq-stats{display:flex;align-items:center;gap:16px}
@@ -399,7 +399,7 @@
 .q-app-shell .fa-page .fa-reason{color:var(--accent-text)}
 .q-app-shell .fa-page .fa-reasons{gap:4px 12px}
 .q-app-shell .fa-page .sp-pill:has(> .un-dot){height:auto;min-height:0;padding:0;background:none;border:0;border-radius:0;font-size:12px;line-height:18px;font-weight:500;gap:8px}
-.q-app-shell .fa-page .sp-pill:has(> .un-dot) > .un-dot{width:8px;height:8px}
+.q-app-shell .fa-page .sp-pill:has(> .un-dot) > .un-dot{width:6px;height:6px} /* XB-007: status dot is 6px in every portal */
 .q-app-shell .fa-page .sd-state{background:transparent;border:0;border-radius:var(--radius-card);color:var(--muted-2)}
 .q-app-shell .fa-page .sd-state b{color:var(--ink);font-weight:500}
 .q-app-shell .fa-page > .sd-state,

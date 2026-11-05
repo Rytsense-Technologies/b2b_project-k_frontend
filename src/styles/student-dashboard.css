@@ -44,7 +44,7 @@
 .q-student .shb-more{flex:none;display:inline-flex;align-items:center;gap:4px;min-height:44px;font-size:14px;font-weight:500;color:var(--sb-teal);text-decoration:none;white-space:nowrap}
 .q-student .shb-more:hover{text-decoration:underline}
 .q-student .shb-more:focus-visible,.q-student .shb a:focus-visible,.q-student .shb button:focus-visible{outline:2px solid var(--sb-teal);outline-offset:2px}
-.q-student .shb-over{display:block;font-size:11px;line-height:16px;font-weight:500;color:var(--sb-index);text-transform:uppercase;letter-spacing:.08em}
+.q-student .shb-over{display:block;font-size:11px;line-height:16px;font-weight:500;color:var(--sb-index-text);text-transform:uppercase;letter-spacing:.08em}
 .q-student .shb-skel{display:flex;flex-direction:column;gap:8px}
 .q-student .shb-skel .sb-skel{display:block}
 .q-student .shb-retry{background:none;border:0;padding:0;cursor:pointer;font:inherit}

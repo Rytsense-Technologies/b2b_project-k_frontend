@@ -1,4 +1,5 @@
 import { api, buildParams, downloadBlob, unwrap } from './http';
+import { userApi } from '@/lib/api/user';
 
 export async function fetchData(request) {
   return unwrap(await request());
@@ -95,7 +96,6 @@ export const departmentsApi = {
 export const reportsApi = {
   preview: (params = {}) =>
     api.get(`/reports/preview?${buildParams(params)}`),
-  generate: (payload) => api.post('/reports/generate', payload),
   download: (format, params = {}) =>
     downloadBlob(
       () => api.get(`/reports/download?${buildParams({ ...params, format })}`, { responseType: 'blob' }),
@@ -123,7 +123,7 @@ export const notificationsApi = {
  * GET/PATCH /auth/me · POST /auth/change-password
  */
 export const settingsApi = {
-  get: () => api.get('/auth/me'),
+  get: () => userApi.getMe(),
   update: (payload) => {
     const body = {
       first_name: payload.first_name,

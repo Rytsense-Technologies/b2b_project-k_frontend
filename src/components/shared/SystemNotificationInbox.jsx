@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FilterField,
@@ -23,6 +23,7 @@ import {
   ALERTS_REFRESH,
   groupAlertsByDay,
   inboxItemHref,
+  requestAlertsRefresh,
   timeOf,
 } from '@/lib/notifications/scenarios';
 
@@ -65,6 +66,12 @@ export default function SystemNotificationInbox({
     () => inboxNotificationsApi.list({ page, pageSize: PAGE_SIZE }),
     [page],
   );
+  // The bell can change these rows too (Mark all as read, open one).
+  useEffect(() => {
+    const onRefresh = () => { reload({ silent: true }).catch(() => {}); };
+    window.addEventListener(ALERTS_REFRESH, onRefresh);
+    return () => window.removeEventListener(ALERTS_REFRESH, onRefresh);
+  }, [reload]);
   const rows = useMemo(() => asList(data, []), [data]);
   const first = loading && !data;
   const shown = showReviewFilter
@@ -75,25 +82,6 @@ export default function SystemNotificationInbox({
   const groups = useMemo(() => groupAlertsByDay(shown), [shown]);
   const [emptyH, emptyP] = EMPTY[portal] || EMPTY.faculty;
   const unreadCount = Number(data?.unread_count) || 0;
-  const tools = (showReviewFilter || unreadCount > 0) ? (
-    <>
-      {showReviewFilter ? (
-        <FilterField label="Show" grow="status">
-          <SegTabs
-            label="Show"
-            value={kind}
-            onChange={setKind}
-            options={FILTERS.map((f) => ({ ...f, count: countLabel(kindCount[f.value]) }))}
-          />
-        </FilterField>
-      ) : null}
-      {unreadCount > 0 ? (
-        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={markAll}>
-          Mark all as read
-        </button>
-      ) : null}
-    </>
-  ) : null;
 
   const openRow = async (row) => {
     if (row?.id && !row.is_read) {
@@ -104,9 +92,10 @@ export default function SystemNotificationInbox({
           const items = asList(prev, []).map((r) => (
             r.id === row.id ? { ...r, is_read: true, read_at: next?.read_at || r.read_at } : r
           ));
-          return { ...prev, items, unread_count: Number(next?.unread_count) ?? Math.max(0, unreadCount - 1) };
+          const left = Number(next?.unread_count);
+          return { ...prev, items, unread_count: Number.isFinite(left) ? left : Math.max(0, unreadCount - 1) };
         });
-        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(ALERTS_REFRESH));
+        requestAlertsRefresh();
       } catch {
         /* still open the page */
       }
@@ -127,11 +116,31 @@ export default function SystemNotificationInbox({
         });
         return { ...prev, items, unread_count: Number(next?.unread_count) || 0 };
       });
-      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(ALERTS_REFRESH));
+      requestAlertsRefresh();
     } catch {
       /* keep current rows */
     }
   };
+
+  const tools = (showReviewFilter || unreadCount > 0) ? (
+    <>
+      {showReviewFilter ? (
+        <FilterField label="Show" grow="status">
+          <SegTabs
+            label="Show"
+            value={kind}
+            onChange={setKind}
+            options={FILTERS.map((f) => ({ ...f, count: countLabel(kindCount[f.value]) }))}
+          />
+        </FilterField>
+      ) : null}
+      {unreadCount > 0 ? (
+        <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={markAll}>
+          Mark all as read
+        </button>
+      ) : null}
+    </>
+  ) : null;
 
   return (
     <Panel
@@ -167,7 +176,7 @@ export default function SystemNotificationInbox({
       ) : null}
       {groups.map((g) => (
         <section key={g.key} className="fa-day" aria-label={g.label}>
-          <h4 className="fa-day-h">{g.label}</h4>
+          <h3 className="fa-day-h">{g.label}</h3>
           <ul className="fa-notes">
             {g.rows.map((r) => {
               const review = isReview(r.event);

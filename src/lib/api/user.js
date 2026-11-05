@@ -1,30 +1,11 @@
 import api from '@/lib/axios';
 
+let meInFlight = null;
+
 export const userApi = {
-  // GET /auth/me → returns UserOut directly
-  getMe: () => api.get('/auth/me'),
-
-  // PATCH /profile/ → updates profile + user name fields
-  updateMe: (data) => api.patch('/profile/', data),
-
-  // POST /profile/photo — field name must be 'file'
-  uploadAvatar: (file) => {
-    const form = new FormData();
-    form.append('file', file);
-    return api.post('/profile/photo', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  // GET /auth/me → returns UserOut directly. Overlapping callers share one request; a finished one is never reused.
+  getMe: () => {
+    if (!meInFlight) meInFlight = api.get('/auth/me').finally(() => { meInFlight = null; });
+    return meInFlight;
   },
-
-  // POST /profile/resume — field name must be 'file'
-  uploadResume: (file) => {
-    const form = new FormData();
-    form.append('file', file);
-    return api.post('/profile/resume', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-
-  // GET /profile/ → returns { user, profile }
-  getProfile: () => api.get('/profile/'),
 };

@@ -26,7 +26,9 @@ import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/mod
 import { academicsApi } from '@/lib/api/superadmin/academics';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
+import { isUuid } from '@/lib/utils';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { useUrlState } from '@/hooks/useUrlState';
 import { nextCodeFromList, nextCodeFor, codesOf, createOmittingCode } from '@/lib/ids/uniqueSeries';
 import {
@@ -114,9 +116,10 @@ function ProgrammeModal({ programme, colleges, defaults, fixedCollege = false, o
 
   const { data: deptData, loading: deptLoading } = useAsyncResource(
     () => (!editing && collegeId
-      ? fetchData(() => departmentsApi.list({ college_id: collegeId, pageSize: 100, is_active: true }))
+      ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ college_id: collegeId, is_active: true, ...p })))
       : Promise.resolve(null)),
     [editing, collegeId],
+    { lookup: 'departments' },
   );
   const departments = asList(deptData, []);
 
@@ -394,8 +397,8 @@ function SubjectTeachersModal({ subject, programme, onClose, onSaved }) {
   const { data, loading, error, reload } = useAsyncResource(async () => {
     if (!departmentId) return [];
     const [fac, hod] = await Promise.all([
-      fetchData(() => usersApi.getUsers({ role: 'faculty', tenantId: collegeId, pageSize: 100 })),
-      fetchData(() => usersApi.getUsers({ role: 'hod', tenantId: collegeId, pageSize: 100 })),
+      fetchAllPages((p) => fetchData(() => usersApi.getUsers({ role: 'faculty', tenantId: collegeId, ...p }))),
+      fetchAllPages((p) => fetchData(() => usersApi.getUsers({ role: 'hod', tenantId: collegeId, ...p }))),
     ]);
     return [...asList(fac, []), ...asList(hod, [])]
       .filter((u) => String(u.department_id || '') === String(departmentId))
@@ -647,7 +650,9 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
-  const department = url.department;
+  // Hand-edited or stale filter ids are treated as "not chosen" (the API would answer 422).
+  const urlCollege = url.college === 'all' || isUuid(url.college) ? url.college : '';
+  const department = isUuid(url.department) ? url.department : '';
   const search = url.q;
   const status = url.status === 'all' ? 'all' : 'active';
   const [modal, setModal] = useState(null);
@@ -655,8 +660,9 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
   const canEdit = true; // Super Admin / College Admin write; the server enforces scope
 
   const { data: collegeData } = useAsyncResource(
-    () => (fixedCollege ? Promise.resolve(null) : fetchData(() => collegesApi.list({ pageSize: 100 }))),
+    () => (fixedCollege ? Promise.resolve(null) : fetchAllPages((p) => fetchData(() => collegesApi.list(p)))),
     [fixedCollege],
+    { lookup: 'colleges' },
   );
   const colleges = useMemo(() => asList(collegeData, []), [collegeData]);
 
@@ -673,22 +679,23 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
 
   // Super Admin: open on the first college (kept in ?college=) so programmes never mix colleges by default.
   useEffect(() => {
-    if (fixedCollege || url.college || !collegesInUniversity.length) return;
+    if (fixedCollege || urlCollege || !collegesInUniversity.length) return;
     const first = collegesInUniversity.find((c) => c.is_active !== false) || collegesInUniversity[0];
     setUrl({ college: String(first.id) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fixedCollege, url.college, collegesInUniversity]);
+  }, [fixedCollege, urlCollege, collegesInUniversity]);
 
-  const college = fixedCollege ? fixedCollegeId : (url.college === 'all' ? '' : url.college);
+  const college = fixedCollege ? fixedCollegeId : (urlCollege === 'all' ? '' : urlCollege);
   const collegeRow = colleges.find((c) => String(c.id) === String(college)) || null;
 
   const { data: deptData } = useAsyncResource(
-    () => (college ? fetchData(() => departmentsApi.list({ college_id: college, pageSize: 100 })) : Promise.resolve(null)),
+    () => (college ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ college_id: college, ...p }))) : Promise.resolve(null)),
     [college],
+    { lookup: 'departments' },
   );
   const departments = useMemo(() => asList(deptData, []), [deptData]);
 
-  const waitingForCollege = !fixedCollege && !url.college;
+  const waitingForCollege = !fixedCollege && !urlCollege;
   const scope = { college_id: college, department_id: department };
   const { data: summary, reload: reloadSummary } = useAsyncResource(
     () => (waitingForCollege ? Promise.resolve(null) : fetchData(() => academicsApi.summary(scope))),
@@ -709,6 +716,7 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
   const { data: programme, loading: programmeLoading, reload: reloadProgramme } = useAsyncResource(
     () => (selectedId ? fetchData(() => academicsApi.getProgram(selectedId)) : Promise.resolve(null)),
     [selectedId],
+    { lookup: 'semesters' },
   );
   const semesters = useMemo(
     () => (programme?.semesters || []).filter((s) => showInactive || s.is_active !== false),
@@ -722,11 +730,13 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
   const { data: subjectData, loading: subjectsLoading, reload: reloadSubjects } = useAsyncResource(
     () => (semesterId ? fetchData(() => academicsApi.listSubjects(semesterId, { include_inactive: showInactive })) : Promise.resolve(null)),
     [semesterId, showInactive],
+    { lookup: 'subjects' },
   );
   const subjects = asList(subjectData, []);
 
+  // XB-005: a refresh after a saved change must not reject (unhandled, or read as the save failing).
   const refreshAll = useCallback(async () => {
-    await Promise.all([reloadPrograms(), reloadProgramme(), reloadSubjects(), reloadSummary()]);
+    await Promise.allSettled([reloadPrograms(), reloadProgramme(), reloadSubjects(), reloadSummary()]);
   }, [reloadPrograms, reloadProgramme, reloadSubjects, reloadSummary]);
 
   const close = () => setModal(null);
@@ -853,13 +863,12 @@ function AcademicStructure({ collegeId: fixedCollegeId = null, initialDepartment
       <div className="sa-acad-grid">
         <Panel title="Programmes" sub={programmes.length ? plural(programmes.length, 'programme') : 'Pick one to manage its semesters'} bodyClassName={null}>
           {programmes.length ? (
-            <ul className="sa-acad-list" role="listbox" aria-label="Programmes">
+            <ul className="sa-acad-list" aria-label="Programmes">
               {programmes.map((p) => (
                 <li key={p.id}>
                   <button
                     type="button"
-                    role="option"
-                    aria-selected={p.id === selectedId}
+                    aria-pressed={p.id === selectedId}
                     className={`sa-acad-prog${p.id === selectedId ? ' is-on' : ''}${p.is_active === false ? ' is-off' : ''}`}
                     onClick={() => setSelectedId(p.id)}
                   >

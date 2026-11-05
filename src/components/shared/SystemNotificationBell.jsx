@@ -35,7 +35,7 @@ export default function SystemNotificationBell({ portal = 'superadmin' }) {
     markRead,
     markAllRead,
     requestDesktop,
-  } = useSystemNotifications();
+  } = useSystemNotifications(portal, router.push);
   const { show, hide, TipLayer } = useQuirriTip();
   const inbox = inboxHref(portal);
 

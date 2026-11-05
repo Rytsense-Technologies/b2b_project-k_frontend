@@ -15,6 +15,7 @@ import '@/styles/student-portal.css';
 import '@/styles/student-b2c.css';
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
+import SkipLink from '@/components/shared/SkipLink';
 
 /**
  * Redesign (14 Oct 2026): every student page keeps the shell top bar (spec X5).
@@ -56,10 +57,11 @@ export default function StudentLayout({ children }) {
 
   return (
     <div className={`app q-app-shell q-student ${mobileNavShellClass(navOpen)}`}>
-      <StudentSidebar />
+      <SkipLink />
+      <Suspense fallback={null}><StudentSidebar /></Suspense>
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
-        <div className="topbar">
+        <header className="topbar">
           <MobileNavButton navOpen={navOpen} onOpen={openNav} />
           <div className="topbar-copy">
             <h1>{meta.title}</h1>
@@ -68,8 +70,8 @@ export default function StudentLayout({ children }) {
           <div className="topbar-right">
             <SystemNotificationBell portal="student" />
           </div>
-        </div>
-        <main className="content" id="main-content"><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
+        </header>
+        <main className="content" id="main-content" tabIndex={0}><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
       </div>
     </div>
   );

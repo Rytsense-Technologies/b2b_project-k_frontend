@@ -15,10 +15,7 @@ import { setCredentials } from '@/store/slices/authSlice';
 import { loginWithRbac, authApi } from '@/lib/api/auth';
 import { getApiErrorMessage, isCredentialFailure } from '@/lib/api/errors';
 import { getPostLoginPath, isB2bRole, isPortalRole } from '@/lib/auth/rbac';
-import { setSessionCookie, setRoleCookie, setTenantCookie, clearTokens } from '@/lib/tokens';
-import { ROLES, getPermissions } from '@/lib/permissions';
-
-const DEV_BYPASS_AUTH = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
+import { clearTokens } from '@/lib/tokens';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_MS = 15 * 60 * 1000;
@@ -68,7 +65,7 @@ function LoginForm() {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm(DEV_BYPASS_AUTH ? {} : { resolver: zodResolver(loginSchema), mode: 'onBlur' });
+  } = useForm({ resolver: zodResolver(loginSchema), mode: 'onBlur' });
 
   const checkLockout = useCallback(() => {
     const { lockedUntil } = getLockoutState();
@@ -131,30 +128,7 @@ function LoginForm() {
 
     setLoading(true);
     try {
-      let session;
-      if (DEV_BYPASS_AUTH) {
-        setSessionCookie();
-        setRoleCookie(ROLES.SUPERADMIN);
-        setTenantCookie(null);
-        session = {
-          user: {
-            id: 'dev-user',
-            name: 'Super Admin',
-            email: data.email || 'admin@quirri.ai',
-            first_name: 'Super',
-            last_name: 'Admin',
-            plan: 'standard',
-          },
-          role: ROLES.SUPERADMIN,
-          tenant_id: null,
-          permissions: getPermissions(ROLES.SUPERADMIN),
-          plan: 'standard',
-          onboarding_complete: true,
-          plan_selected: true,
-        };
-      } else {
-        session = await loginWithRbac(data.email, data.password, tenantSlug);
-      }
+      const session = await loginWithRbac(data.email, data.password, tenantSlug);
 
       if (!session?.user?.email) {
         toast.error('Unexpected login response from server.');
@@ -163,14 +137,13 @@ function LoginForm() {
 
       clearLockout();
 
-      const { user, role, tenant_id, permissions, plan } = session;
+      const { user, role, tenant_id, permissions } = session;
       const isB2b = isB2bRole(role);
 
       if (!isPortalRole(role)) {
         clearTokens();
         try {
           sessionStorage.removeItem('pk_user');
-          sessionStorage.removeItem('pk_plan');
         } catch {
           /* ignore */
         }
@@ -184,16 +157,13 @@ function LoginForm() {
       }
 
       sessionStorage.setItem('pk_user', JSON.stringify(user));
-      sessionStorage.setItem('pk_plan', plan);
 
       dispatch(setCredentials({
         user,
-        plan,
         role,
         tenant_id,
         permissions,
         onboarding_complete: isB2b ? true : (session.onboarding_complete ?? true),
-        plan_selected: isB2b ? true : (session.plan_selected ?? true),
       }));
 
       const displayName = user.first_name || user.name || 'there';

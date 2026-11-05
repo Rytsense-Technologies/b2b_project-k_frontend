@@ -120,7 +120,7 @@ export function ageLabel(iso) {
 /** 5 Oct 2026 */
 export function dayLabel(iso) {
   const d = new Date(iso || '');
-  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 /** Whole-number percent or a dash. */

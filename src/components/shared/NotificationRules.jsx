@@ -8,7 +8,7 @@ import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { notificationRulesApi } from '@/lib/api/notificationRules';
 import { requestAlertsRefresh } from '@/lib/notifications/scenarios';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
-import { isInterviewOff } from '@/lib/product/interviewOff';
+import { isInterviewEvent } from '@/lib/product/interviewOff';
 import '@/styles/notification-rules.css';
 
 /* Personal scope (Faculty / Student, Settings → Notifications). */
@@ -151,7 +151,7 @@ export default function NotificationRules({ scope, scopeId, canTest = false }) {
   const groups = (data?.groups || [])
     .map((g) => ({
       ...g,
-      events: (g.events || []).filter((e) => !isInterviewOff(`${e.id || ''} ${e.name || ''} ${e.group || ''}`)
+      events: (g.events || []).filter((e) => !isInterviewEvent(`${e.id || ''} ${e.group || ''}`)
         && !(personal && PERSONAL_HIDDEN.has(e.id))),
     }))
     .filter((g) => (g.events || []).length);
@@ -174,7 +174,7 @@ export default function NotificationRules({ scope, scopeId, canTest = false }) {
         return (
           <section key={g.id || g.name} className="nr-card" aria-labelledby={`${gid}-h`}>
             <div className="nr-card-h">
-              <h3 id={`${gid}-h`}>{groupName}</h3>
+              <h2 id={`${gid}-h`}>{groupName}</h2>
             </div>
             <ul className="nr-rows">
               {g.events.map((ev) => {

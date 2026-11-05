@@ -15,12 +15,22 @@ import { quizStatus } from '@/lib/student/dashboardModel';
 
 const watched = (job) => Boolean(job?.watch_complete);
 
+// The classroom reloads when watch data lands, often while the first load still runs.
+// Overlapping loads share a request; a finished one is never reused, so a score is always fresh.
+const inFlight = new Map();
+function shared(key, request) {
+  if (!inFlight.has(key)) {
+    inFlight.set(key, request().finally(() => inFlight.delete(key)));
+  }
+  return inFlight.get(key);
+}
+
 export async function loadQuizStates(chapters) {
   const list = (chapters || []).filter((j) => j?.job_id);
   const map = new Map();
   let attempts = null;
   try {
-    attempts = await mcqApi.myAttempts();
+    attempts = await shared('attempts', () => mcqApi.myAttempts());
   } catch {
     attempts = null;
   }
@@ -42,7 +52,7 @@ export async function loadQuizStates(chapters) {
 
   // Availability lookups: attempts unavailable → every chapter; otherwise watched chapters without an attempt.
   const pending = list.filter((j) => !map.has(String(j.job_id)) && (attempts === null || watched(j)));
-  const states = await Promise.all(pending.map((j) => quizStatus(j.job_id)));
+  const states = await Promise.all(pending.map((j) => shared(`job:${j.job_id}`, () => quizStatus(j.job_id))));
   pending.forEach((j, i) => map.set(String(j.job_id), states[i]));
   return map;
 }

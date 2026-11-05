@@ -24,6 +24,7 @@ import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { eduVideoApi, JOB_STATUS, computeJobProgress, summarizeEduVideoError } from '@/lib/api/admin/eduVideo';
+import { publishErrorMessage, publishedMessage } from '@/lib/admin/publish';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
@@ -58,7 +59,7 @@ function formatWhen(value) {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
-  const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
   const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
   return `${date} · ${time}`;
 }
@@ -233,12 +234,12 @@ export default function FacultyVideosPage() {
     setPublishingId(job.job_id);
     try {
       // POST /jobs/{id}/publish — makes the chapter visible to students. 400s unless sent and unpublished.
-      await eduVideoApi.publish(job.job_id);
-      toast.success('Published. Students can now watch this chapter.');
+      const res = await eduVideoApi.publish(job.job_id);
+      toast.success(publishedMessage(res));
       setConfirmJob(null);
       await reloadAll();
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Could not publish this chapter.'));
+      toast.error(publishErrorMessage(err));
     } finally {
       setPublishingId(null);
     }

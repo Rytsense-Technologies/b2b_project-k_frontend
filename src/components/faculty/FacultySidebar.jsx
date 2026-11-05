@@ -3,6 +3,7 @@
 import RolePortalSidebar from '@/components/shared/RolePortalSidebar';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
 import { useAuth } from '@/hooks/useAuth';
+import { facultyMenuKind } from '@/components/faculty/facultyNav';
 
 const NAV = [
   {
@@ -119,16 +120,14 @@ function buildNav(isHod) {
 }
 
 export default function FacultySidebar() {
-  const { scope } = useFacultyScope();
+  const { scope, error } = useFacultyScope();
   const { role } = useAuth();
-  // Only /faculty/me knows HOD vs Faculty: an HOD's session role can still read "faculty".
-  // Until scope loads, show no links rather than the wrong menu (a definite 'hod' role is safe).
-  const known = Boolean(scope) || role === 'hod';
-  const isHod = scope ? Boolean(scope.is_hod) : role === 'hod';
-  const roleLabel = known ? (isHod ? 'Head of department' : 'Faculty') : '';
+  const menu = facultyMenuKind({ scope, error, role });
+  const isHod = menu === 'hod';
+  const roleLabel = menu ? (isHod ? 'Head of department' : 'Faculty') : '';
   return (
     <RolePortalSidebar
-      nav={known ? buildNav(isHod) : []}
+      nav={menu ? buildNav(isHod) : []}
       ariaLabel="HOD / Faculty"
       tenantTitle="Your department"
       tenantSubtitle={roleLabel}

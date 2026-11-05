@@ -3,6 +3,14 @@ function deleteCookie(name) {
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
 }
 
+// Older builds kept a tutor bearer token here. Nothing reads it now, but it is still a live credential.
+function forgetVoiceToken() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem('voiceQnaToken');
+  } catch { /* private mode */ }
+}
+
 // Non-sensitive session flag on the frontend domain.
 // Next.js middleware reads this to know a session exists.
 // It carries no token value — actual auth is enforced by backend httpOnly cookies
@@ -11,6 +19,7 @@ export function setSessionCookie() {
   if (typeof document === 'undefined') return;
   const secure = window.location.protocol === 'https:' ? '; Secure' : '';
   document.cookie = `pk_session=1; path=/; max-age=2592000; SameSite=Lax${secure}`;
+  forgetVoiceToken();
 }
 
 // Clears all frontend-managed cookies on logout.
@@ -21,6 +30,7 @@ export function clearTokens() {
   deleteCookie('pk_onb');
   deleteCookie('pk_role');
   deleteCookie('pk_tenant');
+  forgetVoiceToken();
 }
 
 // Private helper — reads a single cookie value by name.

@@ -1,4 +1,5 @@
 import { getPermissions, ROLES } from '@/lib/permissions';
+import { getRoleCookie, setRoleCookie } from '@/lib/tokens';
 
 /**
  * Backend `user_type` (from POST /auth/login `user` object) → frontend `role` (pk_role cookie).
@@ -15,6 +16,18 @@ export const BACKEND_USER_TYPE_TO_ROLE = {
   individual: ROLES.STUDENT,
 };
 
+/**
+ * Whether the viewer may change role, deactivate or revoke the invite of `target`.
+ * Only a Super Admin acts on a College Admin (self included); the API answers 403 otherwise.
+ */
+export function canManageUser(viewerRole, target) {
+  if (!target) return false;
+  const raw = String(target.role || target.user_type || '').toLowerCase();
+  const targetIsCollegeAdmin = raw === 'college_admin' || raw === 'admin';
+  if (targetIsCollegeAdmin) return viewerRole === ROLES.SUPERADMIN;
+  return true;
+}
+
 /** Recommended user_type values for backend team */
 export const BACKEND_USER_TYPES = {
   SUPER_ADMIN: 'super_admin',
@@ -28,15 +41,16 @@ export const BACKEND_USER_TYPES = {
 /**
  * Maps API user_type / role string to internal role used in Redux + middleware.
  * Aliases (e.g. hod → faculty portal) are applied before exact ROLES matches.
+ * Unknown or missing values return null, so login can refuse them (see isPortalRole).
  */
 export function mapUserTypeToRole(userType) {
-  if (!userType) return ROLES.STUDENT;
+  if (!userType) return null;
   const key = String(userType).toLowerCase().trim();
   if (Object.prototype.hasOwnProperty.call(BACKEND_USER_TYPE_TO_ROLE, key)) {
     return BACKEND_USER_TYPE_TO_ROLE[key];
   }
   if (Object.values(ROLES).includes(key)) return key;
-  return ROLES.STUDENT;
+  return null;
 }
 
 /** Resolve role from unified login payload (role, user_type on root or user). */
@@ -47,6 +61,12 @@ export function resolveRoleFromLoginPayload(data) {
     data?.user_type ??
     data?.user?.user_type;
   return mapUserTypeToRole(raw);
+}
+
+/** After /auth/me: keep pk_role on the server's role, so a role change reaches the middleware without a new sign-in. */
+export function syncRoleCookie(payload) {
+  const role = resolveRoleFromLoginPayload(payload);
+  if (role && role !== getRoleCookie()) setRoleCookie(role);
 }
 
 /**
@@ -115,7 +135,6 @@ export function buildUserObject(raw) {
     tenant_name: u.tenant_name ?? u.college_name ?? null,
     college_name: u.college_name ?? u.tenant_name ?? null,
     university_name: u.university_name ?? u.university ?? null,
-    plan: u.plan ?? 'free',
   };
 }
 
@@ -131,8 +150,6 @@ export function normalizeLoginSession(data) {
   const permissions =
     data.permissions?.length ? data.permissions : getPermissions(role);
 
-  const plan = isB2bRole(role) ? (user.plan === 'free' ? 'standard' : user.plan) : (user.plan || 'free');
-
   const tenantId =
     data.tenant_id ??
     data.tenantId ??
@@ -140,12 +157,10 @@ export function normalizeLoginSession(data) {
     null;
 
   return {
-    user: { ...user, plan },
+    user,
     role,
     tenant_id: tenantId,
     permissions,
-    plan,
     onboarding_complete: isB2bRole(role),
-    plan_selected: isB2bRole(role) ? true : undefined,
   };
 }

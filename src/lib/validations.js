@@ -5,7 +5,6 @@
 export {
   loginSchema,
   signupSchema,
-  otpSchema,
   profileSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

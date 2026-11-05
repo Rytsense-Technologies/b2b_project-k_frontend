@@ -20,9 +20,10 @@ import { useTabInView } from '@/components/admin/insights';
 import { reportsApi, collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { BandPill } from '@/components/shared/data-viz';
 import { formatMinutes, formatPct } from '@/lib/superadmin/format';
-import { isInterviewOff } from '@/lib/product/interviewOff';
+import { isInterviewEvent } from '@/lib/product/interviewOff';
 
 const REPORT_TYPES = [
   { value: 'institution', label: 'Institution report' },
@@ -122,10 +123,12 @@ export default function ReportsWorkspace({ scope = 'platform', collegeName = '',
   const { data: collegeData } = useAsyncResource(
     () => (isCollege ? Promise.resolve(null) : fetchData(() => collegesApi.list({}))),
     [isCollege],
+    { lookup: 'colleges' },
   );
   const { data: deptData } = useAsyncResource(
-    () => (isCollege && !isDept ? fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })) : Promise.resolve(null)),
+    () => (isCollege && !isDept ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ is_active: true, ...p }))) : Promise.resolve(null)),
     [isCollege, isDept],
+    { lookup: 'departments' },
   );
   const departmentOptions = useMemo(() => asList(deptData, []), [deptData]);
   const collegeOptions = useMemo(() => asList(collegeData, []), [collegeData]);
@@ -147,7 +150,7 @@ export default function ReportsWorkspace({ scope = 'platform', collegeName = '',
   // Columns that are not about learning in Quirri (e.g. an older payload's interview counts) are left out.
   const hasQuiz = rows.some((r) => 'quiz_avg' in r);
   const allColumns = apiColumns
-    .filter((c) => !isInterviewOff(`${c.key} ${c.label || ''}`))
+    .filter((c) => !isInterviewEvent(c.key))
     .map((c) => (c.key === 'avg_score' && hasQuiz ? { key: 'quiz_avg', label: 'Quiz avg', kind: 'score' } : c));
   // One college: its name in every row adds nothing on screen (exports keep it).
   const columns = isCollege && reportType !== 'institution'
@@ -313,7 +316,7 @@ export default function ReportsWorkspace({ scope = 'platform', collegeName = '',
           bodyClassName={null}
         >
           {rows.length ? (
-            <div className="sp-table-wrap">
+            <div className="sp-table-wrap" tabIndex={0} role="region" aria-label="Report preview">
               <table className="sp-table un-table sa-table-tight ad-stack rp-table">
                 <thead>
                   <tr>

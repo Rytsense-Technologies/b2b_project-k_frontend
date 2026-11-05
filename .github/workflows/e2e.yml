@@ -1,0 +1,52 @@
+name: E2E smoke
+
+# Manual: needs a running test stack with the five role users. Point it at a
+# test environment, never production; every test run signs in with real sessions.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Frontend URL of the test environment
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url }}
+      E2E_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
+      E2E_COLLEGE_ADMIN_EMAIL: ${{ secrets.E2E_COLLEGE_ADMIN_EMAIL }}
+      E2E_HOD_EMAIL: ${{ secrets.E2E_HOD_EMAIL }}
+      E2E_FACULTY_EMAIL: ${{ secrets.E2E_FACULTY_EMAIL }}
+      E2E_STUDENT_EMAIL: ${{ secrets.E2E_STUDENT_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke tests
+        run: npm run test:e2e
+
+      - name: Keep the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7

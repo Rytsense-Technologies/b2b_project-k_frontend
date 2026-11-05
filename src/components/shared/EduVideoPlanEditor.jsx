@@ -7,6 +7,7 @@ import { QuirriControlledField } from '@/components/superadmin/quirri-ui';
 import { Icon } from '@/components/student/ui';
 import { eduVideoApi, JOB_STATUS } from '@/lib/api/admin/eduVideo';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
+import { planQualityNotes } from '@/lib/planQuality';
 
 /**
  * visual.type → editable visual fields.
@@ -242,6 +243,7 @@ export default function EduVideoPlanEditor({
     () => (Array.isArray(plan?.scenes) ? plan.scenes : []),
     [plan],
   );
+  const qualityNotes = useMemo(() => planQualityNotes(plan), [plan]);
   const scene = scenes[sceneIndex] || null;
   const visualType = String(scene?.visual?.type || '').toLowerCase().trim() || 'title';
   const fields = useMemo(() => fieldsForVisualType(visualType), [visualType]);
@@ -376,13 +378,6 @@ export default function EduVideoPlanEditor({
         await eduVideoApi.requestChanges(jobId, {
           plan,
           note: note.trim() || undefined,
-          meta: {
-            chapter_title: job?.chapter_title || plan?.title || '',
-            source_filename: job?.source_filename || '',
-            department_name: job?.department_name || '',
-            department_id: job?.department_id || null,
-            sent_to_hod_at: job?.sent_to_hod_at || null,
-          },
         });
         toast.success('Edits sent to your College Admin. They can regenerate the video from these changes.');
       } else {
@@ -657,6 +652,16 @@ export default function EduVideoPlanEditor({
           <div>
             <b>{`Changes requested${job.changes_requested_by ? ` by ${job.changes_requested_by}` : ''}`}</b>
             {job.change_note || 'No note — compare the slides with the video and regenerate.'}
+          </div>
+        </div>
+      ) : null}
+
+      {!loading && !loadError && qualityNotes.length ? (
+        <div className="fa-note is-warn" role="note">
+          <Icon name="alert" size={18} />
+          <div>
+            <b>Check this plan before you approve it</b>
+            {qualityNotes.map((line) => <div key={line}>{line}</div>)}
           </div>
         </div>
       ) : null}

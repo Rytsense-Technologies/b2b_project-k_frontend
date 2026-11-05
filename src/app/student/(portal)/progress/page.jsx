@@ -152,7 +152,7 @@ function Card({ title, sub, action, children, className = '' }) {
       {title ? (
         <div className="spg-card-h">
           <div>
-            <h3>{title}</h3>
+            <h2>{title}</h2>
             {sub ? <p>{sub}</p> : null}
           </div>
           {action}
@@ -167,7 +167,7 @@ function SecHead({ title, sub, action }) {
   return (
     <div className="spg-sec-h">
       <div>
-        <h3>{title}</h3>
+        <h2>{title}</h2>
         {sub ? <p>{sub}</p> : null}
       </div>
       {action}
@@ -329,7 +329,7 @@ function ProgressView() {
               </Card>
               <Card title="Assessment scores">
                 {isLoading ? <Skeleton rows={1} h={120} /> : quizTrend.length >= 2 ? (
-                  <TrendChart data={quizTrend} series={quizSeries} height={200} suffix="%" />
+                  <TrendChart data={quizTrend} series={quizSeries} height={200} suffix="%" label="Assessment scores" />
                 ) : (
                   <p className="spg-note"><Icon name="info" size={18} /> {quizTrend.length ? 'One completed assessment. Two or more show a trend.' : 'No assessments yet. Finish a lecture to 100% to unlock its assessment.'}</p>
                 )}

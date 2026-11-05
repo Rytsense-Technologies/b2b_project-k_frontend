@@ -17,6 +17,7 @@ import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList } from '@/lib/api/superadmin/http';
 import { departmentHod, hodCanReview, loadCollegeStaff } from '@/components/admin/departments/departmentModel';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPct } from '@/lib/superadmin/format';
 import { titleCase } from '@/lib/student/learning';
@@ -36,7 +37,7 @@ function shortDate(iso) {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).replace('Sept', 'Sep');
 }
 
 /** Live "Needs your attention" rows for the hero side panel; a row at 0 is hidden. */
@@ -84,10 +85,15 @@ export default function AdminDashboardPage() {
   );
   // Departments without an HOD use the same rule as Academic structure (departmentHod).
   const { data: deptData } = useAsyncResource(
-    () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
+    () => fetchAllPages((p) => fetchData(() => departmentsApi.list({ is_active: true, ...p }))),
     [tenantId],
+    { lookup: 'departments' },
   );
-  const { data: collegeStaff } = useAsyncResource(() => loadCollegeStaff(tenantId), [tenantId]);
+  const { data: collegeStaff } = useAsyncResource(
+    () => loadCollegeStaff(tenantId),
+    [tenantId],
+    { lookup: 'staff' },
+  );
 
   const totals = overview?.totals;
   const queue = overview?.review_queue;

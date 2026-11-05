@@ -13,6 +13,7 @@ import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
+import SkipLink from '@/components/shared/SkipLink';
 
 export default function SuperAdminLayout({ children }) {
   const pathname = usePathname();
@@ -46,11 +47,12 @@ export default function SuperAdminLayout({ children }) {
 
   return (
     <div className={`app q-app-shell sa-shell ${mobileNavShellClass(navOpen)}`}>
+      <SkipLink />
       <SuperAdminSidebar />
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
 
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
-        <div className="topbar">
+        <header className="topbar">
           <MobileNavButton navOpen={navOpen} onOpen={openNav} />
           <div className="topbar-copy">
             <h1>{meta.title}</h1>
@@ -60,9 +62,9 @@ export default function SuperAdminLayout({ children }) {
             <div className="pm-topbar-slot" />
             <SystemNotificationBell portal="superadmin" />
           </div>
-        </div>
+        </header>
 
-        <main className="content"><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
+        <main className="content" id="main-content" tabIndex={0}><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
       </div>
     </div>
   );

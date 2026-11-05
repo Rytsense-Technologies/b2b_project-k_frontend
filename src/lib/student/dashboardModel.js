@@ -27,13 +27,13 @@ function toTime(iso) {
 export function shortDate(iso) {
   const t = toTime(iso);
   if (!t) return '';
-  return new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  return new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).replace('Sept', 'Sep');
 }
 
 export function longDate(iso) {
   const t = toTime(iso);
   if (!t) return '';
-  return new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 export function formatDuration(seconds) {

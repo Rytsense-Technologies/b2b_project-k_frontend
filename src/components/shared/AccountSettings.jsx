@@ -11,9 +11,7 @@ import { useTabParam } from '@/hooks/useUrlState';
 import useAccountScope from '@/hooks/useAccountScope';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppDispatch } from '@/store/hooks';
-import { clearCredentials } from '@/store/slices/authSlice';
-import { queryClient } from '@/lib/queryClient';
-import { clearTokens } from '@/lib/tokens';
+import { clearClientSession } from '@/lib/auth/signOut';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { QuirriRHFField, QuirriField } from '@/components/superadmin/quirri-ui';
@@ -68,7 +66,7 @@ function formatSignInTime(at) {
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-  });
+  }).replace('Sept', 'Sep');
 }
 
 function avatarInitials(name, email) {
@@ -220,9 +218,7 @@ export default function AccountSettings({ notificationsTab = null, extraTabs = [
 
   /** After a password change the server has already ended this session: clear it here and open login. */
   const signOutHere = () => {
-    clearTokens();
-    dispatch(clearCredentials());
-    queryClient.clear();
+    clearClientSession(dispatch);
     router.replace('/auth/login');
   };
 

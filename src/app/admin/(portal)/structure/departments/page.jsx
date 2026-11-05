@@ -89,7 +89,11 @@ function DepartmentsList() {
   const rows = useMemo(() => asList(data, []), [data]);
   const total = typeof data?.total === 'number' ? data.total : rows.length;
   // Same HOD rule as the department record (departmentHod), so list and detail agree.
-  const { data: collegeStaff } = useAsyncResource(() => loadCollegeStaff(tenantId), [tenantId]);
+  const { data: collegeStaff } = useAsyncResource(
+    () => loadCollegeStaff(tenantId),
+    [tenantId],
+    { lookup: 'staff' },
+  );
   const staffReady = Array.isArray(collegeStaff);
   const hodByDept = useMemo(() => {
     const map = new Map();

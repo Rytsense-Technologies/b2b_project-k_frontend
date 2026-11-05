@@ -73,7 +73,7 @@ const EMPTY_BY_STATUS = {
 function when(iso) {
   const d = new Date(iso || '');
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }).replace('Sept', 'Sep');
 }
 
 /**

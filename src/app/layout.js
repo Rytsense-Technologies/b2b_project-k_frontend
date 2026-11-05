@@ -14,13 +14,12 @@ import '../styles/quirri-accents.css';
 import '../styles/data-viz.css';
 import '../styles/module-analytics.css';
 import '../styles/portal-b2c.css';
-import { dmSans } from '@/lib/student/fonts';
 import Providers from './Providers';
 
-/** Brand Guidelines v1.0 — Poppins only (300, 400, 500, 700). */
+/** Brand Guidelines v1.0 — Poppins only (400, 500, 700). */
 const portalFont = Poppins({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
+  weight: ['400', '500', '700'],
   variable: '--font-portal',
   display: 'swap',
 });
@@ -35,7 +34,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${portalFont.variable} ${dmSans.variable}`}>
+    <html lang="en" className={portalFont.variable}>
       <body className={portalFont.className}>
         <Providers>{children}</Providers>
       </body>

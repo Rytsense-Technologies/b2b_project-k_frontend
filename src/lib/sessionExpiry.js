@@ -15,7 +15,6 @@ export function handleSessionExpired() {
   try { clearTokens(); } catch { /* ignore */ }
   try {
     window.sessionStorage.removeItem('pk_user');
-    window.localStorage.removeItem('voiceQnaToken');
   } catch { /* private mode */ }
   window.location.href = '/auth/login';
 }

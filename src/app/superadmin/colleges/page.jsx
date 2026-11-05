@@ -7,7 +7,7 @@ import { SearchBox, QuirriSelect } from '@/components/superadmin/quirri-ui';
 import {
   ModulePage, ModuleHead, KpiRow, Panel, SegTabs, StatusPill, IconButton, Mono, Pager, Icon, SectionState,
 } from '@/components/shared/module-ui';
-import { MetricList, ModernDonut } from '@/components/shared/data-viz';
+import { DvGridPlaceholder, MetricList, ModernDonut } from '@/components/shared/data-viz';
 import {
   EMPTY_FORM, PAGE_SIZE, NEAR_CAP_PCT, num, collegeStats, SeatBar,
   CollegeFormModal, StatusConfirm, CollegeDrawer,
@@ -16,6 +16,7 @@ import { collegesApi, universitiesApi, departmentsApi, fetchData } from '@/lib/a
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { useUrlState, writeAppUrl } from '@/hooks/useUrlState';
 import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
@@ -50,8 +51,9 @@ function CollegesView() {
 
   // Every university for the filter and the form (API max page size is 100; the old call stopped at 25).
   const { data: uniData } = useAsyncResource(
-    () => fetchData(() => universitiesApi.list({ page: 1, page_size: 100 })),
+    () => fetchAllPages((p) => fetchData(() => universitiesApi.list(p))),
     [],
+    { lookup: 'universities' },
   );
   const universities = useMemo(() => asList(uniData, []), [uniData]);
   const uniOptions = useMemo(
@@ -73,9 +75,9 @@ function CollegesView() {
   );
 
   /* Platform totals: every college (max page size 100) + pending College Admin invites. */
-  const { data: totals, reload: reloadTotals } = useAsyncResource(async () => {
+  const { data: totals, loading: totalsLoading, reload: reloadTotals } = useAsyncResource(async () => {
     const [allRes, pendingRes] = await Promise.all([
-      fetchData(() => collegesApi.list({ page: 1, page_size: 100 })),
+      fetchAllPages((p) => fetchData(() => collegesApi.list(p))),
       fetchData(() => usersApi.getUsers({ role: ROLES.COLLEGE_ADMIN, status: 'pending', pageSize: 1 })).catch(() => null),
     ]);
     const rows = asList(allRes, []);
@@ -89,7 +91,7 @@ function CollegesView() {
   const seat = allColleges.reduce((acc, c) => {
     const s = collegeStats(c);
     if (!s.active) return acc;
-    return { students: acc.students + s.students, cap: acc.cap + s.cap, active: acc.active + 1 };
+    return { students: acc.students + s.seats, cap: acc.cap + s.cap, active: acc.active + 1 };
   }, { students: 0, cap: 0, active: 0 });
   const partial = totals && allColleges.length < totals.total;
   const scope = partial ? `first ${num(allColleges.length)} of ${num(totals.total)} colleges` : 'active colleges';
@@ -173,7 +175,7 @@ function CollegesView() {
       setViewDetailLoading(false);
     }
     try {
-      const deptData = unwrap(await departmentsApi.list({ college_id: college.id, page: 1, pageSize: 100 }));
+      const deptData = await fetchAllPages((p) => fetchData(() => departmentsApi.list({ college_id: college.id, ...p })));
       setViewDepts(asList(deptData, []));
     } catch (err) {
       setViewDepts([]);
@@ -300,7 +302,7 @@ function CollegesView() {
             />
           </Panel>
         </div>
-      ) : null}
+      ) : totalsLoading && !totals ? <DvGridPlaceholder /> : null}
 
       <Panel
         title={url.status === 'true' ? 'Active colleges' : url.status === 'false' ? 'Inactive colleges' : 'All colleges'}
@@ -412,7 +414,7 @@ function CollegesView() {
                       <td data-label="University">{s.university || '—'}</td>
                       <td data-label="Admins" className="num">{num(s.admins)}</td>
                       <td data-label="Departments" className="num">{num(s.depts)}</td>
-                      <td data-label="Seats" className="co-seat-cell"><SeatBar students={s.students} cap={s.cap} pct={s.pct} compact /></td>
+                      <td data-label="Seats" className="co-seat-cell"><SeatBar students={s.seats} cap={s.cap} pct={s.pct} compact /></td>
                       <td data-label="Status"><StatusPill active={s.active} /></td>
                       <td className="sa-actions-cell">
                         <div className="un-actions">

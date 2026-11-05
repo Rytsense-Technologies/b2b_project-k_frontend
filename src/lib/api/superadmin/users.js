@@ -1,5 +1,6 @@
 import api from '@/lib/axios';
 import { buildParams } from './http';
+import { promotionBody } from '@/lib/admin/promotion';
 
 /**
  * Live: /api/v1/users (PRJ-127, PRJ-141).
@@ -108,9 +109,10 @@ export const usersApi = {
   /** Cancel an invite that was never accepted (removes the pending account). */
   revokeInvite: (userId) => api.post(`/users/${userId}/revoke-invite`),
 
-  /** Yearly rollover: +1 year for every active student (capped per student). dryRun previews counts only. */
-  bulkPromoteYear: ({ dryRun = true, tenantId } = {}) =>
-    api.post('/users/bulk-promote-year', { dry_run: dryRun, ...(tenantId ? { tenant_id: tenantId } : {}) }),
+  /** Yearly rollover: +1 year for every active student (capped per student). dryRun previews counts only;
+   * repeatConfirmed is needed when the college was already promoted this academic year. */
+  bulkPromoteYear: ({ dryRun = true, repeatConfirmed = false, tenantId } = {}) =>
+    api.post('/users/bulk-promote-year', promotionBody({ dryRun, repeatConfirmed, tenantId })),
 
   resendInvite: (emailOrUser) => {
     const email = typeof emailOrUser === 'string'

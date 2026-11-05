@@ -261,6 +261,25 @@ export function mcqSetState(doc) {
   return 'awaiting';
 }
 
+/**
+ * Owner decision 9: attempts already taken on this question set (staff MCQ document `attempt_count`).
+ * null when the backend sends no count, so the UI never shows a guessed number.
+ */
+export function mcqAttemptCount(doc) {
+  const raw = doc?.attempt_count;
+  if (raw == null || raw === '') return null;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+/** Warning line shown before regenerating or editing an approved quiz. Students keep scores and stay locked. */
+export function mcqAttemptWarning(count) {
+  if (count == null) return null;
+  if (count === 0) return 'No student has attempted this quiz yet.';
+  if (count === 1) return '1 student attempt already exists. That student keeps their score and stays locked.';
+  return `${count} student attempts already exist. Those students keep their scores and stay locked.`;
+}
+
 /** Human label for a question type: "true_false" → "True / False". */
 export function questionTypeLabel(type) {
   const t = String(type || '').toLowerCase();

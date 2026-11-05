@@ -104,7 +104,7 @@
 .sl-table td{padding:16px;border-top:1px solid var(--sb-hairline);vertical-align:middle}
 .sl-table .sl-nowrap{white-space:nowrap}
 .sl-table td b{font-weight:500}
-.sl-table .sl-n{width:56px;color:var(--sb-index)}
+.sl-table .sl-n{width:56px;color:var(--sb-index-text)}
 .sl-table .sl-num{text-align:right}
 
 /* ==================================================== My subjects (student-subjects-redesign.md)
@@ -207,7 +207,7 @@
   min-height:76px;padding:16px 24px;background:var(--panel,#fff);border-radius:var(--radius-card,8px);box-shadow:var(--sb-shadow-row,0 1px 2px rgba(0,0,0,.12));overflow:hidden;
 }
 .sl-crow:hover{background:var(--mist,#F8F8F9)}
-.sl-crow-n{font-size:14px;font-weight:500;color:var(--sb-index);font-variant-numeric:tabular-nums}
+.sl-crow-n{font-size:14px;font-weight:500;color:var(--sb-index-text);font-variant-numeric:tabular-nums}
 .sl-crow-main{min-width:0;display:flex;flex-direction:column;gap:4px}
 .sl-crow-link{font-size:16px;line-height:26px;font-weight:400;color:var(--sb-ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sl-crow-link::after{content:"";position:absolute;inset:0;z-index:0}
@@ -285,7 +285,7 @@
 .sl-chapter:hover{background:var(--mist,#F8F8F9)}
 .sl-chapter[aria-current="true"]{background:var(--sb-wash);box-shadow:none}
 .sl-chapter[aria-current="true"] .sl-chapter-t b{color:var(--sb-teal)}
-.sl-chapter-n{font-size:14px;font-weight:500;color:var(--sb-index);font-variant-numeric:tabular-nums}
+.sl-chapter-n{font-size:14px;font-weight:500;color:var(--sb-index-text);font-variant-numeric:tabular-nums}
 .sl-chapter-t{min-width:0;display:flex;flex-direction:column;gap:4px}
 .sl-chapter-t b{font-size:14px;font-weight:500;color:var(--sb-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sl-chapter-t small{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--sb-muted)}
@@ -395,7 +395,7 @@
 .sl-qitem.is-current{background:var(--sb-wash)}
 .sl-qitem.is-current::before{content:none}
 .sl-qitem.is-current .sl-qitem-t b{color:var(--sb-teal)}
-.sl-qitem-n{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mist,#F8F8F9);color:var(--sb-index);font-size:14px;font-weight:500}
+.sl-qitem-n{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mist,#F8F8F9);color:var(--sb-index-text);font-size:14px;font-weight:500}
 .sl-qitem.is-done .sl-qitem-n{background:var(--sb-teal);color:#fff}
 .sl-qitem-n.is-right,.sl-qitem.is-right .sl-qitem-n{background:var(--success-soft);color:var(--color-success)}
 .sl-qitem-n.is-wrong,.sl-qitem.is-wrong .sl-qitem-n{background:var(--error-soft);color:var(--color-error)}

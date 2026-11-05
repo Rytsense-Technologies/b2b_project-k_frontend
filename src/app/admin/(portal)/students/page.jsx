@@ -38,12 +38,14 @@ import { BAND_NONE, BRAND_CTA, PROGRESS } from '@/lib/constants/theme';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { usersApi } from '@/lib/api/superadmin/users';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
-import { unwrap, asList } from '@/lib/api/superadmin/http';
+import { apiErrorMessage, unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { academicsApi } from '@/lib/api/superadmin/academics';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
 import { isDeactivated, isPending, statusVariant, userStatusLabel } from '@/lib/admin/userStatus';
+import { isAlreadyPromoted } from '@/lib/admin/promotion';
 import { studentDepartmentChangeSchema, tenantStudentCreateSchema } from '@/lib/validation';
 import { getApiErrorMessage } from '@/lib/api/errors';
 
@@ -64,7 +66,7 @@ function dateLabel(value) {
   if (!value) return 'Never';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 function lastActive(user) {
@@ -72,7 +74,7 @@ function lastActive(user) {
   if (!value) return 'Never';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'Never';
-  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).replace('Sept', 'Sep');
 }
 
 /* ------------------------------------------------------------------ form */
@@ -335,15 +337,23 @@ function PromoteYearModal({ open, onClose, onDone }) {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Already promoted this academic year: the server wants an explicit repeat confirmation.
+  const [repeat, setRepeat] = useState(false);
 
   useEffect(() => {
     if (!open) return undefined;
     let live = true;
     setPreview(null);
     setError('');
+    setRepeat(false);
     setBusy(true);
     usersApi.bulkPromoteYear({ dryRun: true })
-      .then((res) => { if (live) setPreview(unwrap(res)); })
+      .then((res) => {
+        if (!live) return;
+        const data = unwrap(res);
+        setPreview(data);
+        setRepeat(isAlreadyPromoted({ preview: data }));
+      })
       .catch((err) => { if (live) setError(getApiErrorMessage(err, 'Could not prepare the preview.')); })
       .finally(() => { if (live) setBusy(false); });
     return () => { live = false; };
@@ -352,11 +362,16 @@ function PromoteYearModal({ open, onClose, onDone }) {
   const confirm = async () => {
     setBusy(true);
     try {
-      const res = unwrap(await usersApi.bulkPromoteYear({ dryRun: false }));
+      const res = unwrap(await usersApi.bulkPromoteYear({ dryRun: false, repeatConfirmed: repeat }));
       toast.success(`${countLabel(res?.promoted_count ?? 0)} student${res?.promoted_count === 1 ? '' : 's'} moved to the next year`);
       await onDone();
       onClose();
     } catch (err) {
+      if (!repeat && isAlreadyPromoted({ error: err })) {
+        // Someone promoted this college meanwhile: show the warning and let the admin decide.
+        setRepeat(true);
+        return;
+      }
       toast.error(getApiErrorMessage(err, 'Could not promote students'));
     } finally {
       setBusy(false);
@@ -375,7 +390,7 @@ function PromoteYearModal({ open, onClose, onDone }) {
           <button type="button" className="sd-btn sd-btn--ghost" onClick={onClose} disabled={busy}>Cancel</button>
           <div className="right">
             <button type="button" className="sd-btn sd-btn--teal" onClick={confirm} disabled={busy || !preview || !promoted}>
-              {busy && preview ? 'Promoting…' : promoted ? `Promote ${countLabel(promoted)} student${promoted === 1 ? '' : 's'}` : 'Promote'}
+              {busy && preview ? 'Promoting…' : promoted ? `${repeat ? 'Promote again: ' : 'Promote '}${countLabel(promoted)} student${promoted === 1 ? '' : 's'}` : 'Promote'}
             </button>
           </div>
         </>
@@ -386,6 +401,12 @@ function PromoteYearModal({ open, onClose, onDone }) {
         {!preview && !error ? <SectionState title="Checking every student…" /> : null}
         {preview ? (
           <>
+            {repeat ? (
+              <ConfirmNote danger title="Already promoted this academic year.">
+                Students in your college were already moved up once this academic year. Promote again only if
+                that run was a mistake or incomplete: everyone below their final year moves up one more year.
+              </ConfirmNote>
+            ) : null}
             <ConfirmNote title="Nothing has changed yet.">
               This is a preview. Each student moves up one year, never past their own programme length.
             </ConfirmNote>
@@ -442,8 +463,8 @@ function StudentsWorkspace() {
     return () => clearTimeout(t);
   }, [searchInput, url.q, setUrl]);
 
-  const { data: deptData } = useAsyncResource(
-    () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
+  const { data: deptData, error: deptError, reload: reloadDepts } = useAsyncResource(
+    () => fetchAllPages((p) => fetchData(() => departmentsApi.list({ is_active: true, ...p }))),
     [tenantId],
   );
   const departments = useMemo(() => asList(deptData, []), [deptData]);
@@ -459,6 +480,7 @@ function StudentsWorkspace() {
   const { data: programData } = useAsyncResource(
     () => fetchData(() => academicsApi.listPrograms(url.dept ? { department_id: url.dept } : {})),
     [tenantId, url.dept],
+    { lookup: 'programmes' },
   );
   const programOptions = useMemo(
     () => asList(programData, []).filter((p) => p.is_active !== false).map((p) => ({ value: p.id, label: p.code ? `${p.name} (${p.code})` : p.name })),
@@ -467,6 +489,7 @@ function StudentsWorkspace() {
   const { data: programDetail } = useAsyncResource(
     () => (url.prog ? fetchData(() => academicsApi.getProgram(url.prog)) : Promise.resolve(null)),
     [url.prog],
+    { lookup: 'semesters' },
   );
   const semesterOptions = useMemo(
     () => (programDetail?.semesters || []).filter((x) => x.is_active !== false).map((x) => ({ value: x.id, label: x.name })),
@@ -499,7 +522,10 @@ function StudentsWorkspace() {
     const [active, pending, inactive] = await Promise.all([one('active'), one('pending'), one('inactive')]);
     return { active, pending, inactive };
   }, [tenantId]);
-  const reloadAll = useCallback(async () => { await Promise.all([reload(), reloadCounts()]); }, [reload, reloadCounts]);
+  // XB-005: callers fire this and move on (onImported, onSaved, after create). A refresh that fails
+  // or is aborted by navigation (Firefox rejects aborted XHRs) must not surface as an unhandled
+  // rejection or as "Failed to update status"; each list keeps its own load error state.
+  const reloadAll = useCallback(async () => { await Promise.allSettled([reload(), reloadCounts()]); }, [reload, reloadCounts]);
 
   const students = useMemo(() => {
     if (!data) return [];
@@ -794,6 +820,14 @@ function StudentsWorkspace() {
                 note={unplaced ? `${countLabel(unplaced)} of ${countLabel(everyone)} student${everyone === 1 ? '' : 's'} ${unplaced === 1 ? 'is' : 'are'} in an inactive department or not placed in one yet, so ${unplaced === 1 ? 'is' : 'are'} not counted here.` : undefined}
                 empty="No departments yet. Create one under Academic structure."
               />
+            ) : deptError ? (
+              <SectionState
+                tone="err"
+                title="Could not load departments"
+                action={<button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => reloadDepts().catch(() => {})}>Try again</button>}
+              >
+                {apiErrorMessage(deptError, 'Try again in a moment.')}
+              </SectionState>
             ) : <p className="dv-empty">Loading…</p>}
           </Panel>
         </div>

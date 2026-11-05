@@ -6,6 +6,8 @@ import { facultyDirectoryApi } from '@/lib/api/faculty/directory';
 // One /faculty/me request per page load, shared by the sidebar and pages.
 let cached = null;
 let inflight = null;
+/** Mounted hooks (sidebar, gate, page) move together when Retry succeeds or fails. */
+const listeners = new Set();
 
 function load(force = false) {
   if (force) {
@@ -32,13 +34,30 @@ export function useFacultyScope() {
 
   useEffect(() => {
     let alive = true;
+    const apply = (next) => { setScope(next.scope); setError(next.error); };
+    listeners.add(apply);
     load()
       .then((data) => { if (alive) setScope(data); })
       .catch((err) => { if (alive) setError(err); });
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      listeners.delete(apply);
+    };
   }, []);
 
-  return { scope, error, reload: () => load(true).then((d) => { setScope(d); return d; }) };
+  return { scope, error, reload };
+}
+
+function reload() {
+  return load(true)
+    .then((data) => {
+      listeners.forEach((apply) => apply({ scope: data, error: null }));
+      return data;
+    })
+    .catch((err) => {
+      listeners.forEach((apply) => apply({ scope: null, error: err }));
+      throw err;
+    });
 }
 
 /** Shared, cached GET /faculty/me loader (same cache as the hook). */

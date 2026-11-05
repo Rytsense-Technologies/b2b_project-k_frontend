@@ -30,6 +30,7 @@ import { Meter, RANGES, minutesLabel, useTabInView } from '@/components/admin/in
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { apiErrorMessage, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { formatPct } from '@/lib/superadmin/format';
 import { useTabParam, useUrlSearch, useUrlState } from '@/hooks/useUrlState';
 import { isInterviewOff } from '@/lib/product/interviewOff';
@@ -181,9 +182,10 @@ export default function InsightsView({
 
   const { data: deptData } = useAsyncResource(
     () => (college
-      ? fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 }))
+      ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ is_active: true, ...p })))
       : Promise.resolve(null)),
     [],
+    { lookup: 'departments' },
   );
   const departments = useMemo(() => asList(deptData, []), [deptData]);
 
@@ -445,6 +447,7 @@ export default function InsightsView({
                 <ColumnChart
                   data={subjects.filter((s) => s.avg_score != null).map((s) => ({ label: s.code || s.subject, value: Math.round(s.avg_score) }))}
                   name="Avg score"
+                  label="Average quiz score"
                   colorBy="band"
                   suffix="%"
                   height={200}

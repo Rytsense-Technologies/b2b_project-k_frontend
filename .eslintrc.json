@@ -1,0 +1,22 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals"],
+  "settings": {
+    "import/resolver": {
+      "typescript": { "alwaysTryTypes": false, "project": "./jsconfig.json" }
+    }
+  },
+  "rules": {
+    "import/no-unresolved": "error"
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next*/",
+    "public/",
+    "assets/",
+    "ProjectK_Client_Demo/",
+    "client_UI_final/",
+    "new_updated_design_four/",
+    "graphify-out/"
+  ]
+}

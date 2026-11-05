@@ -107,7 +107,7 @@ function ResetPasswordForm() {
                   />
                 </div>
                 <button className="btn btn-primary btn-block" type="submit" disabled={loading || !token}>
-                  {loading ? 'Saving…' : 'Save & sign in'}
+                  {loading ? 'Saving…' : 'Save password'}
                 </button>
               </form>
               <p style={{ marginTop: 26, paddingTop: 20, borderTop: '1px solid var(--line)', textAlign: 'left' }}>

@@ -24,11 +24,12 @@ import SystemNotificationInbox from '@/components/shared/SystemNotificationInbox
 import { notificationsApi, collegesApi, fetchData } from '@/lib/api/superadmin/modules';
 import { asList, apiErrorMessage, fetchOptional } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { useLiveRefresh, useTimeAgo } from '@/hooks/useLiveRefresh';
 import { useUrlState, useTabParam } from '@/hooks/useUrlState';
 import { useDebouncedUrlSearch, pageParam } from '@/lib/superadmin/listState';
 import { formatIndianPhone } from '@/lib/superadmin/format';
-import { withoutInterview } from '@/lib/product/interviewOff';
+import { isInterviewEvent } from '@/lib/product/interviewOff';
 import { emailChannelQuery, isWhatsApp, withoutWhatsApp } from '@/lib/product/whatsappOff';
 
 const PAGE_SIZE = 10;
@@ -99,7 +100,7 @@ function Pill({ tone, children }) {
  */
 function RulesTab({ collegeId, onCollege }) {
   const { data: collegesData, error: collegesError } = useAsyncResource(
-    () => fetchData(() => collegesApi.list({ page: 1, page_size: 100 })),
+    () => fetchAllPages((p) => fetchData(() => collegesApi.list(p))),
     [],
   );
   const colleges = useMemo(
@@ -165,12 +166,12 @@ function NotificationsView() {
   const ago = useTimeAgo(useLiveRefresh(() => reloadAll({ silent: true })));
 
   const events = useMemo(
-    () => withoutInterview(asList(eventsData, []), (e) => `${e.id || ''} ${e.event || ''} ${e.name || ''}`),
+    () => asList(eventsData, []).filter((e) => !isInterviewEvent(`${e.id || ''} ${e.event || ''}`)),
     [eventsData],
   );
   const deliveries = useMemo(
     () => withoutWhatsApp(
-      withoutInterview(asList(deliveriesData, []), (row) => `${row.event || ''} ${row.event_label || ''}`),
+      asList(deliveriesData, []).filter((row) => !isInterviewEvent(row.event)),
       (row) => row.channel,
     ),
     [deliveriesData],

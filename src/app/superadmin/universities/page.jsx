@@ -11,14 +11,16 @@ import { SearchBox, QuirriRHFField, AssignedCodeField, IndiaLocationFields } fro
 import {
   ModulePage, ModuleHead, KpiRow, Panel, SegTabs, StatusPill, IconButton, Mono, Pager, Icon, SectionState,
 } from '@/components/shared/module-ui';
-import { MetricListCard } from '@/components/shared/data-viz';
+import { DvGridPlaceholder, MetricListCard } from '@/components/shared/data-viz';
 import { useUrlState, writeAppUrl } from '@/hooks/useUrlState';
 import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
 } from '@/lib/superadmin/listState';
 import { universitiesApi, collegesApi, fetchData } from '@/lib/api/superadmin/modules';
-import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
+import { asList, apiErrorMessage, unwrap } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { codeTakenMessage } from '@/lib/superadmin/savedCode';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import {
   universityCreateSchema,
   universityUpdateSchema,
@@ -67,6 +69,7 @@ function UniversityFormModal({
     control,
     handleSubmit,
     setValue,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
@@ -103,7 +106,9 @@ function UniversityFormModal({
       onSaved();
       onClose();
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to save university'));
+      const taken = codeTakenMessage(err);
+      if (taken) setError('code', { type: 'server', message: taken }, { shouldFocus: true });
+      else toast.error(apiErrorMessage(err, 'Failed to save university'));
     } finally {
       setSaving(false);
     }
@@ -392,8 +397,8 @@ function UniversitiesView() {
   );
 
   /* Platform totals: every university (API max page size 100), not just this page. */
-  const { data: allData, reload: reloadAll } = useAsyncResource(
-    () => fetchData(() => universitiesApi.list({ page: 1, page_size: 100 })),
+  const { data: allData, loading: allLoading, reload: reloadAll } = useAsyncResource(
+    () => fetchAllPages((p) => fetchData(() => universitiesApi.list(p))),
     [],
   );
   const all = useMemo(() => asList(allData, []), [allData]);
@@ -532,7 +537,7 @@ function UniversitiesView() {
           <MetricListCard title="Students by university" items={studentsBars} />
           <MetricListCard title="Colleges by university" items={collegeBars} />
         </div>
-      ) : null}
+      ) : allLoading && !allData ? <DvGridPlaceholder /> : null}
 
       <Panel
         title={url.status === 'true' ? 'Active universities' : url.status === 'false' ? 'Inactive universities' : 'All universities'}

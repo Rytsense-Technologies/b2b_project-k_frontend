@@ -14,6 +14,7 @@ const ICON = {
   regenerated: 'refresh',
   changes_dismissed: 'x',
   published: 'tick',
+  unpublished: 'x',
   comment: 'chat',
 };
 const ROLE = { college_admin: 'College Admin', hod: 'HOD', faculty: 'Faculty', superadmin: 'Super Admin' };

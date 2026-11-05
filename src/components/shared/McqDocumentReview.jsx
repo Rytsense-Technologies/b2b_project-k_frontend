@@ -10,7 +10,7 @@ import { useRetryAfter } from '@/hooks/useRetryAfter';
 import {
   mcqApi, mcqErrorMessage, mcqGenerateErrorMessage, mcqSetState, optionEntries,
   questionTypeLabel, waitForMcqGeneration,
-  isApproveVersionConflict, isLiveSetConfirmError,
+  isApproveVersionConflict, isLiveSetConfirmError, mcqAttemptCount, mcqAttemptWarning,
 } from '@/lib/api/mcq';
 
 const MAX_QUESTIONS = 100;
@@ -25,7 +25,7 @@ function statusText(status) {
 function editedLabel(question) {
   if (!question?.edited_at) return null;
   try {
-    return new Date(question.edited_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(question.edited_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
   } catch {
     return 'Edited';
   }
@@ -297,6 +297,9 @@ export default function McqDocumentReview({
     : [];
   const approved = Boolean(doc?.approved_at);
   const hasEdits = questions.some((q) => q?.edited_at);
+  // Owner decision 9: before a live set changes, staff see how many attempts already exist.
+  const attemptNote = approved ? mcqAttemptWarning(mcqAttemptCount(doc)) : null;
+  const attemptLine = attemptNote ? <><br /><b className="fa-attempt-note">{attemptNote}</b></> : null;
   const canWrite = canGenerate && doc?.status === 'ready';
   const canAdd = canWrite && questions.length < MAX_QUESTIONS;
 
@@ -304,7 +307,7 @@ export default function McqDocumentReview({
     <div className="fa-mcq mcq-review animate-fade-in">
       <div className="fa-mcq-head">
         <div>
-          <h3>Question set</h3>
+          <h2>Question set</h2>
           <p>
             {questions.length} question{questions.length === 1 ? '' : 's'} with answer key
             {doc?.title && doc.title !== chapterTitle ? ` · ${doc.title}` : null}
@@ -450,6 +453,7 @@ export default function McqDocumentReview({
       >
         <ConfirmNote danger icon="alert" title="Students will not see this quiz until you approve it again">
           This question set is live. Changing it takes it offline. After you save, review the new version and approve it.
+          {attemptLine}
         </ConfirmNote>
       </QuirriModal>
 
@@ -474,6 +478,7 @@ export default function McqDocumentReview({
           {hasEdits
             ? 'Regenerating replaces every question, including ones you edited, and clears the approval. Students cannot take this quiz until the new set is approved again.'
             : 'The current questions are replaced and the approval is cleared. Students cannot take this quiz until the new set is approved again.'}
+          {attemptLine}
         </ConfirmNote>
       </QuirriModal>
     </div>

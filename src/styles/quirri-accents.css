@@ -98,9 +98,9 @@ tr:nth-child(even) .pm-person .pm-av{background:var(--accent-soft);color:var(--a
 .rowcard__ix{color:var(--accent-text)}
 
 /* Panel headings: short orange rule before the title */
-.sp-panel-h h3,
+.sp-panel-h :is(h2,h3),
 .card-h h3{display:flex;align-items:center;gap:8px}
-.sp-panel-h h3::before,
+.sp-panel-h :is(h2,h3)::before,
 .card-h h3::before{content:"";flex:none;width:4px;height:18px;border-radius:var(--radius-full);background:var(--highlight)}
 
 /* ---------- Progress = green, focus = orange ---------- */

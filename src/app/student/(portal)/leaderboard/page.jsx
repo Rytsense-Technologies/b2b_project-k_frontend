@@ -5,7 +5,7 @@ import Link from 'next/link';
 import QuirriModal from '@/components/superadmin/QuirriModal';
 import { Icon, SectionState } from '@/components/student/ui';
 import { BANDS, BandPill, ModernDonut, bandFor } from '@/components/shared/data-viz';
-import { leaderboardApi } from '@/lib/api/leaderboard';
+import { LEADERBOARD_REFRESH_MS, leaderboardApi } from '@/lib/api/leaderboard';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState } from '@/hooks/useUrlState';
@@ -14,14 +14,13 @@ import '@/styles/student-leaderboard.css';
 
 /*
  * Student leaderboard (SOW §6.4.4): cohort ranking on correct MCQ scores,
- * refreshed live (every 15 s and whenever the tab regains focus) so a new
+ * refreshed live (every 60 s and whenever the tab regains focus) so a new
  * submission shows up without a reload. Students always see their own
  * position, even outside the top list.
  * Layout — quirri-b2c-student-ui skill (15 Oct 2026): your-position white card ·
  * teal filter bar (applies on Search / Enter, Clear resets) · meta line + stat cluster ·
  * score bands card · stacked white rows · pager (10 per page). No teal hero (filters exist).
  */
-const REFRESH_MS = 15000;
 const LIMIT = 100;
 const PAGE_SIZE = 10;
 
@@ -41,7 +40,7 @@ function formatDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).replace('Sept', 'Sep');
 }
 
 function timeAgo(ts) {
@@ -172,7 +171,7 @@ function LeaderboardInner() {
       if (document.visibilityState !== 'visible' || Date.now() - lastFetch.current < 5000) return;
       reload().catch(() => {});
     };
-    const id = setInterval(refresh, REFRESH_MS);
+    const id = setInterval(refresh, LEADERBOARD_REFRESH_MS);
     const clock = setInterval(() => setTick((t) => t + 1), 15000);
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('focus', refresh);

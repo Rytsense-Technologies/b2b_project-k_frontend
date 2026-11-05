@@ -37,11 +37,12 @@ import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/mod
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, unwrap, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { collegeOptionLabel } from '@/lib/superadmin/format';
 import { nextCodeFromList, nextCodeFor, codesOf } from '@/lib/ids/uniqueSeries';
 import { departmentCreateSchema, departmentUpdateSchema } from '@/lib/validation';
 import { ROLES } from '@/lib/permissions';
-import { MetricList, ModernDonut, dataColor } from '@/components/shared/data-viz';
+import { DvGridPlaceholder, MetricList, ModernDonut, dataColor } from '@/components/shared/data-viz';
 import { useUrlState } from '@/hooks/useUrlState';
 import {
   useDebouncedUrlSearch, ACTIVE_FILTERS, activeParam, pageParam, totalOf,
@@ -75,26 +76,13 @@ function personLabel(user) {
 
 async function loadHodOptions(collegeId) {
   if (!collegeId) return [];
-  const [facultyRes, hodRes] = await Promise.all([
-    usersApi.getUsers({
-      page: 1,
-      pageSize: 100,
-      role: ROLES.FACULTY,
-      tenantId: collegeId,
-      is_active: true,
-    }),
-    usersApi.getUsers({
-      page: 1,
-      pageSize: 100,
-      role: ROLES.HOD,
-      tenantId: collegeId,
-      is_active: true,
-    }),
-  ]);
-  const faculty = asList(unwrap(facultyRes)?.items || unwrap(facultyRes), []);
-  const hods = asList(unwrap(hodRes)?.items || unwrap(hodRes), []);
+  const usersInRole = (role) => fetchAllPages(
+    (p) => fetchData(() => usersApi.getUsers({ ...p, role, tenantId: collegeId, is_active: true })),
+  );
+  // Only HOD accounts can head a department (PATCH /departments answers 422 for anyone else).
+  const hods = (await usersInRole(ROLES.HOD)).items;
   const byId = new Map();
-  [...faculty, ...hods].forEach((u) => {
+  hods.forEach((u) => {
     if (u?.id) byId.set(u.id, u);
   });
   return [...byId.values()].map((u) => ({ value: u.id, label: personLabel(u) }));
@@ -252,7 +240,7 @@ function DepartmentFormModal({
                 disabled={!collegeId || hodLoading}
                 placeholder={hodLoading ? 'Loading staff…' : 'Optional — type to search'}
                 options={hodOptions}
-                emptyMessage={collegeId ? 'No faculty or HOD for this college' : 'Select a college first'}
+                emptyMessage={collegeId ? 'No HOD accounts in this college yet' : 'Select a college first'}
                 full
               />
             )}
@@ -399,8 +387,9 @@ function DepartmentsView() {
 
   // All colleges, inactive ones too (marked), so their departments can still be found.
   const { data: collegeData } = useAsyncResource(
-    () => fetchData(() => collegesApi.list({ page: 1, page_size: 100 })),
+    () => fetchAllPages((p) => fetchData(() => collegesApi.list(p))),
     [],
+    { lookup: 'colleges' },
   );
   const colleges = useMemo(() => asList(collegeData, []), [collegeData]);
   const activeColleges = useMemo(() => colleges.filter((c) => c.is_active !== false), [colleges]);
@@ -419,8 +408,8 @@ function DepartmentsView() {
   );
 
   /* Summary over every department (max page size 100) of the chosen college, or the platform. */
-  const { data: allData, reload: reloadAll } = useAsyncResource(
-    () => fetchData(() => departmentsApi.list({ college_id: url.college || undefined, page: 1, pageSize: 100 })),
+  const { data: allData, loading: allLoading, reload: reloadAll } = useAsyncResource(
+    () => fetchAllPages((p) => fetchData(() => departmentsApi.list({ college_id: url.college || undefined, ...p }))),
     [url.college],
   );
   const all = useMemo(() => asList(allData, []), [allData]);
@@ -573,7 +562,7 @@ function DepartmentsView() {
             ) : null}
           </Panel>
         </div>
-      ) : null}
+      ) : allLoading && !allData ? <DvGridPlaceholder /> : null}
 
       <Panel
         title={url.status === 'true' ? 'Active departments' : url.status === 'false' ? 'Inactive departments' : 'All departments'}

@@ -29,6 +29,7 @@ export default function PasswordInput({
 }) {
   const [show, setShow] = useState(false);
   const inputProps = register ? { ...register } : { value, onChange };
+  const errorId = id ? `${id}-error` : undefined;
 
   return (
     <div>
@@ -40,6 +41,8 @@ export default function PasswordInput({
           placeholder={placeholder}
           autoComplete={autoComplete}
           maxLength={maxLength}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? errorId : undefined}
           className={`${inputClassName}${error ? ' invalid' : ''}`.trim()}
         />
         <button
@@ -52,7 +55,7 @@ export default function PasswordInput({
           {show ? EYE_OFF : EYE}
         </button>
       </div>
-      {error ? <div className="err">{error}</div> : null}
+      {error ? <div id={errorId} className="err" role="alert">{error}</div> : null}
     </div>
   );
 }

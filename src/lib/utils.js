@@ -7,13 +7,24 @@ export function cn(...inputs) {
 }
 
 /** Format date to readable string */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuid(value) {
+  return UUID_RE.test(String(value ?? ''));
+}
+
+/** What a page's not-found branch expects, for an id that cannot exist. */
+export function notFoundError() {
+  return Object.assign(new Error('Not found'), { response: { status: 404 } });
+}
+
 export function formatDate(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  });
+  }).replace('Sept', 'Sep');
 }
 
 /** Format duration in minutes/seconds */
@@ -29,13 +40,6 @@ export function getScoreColor(score) {
   if (score >= 80) return '#46921A';
   if (score >= 60) return '#2C74E0';
   return '#F5821F';
-}
-
-/** Get plan rank */
-export const PLAN_RANK = { free: 0, standard: 1, premium: 2 };
-
-export function isPlanSufficient(userPlan, requiredPlan) {
-  return PLAN_RANK[userPlan] >= PLAN_RANK[requiredPlan];
 }
 
 /** Truncate text */

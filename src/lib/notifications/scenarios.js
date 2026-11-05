@@ -151,6 +151,8 @@ function portalKey(portal) {
   return portal === 'college_admin' ? 'admin' : portal;
 }
 
+const MCQ_EVENTS = new Set(['mcq_ready_for_review', 'assessment_available']);
+
 /** Relative product paths only — never an open redirect from `link`. */
 export function safeInboxLink(link) {
   const path = String(link || '').trim();
@@ -174,11 +176,13 @@ export function inboxItemHref(row, portal) {
       return `/student/subjects?chapter=${q}`;
     }
     if (key === 'faculty') {
-      if (event === 'mcq_ready_for_review') return `/faculty/mcq?job=${q}`;
+      if (event === 'assessment_result') return alertHref(event, key);
+      if (MCQ_EVENTS.has(event)) return `/faculty/mcq?job=${q}`;
       return `/faculty/videos?job=${q}`;
     }
     if (key === 'admin') {
-      if (event === 'mcq_ready_for_review') return `/admin/mcq?job=${q}`;
+      if (event === 'assessment_result') return alertHref(event, key);
+      if (MCQ_EVENTS.has(event)) return `/admin/mcq?job=${q}`;
       return '/admin/content';
     }
     if (key === 'superadmin') return '/superadmin/content';
@@ -201,7 +205,7 @@ export function dayHeading(iso) {
   const yest = dayKey(new Date(Date.now() - 86400000).toISOString());
   if (key === today) return 'Today';
   if (key === yest) return 'Yesterday';
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ }).replace('Sept', 'Sep');
 }
 
 export function timeOf(iso) {

@@ -6,15 +6,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import QuirriLogo from '@/components/superadmin/QuirriLogo';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { clearCredentials } from '@/store/slices/authSlice';
 import { selectSidebarOpen, toggleSidebar } from '@/store/slices/uiSlice';
-import { queryClient } from '@/lib/queryClient';
-import { authApi } from '@/lib/api/auth';
-import { clearTokens } from '@/lib/tokens';
-import { clearFacultyScopeCache } from '@/hooks/useFacultyScope';
+import { signOut } from '@/lib/auth/signOut';
 import { useAuth } from '@/hooks/useAuth';
 import { titleCase } from '@/lib/student/learning';
-import toast from 'react-hot-toast';
 
 function accountLinkCurrent(href, pathname, tab) {
   try {
@@ -110,19 +105,7 @@ function RolePortalSidebarInner({
   const tenantSub = u?.department || tenantSubtitle;
   const tenantInitials = getInitials(tenantName, displayEmail, fallbackInitials);
 
-  const handleLogout = async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      /* ignore */
-    }
-    clearTokens();
-    clearFacultyScopeCache();
-    dispatch(clearCredentials());
-    queryClient.clear();
-    toast.success('Logged out successfully');
-    router.push(loginPath);
-  };
+  const handleLogout = () => signOut({ dispatch, router, loginPath });
 
   const tipHandlers = (label, placement = 'right') => ({
     onMouseEnter: (e) => showTip(e, label, placement),
@@ -132,7 +115,7 @@ function RolePortalSidebarInner({
   });
 
   return (
-    <aside className={`sidebar${sidebarOpen ? '' : ' is-collapsed'}`}>
+    <aside className={`sidebar${sidebarOpen ? '' : ' is-collapsed'}`} aria-label="Sidebar">
       <div className="brand">
         <div className="brand-mark">
           <QuirriLogo className="logo-full" size="sm" priority />

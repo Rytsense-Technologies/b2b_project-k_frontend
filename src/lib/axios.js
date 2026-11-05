@@ -20,8 +20,20 @@ function isAuthEndpoint(url = '') {
   return AUTH_PATHS.some((p) => url.includes(p));
 }
 
-let refreshing = false;
-let queue = [];
+let refreshInFlight = null;
+
+/**
+ * The one refresh call for this tab, shared by every API client. A second call
+ * sent with the same cookie would look like a stolen token to the server.
+ */
+export function refreshSession() {
+  if (!refreshInFlight) {
+    // refresh_token is httpOnly — browser sends it automatically via withCredentials.
+    // No request body needed.
+    refreshInFlight = api.post('/auth/refresh-token').finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
 
 // ── Auto-refresh on 401, then replay queued requests ─────────────────────────
 api.interceptors.response.use(
@@ -32,26 +44,13 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !orig._retry && !isAuthEndpoint(orig.url)) {
       orig._retry = true;
 
-      if (refreshing) {
-        return new Promise((resolve) => queue.push(() => resolve(api(orig))));
-      }
-
-      refreshing = true;
       try {
-        // refresh_token is httpOnly — browser sends it automatically via withCredentials.
-        // Backend reads it from the cookie (Path=/api/v1/auth/refresh-token).
-        // No request body needed.
-        await api.post('/auth/refresh-token');
+        await refreshSession();
       } catch {
-        refreshing = false;
-        queue = [];
         handleSessionExpired();
         return Promise.reject(err);
       }
 
-      refreshing = false;
-      queue.forEach((cb) => cb());
-      queue = [];
       return api(orig);
     }
 

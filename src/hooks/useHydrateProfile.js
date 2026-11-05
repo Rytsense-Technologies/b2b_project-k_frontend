@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectUser, setUser } from '@/store/slices/authSlice';
 import { userApi } from '@/lib/api/user';
 import { unwrap } from '@/lib/api/superadmin/http';
+import { syncRoleCookie } from '@/lib/auth/rbac';
 
 /**
  * The store only rehydrates from this tab's sessionStorage — a new tab, a hard
@@ -24,6 +25,7 @@ export function useHydrateProfile({ always = false } = {}) {
     userApi.getMe().then(unwrap).then((res) => {
       const me = res?.user ?? res; // /auth/me → { user: {...} }
       if (cancelled || !me?.id) return;
+      syncRoleCookie(res);
       const first = me.first_name ?? '';
       const last = me.last_name ?? '';
       const profile = {

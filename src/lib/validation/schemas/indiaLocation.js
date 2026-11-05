@@ -18,7 +18,7 @@ const STATE_NAMES = INDIA_STATES.map((s) => s.name);
 export const indiaLocationFields = {
   country: z.literal(INDIA_COUNTRY.code).default(INDIA_COUNTRY.code),
   state: z
-    .string({ required_error: 'Select a state' })
+    .string({ error: 'Select a state' })
     .transform((v) => String(v ?? '').trim())
     .refine((v) => STATE_NAMES.includes(v), 'Select a state from the list'),
   district: z
@@ -56,7 +56,7 @@ export function refineIndiaDistrict(data, ctx) {
   if (!data?.district) return;
   if (!data?.state) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Select a state before choosing a district',
       path: ['district'],
     });
@@ -65,7 +65,7 @@ export function refineIndiaDistrict(data, ctx) {
   const allowed = getDistrictsForState(data.state);
   if (!allowed.includes(data.district)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Select a district in the chosen state',
       path: ['district'],
     });

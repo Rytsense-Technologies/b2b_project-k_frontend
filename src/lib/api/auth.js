@@ -60,12 +60,6 @@ export const authApi = {
     clearTenantCookie();
     return res;
   },
-  refresh: (refreshToken) => api.post('/auth/refresh-token', { refresh_token: refreshToken }),
-
-  sendOtp: (email) => api.post('/auth/send-otp', { email }),
-
-  verifyOtp: (email, otp_code, purpose = 'login') =>
-    api.post('/auth/verify-otp', { email, otp_code, purpose }),
 
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
 

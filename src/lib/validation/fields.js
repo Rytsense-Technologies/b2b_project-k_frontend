@@ -1,4 +1,8 @@
 import { z } from 'zod';
+
+// Production CSP has no 'unsafe-eval'. zod's JIT probe (Function('')) is blocked there and Firefox
+// logs it as a console error, so run zod jitless: same results, no eval attempt (XB-010).
+z.config({ jitless: true });
 import {
   collapseSpaces,
   normalizeCode,
@@ -23,7 +27,7 @@ const CODE_RE = /^[A-Za-z0-9_-]+$/;
 const ADDRESS_RE = /^[\p{L}\d\s&.,#/\-()'’]+$/u;
 
 function requiredString(message) {
-  return z.string({ required_error: message }).transform(collapseSpaces);
+  return z.string({ error: message }).transform(collapseSpaces);
 }
 
 /**
@@ -136,17 +140,6 @@ export const FIELD_RULES = {
     inputMode: 'text',
     autoComplete: 'new-password',
     type: 'password',
-  },
-  otp: {
-    id: 'otp',
-    labelHint: '6 digits',
-    min: 6,
-    max: 6,
-    pattern: /^\d{6}$/,
-    inputMode: 'numeric',
-    autoComplete: 'one-time-code',
-    type: 'text',
-    filter: (incoming) => incoming.replace(/\D/g, '').slice(0, 6),
   },
   address: {
     id: 'address',
@@ -359,7 +352,7 @@ export function pincodeField(label = 'Pincode', { required = false } = {}) {
       .pipe(z.union([z.literal(''), valid]));
   }
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .transform((v) => String(v ?? '').replace(/\D/g, '').slice(0, 6))
     .pipe(valid);
 }
@@ -381,7 +374,7 @@ export function codeField(label = 'Code', { required = true } = {}) {
   }
 
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .transform(normalizeCode)
     .pipe(valid);
 }
@@ -389,7 +382,7 @@ export function codeField(label = 'Code', { required = true } = {}) {
 export function emailField(label = 'Email') {
   const rule = FIELD_RULES.email;
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .transform(normalizeEmail)
     .pipe(
       z
@@ -439,7 +432,7 @@ export function phoneField(label = 'Phone', { required = true } = {}) {
       });
   }
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .transform((v, ctx) => {
       const p = normalizePhone(v);
       if (p === '' || p === '+' || p === '+91') {
@@ -453,7 +446,7 @@ export function phoneField(label = 'Phone', { required = true } = {}) {
 export function passwordField(label = 'Password') {
   const rule = FIELD_RULES.password;
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .min(1, `${label} is required`)
     .max(rule.max, `${label} must be ${rule.max} characters or fewer`)
     // Mirrors the backend rule (8–72 chars, upper + lower + digit) with ONE
@@ -473,19 +466,6 @@ export function isStrongPassword(v) {
   const s = String(v ?? '');
   const { min, max } = FIELD_RULES.password;
   return s.length >= min && s.length <= max && /[A-Z]/.test(s) && /[a-z]/.test(s) && /[0-9]/.test(s);
-}
-
-export function otpField(label = 'OTP') {
-  const rule = FIELD_RULES.otp;
-  return z
-    .string({ required_error: `${label} is required` })
-    .transform(trimValue)
-    .pipe(
-      z
-        .string()
-        .length(rule.max, `${label} must be ${rule.max} digits`)
-        .regex(/^\d+$/, `${label} must contain only digits`),
-    );
 }
 
 export function addressField(label = 'Address', { required = false } = {}) {
@@ -535,7 +515,7 @@ export function urlField(label = 'URL', { required = false } = {}) {
       );
   }
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .transform(trimValue)
     .pipe(z.string().url(`Enter a valid ${label}`).max(rule.max));
 }
@@ -576,7 +556,7 @@ export function voiceQuestionField(label = 'Question') {
 export function mcqQuestionField(label = 'Question') {
   const rule = FIELD_RULES.mcqQuestion;
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .transform((v) => String(v ?? '').trim())
     .pipe(
       z
@@ -600,7 +580,7 @@ export function mcqOptionField(label = 'Option', { required = true } = {}) {
       .pipe(z.union([z.literal(''), valid]));
   }
   return z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .transform((v) => String(v ?? '').trim())
     .pipe(valid);
 }
@@ -642,14 +622,14 @@ export function positiveIntField(label = 'Number', { required = false, max = 999
     .superRefine((digits, ctx) => {
       if (!digits) {
         if (required) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} is required` });
+          ctx.addIssue({ code: 'custom', message: `${label} is required` });
         }
         return;
       }
       const n = Number(digits);
       if (!Number.isFinite(n) || n < 1 || n > max) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: `Enter a ${label.toLowerCase()} between 1 and ${max.toLocaleString('en-IN')}`,
         });
       }

@@ -120,13 +120,13 @@ export function QuirriFormGrid({ children }) {
   return <div className="grid2">{children}</div>;
 }
 
-export function QuirriField({ label, children, full = false, hint, htmlFor, error }) {
+export function QuirriField({ label, children, full = false, hint, htmlFor, error, errorId }) {
   return (
     <div className="field" style={full ? { gridColumn: '1 / -1' } : undefined}>
       {label ? <label htmlFor={htmlFor}>{label}</label> : null}
       {children}
       {error ? (
-        <div className="hint field-error" role="alert">{error}</div>
+        <div id={errorId} className="hint field-error" role="alert">{error}</div>
       ) : hint ? (
         <div className="hint">{hint}</div>
       ) : null}
@@ -176,6 +176,7 @@ export function QuirriControlledField({
     onChange: handleChange,
     onBlur,
     'aria-invalid': Boolean(error),
+    'aria-describedby': error ? `${fieldId}-error` : undefined,
     maxLength: rule.max,
     ...rest,
   };
@@ -186,6 +187,7 @@ export function QuirriControlledField({
       full={full}
       htmlFor={fieldId}
       error={typeof error === 'string' ? error : error?.message}
+      errorId={`${fieldId}-error`}
       hint={hint}
     >
       {multiline ? (

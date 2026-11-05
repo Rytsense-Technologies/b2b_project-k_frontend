@@ -39,8 +39,10 @@ import { usersApi } from '@/lib/api/superadmin/users';
 import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, asList } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLES } from '@/lib/permissions';
+import { canManageUser } from '@/lib/auth/rbac';
 import { isDeactivated, isPending, statusVariant, userStatusLabel } from '@/lib/admin/userStatus';
 import { tenantFacultyCreateSchema } from '@/lib/validation';
 import { getApiErrorMessage } from '@/lib/api/errors';
@@ -73,7 +75,7 @@ function dateLabel(value) {
   if (!value) return 'Never';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 /** Drawer tile: date only, so the large stat value does not wrap. */
@@ -315,8 +317,9 @@ function StaffWorkspace() {
   const subjectMap = subjectMapData?.items || {};
 
   const { data: deptData } = useAsyncResource(
-    () => fetchData(() => departmentsApi.list({ is_active: true, page: 1, pageSize: 100 })),
+    () => fetchAllPages((p) => fetchData(() => departmentsApi.list({ is_active: true, ...p }))),
     [tenantId],
+    { lookup: 'departments' },
   );
   const departmentOptions = useMemo(
     () => asList(deptData, []).map((d) => ({
@@ -359,7 +362,8 @@ function StaffWorkspace() {
     ]);
     return { hod, faculty, pending };
   }, [tenantId]);
-  const reloadAll = useCallback(async () => { await Promise.all([reload(), reloadCounts()]); }, [reload, reloadCounts]);
+  // XB-005: fire-and-forget refresh; an aborted or failed reload must not become an unhandled rejection.
+  const reloadAll = useCallback(async () => { await Promise.allSettled([reload(), reloadCounts()]); }, [reload, reloadCounts]);
 
   // Subject coverage: every subject students can reach (/analytics/college subjects[]) against
   // the staff → subject names map (/academics/staff-subjects).
@@ -711,7 +715,7 @@ function StaffWorkspace() {
           { label: 'Subjects', value: countLabel(subjectMap[drawerUser.id]?.length || 0) },
           { label: 'Last active', value: lastActiveDate(drawerUser) },
         ] : null}
-        footer={drawerUser ? (
+        footer={drawerUser && canManageUser(ROLES.COLLEGE_ADMIN, drawerUser) ? (
           <>
             <button
               type="button"

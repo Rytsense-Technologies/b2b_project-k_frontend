@@ -45,7 +45,9 @@ import {
 import MultiDocumentPicker, { validateDocuments } from '@/components/shared/MultiDocumentPicker';
 import { mcqApi, mcqGenerateErrorMessage, mcqSetState, waitForMcqGeneration } from '@/lib/api/mcq';
 import { useRetryAfter } from '@/hooks/useRetryAfter';
+import { canRetryFailedJob, isRegenerating } from '@/lib/admin/videoRetry';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { FIELD_RULES } from '@/lib/validation';
@@ -339,7 +341,7 @@ function ContentStudio({ platformScope = false }) {
 
   const { data: collegeData, loading: collegeLoading, error: collegeError } = useAsyncResource(
     () => (platformScope
-      ? fetchData(() => collegesApi.list({ page: 1, pageSize: 100, is_active: true }))
+      ? fetchAllPages((p) => fetchData(() => collegesApi.list({ is_active: true, ...p })))
       : Promise.resolve({ items: [] })),
     [platformScope],
   );
@@ -353,12 +355,7 @@ function ContentStudio({ platformScope = false }) {
   const { data: deptData, loading: deptLoading, error: deptError } = useAsyncResource(
     () => {
       if (platformScope && !collegeId) return Promise.resolve({ items: [] });
-      return fetchData(() => departmentsApi.list({
-        page: 1,
-        pageSize: 100,
-        is_active: true,
-        college_id: platformScope ? collegeId : undefined,
-      }));
+      return fetchAllPages((p) => fetchData(() => departmentsApi.list({ is_active: true, college_id: platformScope ? collegeId : undefined, ...p })));
     },
     [platformScope, collegeId, sessionTenantId],
   );
@@ -371,9 +368,10 @@ function ContentStudio({ platformScope = false }) {
   // List filter: departments of the filtered college (SA); CA reuses the form list.
   const { data: filterDeptData } = useAsyncResource(
     () => (platformScope && filters.college
-      ? fetchData(() => departmentsApi.list({ page: 1, pageSize: 100, is_active: true, college_id: filters.college }))
+      ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ is_active: true, college_id: filters.college, ...p })))
       : Promise.resolve(null)),
     [platformScope, filters.college],
+    { lookup: 'departments' },
   );
   const filterDepartments = platformScope ? asList(filterDeptData, []) : departments;
 
@@ -393,11 +391,13 @@ function ContentStudio({ platformScope = false }) {
       ? fetchData(() => academicsApi.listPrograms({ department_id: departmentId }))
       : Promise.resolve(null)),
     [departmentId],
+    { lookup: 'programmes' },
   );
   const programs = useMemo(() => asList(programData, []), [programData]);
   const { data: programDetail } = useAsyncResource(
     () => (programId ? fetchData(() => academicsApi.getProgram(programId)) : Promise.resolve(null)),
     [programId],
+    { lookup: 'semesters' },
   );
   const semesters = useMemo(
     () => (programDetail?.semesters || []).filter((s) => s.is_active !== false),
@@ -406,11 +406,13 @@ function ContentStudio({ platformScope = false }) {
   const { data: subjectData } = useAsyncResource(
     () => (semesterId ? fetchData(() => academicsApi.listSubjects(semesterId)) : Promise.resolve(null)),
     [semesterId],
+    { lookup: 'subjects' },
   );
   const subjects = useMemo(() => asList(subjectData, []), [subjectData]);
   const { data: chapterData } = useAsyncResource(
     () => (subjectId ? fetchData(() => academicsApi.listChapters(subjectId)) : Promise.resolve(null)),
     [subjectId],
+    { lookup: 'chapters' },
   );
   const chapters = useMemo(() => asList(chapterData, []), [chapterData]);
   const linkedChapter = chapters.find((c) => c.id === chapterId) || null;
@@ -430,7 +432,7 @@ function ContentStudio({ platformScope = false }) {
   );
   const jobs = useMemo(() => asList(jobsData, []), [jobsData]);
 
-  // Open change requests from the HOD / Faculty (cleared by regenerate / publish / dismiss).
+  // Open change requests from the HOD / Faculty (cleared when a regenerated video finishes, or by publish / dismiss).
   const feedbackItems = useMemo(
     () => jobs
       .filter((job) => Boolean(job?.changes_requested_at) && !job?.published_at)
@@ -509,6 +511,20 @@ function ContentStudio({ platformScope = false }) {
       await reloadJobs();
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Could not resume this chapter. Remove it and upload again.'));
+    } finally {
+      setResumingId(null);
+    }
+  };
+
+  // A failed render restarts from the saved plan, at no new planning cost.
+  const retryJob = async (jobId) => {
+    setResumingId(jobId);
+    try {
+      await eduVideoApi.regenerate(jobId);
+      toast.success('Rendering again. Progress shows here.');
+      await reloadJobs();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Could not retry this chapter. Remove it and upload again.'));
     } finally {
       setResumingId(null);
     }
@@ -790,8 +806,20 @@ function ContentStudio({ platformScope = false }) {
       ) : null;
       menu = [removeItem(job)];
     } else if (stage === 'failed') {
-      primary = previewable ? previewButton(job) : null;
+      // Planning failed: no slides to re-render, so only a new upload helps (Remove stays in the menu).
+      primary = canRetryFailedJob(job) ? (
+        <button
+          type="button"
+          className="sd-btn sd-btn--teal sd-btn--sm"
+          disabled={resumingId === job.job_id}
+          onClick={() => resumingId !== job.job_id && retryJob(job.job_id)}
+        >
+          <Icon name="refresh" size={14} />
+          {resumingId === job.job_id ? 'Retrying…' : 'Retry'}
+        </button>
+      ) : null;
       menu = [
+        previewable ? previewItem(job) : null,
         previewable ? slidesItem(job) : null,
         previewable ? mcqItem(job) : null,
         previewable ? linkItem(job) : null,
@@ -1354,9 +1382,16 @@ function ContentStudio({ platformScope = false }) {
                           <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={() => setHistoryJob(item)}>
                             <Icon name="clock" size={14} /> History
                           </button>
-                          <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={() => openFeedbackEdit(item)}>
-                            <Icon name="edit" size={14} /> Review edits
-                          </button>
+                          {/* The request stays open until the regenerated video finishes (BACKEND-004). */}
+                          {isRegenerating(item) ? (
+                            <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" disabled>
+                              <Icon name="refresh" size={14} /> Regenerating…
+                            </button>
+                          ) : (
+                            <button type="button" className="sd-btn sd-btn--teal sd-btn--sm" onClick={() => openFeedbackEdit(item)}>
+                              <Icon name="edit" size={14} /> Review edits
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
