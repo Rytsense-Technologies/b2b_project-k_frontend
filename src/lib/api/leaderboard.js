@@ -1,6 +1,9 @@
 import api from '@/lib/axios';
 import { unwrap } from '@/lib/api/superadmin/http';
 
+/** How often an open leaderboard asks again. Focus also refreshes it, so returning to the tab is never stale. */
+export const LEADERBOARD_REFRESH_MS = 60000;
+
 /** Live: /api/v1/leaderboard */
 export const leaderboardApi = {
   /**

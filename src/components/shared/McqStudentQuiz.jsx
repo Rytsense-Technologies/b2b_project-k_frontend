@@ -8,6 +8,7 @@ import { Icon, SectionState } from '@/components/student/ui';
 import { mcqApi, mcqErrorMessage, optionEntries, isMultiSelect, isQuizUpdatingError } from '@/lib/api/mcq';
 import { mcqSubmitSchema } from '@/lib/validation';
 import { useRetryAfter } from '@/hooks/useRetryAfter';
+import { clearQuizDraft, loadQuizDraft, saveQuizDraft } from '@/lib/student/quizDraft';
 import { formatDateTime } from '@/lib/student/learning';
 import { BandPill, ModernDonut, bandFor } from '@/components/shared/data-viz';
 
@@ -53,11 +54,13 @@ export default function McqStudentQuiz({
       setUpdating(false);
       setView(data);
       if (data?.status === 'already_attempted' && data?.result) {
+        clearQuizDraft(jobId);
         setResult(data.result);
       } else {
+        const draft = loadQuizDraft(jobId, [...(data?.questions || [])].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)));
         setResult(null);
-        setAnswers({});
-        setIndex(0);
+        setAnswers(draft.answers);
+        setIndex(draft.index);
       }
       setLoadError('');
     } catch (err) {
@@ -105,6 +108,11 @@ export default function McqStudentQuiz({
   /* ------------------------------------------------------------ attempt */
   const current = questions[index] || null;
   const answeredCount = questions.filter((q) => (answers[q.id] || []).length > 0).length;
+
+  // Once answering has started, keep the draft so a reload does not lose it.
+  useEffect(() => {
+    if (view?.status === 'not_attempted' && answeredCount > 0) saveQuizDraft(jobId, { answers, index });
+  }, [jobId, view?.status, answers, index, answeredCount]);
   const allAnswered = questions.length > 0 && answeredCount === questions.length;
 
   const toggleOption = useCallback((letter, multi) => {
@@ -167,6 +175,7 @@ export default function McqStudentQuiz({
         ch.postMessage({ type: 'assessment-submitted', jobId });
         ch.close();
       } catch { /* BroadcastChannel unsupported */ }
+      clearQuizDraft(jobId);
       setResult(res);
       setView((prev) => (prev ? { ...prev, status: 'already_attempted', result: res } : prev));
       setConfirmOpen(false);

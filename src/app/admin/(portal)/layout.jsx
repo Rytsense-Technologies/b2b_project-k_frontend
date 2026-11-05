@@ -12,6 +12,7 @@ import CollegeAdminSidebar from '@/components/admin/CollegeAdminSidebar';
 import { PageHeaderProvider, PortalTopbar, resolvePageMeta } from '@/components/shared/PageHeader';
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
+import SkipLink from '@/components/shared/SkipLink';
 
 export default function CollegeAdminLayout({ children }) {
   const pathname = usePathname();
@@ -44,6 +45,7 @@ export default function CollegeAdminLayout({ children }) {
 
   return (
     <div className={`app q-app-shell ${mobileNavShellClass(navOpen)}`}>
+      <SkipLink />
       <CollegeAdminSidebar />
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
 
@@ -55,7 +57,7 @@ export default function CollegeAdminLayout({ children }) {
             leading={<MobileNavButton navOpen={navOpen} onOpen={openNav} />}
           />
 
-          <main className="content"><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
+          <main className="content" id="main-content" tabIndex={0}><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
         </div>
       </PageHeaderProvider>
     </div>

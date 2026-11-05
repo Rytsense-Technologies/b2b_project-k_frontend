@@ -1,4 +1,5 @@
 import api from '@/lib/axios';
+import { readableValidationParts } from '@/lib/api/errors';
 
 export function unwrap(res) {
   const body = res?.data;
@@ -87,10 +88,7 @@ export function apiErrorMessage(err, fallback = 'Something went wrong') {
     if (typeof detail.message === 'string' && detail.message.trim()) return detail.message;
   }
   if (Array.isArray(detail) && detail.length) {
-    return detail
-      .map((d) => (typeof d === 'string' ? d : d?.msg || d?.message))
-      .filter(Boolean)
-      .join('; ') || fallback;
+    return readableValidationParts(detail).join('; ') || fallback;
   }
   const raw = err?.response?.data;
   if (

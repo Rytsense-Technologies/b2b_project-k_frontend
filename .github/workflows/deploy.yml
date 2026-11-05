@@ -8,12 +8,27 @@ on:
 env:
   IMAGE: ghcr.io/rytsense-technologies/b2b_project-k_frontend
   FRONTEND_PORT: 3100
+  # Canary only lives for the health check, on a port no other service uses.
+  CANARY_PORT: 3199
   # Backend runs on host port 8100 - see b2b_projectk deploy workflow.
   BACKEND_PORT: 8100
 
+# A second push waits; two deploys must never swap the same container.
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   build-and-deploy:
+    needs: ci
     runs-on: self-hosted
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: write
@@ -44,8 +59,6 @@ jobs:
         with:
           context: .
           push: true
-          build-args: |
-            NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL || 'https://xplains.quirri.ai' }}
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
@@ -54,16 +67,46 @@ jobs:
 
       # buildx push does not refresh the host's local :latest tag. Always pull the
       # commit-sha image from GHCR so deploy cannot reuse a stale local layer.
-      - name: Deploy frontend
+      - name: Pull image and remember the running one
         run: |
           set -euo pipefail
           IMAGE_REF="${{ env.IMAGE }}:${{ github.sha }}"
           echo "Pulling $IMAGE_REF"
           docker pull "$IMAGE_REF"
-          docker rm -f xplains-frontend 2>/dev/null || true
+          previous=$(docker inspect --format='{{.Config.Image}}' xplains-frontend 2>/dev/null || true)
+          echo "PREVIOUS_IMAGE=$previous" >> "$GITHUB_ENV"
+          echo "Running before this deploy: ${previous:-none}"
+
+      # The running container stays untouched until the new image has answered.
+      - name: Check new image before switching
+        run: |
+          set -euo pipefail
+          IMAGE_REF="${{ env.IMAGE }}:${{ github.sha }}"
+          docker rm -f xplains-frontend-canary 2>/dev/null || true
+          docker run -d --name xplains-frontend-canary -p 127.0.0.1:${{ env.CANARY_PORT }}:3000 "$IMAGE_REF"
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null "http://127.0.0.1:${{ env.CANARY_PORT }}/auth/login"; then
+              echo "New image is healthy"
+              docker rm -f xplains-frontend-canary
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "New image failed its health check; the running site was not changed" >&2
+          docker logs --tail 100 xplains-frontend-canary >&2
+          docker rm -f xplains-frontend-canary
+          exit 1
+
+      - name: Deploy frontend
+        run: |
+          set -euo pipefail
+          IMAGE_REF="${{ env.IMAGE }}:${{ github.sha }}"
+          docker rm -f xplains-frontend
           docker run -d --name xplains-frontend \
             --restart unless-stopped \
-            -p ${{ env.FRONTEND_PORT }}:3000 \
+            --memory 1g \
+            --log-opt max-size=20m --log-opt max-file=5 \
+            -p 127.0.0.1:${{ env.FRONTEND_PORT }}:3000 \
             "$IMAGE_REF"
           echo "Running image:"
           docker inspect --format='{{.Image}} {{index .Config.Image}} {{.Created}}' xplains-frontend
@@ -72,7 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           for i in $(seq 1 30); do
-            if curl -sf "http://localhost:${{ env.FRONTEND_PORT }}"; then
+            if curl -sf -o /dev/null "http://127.0.0.1:${{ env.FRONTEND_PORT }}/auth/login"; then
               echo "Frontend is up"
               # Confirm Assessment UI is in this image (stale-build guard).
               if docker exec xplains-frontend sh -c "grep -Rql 'Take assessment\\|Open assessment' /app/.next 2>/dev/null"; then
@@ -87,3 +130,22 @@ jobs:
           echo "Frontend failed to respond" >&2
           docker logs --tail 100 xplains-frontend >&2
           exit 1
+
+      - name: Roll back
+        if: failure() && env.PREVIOUS_IMAGE != ''
+        run: |
+          set -euo pipefail
+          current=$(docker inspect --format='{{.Config.Image}}' xplains-frontend 2>/dev/null || true)
+          running=$(docker inspect --format='{{.State.Running}}' xplains-frontend 2>/dev/null || echo false)
+          if [ "$current" = "$PREVIOUS_IMAGE" ] && [ "$running" = "true" ]; then
+            echo "Previous image is still serving; nothing to roll back"
+            exit 0
+          fi
+          echo "Restoring $PREVIOUS_IMAGE"
+          docker rm -f xplains-frontend 2>/dev/null || true
+          docker run -d --name xplains-frontend \
+            --restart unless-stopped \
+            --memory 1g \
+            --log-opt max-size=20m --log-opt max-file=5 \
+            -p 127.0.0.1:${{ env.FRONTEND_PORT }}:3000 \
+            "$PREVIOUS_IMAGE"

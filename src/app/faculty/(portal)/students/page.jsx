@@ -33,6 +33,7 @@ import { mcqResetReasonSchema } from '@/lib/validation';
 import { apiErrorMessage, asList, unwrap } from '@/lib/api/superadmin/http';
 import { userStatusLabel } from '@/lib/admin/userStatus';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { isUuid } from '@/lib/utils';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { scopeChip, ReadOnlyNote, dayLabel, pct } from '@/components/faculty/facultyKit';
@@ -66,7 +67,7 @@ function StudentDrawer({ id, onClose, subjectLimited = false, canReset = false }
   const { data, loading, error, reload } = useAsyncResource(
     // A malformed ?student= (old or hand-edited link) is "not found" without a request.
     () => (!id ? Promise.resolve(null)
-      : /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? facultyDirectoryApi.student(id)
+      : isUuid(id) ? facultyDirectoryApi.student(id)
         : Promise.reject(Object.assign(new Error('Not found'), { response: { status: 404 } }))),
     [id],
   );
@@ -255,25 +256,30 @@ export default function FacultyStudentsPage() {
   const programs = useAsyncResource(() => academicsApi.listPrograms().then(unwrap), []);
   const programList = useMemo(() => asList(programs.data, []), [programs.data]);
   const semesters = useAsyncResource(
-    () => (url.program ? academicsApi.getProgram(url.program).then(unwrap) : Promise.resolve(null)),
+    () => (isUuid(url.program) ? academicsApi.getProgram(url.program).then(unwrap) : Promise.resolve(null)),
     [url.program],
   );
   const semesterList = semesters.data?.semesters || [];
   const maxYears = Math.max(4, ...programList.map((p) => Number(p.duration_years) || 0));
 
-  const status = url.status === 'all' ? '' : url.status;
+  // A hand-edited or stale filter falls back to the default instead of a validator error.
+  const urlStatus = STATUS_OPTIONS.some((o) => o.value === url.status) ? url.status : 'active';
+  const status = urlStatus === 'all' ? '' : urlStatus;
+  const programId = isUuid(url.program) ? url.program : '';
+  const semesterId = isUuid(url.semester) ? url.semester : '';
+  const yearOfStudy = /^\d{1,2}$/.test(url.year) ? url.year : '';
   const { data, loading, error, reload } = useAsyncResource(
     () => facultyDirectoryApi.students({
-      q: url.q, status, programId: url.program, semesterId: url.semester, yearOfStudy: url.year, page, pageSize: PAGE_SIZE,
+      q: url.q, status, programId, semesterId, yearOfStudy, page, pageSize: PAGE_SIZE,
     }),
-    [url.q, status, url.program, url.semester, url.year, page],
+    [url.q, status, programId, semesterId, yearOfStudy, page],
   );
   const insights = useAsyncResource(() => analyticsApi.department({ range: 'all_time' }), []);
 
   const rows = useMemo(() => asList(data, []), [data]);
   const total = data?.total ?? 0;
   const first = loading && !data;
-  const filtered = Boolean(url.q || url.status !== 'active' || url.program || url.semester || url.year);
+  const filtered = Boolean(url.q || urlStatus !== 'active' || programId || semesterId || yearOfStudy);
   const clearFilters = () => { setSearch(''); setUrl({ q: '', status: 'active', program: '', semester: '', year: '' }); };
   // Names of the filters that are hiding rows (for the empty state).
   const activeFilters = [
@@ -281,7 +287,7 @@ export default function FacultyStudentsPage() {
     url.program ? (programList.find((p) => p.id === url.program)?.name || 'a programme') : null,
     url.semester ? (semesterList.find((x) => x.id === url.semester)?.name || 'a semester') : null,
     url.year ? `Year ${url.year}` : null,
-    url.status !== 'active' ? (STATUS_OPTIONS.find((o) => o.value === url.status)?.label || url.status) : null,
+    urlStatus !== 'active' ? STATUS_OPTIONS.find((o) => o.value === urlStatus)?.label : null,
   ].filter(Boolean);
   const limited = Boolean(scope && !scope.is_hod && scope.subject_limited);
   const openStudent = (id) => setUrl({ student: id }, { push: true });
@@ -371,7 +377,7 @@ export default function FacultyStudentsPage() {
               <div className="fa-filter-select fa-filter-select--sm">
                 <QuirriSelect
                   ariaLabel="Filter by account status"
-                  value={url.status}
+                  value={urlStatus}
                   onChange={(e) => setUrl({ status: e.target.value })}
                   options={STATUS_OPTIONS}
                 />

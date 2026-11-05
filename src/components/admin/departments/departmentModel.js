@@ -1,6 +1,7 @@
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, unwrap } from '@/lib/api/superadmin/http';
 import { ROLES } from '@/lib/permissions';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 
 export const DEPARTMENTS_PATH = '/admin/structure/departments';
 
@@ -43,12 +44,14 @@ function personLabel(user) {
 }
 
 async function listUsers(role, tenantId) {
-  const res = await usersApi.getUsers({ page: 1, pageSize: 100, role, tenantId });
-  const body = unwrap(res);
-  return asList(body?.items || body?.users || body, []);
+  const { items } = await fetchAllPages(async (p) => {
+    const body = unwrap(await usersApi.getUsers({ ...p, role, tenantId }));
+    return body?.users ? { ...body, items: body.users } : body;
+  });
+  return items;
 }
 
-/** Faculty + HOD accounts in this college (first 100 per role). */
+/** Faculty + HOD accounts in this college. */
 export async function loadCollegeStaff(tenantId) {
   if (!tenantId) return [];
   const [hods, faculty] = await Promise.all([
@@ -61,12 +64,12 @@ export async function loadCollegeStaff(tenantId) {
 }
 
 /**
- * HOD picker options: active faculty / HOD accounts placed in THIS department only
- * (the server rejects an HOD from another department). A new department has none yet.
+ * HOD picker options: active HOD accounts placed in THIS department only. The server refuses
+ * a faculty head (422: change their role to HOD first) and an HOD from another department.
  */
 export async function loadHodOptions(tenantId, dept) {
   if (!tenantId || !dept?.id) return [];
-  const staff = await loadCollegeStaff(tenantId);
+  const staff = await listUsers(ROLES.HOD, tenantId);
   return staff
     .filter((u) => u.is_active !== false && inDepartment(u, dept))
     .map((u) => ({ value: u.id, label: personLabel(u) }));
@@ -143,7 +146,7 @@ export function dateLabel(value) {
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace('Sept', 'Sep');
 }
 
 export function httpStatus(err) {

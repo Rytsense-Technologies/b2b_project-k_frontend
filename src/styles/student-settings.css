@@ -10,8 +10,8 @@
 
 .q-student .sa-settings .sp-panel{border:0;border-radius:var(--radius-card,8px);box-shadow:var(--shadow-card,var(--sb-shadow))}
 .q-student .sa-settings .sp-panel-h{padding:16px;border-bottom:0}
-.q-student .sa-settings .sp-panel-h h3{font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
-.q-student .sa-settings .sp-panel-h h3::before{display:none}
+.q-student .sa-settings .sp-panel-h :is(h2,h3){font-size:18px;line-height:26px;font-weight:500;color:var(--sb-ink)}
+.q-student .sa-settings .sp-panel-h :is(h2,h3)::before{display:none}
 .q-student .sa-settings .sp-panel-h p{font-size:12px;line-height:18px;color:var(--sb-muted)}
 .q-student .sa-settings .sp-panel-b{padding:0 16px 16px}
 @media (min-width:1024px){

@@ -15,6 +15,7 @@ import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
+import SkipLink from '@/components/shared/SkipLink';
 
 export default function FacultyLayout({ children }) {
   const pathname = usePathname();
@@ -53,10 +54,11 @@ export default function FacultyLayout({ children }) {
 
   return (
     <div className={`app q-app-shell q-faculty ${mobileNavShellClass(navOpen)}`}>
-      <FacultySidebar />
+      <SkipLink />
+      <Suspense fallback={null}><FacultySidebar /></Suspense>
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
-        <div className="topbar">
+        <header className="topbar">
           <MobileNavButton navOpen={navOpen} onOpen={openNav} />
           <div className="topbar-copy">
             <h1>{meta.title}</h1>
@@ -66,8 +68,8 @@ export default function FacultyLayout({ children }) {
             <div className="pm-topbar-slot" />
             <SystemNotificationBell portal="faculty" />
           </div>
-        </div>
-        <main className="content" id="main-content"><FacultyAccessGate><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></FacultyAccessGate></main>
+        </header>
+        <main className="content" id="main-content" tabIndex={0}><FacultyAccessGate><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></FacultyAccessGate></main>
       </div>
     </div>
   );

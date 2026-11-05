@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createRefreshGate } from '@/lib/refreshGate';
+
+/** Regaining focus fires both visibilitychange and focus: refresh once. */
+const FOCUS_GAP_MS = 5000;
 
 /**
  * Live data, the same way the student pages do it: call `refresh` every
@@ -17,13 +21,17 @@ export function useLiveRefresh(refresh, intervalMs = 60000) {
       if (document.visibilityState !== 'visible') return;
       Promise.resolve(ref.current?.()).catch(() => {}).finally(() => setUpdatedAt(Date.now()));
     };
+    const gate = createRefreshGate(FOCUS_GAP_MS);
+    const onReturn = () => {
+      if (document.visibilityState === 'visible' && gate()) run();
+    };
     const id = setInterval(run, intervalMs);
-    document.addEventListener('visibilitychange', run);
-    window.addEventListener('focus', run);
+    document.addEventListener('visibilitychange', onReturn);
+    window.addEventListener('focus', onReturn);
     return () => {
       clearInterval(id);
-      document.removeEventListener('visibilitychange', run);
-      window.removeEventListener('focus', run);
+      document.removeEventListener('visibilitychange', onReturn);
+      window.removeEventListener('focus', onReturn);
     };
   }, [intervalMs]);
 

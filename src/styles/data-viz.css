@@ -239,7 +239,7 @@
 /* Compact widget (dashboards): small ring beside a plain legend, "count (pct%)" */
 .mdc--compact{gap:12px}
 .mdc--compact .mdc-body{gap:24px}
-.mdc--compact .mdc-ring-t b{font-size:22px;line-height:26px}
+.mdc--compact .mdc-ring-t b{font-size:22px;line-height:26px;font-weight:500} /* XB-006: 700 only at 28px+ */
 .mdc--compact .mdc-ring-t small{font-size:12px;line-height:16px}
 .mdc--compact .mdc-legend{gap:6px;max-width:none;width:100%}
 .mdc--compact .mdc-legend li{grid-template-columns:10px minmax(0,1fr) auto;min-height:32px;padding:4px 0;border:0;border-radius:0;background:none}
@@ -253,7 +253,7 @@
 @container (max-width:560px){
   .mdc:not(.mdc--compact) .mdc-ring{width:148px !important;height:148px !important}
   .mdc:not(.mdc--compact) .mdc-body{column-gap:28px}
-  .mdc:not(.mdc--compact) .mdc-ring-t b{font-size:26px;line-height:30px}
+  .mdc:not(.mdc--compact) .mdc-ring-t b{font-size:26px;line-height:30px;font-weight:500}
   .mdc:not(.mdc--compact) .mdc-ring-t small{font-size:12px;line-height:16px}
 }
 @container (max-width:420px){

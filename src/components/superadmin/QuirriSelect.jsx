@@ -208,6 +208,7 @@ export default function QuirriSelect({
         aria-activedescendant={open && activeIndex >= 0 ? `${listId}-opt-${activeIndex}` : undefined}
         aria-label={label ? undefined : (ariaLabel || placeholder || 'Select')}
         aria-invalid={Boolean(error)}
+        aria-describedby={error || hint ? `${selectId}-msg` : undefined}
         onClick={() => (open ? close() : openMenu())}
         onKeyDown={onTriggerKeyDown}
         onBlur={onBlur}
@@ -280,9 +281,9 @@ export default function QuirriSelect({
       {label ? <label htmlFor={selectId}>{label}</label> : null}
       {control}
       {error ? (
-        <div className="hint field-error" role="alert">{error}</div>
+        <div id={`${selectId}-msg`} className="hint field-error" role="alert">{error}</div>
       ) : hint ? (
-        <div className="hint">{hint}</div>
+        <div id={`${selectId}-msg`} className="hint">{hint}</div>
       ) : null}
     </div>
   );

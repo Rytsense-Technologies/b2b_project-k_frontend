@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { academicLabelField, codeField } from '../fields';
 
 const count = (label, min, max) => z.coerce
-  .number({ invalid_type_error: `Select ${label.toLowerCase()}` })
+  .number({ error: `Select ${label.toLowerCase()}` })
   .int()
   .min(min, `Select ${label.toLowerCase()}`)
   .max(max, `${label} can be at most ${max}`);

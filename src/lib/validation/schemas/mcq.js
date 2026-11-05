@@ -25,7 +25,7 @@ export const mcqSubmitSchema = z.object({
   data.answers.forEach((a, i) => {
     if (seen.has(a.question_id)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'Each question can only appear once in your answers.',
         path: ['answers', i, 'question_id'],
       });
@@ -43,36 +43,36 @@ function refineCorrectOptions(data, ctx, { typeKey = 'question_type', requireTyp
     .map((k) => ({ key: k, value: String(data[`option_${k.toLowerCase()}`] || '').trim() }))
     .filter((o) => o.value);
   if (requireType && !type) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Choose a question type.', path: ['question_type'] });
+    ctx.addIssue({ code: 'custom', message: 'Choose a question type.', path: ['question_type'] });
     return;
   }
   if (type === 'true_false') {
     if (correct.length !== 1 || !['A', 'B'].includes(correct[0])) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'True / false needs exactly one correct answer.', path: ['correct_options'] });
+      ctx.addIssue({ code: 'custom', message: 'True / false needs exactly one correct answer.', path: ['correct_options'] });
     }
     return;
   }
   // Backend check_question: single and multiple always need Option C and Option D.
   if (!String(data.option_c || '').trim()) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Option C is required', path: ['option_c'] });
+    ctx.addIssue({ code: 'custom', message: 'Option C is required', path: ['option_c'] });
   }
   if (!String(data.option_d || '').trim()) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Option D is required', path: ['option_d'] });
+    ctx.addIssue({ code: 'custom', message: 'Option D is required', path: ['option_d'] });
   }
   if (type === 'single' && correct.length !== 1) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A single-answer question needs exactly one correct option.', path: ['correct_options'] });
+    ctx.addIssue({ code: 'custom', message: 'A single-answer question needs exactly one correct option.', path: ['correct_options'] });
   }
   if (type === 'multiple') {
     if (correct.length < 2 || correct.length > 3) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A multiple-answer question needs two or three correct options.', path: ['correct_options'] });
+      ctx.addIssue({ code: 'custom', message: 'A multiple-answer question needs two or three correct options.', path: ['correct_options'] });
     }
     if (options.length && correct.length >= options.length) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Not every option can be correct.', path: ['correct_options'] });
+      ctx.addIssue({ code: 'custom', message: 'Not every option can be correct.', path: ['correct_options'] });
     }
   }
   const values = options.map((o) => o.value.toLowerCase());
   if (new Set(values).size !== values.length) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Each option must be different.', path: ['option_a'] });
+    ctx.addIssue({ code: 'custom', message: 'Each option must be different.', path: ['option_a'] });
   }
 }
 
@@ -91,7 +91,7 @@ export const mcqQuestionEditSchema = z.object({
 /** POST a new question. */
 export const mcqQuestionCreateSchema = z.object({
   question_type: z.enum(['single', 'multiple', 'true_false'], {
-    required_error: 'Choose a question type.',
+    error: 'Choose a question type.',
   }),
   question_text: mcqQuestionField(),
   option_a: mcqOptionField('Option A'),

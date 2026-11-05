@@ -15,6 +15,30 @@ const LEGACY_LOGIN_PATHS = [
   '/student/login',
 ];
 
+/** host[:port] only: a forwarded value must not be able to change the path of a redirect. */
+const HOST_RE = /^[a-z0-9.-]+(:\d{1,5})?$/i;
+
+function firstHeaderValue(req, name) {
+  return (req.headers.get(name) || '').split(',')[0].trim();
+}
+
+/**
+ * Absolute redirect target on the host the user is on. req.url carries the server's own
+ * host (localhost:<port>), which is wrong behind a proxy.
+ */
+function publicUrl(req, path) {
+  const dest = new URL(path, req.url);
+  const host = firstHeaderValue(req, 'x-forwarded-host') || firstHeaderValue(req, 'host');
+  const safeHost = HOST_RE.test(host) ? host : firstHeaderValue(req, 'host');
+  if (HOST_RE.test(safeHost)) {
+    dest.port = '';
+    dest.host = safeHost;
+  }
+  const proto = firstHeaderValue(req, 'x-forwarded-proto');
+  if (proto === 'http' || proto === 'https') dest.protocol = `${proto}:`;
+  return dest;
+}
+
 function isPublicPath(pathname) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
@@ -42,7 +66,7 @@ export async function middleware(req) {
   const { pathname } = req.nextUrl;
 
   if (LEGACY_LOGIN_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    const dest = new URL('/auth/login', req.url);
+    const dest = publicUrl(req, '/auth/login');
     dest.search = req.nextUrl.search;
     return NextResponse.redirect(dest);
   }
@@ -56,16 +80,16 @@ export async function middleware(req) {
   // Legacy B2C paths
   if (pathname.startsWith('/main') || pathname.startsWith('/pricing')) {
     if (session && role) {
-      return NextResponse.redirect(new URL(homeForRole(role), req.url));
+      return NextResponse.redirect(publicUrl(req, homeForRole(role)));
     }
-    return NextResponse.redirect(new URL('/auth/login', req.url));
+    return NextResponse.redirect(publicUrl(req, '/auth/login'));
   }
 
   if (pathname === '/') {
     if (session && role) {
-      return NextResponse.redirect(new URL(homeForRole(role), req.url));
+      return NextResponse.redirect(publicUrl(req, homeForRole(role)));
     }
-    return NextResponse.redirect(new URL('/auth/login', req.url));
+    return NextResponse.redirect(publicUrl(req, '/auth/login'));
   }
 
   const portalGuards = [
@@ -82,17 +106,17 @@ export async function middleware(req) {
       : role === guard.role;
     if (!session || !allowed) {
       if (session && role) {
-        return NextResponse.redirect(new URL(homeForRole(role), req.url));
+        return NextResponse.redirect(publicUrl(req, homeForRole(role)));
       }
-      return NextResponse.redirect(new URL(loginForRole(), req.url));
+      return NextResponse.redirect(publicUrl(req, loginForRole()));
     }
     return withTenantHeader(req, tenant);
   }
 
   if (session && role) {
-    return NextResponse.redirect(new URL(homeForRole(role), req.url));
+    return NextResponse.redirect(publicUrl(req, homeForRole(role)));
   }
-  return NextResponse.redirect(new URL('/auth/login', req.url));
+  return NextResponse.redirect(publicUrl(req, '/auth/login'));
 }
 
 export const config = {

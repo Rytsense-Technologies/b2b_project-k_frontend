@@ -13,7 +13,7 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
  * optional ("Not set"). Changing the programme clears the semester.
  */
 export default function StudentPlacementFields({ departmentId, programId, semesterId, onChange, idPrefix = 'placement' }) {
-  const { data: programData, loading: programsLoading } = useAsyncResource(
+  const { data: programData, loading: programsLoading, error: programsError } = useAsyncResource(
     () => (departmentId
       ? fetchData(() => academicsApi.listPrograms({ department_id: departmentId }))
       : Promise.resolve(null)),
@@ -21,7 +21,7 @@ export default function StudentPlacementFields({ departmentId, programId, semest
   );
   const programs = useMemo(() => asList(programData, []), [programData]);
 
-  const { data: programDetail, loading: semestersLoading } = useAsyncResource(
+  const { data: programDetail, loading: semestersLoading, error: semestersError } = useAsyncResource(
     () => (programId ? fetchData(() => academicsApi.getProgram(programId)) : Promise.resolve(null)),
     [programId],
   );
@@ -37,7 +37,7 @@ export default function StudentPlacementFields({ departmentId, programId, semest
     }
   }, [programId, programData, programs, onChange]);
 
-  const noProgrammes = departmentId && !programsLoading && !programs.length;
+  const noProgrammes = departmentId && !programsLoading && !programsError && !programs.length;
 
   return (
     <div className="grid2">
@@ -46,7 +46,8 @@ export default function StudentPlacementFields({ departmentId, programId, semest
         label="Programme"
         value={programId || ''}
         onChange={(e) => onChange({ program_id: e.target.value, semester_id: '' })}
-        disabled={!departmentId || programsLoading || noProgrammes}
+        disabled={!departmentId || programsLoading || noProgrammes || Boolean(programsError)}
+        error={programsError ? 'Could not load programmes. Close this form and try again.' : undefined}
         placeholder={!departmentId ? 'Select a department first' : programsLoading ? 'Loading programmes…' : noProgrammes ? 'No programmes in this department' : 'Not set'}
         hint={noProgrammes ? 'Add programmes under Academic structure first.' : 'Decides which subjects and chapters the student sees.'}
         options={[{ value: '', label: 'Not set' }, ...programs.map((p) => ({ value: p.id, label: p.code ? `${p.name} (${p.code})` : p.name }))]}
@@ -57,6 +58,7 @@ export default function StudentPlacementFields({ departmentId, programId, semest
         value={semesterId || ''}
         onChange={(e) => onChange({ program_id: programId, semester_id: e.target.value })}
         disabled={!programId || semestersLoading || !semesters.length}
+        error={semestersError ? 'Could not load semesters. Close this form and try again.' : undefined}
         placeholder={!programId ? 'Select a programme first' : semestersLoading ? 'Loading semesters…' : 'Select semester'}
         hint="Year of study is worked out from the semester."
         options={semesters.map((s) => ({ value: s.id, label: s.name }))}

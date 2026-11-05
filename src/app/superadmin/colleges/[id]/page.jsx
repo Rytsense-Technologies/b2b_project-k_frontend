@@ -30,6 +30,8 @@ import {
 import { usersApi } from '@/lib/api/superadmin/users';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
+import { isUuid, notFoundError } from '@/lib/utils';
 import { useUrlState, useTabParam } from '@/hooks/useUrlState';
 import { formatCount, formatDate, formatIndianPhone, formatMinutes, formatPct } from '@/lib/superadmin/format';
 import { INDIA_COUNTRY } from '@/lib/india';
@@ -46,6 +48,7 @@ const RANGES = [
 
 function CollegeView() {
   const { id } = useParams();
+  const validId = isUuid(id);
   const [tab] = useTabParam(TAB_KEYS, 'overview');
   const [url, setUrl] = useUrlState({ range: 'last_30_days' });
   const range = RANGES.some((r) => r.value === url.range) ? url.range : 'last_30_days';
@@ -55,24 +58,32 @@ function CollegeView() {
   const [resendingEmail, setResendingEmail] = useState(null);
 
   const { data: college, loading, error, reload } = useAsyncResource(
-    () => fetchData(() => collegesApi.get(id)),
+    () => (validId ? fetchData(() => collegesApi.get(id)) : Promise.reject(notFoundError())),
     [id],
   );
   const { data: deptData, loading: deptLoading, reload: reloadDepts } = useAsyncResource(
-    () => fetchData(() => departmentsApi.list({ college_id: id, page: 1, pageSize: 100 })),
+    () => (validId
+      ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ college_id: id, ...p })))
+      : Promise.resolve(null)),
     [id],
   );
   const { data: institution } = useAsyncResource(
-    () => fetchData(() => reportsApi.preview({ report_type: 'institution', college: id, range, page_size: 1 })),
+    () => (validId
+      ? fetchData(() => reportsApi.preview({ report_type: 'institution', college: id, range, page_size: 1 }))
+      : Promise.resolve(null)),
     [id, range],
+    { lookup: 'college learning figures' },
   );
   const { data: deptReport, loading: deptReportLoading } = useAsyncResource(
-    () => fetchData(() => reportsApi.preview({ report_type: 'department', college: id, range, page_size: 100 })),
+    () => (validId
+      ? fetchData(() => reportsApi.preview({ report_type: 'department', college: id, range, page_size: 100 }))
+      : Promise.resolve(null)),
     [id, range],
   );
   const { data: uniData } = useAsyncResource(
-    () => (editOpen ? fetchData(() => universitiesApi.list({ page: 1, page_size: 100 })) : Promise.resolve(null)),
+    () => (editOpen ? fetchAllPages((p) => fetchData(() => universitiesApi.list(p))) : Promise.resolve(null)),
     [editOpen],
+    { lookup: 'universities' },
   );
 
   const departments = useMemo(() => asList(deptData, []), [deptData]);
@@ -188,7 +199,7 @@ function CollegeView() {
           </>
         )}
         facts={[
-          { label: 'Students / seat cap', value: `${formatCount(s.students) || 0} / ${s.cap ? formatCount(s.cap) : '—'}`, tone: s.pct >= NEAR_CAP_PCT ? 'amber' : null },
+          { label: 'Students / seat cap', value: `${formatCount(s.seats) || 0} / ${s.cap ? formatCount(s.cap) : '—'}`, tone: s.pct >= NEAR_CAP_PCT ? 'amber' : null },
           { label: 'Departments', value: deptLoading && !deptData ? '…' : countLabel(departments.length) },
           { label: 'Administrators', value: countLabel(admins.length), tone: pendingAdmins ? 'amber' : null },
         ]}
@@ -252,8 +263,8 @@ function CollegeView() {
               title="Seat usage"
               unit="Seats"
               parts={[
-                { key: 'used', label: 'Seats used', value: s.students, tone: s.pct >= NEAR_CAP_PCT ? 'warn' : 'info' },
-                { key: 'free', label: 'Seats free', value: Math.max(0, s.cap - s.students), tone: 'neutral' },
+                { key: 'used', label: 'Seats used', value: s.seats, tone: s.pct >= NEAR_CAP_PCT ? 'warn' : 'info' },
+                { key: 'free', label: 'Seats free', value: Math.max(0, s.cap - s.seats), tone: 'neutral' },
               ]}
               empty="No seat cap set for this college."
             />

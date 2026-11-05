@@ -28,8 +28,9 @@ import {
 } from '@/lib/student/learning';
 import { applyCaptionsMode, probeCaptions } from '@/lib/student/captions';
 import '@/styles/student-learning.css';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 
-// LiveKit is heavy: load it only when the AI tutor tab opens.
+// LiveKit is 136 KB gz: load it only when the AI tutor tab opens.
 const VoiceQnaPanel = dynamic(() => import('@/components/student/VoiceQnaPanel'), {
   ssr: false,
   loading: () => <SectionState title="Loading your AI tutor…" />,
@@ -922,7 +923,7 @@ function SubjectsInner() {
   }, []);
 
   const { data: meData } = useAsyncResource(() => fetchData(() => settingsApi.get()), []);
-  const { data, loading, error, reload } = useAsyncResource(() => eduVideoApi.listStudentVideos({ pageSize: 100 }), []);
+  const { data, loading, error, reload } = useAsyncResource(() => fetchAllPages((p) => eduVideoApi.listStudentVideos(p)), []);
 
   const videos = useMemo(() => asList(data, []), [data]);
   const me = meData?.user || meData || null;

@@ -35,6 +35,7 @@ import { usersApi } from '@/lib/api/superadmin/users';
 import { collegesApi, departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { unwrap, asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 import { ROLES } from '@/lib/permissions';
 import { platformUserCreateSchema } from '@/lib/validation';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
@@ -193,9 +194,10 @@ function CreateUserModal({ open, colleges, defaultCollegeId, onClose, onSaved })
   // Departments of the chosen institution; the pick resets when the institution changes.
   const { data: deptData, loading: deptLoading } = useAsyncResource(
     () => (needsDept && collegeId
-      ? fetchData(() => departmentsApi.list({ college_id: collegeId, pageSize: 100 }))
+      ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ college_id: collegeId, ...p })))
       : Promise.resolve(null)),
     [needsDept, collegeId],
+    { lookup: 'departments' },
   );
   const departments = useMemo(
     () => asList(deptData, []).filter((d) => d.is_active !== false),
@@ -622,17 +624,19 @@ function UsersView() {
   const isSelf = useCallback((u) => Boolean(me?.id && u?.id && String(me.id) === String(u.id)), [me?.id]);
 
   const { data: collegeData } = useAsyncResource(
-    () => fetchData(() => collegesApi.list({ pageSize: 100 })),
+    () => fetchAllPages((p) => fetchData(() => collegesApi.list(p))),
     [],
+    { lookup: 'colleges' },
   );
   const colleges = useMemo(() => asList(collegeData, []), [collegeData]);
   const collegeById = useMemo(() => new Map(colleges.map((c) => [String(c.id), c])), [colleges]);
 
   const { data: deptData } = useAsyncResource(
     () => (url.institution
-      ? fetchData(() => departmentsApi.list({ college_id: url.institution, pageSize: 100 }))
+      ? fetchAllPages((p) => fetchData(() => departmentsApi.list({ college_id: url.institution, ...p })))
       : Promise.resolve(null)),
     [url.institution],
+    { lookup: 'departments' },
   );
   const departments = useMemo(() => asList(deptData, []), [deptData]);
 

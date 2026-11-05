@@ -1,34 +1,21 @@
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-  selectUser, selectPlan, selectIsAuthed, clearCredentials,
+  selectUser, selectIsAuthed,
   selectRole, selectTenantId, selectPermissions,
 } from '@/store/slices/authSlice';
-import { queryClient } from '@/lib/queryClient';
-import api from '@/lib/axios';
-import { clearTokens } from '@/lib/tokens';
+import { signOut } from '@/lib/auth/signOut';
 import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
 
 export function useAuth() {
   const dispatch     = useAppDispatch();
   const router       = useRouter();
   const user         = useAppSelector(selectUser);
-  const plan         = useAppSelector(selectPlan);
   const isAuthed     = useAppSelector(selectIsAuthed);
   const role         = useAppSelector(selectRole);
   const tenantId     = useAppSelector(selectTenantId);
   const permissions  = useAppSelector(selectPermissions);
 
-  const logout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch { /* ignore — still clear local state */ }
-    clearTokens();
-    dispatch(clearCredentials());
-    queryClient.clear();
-    router.push('/auth/login');
-    toast.success("You're signed out.");
-  };
+  const logout = () => signOut({ dispatch, router });
 
   // Returns true if the user holds the given permission.
   // Superadmin always passes — '*' in permissions grants everything.
@@ -40,5 +27,5 @@ export function useAuth() {
   // Returns true if the current role matches any of the supplied roles.
   const isRole = (...roles) => roles.includes(role);
 
-  return { user, plan, isAuthed, logout, role, tenantId, hasPermission, isRole };
+  return { user, isAuthed, logout, role, tenantId, hasPermission, isRole };
 }

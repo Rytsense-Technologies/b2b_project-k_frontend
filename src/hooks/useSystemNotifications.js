@@ -3,33 +3,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { inboxNotificationsApi } from '@/lib/api/notificationRules';
 import { asList } from '@/lib/api/superadmin/http';
-import { isInterviewOff } from '@/lib/product/interviewOff';
-import { ALERTS_REFRESH } from '@/lib/notifications/scenarios';
+import {
+  POLL_MS,
+  createBadgePoller,
+  isInboxRow,
+  pollIsDue,
+  showDesktopAlerts,
+  unreadOf,
+} from '@/lib/notifications/inboxPoller';
+import { ALERTS_REFRESH, inboxItemHref, requestAlertsRefresh } from '@/lib/notifications/scenarios';
 
-const POLL_MS = 45000;
 const PAGE_SIZE = 25;
-
-function isInboxRow(row) {
-  if (!row) return false;
-  return !isInterviewOff(`${row.event || ''} ${row.event_label || ''} ${row.title || ''}`);
-}
 
 function createdMs(row) {
   const t = Date.parse(row?.created_at || '');
   return Number.isNaN(t) ? 0 : t;
 }
 
-function unreadOf(data, fallback = 0) {
-  const n = Number(data?.unread_count);
-  return Number.isFinite(n) && n >= 0 ? n : fallback;
-}
-
 /**
  * Bell + desktop alerts from GET /notifications/inbox*.
  * Badge polls unread-count; the list loads when the panel opens.
- * Desktop alerts use the browser Notification API after an in-UI grant.
+ * Desktop alerts use the browser Notification API after an in-UI grant, so polling
+ * continues (more slowly) while the tab is hidden; that is when they are shown.
+ * @param {string} portal  portal key, for the deep link a desktop alert opens
+ * @param {(href: string) => void} [navigate]
  */
-export function useSystemNotifications() {
+export function useSystemNotifications(portal = 'superadmin', navigate = null) {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [unread, setUnread] = useState(0);
@@ -37,8 +36,27 @@ export function useSystemNotifications() {
   const [error, setError] = useState(null);
   const [desktop, setDesktop] = useState('unsupported');
   const openedAtRef = useRef('');
-  const lastUnread = useRef(0);
-  const primed = useRef(false);
+  const portalRef = useRef(portal);
+  portalRef.current = portal;
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+  const pollerRef = useRef(null);
+  if (!pollerRef.current) {
+    pollerRef.current = createBadgePoller({
+      api: inboxNotificationsApi,
+      onCount: setUnread,
+      notify: (rows) => showDesktopAlerts(rows, {
+        Ctor: typeof Notification === 'undefined' ? null : Notification,
+        hidden: () => document.visibilityState !== 'visible',
+        hrefFor: (row) => inboxItemHref(row, portalRef.current),
+        open: (href) => {
+          if (navigateRef.current) navigateRef.current(href);
+          else window.location.assign(href);
+        },
+        focus: () => window.focus(),
+      }),
+    });
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof Notification === 'undefined') {
@@ -52,44 +70,13 @@ export function useSystemNotifications() {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  const notifyNew = useCallback((rows) => {
-    if (typeof window === 'undefined' || typeof Notification === 'undefined') return;
-    if (Notification.permission !== 'granted') return;
-    if (document.visibilityState === 'visible') return;
-    rows.slice(0, 3).forEach((row) => {
-      const title = row.title || row.event_label || 'Quirri alert';
-      const body = row.body ? String(row.body) : 'Open Quirri to read this message.';
-      try {
-        const n = new Notification(title, { body, tag: `quirri-${row.id}`, silent: false });
-        n.onclick = () => {
-          window.focus();
-          n.close();
-        };
-      } catch {
-        /* some browsers throw if the service worker is missing */
-      }
-    });
-  }, []);
-
   const pollBadge = useCallback(async () => {
     try {
-      const data = await inboxNotificationsApi.unreadCount();
-      const n = unreadOf(data, 0);
-      if (primed.current && n > lastUnread.current) {
-        try {
-          const fresh = await inboxNotificationsApi.list({ page: 1, pageSize: 3, unreadOnly: true });
-          notifyNew(asList(fresh, []).filter(isInboxRow));
-        } catch {
-          /* badge still updates */
-        }
-      }
-      lastUnread.current = n;
-      primed.current = true;
-      setUnread(n);
+      await pollerRef.current.poll();
     } catch {
       /* keep the last badge; the panel shows load errors */
     }
-  }, [notifyNew]);
+  }, []);
 
   const loadInbox = useCallback(async ({ silent = false, openedAt } = {}) => {
     if (!silent) setLoading(true);
@@ -98,9 +85,9 @@ export function useSystemNotifications() {
       const rows = asList(data, []).filter(isInboxRow);
       setItems(rows);
       setTotal(typeof data?.total === 'number' ? data.total : rows.length);
-      setUnread(unreadOf(data, lastUnread.current));
-      lastUnread.current = unreadOf(data, lastUnread.current);
-      primed.current = true;
+      const n = unreadOf(data, pollerRef.current.count());
+      setUnread(n);
+      pollerRef.current.sync(n);
       if (openedAt) openedAtRef.current = openedAt;
       else if (!openedAtRef.current) openedAtRef.current = new Date().toISOString();
       setError(null);
@@ -115,10 +102,14 @@ export function useSystemNotifications() {
 
   useEffect(() => {
     let cancelled = false;
+    let lastPoll = Date.now();
     pollBadge();
     const tick = () => {
       if (cancelled) return;
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const permission = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+      const hidden = document.visibilityState === 'hidden';
+      if (!pollIsDue({ hidden, permission, sinceLast: Date.now() - lastPoll })) return;
+      lastPoll = Date.now();
       pollBadge();
     };
     const id = window.setInterval(tick, POLL_MS);
@@ -142,8 +133,10 @@ export function useSystemNotifications() {
     setItems((prev) => prev.map((row) => (
       row.id === id ? { ...row, is_read: true, read_at: data?.read_at || row.read_at } : row
     )));
-    setUnread(unreadOf(data, Math.max(0, lastUnread.current - 1)));
-    lastUnread.current = unreadOf(data, Math.max(0, lastUnread.current - 1));
+    const n = unreadOf(data, Math.max(0, pollerRef.current.count() - 1));
+    pollerRef.current.sync(n);
+    setUnread(n);
+    requestAlertsRefresh();
     return data;
   }, []);
 
@@ -155,8 +148,9 @@ export function useSystemNotifications() {
       !Number.isNaN(cut) && createdMs(row) <= cut ? { ...row, is_read: true } : row
     )));
     const n = unreadOf(data, 0);
-    lastUnread.current = n;
+    pollerRef.current.sync(n);
     setUnread(n);
+    requestAlertsRefresh();
     return data;
   }, []);
 

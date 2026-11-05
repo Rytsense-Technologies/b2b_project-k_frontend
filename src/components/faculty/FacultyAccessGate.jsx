@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import FacultyNotFound from '@/app/faculty/(portal)/not-found';
 import { ModulePage, SectionState } from '@/components/shared/module-ui';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
+import { scopeFailure } from '@/components/faculty/facultyNav';
+import { apiErrorMessage } from '@/lib/api/superadmin/http';
 
 /**
  * An HOD / Faculty account with no department can't see anything yet - show
@@ -14,10 +17,9 @@ import { useFacultyScope } from '@/hooks/useFacultyScope';
  */
 export default function FacultyAccessGate({ children }) {
   const pathname = usePathname() || '';
-  const { scope, error } = useFacultyScope();
-  const status = error?.response?.status ?? error?.status;
-  const detail = String(error?.response?.data?.detail || error?.message || '');
-  const noDepartment = status === 400 && /department/i.test(detail);
+  const { scope, error, reload } = useFacultyScope();
+  const [retrying, setRetrying] = useState(false);
+  const failure = scopeFailure(error);
   const exempt = pathname.startsWith('/faculty/settings') || pathname.startsWith('/faculty/notifications');
   const hodOnlyStaff = pathname.startsWith('/faculty/staff');
   const hodOnlyReports = pathname.startsWith('/faculty/reports');
@@ -25,7 +27,31 @@ export default function FacultyAccessGate({ children }) {
   if (scope && hodOnlyStaff && !scope.can_see_staff) return <FacultyNotFound />;
   if (scope && hodOnlyReports && !scope.can_export_reports) return <FacultyNotFound />;
 
-  if (noDepartment && !exempt) {
+  const retry = () => {
+    if (retrying) return;
+    setRetrying(true);
+    reload().catch(() => {}).finally(() => setRetrying(false));
+  };
+
+  if (failure === 'failed' && !exempt) {
+    return (
+      <ModulePage className="fa-page">
+        <SectionState
+          tone="err"
+          title="Could not load your department details"
+          action={(
+            <button type="button" className="sd-btn sd-btn--ghost sd-btn--sm" onClick={retry} aria-disabled={retrying}>
+              {retrying ? 'Trying…' : 'Try again'}
+            </button>
+          )}
+        >
+          {apiErrorMessage(error, 'Check your connection and try again.')}
+        </SectionState>
+      </ModulePage>
+    );
+  }
+
+  if (failure === 'no_department' && !exempt) {
     return (
       <ModulePage className="fa-page">
         <SectionState title="Your account isn't in a department yet">

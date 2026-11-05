@@ -195,8 +195,6 @@ eduVideoClient.interceptors.request.use((config) => {
 });
 
 /** Same cookie refresh as src/lib/axios.js — edu_video is outside /api/v1. */
-let eduRefreshing = false;
-let eduQueue = [];
 eduVideoClient.interceptors.response.use(
   (res) => res,
   async (err) => {
@@ -205,24 +203,15 @@ eduVideoClient.interceptors.response.use(
       return Promise.reject(err);
     }
     orig._retry = true;
-    if (eduRefreshing) {
-      return new Promise((resolve) => eduQueue.push(() => resolve(eduVideoClient(orig))));
-    }
-    eduRefreshing = true;
     try {
-      const { default: api } = await import('@/lib/axios');
-      await api.post('/auth/refresh-token');
+      const { refreshSession } = await import('@/lib/axios');
+      await refreshSession();
     } catch {
-      eduRefreshing = false;
-      eduQueue = [];
       // Session really expired - go to login rather than show empty lists.
       const { handleSessionExpired } = await import('@/lib/sessionExpiry');
       handleSessionExpired();
       return Promise.reject(err);
     }
-    eduRefreshing = false;
-    eduQueue.forEach((cb) => cb());
-    eduQueue = [];
     return eduVideoClient(orig);
   },
 );
@@ -378,7 +367,8 @@ export const eduVideoApi = {
    * approval; the video becomes visible to students from this point (no
    * separate student-facing consumption endpoint exists yet — see
    * CONTENT_VIDEO_GENERATION_BACKEND_INTEGRATION.md). 400s if a College
-   * Admin hasn't sent it yet, or if it was already published.
+   * Admin hasn't sent it yet, or if it was already published; 409 while a change request is open.
+   * Returns { job_id, published, unpublished_job_ids } (earlier videos of the chapter it took offline).
    */
   publish(jobId) {
     const origin = getEduVideoOrigin();
@@ -441,6 +431,12 @@ export const eduVideoApi = {
     return eduVideoClient.delete(url).then((res) => res?.data);
   },
 
+  /** GET /edu_video/captions/{job_id} — WebVTT for a finished video; 404 when it has none yet. */
+  getCaptionsUrl(jobId) {
+    const origin = getEduVideoOrigin() || '';
+    return `${origin}/edu_video/captions/${encodeURIComponent(jobId)}`;
+  },
+
   /** Absolute URL for GET /edu_video/download/{job_id} (open in new tab). */
   getDownloadUrl(jobId) {
     const origin = getEduVideoOrigin() || '';
@@ -483,60 +479,14 @@ export const eduVideoApi = {
   /**
    * POST /edu_video/jobs/{job_id}/request-changes — HOD/Faculty sends
    * edited plan (+ optional note) back to College Admin for regenerate.
-   * Live FastAPI often 404s; we then fall back to the Next.js bridge
-   * (`/api/edu-video/request-changes`) so the handoff works in-app until
-   * backend ships the real route. See docs/BACKEND_EDU_VIDEO_REQUEST_CHANGES.md.
    */
-  requestChanges(jobId, { plan, note, meta } = {}) {
+  requestChanges(jobId, { plan, note } = {}) {
     const origin = getEduVideoOrigin();
     const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/request-changes`;
     const url = origin ? `${origin}${path}` : path;
     const body = { plan, note: note || undefined };
 
-    return eduVideoClient
-      .post(url, body)
-      .then((res) => res?.data)
-      .catch(async (err) => {
-        const status = err?.response?.status;
-        if (status !== 404 && status !== 405 && status !== 501) throw err;
-        const bridgeRes = await fetch('/api/edu-video/request-changes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({
-            job_id: jobId,
-            plan,
-            note: note || '',
-            chapter_title: meta?.chapter_title || '',
-            source_filename: meta?.source_filename || '',
-            department_name: meta?.department_name || '',
-            department_id: meta?.department_id || null,
-            sent_to_hod_at: meta?.sent_to_hod_at || null,
-          }),
-        });
-        const data = await bridgeRes.json().catch(() => ({}));
-        if (!bridgeRes.ok) {
-          const detail = data?.detail || data?.message || 'Could not store pending changes.';
-          const bridgeErr = new Error(detail);
-          bridgeErr.response = { status: bridgeRes.status, data };
-          throw bridgeErr;
-        }
-        return data;
-      });
-  },
-
-  /** Temporary Next bridge — list HOD→CA pending slide edits. */
-  listPendingChanges() {
-    return fetch('/api/edu-video/pending-changes', { credentials: 'same-origin' })
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const err = new Error(data?.detail || 'Could not load pending changes.');
-          err.response = { status: res.status, data };
-          throw err;
-        }
-        return data;
-      });
+    return eduVideoClient.post(url, body).then((res) => res?.data);
   },
 
   /** GET /edu_video/jobs/{job_id}/history — review trail, newest first. */
@@ -559,23 +509,6 @@ export const eduVideoApi = {
     const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/dismiss-changes`;
     const url = origin ? `${origin}${path}` : path;
     return eduVideoClient.post(url, {}).then((res) => res?.data);
-  },
-
-  /** Temporary Next bridge — clear one pending item after CA acts. */
-  clearPendingChange(jobId) {
-    const qs = new URLSearchParams({ job_id: String(jobId) });
-    return fetch(`/api/edu-video/pending-changes?${qs}`, {
-      method: 'DELETE',
-      credentials: 'same-origin',
-    }).then(async (res) => {
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const err = new Error(data?.detail || 'Could not clear pending change.');
-        err.response = { status: res.status, data };
-        throw err;
-      }
-      return data;
-    });
   },
 
   /**

@@ -46,7 +46,7 @@
   padding:16px 24px;min-width:0;flex:none;
 }
 .nr-card-h{margin-bottom:4px}
-.nr-card-h h3{
+.nr-card-h :is(h2,h3){
   margin:0;font-size:12px;line-height:18px;font-weight:500;
   color:var(--muted-2);
 }

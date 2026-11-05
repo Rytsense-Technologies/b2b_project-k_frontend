@@ -11,6 +11,7 @@ import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useUrlState } from '@/hooks/useUrlState';
 import { SUBJECTS_PATH, classroomHref, subjectKey, subjectName } from '@/lib/student/learning';
 import '@/styles/student-learning.css';
+import { fetchAllPages } from '@/lib/api/fetchAllPages';
 
 /**
  * Student chapter assessment: take → results → review (state in the URL:
@@ -24,7 +25,7 @@ function AssessmentInner() {
 
   /* Chapter context (subject name, source file) for breadcrumbs and links. */
   const { data } = useAsyncResource(
-    () => (jobId ? eduVideoApi.listStudentVideos({ pageSize: 100 }) : Promise.resolve(null)),
+    () => (jobId ? fetchAllPages((p) => eduVideoApi.listStudentVideos(p)) : Promise.resolve(null)),
     [jobId],
   );
   const job = useMemo(() => asList(data, []).find((v) => v.job_id === jobId) || null, [data, jobId]);

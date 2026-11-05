@@ -8,12 +8,12 @@
  *   rank     → 1 orange · 2 blue · 3 purple · rest teal
  * Buttons, status pills and navigation never use these colours.
  */
-import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import {
-  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts';
+
+// Recharts is about 100 KB gz and only two pages draw with it, so it stays out of this module.
+const ColumnPlot = dynamic(() => import('./data-viz-charts').then((m) => m.ColumnPlot), { ssr: false });
+const TrendPlot = dynamic(() => import('./data-viz-charts').then((m) => m.TrendPlot), { ssr: false });
 
 const SERIES = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)', 'var(--cat-5)', 'var(--cat-6)'];
 // Raw hex for SVG attributes in charts (CSS variables do not resolve inside some recharts props).
@@ -45,18 +45,12 @@ export function bandFor(score) {
   return 'focus';
 }
 
-const BAND_HEX = { strong: '#5CB414', ok: '#2C74E0', focus: '#F5821F', none: '#4D8691' };
+export const BAND_HEX = { strong: '#5CB414', ok: '#2C74E0', focus: '#F5821F', none: '#4D8691' };
 
-function fmt(v, format) {
+export function fmt(v, format) {
   if (v == null || Number.isNaN(Number(v))) return '—';
   if (format) return format(v);
   return Number(v).toLocaleString('en-IN', { maximumFractionDigits: 1 });
-}
-
-function useMounted() {
-  const [m, setM] = useState(false);
-  useEffect(() => setM(true), []);
-  return m;
 }
 
 /** Small pill for a score band. */
@@ -99,46 +93,34 @@ function unitFor(unit, count, unitOne) {
   return unit;
 }
 
-function ChartTip({ active, payload, label, format, suffix, labelOf }) {
-  if (!active || !payload?.length) return null;
-  const shown = labelOf ? labelOf(label) : label;
-  return (
-    <div className="dv-tip">
-      {shown != null ? <b>{shown}</b> : null}
-      {payload.map((p) => (
-        <span key={p.dataKey ?? p.name}>
-          <i style={{ background: p.color || p.payload?.fill }} aria-hidden="true" />
-          {p.name}: {fmt(p.value, format)}{suffix}
-        </span>
-      ))}
-    </div>
-  );
+/** Spoken alternative for ColumnChart: every column as "label value". */
+export function columnSummary(label, data, { xKey = 'label', yKey = 'value', format, suffix = '' } = {}) {
+  const rows = (data || []).map((d) => `${d[xKey]} ${fmt(d[yKey], format)}${suffix}`);
+  return `${label}: ${rows.join(', ')}`;
+}
+
+/** Spoken alternative for TrendChart: range, then latest, lowest and highest per series. */
+export function trendSummary(label, data, series, { xKey = 'label', format, suffix = '' } = {}) {
+  const rows = data || [];
+  const range = `${rows.length} point${rows.length === 1 ? '' : 's'} from ${rows[0]?.[xKey]} to ${rows[rows.length - 1]?.[xKey]}`;
+  const lines = (series || []).map((s) => {
+    const values = rows.map((d) => Number(d[s.key])).filter((v) => !Number.isNaN(v));
+    if (!values.length) return `${s.name}: no data`;
+    const show = (v) => `${fmt(v, format)}${suffix}`;
+    return `${s.name}: latest ${show(values[values.length - 1])}, lowest ${show(Math.min(...values))}, highest ${show(Math.max(...values))}`;
+  });
+  return `${label}: ${range}. ${lines.join('; ')}`;
 }
 
 /**
  * Vertical columns, one colour per column (or per series when `series` is given).
  * data: [{ [xKey]: label, [yKey]: value }]
  */
-export function ColumnChart({ data, xKey = 'label', yKey = 'value', name = 'Value', colorBy = 'series', height = 220, format, suffix = '', empty = 'No data yet.' }) {
-  const mounted = useMounted();
+export function ColumnChart({ data, xKey = 'label', yKey = 'value', name = 'Value', colorBy = 'series', height = 220, format, suffix = '', empty = 'No data yet.', label = 'Column chart' }) {
   if (!data?.length) return <p className="dv-empty">{empty}</p>;
   return (
-    <div className="dv-chart" style={{ height }}>
-      {mounted ? (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="#DEE0E1" strokeDasharray="3 3" />
-            <XAxis dataKey={xKey} tick={{ fontSize: 12, fill: '#536064' }} tickLine={false} axisLine={{ stroke: '#DEE0E1' }} interval={0} />
-            <YAxis tick={{ fontSize: 12, fill: '#536064' }} tickLine={false} axisLine={false} allowDecimals={false} />
-            <Tooltip cursor={{ fill: 'rgba(14,92,107,.06)' }} content={<ChartTip format={format} suffix={suffix} />} />
-            <Bar dataKey={yKey} name={name} radius={[6, 6, 0, 0]} maxBarSize={44}>
-              {data.map((d, i) => (
-                <Cell key={d[xKey] ?? i} fill={colorBy === 'band' ? BAND_HEX[bandFor(d[yKey])] : dataColor(i, { hex: true })} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      ) : null}
+    <div className="dv-chart" style={{ height }} role="img" aria-label={columnSummary(label, data, { xKey, yKey, format, suffix })}>
+      <ColumnPlot data={data} xKey={xKey} yKey={yKey} name={name} colorBy={colorBy} format={format} suffix={suffix} />
     </div>
   );
 }
@@ -148,51 +130,12 @@ export function ColumnChart({ data, xKey = 'label', yKey = 'value', name = 'Valu
  * series: [{ key, name, color? }] — colours follow series order unless a series sets `color`
  * (hex, e.g. a subject colour from dataColor(id, { hex: true })).
  */
-export function TrendChart({ data, xKey = 'label', series, height = 220, format, suffix = '', empty = 'No activity in this range.' }) {
-  const mounted = useMounted();
+export function TrendChart({ data, xKey = 'label', series, height = 220, format, suffix = '', empty = 'No activity in this range.', label = 'Trend chart' }) {
   const colorOf = (s, i) => s.color || dataColor(i, { hex: true });
   if (!data?.length) return <p className="dv-empty">{empty}</p>;
-  // Several points can share a label (two sessions on one day): plot by index and
-  // print a label only where it changes, so the axis never repeats a date.
-  const rows = data.map((d, i) => ({ ...d, __i: i }));
-  const tickFor = (i) => {
-    const cur = rows[i]?.[xKey];
-    return i > 0 && rows[i - 1]?.[xKey] === cur ? '' : String(cur ?? '');
-  };
   return (
-    <div className="dv-chart" style={{ height }}>
-      {mounted ? (
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={rows} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <defs>
-              {series.map((s, i) => (
-                <linearGradient key={s.key} id={`dv-fill-${s.key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={colorOf(s, i)} stopOpacity={0.18} />
-                  <stop offset="100%" stopColor={colorOf(s, i)} stopOpacity={0} />
-                </linearGradient>
-              ))}
-            </defs>
-            <CartesianGrid vertical={false} stroke="#DEE0E1" strokeDasharray="3 3" />
-            <XAxis dataKey="__i" type="category" tickFormatter={tickFor} tick={{ fontSize: 12, fill: '#536064' }} tickLine={false} axisLine={{ stroke: '#DEE0E1' }} minTickGap={16} />
-            <YAxis tick={{ fontSize: 12, fill: '#536064' }} tickLine={false} axisLine={false} allowDecimals={false} />
-            <Tooltip content={<ChartTip format={format} suffix={suffix} labelOf={(i) => rows[i]?.[xKey] ?? i} />} />
-            {series.map((s, i) => (
-              <Area
-                key={s.key}
-                type="monotone"
-                dataKey={s.key}
-                name={s.name}
-                stroke={colorOf(s, i)}
-                strokeWidth={2}
-                fill={`url(#dv-fill-${s.key})`}
-                dot={{ r: 3.5, fill: '#F5821F', stroke: '#fff', strokeWidth: 1 }}
-                isAnimationActive={false}
-                activeDot={{ r: 5 }}
-              />
-            ))}
-          </AreaChart>
-        </ResponsiveContainer>
-      ) : null}
+    <div className="dv-chart" style={{ height }} role="img" aria-label={trendSummary(label, data, series, { xKey, format, suffix })}>
+      <TrendPlot data={data} xKey={xKey} series={series} format={format} suffix={suffix} />
       {series.length > 1 ? (
         <ul className="dv-slegend">
           {series.map((s, i) => <li key={s.key}><i style={{ background: colorOf(s, i) }} aria-hidden="true" />{s.name}</li>)}
@@ -400,7 +343,7 @@ export function ModernDonutCard({
       {title || chip || action ? (
         <div className="sp-panel-h">
           <div>
-            {title ? <h3>{title}</h3> : null}
+            {title ? <h2>{title}</h2> : null}
             {sub ? <p>{sub}</p> : null}
           </div>
           {action || chip}
@@ -446,13 +389,23 @@ export function MetricList({
 }
 
 /** MetricList in its own card (title, sub, optional head action, note strip, "View …" link). */
+/** Holds the place of a two-card .dv-grid while its totals load, so the list below does not jump. */
+export function DvGridPlaceholder() {
+  return (
+    <div className="dv-grid" aria-hidden="true">
+      <div className="sp-panel dv-ph" />
+      <div className="sp-panel dv-ph" />
+    </div>
+  );
+}
+
 export function MetricListCard({ title, sub, action, note, link, className = '', ...listProps }) {
   return (
     <section className={`sp-panel mdc-card ${className}`.trim()}>
       {title || action ? (
         <div className="sp-panel-h">
           <div>
-            {title ? <h3>{title}</h3> : null}
+            {title ? <h2>{title}</h2> : null}
             {sub ? <p>{sub}</p> : null}
           </div>
           {action}

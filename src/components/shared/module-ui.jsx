@@ -243,7 +243,7 @@ export function Panel({ title, sub, action = null, toolbar = null, children, cla
       {title || action ? (
         <div className="sp-panel-h">
           <div>
-            {title ? <h3>{title}</h3> : null}
+            {title ? <h2>{title}</h2> : null}
             {sub ? <p>{sub}</p> : null}
           </div>
           {action}

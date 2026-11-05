@@ -37,6 +37,7 @@ import { departmentsApi, fetchData } from '@/lib/api/superadmin/modules';
 import { academicsApi } from '@/lib/api/superadmin/academics';
 import { apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
+import { isUuid, notFoundError } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 
@@ -56,12 +57,13 @@ function DepartmentRecord() {
   const [drawer, setDrawer] = useState(null); // null | 'edit' | 'hod'
 
   const { data: dept, loading, error, reload } = useAsyncResource(
-    () => fetchData(() => departmentsApi.get(id)),
+    () => (isUuid(id) ? fetchData(() => departmentsApi.get(id)) : Promise.reject(notFoundError())),
     [id],
   );
   const { data: below } = useAsyncResource(
-    () => fetchData(() => academicsApi.summary({ department_id: id })),
+    () => (isUuid(id) ? fetchData(() => academicsApi.summary({ department_id: id })) : Promise.resolve(null)),
     [id],
+    { lookup: 'programme totals' },
   );
 
   const { data: people, loading: peopleLoading, error: peopleError } = useAsyncResource(

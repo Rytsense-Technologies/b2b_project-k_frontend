@@ -5,6 +5,7 @@
  * page (/superadmin/colleges/[id]): form, status confirm, drawer, seat bar, helpers.
  */
 import { useRef, useState } from 'react';
+import { collegeStats } from '@/lib/superadmin/collegeStats';
 import Link from 'next/link';
 import { useOverlay } from '@/components/superadmin/overlayStack';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -15,11 +16,12 @@ import { QuirriRHFField, QuirriSelect, AssignedCodeField, IndiaLocationFields } 
 import { Icon, SectionState } from '@/components/shared/module-ui';
 import ScoreRing from '@/components/shared/ScoreRing';
 import { collegesApi } from '@/lib/api/superadmin/modules';
-import { apiErrorMessage } from '@/lib/api/superadmin/http';
+import { apiErrorMessage, unwrap } from '@/lib/api/superadmin/http';
 import { collegeCreateSchema, collegeUpdateSchema } from '@/lib/validation';
 import { INDIA_COUNTRY, withIndiaPhoneDefault } from '@/lib/india';
 import { formatIndianPhone } from '@/lib/superadmin/format';
 import { createOmittingCode } from '@/lib/ids/uniqueSeries';
+import { codeTakenMessage } from '@/lib/superadmin/savedCode';
 
 export const EMPTY_FORM = {
   name: '',
@@ -48,24 +50,7 @@ export function num(n) {
   return n == null || n === '' ? '—' : Number(n).toLocaleString('en-IN');
 }
 
-/** Normalise the fields the API returns under different names. */
-export function collegeStats(c) {
-  const students = Number(c?.students ?? c?.student_count ?? 0);
-  const cap = Number(c?.student_seat_cap ?? c?.student_limit ?? c?.seat_cap ?? 0);
-  const admins = Array.isArray(c?.admins) ? c.admins.length : (c?.admin_count ?? c?.admins ?? 0);
-  const pct = cap > 0 ? Math.min(100, Math.round((students / cap) * 100)) : 0;
-  return {
-    students,
-    cap,
-    admins: Number(admins) || 0,
-    depts: c?.department_count,
-    pct,
-    active: c?.is_active !== false,
-    university: c?.university || c?.university_name || '',
-    // City and state only; district usually repeats the city.
-    location: [c?.city || c?.district, c?.state].filter(Boolean).join(', '),
-  };
-}
+export { collegeStats };
 
 export function adminStatus(status) {
   const st = String(status || '').toLowerCase();
@@ -111,6 +96,7 @@ export function CollegeFormModal({
     control,
     handleSubmit,
     setValue,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
@@ -153,7 +139,9 @@ export function CollegeFormModal({
       onSaved();
       onClose();
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to save college'));
+      const taken = codeTakenMessage(err);
+      if (taken) setError('code', { type: 'server', message: taken }, { shouldFocus: true });
+      else toast.error(apiErrorMessage(err, 'Failed to save college'));
     } finally {
       setSaving(false);
     }
@@ -432,7 +420,7 @@ export function CollegeDrawer({
               <h3>Seat usage</h3>
               <span className="sp-pill sp-pill--teal">Seat cap {s.cap ? num(s.cap) : '—'}</span>
             </div>
-            <SeatBar students={s.students} cap={s.cap} pct={s.pct} />
+            <SeatBar students={s.seats} cap={s.cap} pct={s.pct} />
             {s.pct >= 90 ? (
               <p className="co-warn"><Icon name="info" size={14} /> Close to the seat cap — new students may be refused.</p>
             ) : null}

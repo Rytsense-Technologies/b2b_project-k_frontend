@@ -6,6 +6,14 @@
  */
 const INTERVIEW_LABEL = /ai[\s_-]?interview|\binterviews?\b|\bmock\b/i;
 
+/**
+ * Catalogue event ids and report keys. Use this, not isInterviewOff, for anything that
+ * can hold user content: a chapter called "Mock test" is not an interview.
+ */
+export function isInterviewEvent(id) {
+  return /interview|(^|_)mock(_|$)/i.test(String(id || ''));
+}
+
 export function isInterviewOff(value) {
   return INTERVIEW_LABEL.test(String(value || ''));
 }

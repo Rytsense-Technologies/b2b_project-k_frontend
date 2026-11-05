@@ -37,7 +37,7 @@ function optionalIntListField(label, { maxItem, maxEntries = MAX_ASSIGNED_ENTRIE
       if (list == null) return;
       if (list.length > maxEntries) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: `Enter at most ${maxEntries} ${label.toLowerCase()} values`,
         });
         return;
@@ -45,7 +45,7 @@ function optionalIntListField(label, { maxItem, maxEntries = MAX_ASSIGNED_ENTRIE
       for (const n of list) {
         if (!Number.isInteger(n) || n < 1 || n > maxItem) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: 'custom',
             message: `Each ${label.toLowerCase()} must be a whole number from 1 to ${maxItem}`,
           });
           return;
@@ -53,7 +53,7 @@ function optionalIntListField(label, { maxItem, maxEntries = MAX_ASSIGNED_ENTRIE
       }
       if (new Set(list).size !== list.length) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           message: `${label} cannot contain duplicate values`,
         });
       }
@@ -67,7 +67,7 @@ function yearWithinDurationRefine(data, ctx) {
     && data.year_of_study > data.course_duration_years
   ) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Current year cannot exceed programme duration',
       path: ['year_of_study'],
     });
@@ -102,7 +102,7 @@ export const platformUserCreateSchema = z
     email: emailField('Email'),
     phone_number: phoneField('Phone number', { required: false }),
     role: z.enum(PLATFORM_ROLES, {
-      required_error: 'Select a role',
+      error: 'Select a role',
     }),
     college_id: z.string().optional().default(''),
     ...academicOptionalFields,
@@ -110,7 +110,7 @@ export const platformUserCreateSchema = z
   .superRefine((data, ctx) => {
     if (data.role !== 'superadmin' && !String(data.college_id || '').trim()) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'Select an institution',
         path: ['college_id'],
       });
@@ -152,7 +152,7 @@ export const tenantStudentCreateSchema = z
   .superRefine(yearWithinDurationRefine)
   .superRefine((v, ctx) => {
     if (v.program_id && !v.semester_id) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['semester_id'], message: 'Select the current semester' });
+      ctx.addIssue({ code: 'custom', path: ['semester_id'], message: 'Select the current semester' });
     }
   });
 
@@ -162,7 +162,7 @@ export const tenantFacultyCreateSchema = z.object({
   last_name: personNameField('Last name'),
   email: emailField('Email'),
   phone_number: phoneField('Phone number', { required: false }),
-  role: z.enum(['faculty', 'hod'], { required_error: 'Select a role' }),
+  role: z.enum(['faculty', 'hod'], { error: 'Select a role' }),
   department_id: optionalDepartmentId,
   assigned_years: optionalIntListField('Assigned years', { maxItem: MAX_ASSIGNED_YEAR }),
   assigned_semesters: optionalIntListField('Assigned semesters', {
