@@ -318,6 +318,9 @@
 .sd-kpi-v.is-focus{color:var(--accent-text)}
 .cs-seg-row{flex:1 1 100%;min-width:0}
 .cs-jobs td{vertical-align:top}
+/* The chapter name may break anywhere (long file names), which makes its min-content one letter wide:
+   without a floor the auto table layout squeezed it to a single column of letters next to the actions. */
+.cs-jobs td:first-child{min-width:240px}
 .cs-jobs th:nth-child(4),.cs-jobs .cs-date{white-space:nowrap}
 .cs-where{display:flex;flex-direction:column;min-width:0;max-width:32ch}
 .cs-where span{font-size:14px;line-height:22px;color:var(--ink);overflow-wrap:anywhere}
@@ -341,6 +344,7 @@
   .cs-steps{grid-template-columns:1fr;gap:12px}
   .cs-where{max-width:none;align-items:flex-end;text-align:right}
   .cs-jobs .ad-actions{flex-wrap:wrap}
+  .cs-jobs td:first-child{min-width:0}
 }
 
 /* Light in-panel filters for the shared content / MCQ / structure modules (search icon + compact selects) */

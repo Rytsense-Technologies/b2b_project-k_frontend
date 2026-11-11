@@ -109,6 +109,8 @@ export async function middleware(req) {
     { prefix: '/superadmin', role: 'superadmin' },
     { prefix: '/faculty', roles: ['faculty', 'hod'] },
     { prefix: '/student', role: 'student' },
+    // Watch-only video tab (VideoPreviewModal "Open in a new tab"); the API checks who may watch.
+    { prefix: '/watch/', roles: ['superadmin', 'college_admin', 'hod', 'faculty', 'student'] },
   ];
 
   for (const guard of portalGuards) {

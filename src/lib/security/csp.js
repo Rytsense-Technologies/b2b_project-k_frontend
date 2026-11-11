@@ -15,8 +15,12 @@
 const HOST_RE = /^[a-z0-9.-]+(:\d{1,5})?$/i;
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
-/** Media bucket defaults; presigned edu_video links point at this bucket (next.config images too). */
-const DEFAULT_BUCKET = 'projectk-media';
+/**
+ * Media buckets allowed by default. Presigned edu_video links point at the production bucket
+ * (xplains-b2b, served as https://xplains-b2b.s3.amazonaws.com); projectk-media is the older
+ * default (next.config images). NEXT_PUBLIC_AWS_S3_BUCKET adds one more; CSP_MEDIA_ORIGINS adds any origin.
+ */
+const DEFAULT_BUCKETS = ['xplains-b2b', 'projectk-media'];
 const DEFAULT_REGION = 'ap-south-1';
 
 /** Local stack the browser talks to directly when the page itself is on localhost (apiConfig, livekitUrl, eduVideo). */
@@ -53,10 +57,11 @@ function withHttpTwin(origin) {
  * runtime, so an image built without them can still be pointed at another bucket or LiveKit host.
  */
 export function configuredOrigins(env = {}) {
-  const bucket = (env.NEXT_PUBLIC_AWS_S3_BUCKET || DEFAULT_BUCKET).trim();
   const region = (env.NEXT_PUBLIC_AWS_REGION || DEFAULT_REGION).trim();
-  const bucketOrigins = /^[a-z0-9.-]+$/.test(bucket) && /^[a-z0-9-]+$/.test(region)
-    ? [`https://${bucket}.s3.${region}.amazonaws.com`, `https://${bucket}.s3.amazonaws.com`]
+  const buckets = [...new Set([String(env.NEXT_PUBLIC_AWS_S3_BUCKET || '').trim(), ...DEFAULT_BUCKETS].filter(Boolean))];
+  const bucketOrigins = /^[a-z0-9-]+$/.test(region)
+    ? buckets.filter((bucket) => /^[a-z0-9.-]+$/.test(bucket))
+      .flatMap((bucket) => [`https://${bucket}.s3.${region}.amazonaws.com`, `https://${bucket}.s3.amazonaws.com`])
     : [];
   const api = [env.NEXT_PUBLIC_API_URL, env.NEXT_PUBLIC_EDU_VIDEO_ORIGIN].map(originOf).filter(Boolean);
   const livekit = originList(env.NEXT_PUBLIC_LIVEKIT_URL).flatMap(withHttpTwin);
