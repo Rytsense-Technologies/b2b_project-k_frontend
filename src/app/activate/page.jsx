@@ -12,6 +12,7 @@ import { resetPasswordSchema, FIELD_RULES } from '@/lib/validation';
 import { authApi } from '@/lib/api/auth';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { getPostLoginPath } from '@/lib/auth/rbac';
+import ClientOnly from '@/components/shared/ClientOnly';
 
 /**
  * Account activation (invite e-mail → {FRONTEND_URL}/activate?token=…).
@@ -50,7 +51,9 @@ function ActivateLoading() {
 export default function ActivatePage() {
   return (
     <Suspense fallback={<ActivateLoading />}>
-      <ActivateForm />
+      <ClientOnly fallback={<ActivateLoading />}>
+        <ActivateForm />
+      </ClientOnly>
     </Suspense>
   );
 }

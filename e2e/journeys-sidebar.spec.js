@@ -29,10 +29,13 @@ for (const role of ROLES) {
       test('the sidebar offers exactly the expected pages', async () => {
         await page.goto(role.home);
         await settled(page);
-        const hrefs = await page
-          .locator('aside nav a[href]')
-          .evaluateAll((links) => [...new Set(links.map((a) => a.getAttribute('href')))]);
-        expect(hrefs.sort()).toEqual([...PATHS[role.name]].sort());
+        // The sidebar mounts on the client after hydration (and the HOD/faculty split after the
+        // profile loads), so wait for the list rather than reading it once (firefox at 768).
+        await expect
+          .poll(async () => (await page
+            .locator('aside nav a[href]')
+            .evaluateAll((links) => [...new Set(links.map((a) => a.getAttribute('href')))])).sort())
+          .toEqual([...PATHS[role.name]].sort());
       });
 
       for (const path of PATHS[role.name]) {

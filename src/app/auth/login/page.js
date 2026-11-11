@@ -16,6 +16,7 @@ import { loginWithRbac, authApi } from '@/lib/api/auth';
 import { getApiErrorMessage, isCredentialFailure } from '@/lib/api/errors';
 import { getPostLoginPath, isB2bRole, isPortalRole } from '@/lib/auth/rbac';
 import { clearTokens } from '@/lib/tokens';
+import ClientOnly from '@/components/shared/ClientOnly';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_MS = 15 * 60 * 1000;
@@ -46,7 +47,9 @@ function getOnbCookie() {
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
-      <LoginForm />
+      <ClientOnly>
+        <LoginForm />
+      </ClientOnly>
     </Suspense>
   );
 }

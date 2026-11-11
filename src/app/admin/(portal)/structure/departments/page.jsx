@@ -263,10 +263,12 @@ function DepartmentsList() {
                     <tr
                       key={d.id}
                       className="pm-row-link"
-                      onClick={(e) => { if (!e.target.closest('a')) router.push(href); }}
+                      // The second click of a double click (e.g. on "Create department", whose drawer has
+                      // just closed over this row) must not open a department.
+                      onClick={(e) => { if (e.detail <= 1 && !e.target.closest('a')) router.push(href); }}
                     >
                       <td>
-                        <Link href={href} className="pm-person">
+                        <Link href={href} className="pm-person" onClick={(e) => { if (e.detail > 1) e.preventDefault(); }}>
                           <Mono name={d.name} size="sm" muted={!active} />
                           <span>
                             <b>{d.name}</b>

@@ -16,8 +16,14 @@ for (const role of ROLES) {
 
     test.beforeAll(async ({ browser }) => {
       page = await browser.newPage();
+      // Chromium logs CSP blocks to the console; Firefox and WebKit only fire the DOM event.
+      await page.addInitScript(() => {
+        document.addEventListener('securitypolicyviolation', (e) => {
+          console.error(`CSP violation: ${e.violatedDirective} blocked ${e.blockedURI || 'inline'}`);
+        });
+      });
       page.on('console', (message) => {
-        if (message.text().includes('Content Security Policy')) blocked.push(message.text());
+        if (/Content Security Policy|CSP violation/.test(message.text())) blocked.push(message.text());
       });
       await signIn(page, role);
     });

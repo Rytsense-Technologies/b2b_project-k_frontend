@@ -5,7 +5,10 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Toaster } from 'react-hot-toast';
 
-export default function Providers({ children }) {
+export default function Providers({ children, nonce }) {
+  // SECB-009: react-hot-toast styles through goober, which stamps window.__nonce__ on its <style>
+  // tag; without it the CSP blocks every toast's styling. Set before the Toaster first renders.
+  if (typeof window !== 'undefined' && nonce && window.__nonce__ !== nonce) window.__nonce__ = nonce;
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getApiBaseUrl, getApiOrigin, PRODUCTION_HOST } from '@/lib/apiConfig';
+import { getApiBaseUrl, getApiOrigin } from '@/lib/apiConfig';
 
 /**
  * Educational video pipeline — mounted at /edu_video on the FastAPI app
@@ -163,8 +163,6 @@ export function getEduVideoOrigin() {
     const { hostname, protocol } = window.location;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       candidates.push(LOCAL_API_ORIGIN);
-    } else if (hostname === PRODUCTION_HOST) {
-      candidates.push(`http://${PRODUCTION_HOST}:8000`);
     } else if (protocol === 'https:') {
       candidates.push('');
     }
@@ -373,6 +371,19 @@ export const eduVideoApi = {
   publish(jobId) {
     const origin = getEduVideoOrigin();
     const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/publish`;
+    const url = origin ? `${origin}${path}` : path;
+    return eduVideoClient.post(url).then((res) => res?.data);
+  },
+
+  /**
+   * POST /edu_video/jobs/{job_id}/unpublish — takes a published chapter away from students (video, quiz and
+   * tutor follow it). It returns to the review queue, still sent to HOD & Faculty, so it can be published
+   * again or deleted. HOD, Faculty, College Admin and Super Admin, same scope as publish.
+   * 409 when it is not published (or changed meanwhile). Returns { job_id, published: false }.
+   */
+  unpublish(jobId) {
+    const origin = getEduVideoOrigin();
+    const path = `/edu_video/jobs/${encodeURIComponent(jobId)}/unpublish`;
     const url = origin ? `${origin}${path}` : path;
     return eduVideoClient.post(url).then((res) => res?.data);
   },

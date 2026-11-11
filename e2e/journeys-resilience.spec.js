@@ -104,8 +104,10 @@ test('losing the session mid-page lands on login, and no data stays on screen', 
   await page.goto('/student/subjects');
   await settled(page);
   await context.clearCookies();
-  // A background request may notice first and send the page to login before the click lands.
-  await (await sidebarLink(page, 'Leaderboard').catch(() => page.getByRole('link', { name: 'Leaderboard' }))).click({ timeout: 5_000 }).catch(() => {});
+  // A background request may notice first and send the page to login before the click lands, so
+  // click the sidebar link from inside the page: no drawer to open and no actionability wait that a
+  // page leaving mid-check could hang (XB-013, webkit-tablet). Next's Link still handles the click.
+  await page.evaluate(() => document.querySelector('aside a[href$="/leaderboard"]')?.click()).catch(() => {});
   await page.waitForURL(/\/auth\/login/, { timeout: 20_000 });
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
   expect(problems.filter((p) => !p.startsWith('console:'))).toEqual([]);

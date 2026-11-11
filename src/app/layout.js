@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import '../styles/quirri-design.css';
@@ -32,11 +33,16 @@ export const metadata = {
   description: 'Quirri workspace for institutions, learning, and platform operations.',
 };
 
-export default function RootLayout({ children }) {
+/**
+ * SECB-009: reading the request makes every page render per request, which a nonce-based CSP needs
+ * (a prerendered page would carry no nonce). The middleware sets x-nonce.
+ */
+export default async function RootLayout({ children }) {
+  const nonce = (await headers()).get('x-nonce') || undefined;
   return (
     <html lang="en" className={portalFont.variable}>
       <body className={portalFont.className}>
-        <Providers>{children}</Providers>
+        <Providers nonce={nonce}>{children}</Providers>
       </body>
     </html>
   );

@@ -29,6 +29,9 @@
 
 /* ---------- Sidebar ---------- */
 .q-app-shell:not(.q-student) .sidebar{border-right:0;box-shadow:0 1px 2px rgba(0,0,0,.08);z-index:50}
+/* XB-013: same fix as the student drawer (student-b2c.css). The z-index:50 above outranked the
+   drawer's 70, so the open drawer sat under its scrim (65) and every nav tap closed it instead. */
+@media (max-width:1023px){.app.q-app-shell.q-drawer-shell:not(.q-student) .sidebar{z-index:70}}
 .q-app-shell:not(.q-student) .sidebar .nav{padding-left:16px;padding-right:16px}
 .q-app-shell:not(.q-student) .sidebar.is-collapsed .nav{padding-left:8px;padding-right:8px}
 .q-app-shell:not(.q-student) .nav a{color:var(--sb-ink);font-weight:500;font-size:15px;padding:8px 20px;min-height:44px;border-radius:6px}

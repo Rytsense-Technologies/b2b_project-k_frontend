@@ -34,6 +34,7 @@ import { academicsApi } from '@/lib/api/superadmin/academics';
 import ChapterLinkModal from '@/components/shared/ChapterLinkModal';
 import ReviewHistoryModal from '@/components/shared/ReviewHistoryModal';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
+import { UNPUBLISHED, deleteErrorMessage, unpublishErrorMessage } from '@/lib/admin/publish';
 import {
   eduVideoApi,
   JOB_STATUS,
@@ -333,6 +334,8 @@ function ContentStudio({ platformScope = false }) {
   const [dismissingPendingId, setDismissingPendingId] = useState(null);
   // Confirmations for destructive / approval-clearing actions.
   const [confirmRemove, setConfirmRemove] = useState(null);
+  const [confirmUnpublish, setConfirmUnpublish] = useState(null);
+  const [unpublishingId, setUnpublishingId] = useState(null);
   const [confirmMcq, setConfirmMcq] = useState(null); // { job, state }
   const [checkingMcqId, setCheckingMcqId] = useState(null);
   const generateRetry = useRetryAfter();
@@ -680,9 +683,25 @@ function ContentStudio({ platformScope = false }) {
       toast.success(`${chapterName(job)} removed.`);
       await reloadJobs();
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Could not remove this chapter.'));
+      // 409: a published chapter must be unpublished first (BACKEND-021); show the API's sentence.
+      toast.error(deleteErrorMessage(err));
     } finally {
       setRemovingId(null);
+    }
+  };
+
+  const unpublishJob = async (job) => {
+    const jobId = job.job_id;
+    setUnpublishingId(jobId);
+    try {
+      await eduVideoApi.unpublish(jobId);
+      toast.success(UNPUBLISHED);
+      setConfirmUnpublish(null);
+      await reloadJobs();
+    } catch (err) {
+      toast.error(unpublishErrorMessage(err));
+    } finally {
+      setUnpublishingId(null);
     }
   };
 
@@ -755,6 +774,12 @@ function ContentStudio({ platformScope = false }) {
   });
   const historyItem = (job) => ({ label: 'Review history', icon: 'clock', onClick: () => setHistoryJob(job) });
   const previewItem = (job) => ({ label: 'Preview video', icon: 'play', onClick: () => setPreviewJob(job) });
+  const unpublishItem = (job) => ({
+    label: unpublishingId === job.job_id ? 'Unpublishingâ€¦' : 'Unpublish',
+    icon: 'back',
+    disabled: unpublishingId === job.job_id,
+    onClick: () => setConfirmUnpublish(job),
+  });
   const removeItem = (job) => ({
     label: removingId === job.job_id ? 'Removing…' : 'Remove chapter',
     icon: 'trash',
@@ -791,7 +816,7 @@ function ContentStudio({ platformScope = false }) {
       menu = [slidesItem(job), mcqItem(job), linkItem(job), historyItem(job)];
     } else if (stage === 'published') {
       primary = previewButton(job);
-      menu = [mcqItem(job), linkItem(job), historyItem(job), removeItem(job)];
+      menu = [mcqItem(job), linkItem(job), historyItem(job), unpublishItem(job), removeItem(job)];
     } else if (stage === 'stalled') {
       primary = job.status === JOB_STATUS.AWAITING_REVIEW ? (
         <button
@@ -1432,6 +1457,35 @@ function ContentStudio({ platformScope = false }) {
       {historyJob ? <ReviewHistoryModal job={historyJob} onClose={() => setHistoryJob(null)} /> : null}
 
       <QuirriModal
+        open={Boolean(confirmUnpublish)}
+        onClose={() => { if (!unpublishingId) setConfirmUnpublish(null); }}
+        title={confirmUnpublish ? `Unpublish ${chapterName(confirmUnpublish)}?` : 'Unpublish chapter?'}
+        crumb={confirmUnpublish ? [platformScope ? collegeNameOf(confirmUnpublish) : null, confirmUnpublish.department_name].filter(Boolean).join(' Â· ') || undefined : undefined}
+        busy={Boolean(unpublishingId)}
+        initialFocus=".modal-f .sd-btn--ghost"
+        footer={(
+          <>
+            <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setConfirmUnpublish(null)} disabled={Boolean(unpublishingId)}>Cancel</button>
+            <div className="right">
+              <button
+                type="button"
+                className="sd-btn sd-btn--danger"
+                disabled={Boolean(unpublishingId)}
+                onClick={() => confirmUnpublish && unpublishJob(confirmUnpublish)}
+              >
+                <Icon name="back" size={16} /> {unpublishingId ? 'Unpublishingâ€¦' : 'Unpublish'}
+              </button>
+            </div>
+          </>
+        )}
+      >
+        <ConfirmNote danger icon="alert" title="Students lose access straight away">
+          The video, its quiz and the tutor for this chapter disappear for students. Their watch history and quiz
+          attempts are kept. The chapter goes back to the HOD for review, so it can be published again or removed.
+        </ConfirmNote>
+      </QuirriModal>
+
+      <QuirriModal
         open={Boolean(confirmRemove)}
         onClose={() => setConfirmRemove(null)}
         title={confirmRemove ? `Remove ${chapterName(confirmRemove)}?` : 'Remove chapter?'}
@@ -1455,9 +1509,9 @@ function ContentStudio({ platformScope = false }) {
       >
         {confirmRemove ? (
           confirmRemove.published_at ? (
-            <ConfirmNote danger icon="alert" title="Students lose access to this chapter">
-              This chapter is published. Removing it takes the video and its quiz away from students
-              straight away, and it cannot be undone.
+            <ConfirmNote danger icon="alert" title="Unpublish it first">
+              This chapter is published, so it cannot be removed yet. Choose Unpublish in its menu to take it
+              away from students, then remove it.
             </ConfirmNote>
           ) : confirmRemove.sent_to_hod_at ? (
             <ConfirmNote danger icon="alert" title="The review stops">

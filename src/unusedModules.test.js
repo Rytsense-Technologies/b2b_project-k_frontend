@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const SRC = import.meta.dirname;
-const ROOT = /[\\/](page|layout|not-found|error|loading|route|template|global-error)\.jsx?$|[\\/]middleware\.js$|[\\/]Providers\.jsx$/;
+const ROOT = /[\\/](page|layout|not-found|error|loading|route|template|global-error)\.jsx?$|[\\/]middleware\.js$|[\\/]instrumentation-client\.js$|[\\/]Providers\.jsx$/;
 const IMPORT = /(?:from\s+|import\s*\(\s*|import\s+|require\()['"]([^'"]+)['"]/g;
 
 function walk(dir) {

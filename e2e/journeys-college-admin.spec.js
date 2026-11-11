@@ -1,8 +1,13 @@
-import { expect, test } from '@playwright/test';
+import { expect, request, test } from '@playwright/test';
 import { CA, SA, api, expectHealthyPage, ids, settled, signedInContext, unique, watch, journeyViewport } from './journeys-helpers';
+import { credentials } from './roles';
 
 // One journey down the hierarchy: each step uses what the step before it made.
 test.describe.configure({ mode: 'serial' });
+// QA-FLAKE-003: these journeys are long forms (15-20 actions). On a loaded host WebKit spends 2-5 s
+// per action (measured from traces), so a 60 s budget ran out mid-form. The lost-click cause
+// (dropdown scrollIntoView) is fixed in the app; this only gives WebKit the time the form takes.
+test.slow(({ browserName }) => browserName === 'webkit', 'long form journey on WebKit');
 
 let context;
 let page;
@@ -198,20 +203,33 @@ test('promote to next year previews first and changes nothing until confirmed', 
   await expectHealthyPage(page, problems);
 });
 
-test('adding a student past the seat cap shows the reason, and keeps the form', async ({ browser }) => {
+test('adding a student past the seat cap shows the reason, and keeps the form', async () => {
   const { a } = ids();
-  const adminContext = await signedInContext(browser, SA);
-  const adminPage = await adminContext.newPage();
-  await adminPage.goto('/superadmin/dashboard');
-  const current = await api(adminPage, 'GET', `/colleges/${a.tenant}`);
+  // QA-FLAKE-003: the Super Admin side needs no page. Any page opened after `page` (even the
+  // sign-in page signedInContext opens, then closes) left `page` in the background, where headless
+  // WebKit throttles animation frames: every click on it took ~11 s and bringToFront() did not undo
+  // it. Sign in over the API instead, so no second page ever exists.
+  const admin = await request.newContext({ baseURL: process.env.E2E_BASE_URL });
+  const { email, password } = credentials(SA);
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const res = await admin.post('/api/v1/auth/login', { data: { email, password } });
+    if (res.status() !== 429) {
+      expect(res.status(), 'Super Admin API sign-in').toBeLessThan(300);
+      break;
+    }
+    await new Promise((resolve) => { setTimeout(resolve, 20_000); });
+  }
+  const call = async (method, url, data) => {
+    const res = await admin.fetch(`/api/v1${url}`, { method, data, headers: { 'Content-Type': 'application/json' } });
+    return { status: res.status(), body: await res.json().catch(() => null) };
+  };
+  const current = await call('GET', `/colleges/${a.tenant}`);
   const college = current.body?.data ?? current.body;
   const cap = college.student_seat_cap;
   // The API refuses a cap below the seats in use, so the lowest cap is exactly full.
-  const lowered = await api(adminPage, 'PATCH', `/colleges/${a.tenant}`, { student_seat_cap: Math.max(1, college.student_count) });
+  const lowered = await call('PATCH', `/colleges/${a.tenant}`, { student_seat_cap: Math.max(1, college.student_count) });
   try {
     expect(lowered.status).toBeLessThan(300);
-    // The admin page opened above is now in front; headless WebKit throttles animation frames on
-    // a background page, so actionability checks on `page` would wait forever (XB, WebKit runs).
     await page.bringToFront();
     await page.goto('/admin/students');
     await settled(page);
@@ -228,7 +246,7 @@ test('adding a student past the seat cap shows the reason, and keeps the form', 
     await expect(dialog()).toBeVisible();
     await expect(dialog().getByLabel('First name')).toHaveValue('Over');
   } finally {
-    await api(adminPage, 'PATCH', `/colleges/${a.tenant}`, { student_seat_cap: cap });
-    await adminContext.close();
+    await call('PATCH', `/colleges/${a.tenant}`, { student_seat_cap: cap });
+    await admin.dispose();
   }
 });

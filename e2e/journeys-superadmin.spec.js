@@ -3,6 +3,10 @@ import { SA, api, expectHealthyPage, settled, signedInContext, unique, watch, jo
 
 // One journey: every step builds on the university and college made before it.
 test.describe.configure({ mode: 'serial' });
+// QA-FLAKE-003: these journeys are long forms (15-20 actions). On a loaded host WebKit spends 2-5 s
+// per action (measured from traces), so a 60 s budget ran out mid-form. The lost-click cause
+// (dropdown scrollIntoView) is fixed in the app; this only gives WebKit the time the form takes.
+test.slow(({ browserName }) => browserName === 'webkit', 'long form journey on WebKit');
 
 let context;
 let page;

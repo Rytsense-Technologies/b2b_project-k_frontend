@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { buildCsp, createNonce, cspEnv } from '@/lib/security/csp';
 
 const PUBLIC_PATHS = [
   '/auth/login',
@@ -43,8 +44,19 @@ function isPublicPath(pathname) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
-function withTenantHeader(req, tenant) {
-  const res = NextResponse.next();
+/**
+ * Lets the request through with this request's CSP (SECB-009). Next reads the nonce from the
+ * Content-Security-Policy request header and stamps it on its own scripts; the layout reads x-nonce.
+ */
+function pass(req, tenant) {
+  const nonce = createNonce();
+  const host = firstHeaderValue(req, 'x-forwarded-host') || firstHeaderValue(req, 'host');
+  const csp = buildCsp({ nonce, host, dev: process.env.NODE_ENV === 'development', env: cspEnv() });
+  const headers = new Headers(req.headers);
+  headers.set('x-nonce', nonce);
+  headers.set('content-security-policy', csp);
+  const res = NextResponse.next({ request: { headers } });
+  res.headers.set('Content-Security-Policy', csp);
   if (tenant) res.headers.set('x-tenant-id', tenant);
   return res;
 }
@@ -71,7 +83,7 @@ export async function middleware(req) {
     return NextResponse.redirect(dest);
   }
 
-  if (isPublicPath(pathname)) return NextResponse.next();
+  if (isPublicPath(pathname)) return pass(req);
 
   const session = req.cookies.get('pk_session')?.value;
   const role = req.cookies.get('pk_role')?.value;
@@ -110,7 +122,7 @@ export async function middleware(req) {
       }
       return NextResponse.redirect(publicUrl(req, loginForRole()));
     }
-    return withTenantHeader(req, tenant);
+    return pass(req, tenant);
   }
 
   if (session && role) {
