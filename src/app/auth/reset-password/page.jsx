@@ -11,11 +11,14 @@ import PasswordInput from '@/components/auth/PasswordInput';
 import { resetPasswordSchema, FIELD_RULES } from '@/lib/validation';
 import { authApi } from '@/lib/api/auth';
 import { getApiErrorMessage } from '@/lib/api/errors';
+import ClientOnly from '@/components/shared/ClientOnly';
 
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={null}>
-      <ResetPasswordForm />
+      <ClientOnly>
+        <ResetPasswordForm />
+      </ClientOnly>
     </Suspense>
   );
 }

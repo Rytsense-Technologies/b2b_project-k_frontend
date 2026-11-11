@@ -9,10 +9,16 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
+# SECA-005: the runner copies node_modules; drop dev-only tooling first (next start needs none of it).
+RUN npm prune --omit=dev
 
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# SECA-018: the app starts with node directly, so the base image's package managers (npm, npx,
+# corepack, yarn) and their bundled dependencies are dead weight with open advisories.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/public ./public
@@ -23,4 +29,4 @@ USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -q -O /dev/null http://127.0.0.1:3000/auth/login
-CMD ["npm", "run", "start"]
+CMD ["node", "node_modules/next/dist/bin/next", "start"]

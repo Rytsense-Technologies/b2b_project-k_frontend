@@ -16,7 +16,7 @@
     "start": "next start",
     "preview": "node scripts/preview.mjs",
     "warm": "node scripts/warm-routes.mjs",
-    "lint": "next lint --dir src --dir e2e",
+    "lint": "eslint --ext .js,.jsx,.mjs,.cjs --cache --cache-location node_modules/.cache/eslint/ src e2e",
     "typecheck": "tsc -p jsconfig.json --noEmit --incremental false",
     "check:docs": "node scripts/check-knowledge.mjs --paths",
     "graphify": "py -m graphify extract . --no-cluster && py -m graphify cluster-only . --no-label",
@@ -30,10 +30,10 @@
     "axios": "^1.6.8",
     "clsx": "^2.1.1",
     "livekit-client": "^2.22.3",
-    "lucide-react": "^0.376.0",
-    "next": "14.2.35",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "lucide-react": "^0.397.0",
+    "next": "15.5.29",
+    "react": "~19.2.9",
+    "react-dom": "~19.2.9",
     "react-hook-form": "^7.51.3",
     "react-hot-toast": "^2.4.1",
     "react-phone-number-input": "^3.4.17",
@@ -44,16 +44,27 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
-    "@vitest/coverage-v8": "2.1.9",
+    "@vitest/coverage-v8": "5.1.0",
     "autoprefixer": "^10.4.19",
     "axe-core": "4.12.1",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.3",
+    "eslint-config-next": "15.5.29",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
-    "svgo": "3.3.2",
+    "svgo": "3.3.5",
     "tailwindcss": "^3.4.3",
     "typescript": "7.0.2",
-    "vitest": "2.1.9"
+    "vitest": "5.1.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.32"
+    },
+    "recharts": {
+      "react-is": "$react"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

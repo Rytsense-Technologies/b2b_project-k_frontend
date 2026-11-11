@@ -47,11 +47,18 @@ for (const role of ROLES) {
           await settled(page);
           await motionSettled(page);
           await page.addScriptTag({ path: axePath });
-          const { violations } = await page.evaluate(() => window.axe.run());
-          const blocking = withoutBrandOrange(violations)
-            .filter((v) => ['serious', 'critical'].includes(v.impact))
-            .map((v) => `${v.impact} ${v.id}: ${v.nodes.slice(0, 4).map((n) => n.target).join(' | ')} (${v.nodes.length})`);
-          expect(blocking).toEqual([]);
+          // Portal pages mount after hydration and fade in again when their data lands, so one axe
+          // pass can read a half-faded colour (e.g. #f48c33 instead of the exempt #f5821f). Poll until
+          // the page is at rest; a real violation stays and still fails after the timeout.
+          await expect
+            .poll(async () => {
+              await motionSettled(page);
+              const { violations } = await page.evaluate(() => window.axe.run());
+              return withoutBrandOrange(violations)
+                .filter((v) => ['serious', 'critical'].includes(v.impact))
+                .map((v) => `${v.impact} ${v.id}: ${v.nodes.slice(0, 4).map((n) => n.target).join(' | ')} (${v.nodes.length})`);
+            }, { timeout: 15_000, intervals: [500, 1_000, 2_000] })
+            .toEqual([]);
         });
       }
     });

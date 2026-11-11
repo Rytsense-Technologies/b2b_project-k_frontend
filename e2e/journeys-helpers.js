@@ -99,7 +99,22 @@ export async function signedInContext(browser, role, options = {}) {
 /** Records everything the journey must end without. */
 export function watch(page) {
   const problems = [];
+  // SECB-009: every engine fires securitypolicyviolation, but only Chromium also logs it to the
+  // console, so the event itself is reported as a console error on all browsers. Playwright's own
+  // WebKit helpers (web-inspector:// sources, e.g. the caret-hiding style of a screenshot) are not
+  // the app and are skipped.
+  page
+    .addInitScript(() => {
+      document.addEventListener('securitypolicyviolation', (e) => {
+        if (String(e.sourceFile || '').startsWith('web-inspector://')) return;
+        console.error(`CSP violation: ${e.violatedDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || ''}:${e.lineNumber || 0})`);
+      });
+    })
+    .catch(() => {});
   page.on('console', (m) => {
+    // The engine's own "Refused to …" line repeats the event above without its source; the event
+    // line is the one that counts.
+    if (m.type() === 'error' && /^Refused to .*Content Security Policy/.test(m.text())) return;
     // Next.js 14 logs this when a navigation started by the test (goto / reload) aborts the
     // sidebar's in-flight link prefetches. Firefox settles the aborted fetch before unload, so it
     // logs; Chromium unloads silently. Next then does a normal navigation; nothing reaches the user.
@@ -110,8 +125,14 @@ export function watch(page) {
     // WebKit reports every request that a navigation aborts this way, caught by the app or not
     // (probe: /auth/me and the unread count, both handled, still raise it). The app is single-origin
     // behind the proxy, so a real access-control failure cannot occur; Firefox still surfaces
-    // genuinely unhandled aborts as AxiosError (XB-005).
-    if (/^(?:Error: )?(?:XMLHttpRequest|Fetch API) cannot load \S+ due to access control checks\.$/.test(String(e.message || e))) return;
+    // genuinely unhandled aborts as AxiosError (XB-005). WebKit can print the URL with a space after
+    // the scheme ("http: /localhost:…", seen on a reload mid-request, QA-FLAKE-003), so match loosely
+    // but only for this page's own origin.
+    const host = new URL(process.env.E2E_BASE_URL || 'http://localhost:3000').host;
+    const aborted = [e?.message, String(e)]
+      .map((text) => /(?:XMLHttpRequest|Fetch API) cannot load (https?:\s*\/+)(\S+) due to access control checks/.exec(String(text || '')))
+      .find(Boolean);
+    if (aborted && (aborted[2] === host || aborted[2].startsWith(`${host}/`) || aborted[2].startsWith(`${host}?`))) return;
     problems.push(`pageerror: ${String(e).slice(0, 240)}`);
   });
   page.on('response', (r) => {
@@ -126,8 +147,10 @@ export async function settled(page, timeout = 20_000) {
   await page
     .waitForFunction(
       () => {
+        // .pm-route-loading is the portal's "Loading…" placeholder, shown until the page mounts on
+        // the client (ClientOnly, SECB-009); without it this could pass before the page existed.
         const busy = document.querySelector(
-          '[aria-busy="true"], .rps-sk, .qs-skeleton, .skeleton, [class*="skeleton"], [class*="spinner"], [class*="Spinner"]',
+          '[aria-busy="true"], .pm-route-loading, .rps-sk, .qs-skeleton, .skeleton, [class*="skeleton"], [class*="spinner"], [class*="Spinner"]',
         );
         return !busy || !busy.getClientRects().length;
       },
@@ -198,10 +221,22 @@ export async function sidebarLink(page, name, options = {}) {
   // The drawer is slid off-canvas (transform), which Playwright still counts as visible, so decide
   // by the menu button instead and wait until the link is really on screen.
   const open = page.getByRole('button', { name: 'Open menu' });
-  if ((await open.isVisible()) && !(await link.evaluate((el) => {
+  // No link (the page has already left the portal, e.g. for login) is the caller's to handle:
+  // evaluate() would otherwise wait for it until the test timed out (XB-013, session-loss journey).
+  await link.first().waitFor({ state: 'attached', timeout: 10_000 }).catch(() => {});
+  if (!(await link.count())) return link;
+  if (!(await open.isVisible())) return link;
+  // A drawer still sliding shut after the previous navigation reads as on screen, then leaves:
+  // the click then waits for a link that is never stable (XB-013). Let the slide finish first.
+  await page.locator('aside').first().evaluate(
+    (el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
+    undefined,
+    { timeout: 5_000 },
+  ).catch(() => {});
+  if (!(await link.evaluate((el) => {
     const r = el.getBoundingClientRect();
     return r.right > 0 && r.left < window.innerWidth;
-  }))) {
+  }, undefined, { timeout: 5_000 }))) {
     await open.click();
     await expect(link).toBeInViewport();
   }

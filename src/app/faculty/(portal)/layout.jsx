@@ -16,6 +16,7 @@ import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } fr
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
 import SkipLink from '@/components/shared/SkipLink';
+import ClientOnly from '@/components/shared/ClientOnly';
 
 export default function FacultyLayout({ children }) {
   const pathname = usePathname();
@@ -55,7 +56,7 @@ export default function FacultyLayout({ children }) {
   return (
     <div className={`app q-app-shell q-faculty ${mobileNavShellClass(navOpen)}`}>
       <SkipLink />
-      <Suspense fallback={null}><FacultySidebar /></Suspense>
+      <Suspense fallback={null}><ClientOnly><FacultySidebar /></ClientOnly></Suspense>
       <MobileNavScrim navOpen={navOpen} onClose={closeNav} />
       <div className={`main${sidebarOpen ? '' : ' is-collapsed'}`}>
         <header className="topbar">
@@ -69,7 +70,7 @@ export default function FacultyLayout({ children }) {
             <SystemNotificationBell portal="faculty" />
           </div>
         </header>
-        <main className="content" id="main-content" tabIndex={0}><FacultyAccessGate><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></FacultyAccessGate></main>
+        <main className="content" id="main-content" tabIndex={0}><FacultyAccessGate><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}><ClientOnly fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</ClientOnly></Suspense></FacultyAccessGate></main>
       </div>
     </div>
   );

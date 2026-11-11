@@ -99,7 +99,15 @@ export default function QuirriCombobox({
   useEffect(() => {
     if (!open || activeIndex < 0) return;
     const el = typeof document !== 'undefined' ? document.getElementById(`${listId}-opt-${activeIndex}`) : null;
-    el?.scrollIntoView?.({ block: 'nearest' });
+    // Scroll the list only. scrollIntoView also scrolled the dialog under this fixed menu in
+    // WebKit, which moved the menu between mousedown and mouseup, so a hovered option's
+    // click was lost (QA-FLAKE-003: State / UT never got picked).
+    const menu = el?.parentElement;
+    if (!el || !menu) return;
+    if (el.offsetTop < menu.scrollTop) menu.scrollTop = el.offsetTop;
+    else if (el.offsetTop + el.offsetHeight > menu.scrollTop + menu.clientHeight) {
+      menu.scrollTop = el.offsetTop + el.offsetHeight - menu.clientHeight;
+    }
   }, [activeIndex, listId, open, menuBox]);
 
   useEffect(() => {

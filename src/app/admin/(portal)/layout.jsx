@@ -13,6 +13,7 @@ import { PageHeaderProvider, PortalTopbar, resolvePageMeta } from '@/components/
 import { useHydrateProfile } from '@/hooks/useHydrateProfile';
 import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } from '@/components/shared/MobileNav';
 import SkipLink from '@/components/shared/SkipLink';
+import ClientOnly from '@/components/shared/ClientOnly';
 
 export default function CollegeAdminLayout({ children }) {
   const pathname = usePathname();
@@ -57,7 +58,7 @@ export default function CollegeAdminLayout({ children }) {
             leading={<MobileNavButton navOpen={navOpen} onOpen={openNav} />}
           />
 
-          <main className="content" id="main-content" tabIndex={0}><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
+          <main className="content" id="main-content" tabIndex={0}><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}><ClientOnly fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</ClientOnly></Suspense></main>
         </div>
       </PageHeaderProvider>
     </div>

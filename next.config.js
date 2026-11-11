@@ -5,32 +5,20 @@ const PRODUCTION_API_URL = '/api/v1';
 
 const apiProxyTarget = (process.env.API_PROXY_TARGET || '').replace(/\/$/, '');
 
-// Next injects inline bootstrap scripts, so script-src needs 'unsafe-inline' without nonces.
-// https:/wss: stay open for S3 media and the LiveKit signal URL, which come from the backend.
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
-  "media-src 'self' blob: https:",
-  `connect-src 'self' https: wss:${isProd ? '' : ' http: ws:'}`,
-  "worker-src 'self' blob:",
-  "frame-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-].join('; ');
-
+// SECB-009: the Content-Security-Policy is per request (nonce) and set by src/middleware.js,
+// built in src/lib/security/csp.js. These headers are the same on every response.
 const SECURITY_HEADERS = [
-  { key: 'Content-Security-Policy', value: CONTENT_SECURITY_POLICY },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
   // Microphone is the voice tutor.
   { key: 'Permissions-Policy', value: 'camera=(), geolocation=(), microphone=(self)' },
+  // No popup/OAuth flow needs a cross-origin opener (SECB-003).
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  // SECB-010: no other site may embed these responses. COEP stays off: it would block the
+  // cross-origin S3 media the players load.
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
 ];
 
 const nextConfig = {
@@ -47,6 +35,9 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_API_URL || (isProd ? PRODUCTION_API_URL : ''),
   },
   images: {
+    // SECA-003: no page needs /_next/image; with this set Next answers it with 404, which removes
+    // the optimiser's unpatched 14.x RCE/DoS advisories from the attack surface.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

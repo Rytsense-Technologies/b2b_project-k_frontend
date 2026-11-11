@@ -14,6 +14,7 @@ import { MobileNavButton, MobileNavScrim, mobileNavShellClass, useMobileNav } fr
 import { usePortalDocumentTitle } from '@/hooks/usePortalDocumentTitle';
 import SystemNotificationBell from '@/components/shared/SystemNotificationBell';
 import SkipLink from '@/components/shared/SkipLink';
+import ClientOnly from '@/components/shared/ClientOnly';
 
 export default function SuperAdminLayout({ children }) {
   const pathname = usePathname();
@@ -64,7 +65,7 @@ export default function SuperAdminLayout({ children }) {
           </div>
         </header>
 
-        <main className="content" id="main-content" tabIndex={0}><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</Suspense></main>
+        <main className="content" id="main-content" tabIndex={0}><Suspense fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}><ClientOnly fallback={<div className="pm-route-loading" role="status" aria-live="polite">Loading…</div>}>{children}</ClientOnly></Suspense></main>
       </div>
     </div>
   );

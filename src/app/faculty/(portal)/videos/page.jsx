@@ -24,7 +24,7 @@ import { QuirriSelect } from '@/components/superadmin/quirri-ui';
 import { useFacultyScope } from '@/hooks/useFacultyScope';
 import { useTabParam, useUrlState } from '@/hooks/useUrlState';
 import { eduVideoApi, JOB_STATUS, computeJobProgress, summarizeEduVideoError } from '@/lib/api/admin/eduVideo';
-import { publishErrorMessage, publishedMessage } from '@/lib/admin/publish';
+import { UNPUBLISHED, publishErrorMessage, publishedMessage, unpublishErrorMessage } from '@/lib/admin/publish';
 import { asList, apiErrorMessage } from '@/lib/api/superadmin/http';
 import { useAsyncResource } from '@/hooks/useAsyncResource';
 import { useQuirriTip } from '@/components/superadmin/QuirriTooltip';
@@ -125,6 +125,8 @@ export default function FacultyVideosPage() {
   const [page, setPage] = useState(1);
   const [publishingId, setPublishingId] = useState(null);
   const [confirmJob, setConfirmJob] = useState(null);
+  const [unpublishJob, setUnpublishJob] = useState(null);
+  const [unpublishingId, setUnpublishingId] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
   const [editJob, setEditJob] = useState(null);
   const [historyJob, setHistoryJob] = useState(null);
@@ -245,6 +247,21 @@ export default function FacultyVideosPage() {
     }
   };
 
+  const unpublish = async (job) => {
+    setUnpublishingId(job.job_id);
+    try {
+      // POST /jobs/{id}/unpublish — students lose the chapter; it returns to To review.
+      await eduVideoApi.unpublish(job.job_id);
+      toast.success(UNPUBLISHED);
+      setUnpublishJob(null);
+      await reloadAll();
+    } catch (err) {
+      toast.error(unpublishErrorMessage(err));
+    } finally {
+      setUnpublishingId(null);
+    }
+  };
+
   const subjectOptions = useMemo(
     () => (subjects.data?.items || []).map((s) => ({ value: s.id, label: s.code ? `${s.name} · ${s.code}` : s.name })),
     [subjects.data],
@@ -336,6 +353,16 @@ export default function FacultyVideosPage() {
             <>
               {previewBtn(job)}
               {historyBtn(job)}
+              {job.can_review === false || readOnly ? null : (
+                <button
+                  type="button"
+                  className="sd-btn sd-btn--ghost sd-btn--sm"
+                  onClick={() => setUnpublishJob(job)}
+                  disabled={unpublishingId === job.job_id}
+                >
+                  <Icon name="back" size={16} /> Unpublish
+                </button>
+              )}
             </>
           )}
         />
@@ -477,7 +504,36 @@ export default function FacultyVideosPage() {
         )}
       >
         <ConfirmNote icon="send" title="Students will see this chapter straight away">
-          Students can watch it as soon as it is published. There is no unpublish step, and a published chapter can&apos;t be sent back for changes.
+          Students can watch it as soon as it is published. To take it back later, use Unpublish on the Published tab.
+        </ConfirmNote>
+      </QuirriModal>
+
+      <QuirriModal
+        open={Boolean(unpublishJob)}
+        onClose={() => { if (!unpublishingId) setUnpublishJob(null); }}
+        title="Unpublish this chapter?"
+        crumb={unpublishJob?.chapter_title || undefined}
+        busy={Boolean(unpublishingId)}
+        initialFocus=".modal-f .sd-btn--ghost"
+        footer={(
+          <>
+            <button type="button" className="sd-btn sd-btn--ghost" onClick={() => setUnpublishJob(null)} disabled={Boolean(unpublishingId)}>Cancel</button>
+            <div className="right">
+              <button
+                type="button"
+                className="sd-btn sd-btn--danger"
+                onClick={() => unpublishJob && unpublish(unpublishJob)}
+                disabled={Boolean(unpublishingId)}
+              >
+                <Icon name="back" size={16} /> {unpublishingId ? 'Unpublishing…' : 'Unpublish'}
+              </button>
+            </div>
+          </>
+        )}
+      >
+        <ConfirmNote danger icon="alert" title="Students lose access straight away">
+          The video, its quiz and the tutor for this chapter disappear for students. Their watch history and quiz
+          attempts are kept. The chapter goes back to To review, so it can be published again.
         </ConfirmNote>
       </QuirriModal>
 

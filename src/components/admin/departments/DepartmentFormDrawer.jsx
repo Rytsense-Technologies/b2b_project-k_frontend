@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
@@ -33,6 +33,9 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
   });
   const assignedCode = useWatch({ control, name: 'code' });
   const [saving, setSaving] = useState(false);
+  // Double-click guard: `saving` only disables the button after a re-render, and the async zod
+  // check lets a second submit through first, which created the department twice.
+  const submitting = useRef(false);
   const [hodOptions, setHodOptions] = useState([]);
   const [hodState, setHodState] = useState('idle');
 
@@ -79,10 +82,12 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
   }, [open, focus, hodState]);
 
   const onSave = handleSubmit(async (values) => {
+    if (submitting.current) return;
     if (!tenantId) {
       toast.error('Your college is missing from this session. Sign in again.');
       return;
     }
+    submitting.current = true;
     setSaving(true);
     try {
       const hod = values.hod_user_id || null;
@@ -109,6 +114,7 @@ export default function DepartmentFormDrawer({ open, department = null, tenantId
     } catch (err) {
       toast.error(apiErrorMessage(err, editing ? 'Could not save the department' : 'Could not create the department'));
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   });

@@ -33,17 +33,24 @@ describe('next.config.js', () => {
     expect(headers['x-content-type-options']).toBe('nosniff');
     expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
     expect(headers['strict-transport-security']).toMatch(/max-age=\d{7,}/);
-    expect(headers['content-security-policy']).toContain("frame-ancestors 'none'");
-    expect(headers['content-security-policy']).toContain("object-src 'none'");
     expect(headers['permissions-policy']).toContain('microphone=(self)');
+    // SECB-003: ZAP baseline flagged a missing opener policy; same-origin isolates the window from cross-origin popups.
+    expect(headers['cross-origin-opener-policy']).toBe('same-origin');
+    // SECB-010: no cross-site embedding of our responses. COEP would break the S3 media, so it stays off.
+    expect(headers['cross-origin-resource-policy']).toBe('same-origin');
+    expect(headers['cross-origin-embedder-policy']).toBeUndefined();
   });
 
-  it('keeps the CSP open for LiveKit and media, and strict on eval in production', async () => {
-    const prod = (await load('production')).headers['content-security-policy'];
-    expect(prod).toMatch(/connect-src[^;]*wss:/);
-    expect(prod).toMatch(/media-src[^;]*https:/);
-    expect(prod).not.toContain('unsafe-eval');
-    expect((await load('development')).headers['content-security-policy']).toContain('unsafe-eval');
+  // SECB-009: a static policy cannot carry a per-request nonce; the middleware sets it (src/lib/security/csp.test.js).
+  it('leaves the Content-Security-Policy to the middleware', async () => {
+    expect((await load('production')).headers['content-security-policy']).toBeUndefined();
+    expect(read('src/middleware.js')).toMatch(/res\.headers\.set\('Content-Security-Policy', csp\)/);
+    expect(read('src/app/layout.js')).toMatch(/await headers\(\)\)\.get\('x-nonce'\)/);
+  });
+
+  it('keeps the /admin/structure redirect ahead of render (XB-012)', async () => {
+    const [rule] = await require('../next.config.js').redirects();
+    expect(rule).toMatchObject({ source: '/admin/structure', destination: '/admin/structure/departments', permanent: false });
   });
 
   it('lists no external package that is not installed', () => {
@@ -57,6 +64,26 @@ describe('next.config.js', () => {
     expect(remotePatterns.filter((p) => p.protocol === 'http' && !local.includes(p.hostname))).toEqual([]);
     expect(read('next.config.js')).not.toMatch(RAW_IP);
   });
+
+  // SECA-003: Next 14.2.x has unpatched critical RCE/DoS advisories in the image optimiser
+  // (/_next/image). The app never uses it (its one <Image> is already unoptimized), so it stays off.
+  it('turns the /_next/image optimiser off', () => {
+    expect(require('../next.config.js').images.unoptimized).toBe(true);
+  });
+
+  // SECA-012: Next 14.2.x keeps unpatched advisories; 15.5.29 has none in `npm audit`. App Router 15 needs React 19,
+  // and recharts 2.x only sees React 19 elements through a matching react-is.
+  it('pins Next and its lint config to a patched 15.5 release on React 19', () => {
+    const pkg = JSON.parse(read('package.json'));
+    const lock = JSON.parse(read('package-lock.json')).packages;
+    const [maj, min, pat] = lock['node_modules/next'].version.split('.').map(Number);
+    expect(maj).toBe(15);
+    expect(min * 1e3 + pat).toBeGreaterThanOrEqual(5029);
+    expect(pkg.devDependencies['eslint-config-next']).toBe(pkg.dependencies.next);
+    for (const name of ['react', 'react-dom']) expect(lock[`node_modules/${name}`].version).toMatch(/^19\./);
+    const reactIs = lock['node_modules/recharts/node_modules/react-is'] || lock['node_modules/react-is'];
+    expect(reactIs.version).toMatch(/^19\./);
+  });
 });
 
 describe('frontend image', () => {
@@ -67,6 +94,31 @@ describe('frontend image', () => {
     expect(runner).toMatch(/^USER node$/m);
     expect(runner.indexOf('USER node')).toBeLessThan(runner.indexOf('CMD '));
     expect(runner).toMatch(/^HEALTHCHECK /m);
+  });
+
+  // SECA-018: the runtime image needs no package manager; npm's bundled dependencies carried HIGH advisories.
+  it('starts next with node and removes npm from the runtime stage', () => {
+    const runner = docker.slice(docker.lastIndexOf('FROM '));
+    expect(runner).toMatch(/^CMD \["node", "node_modules\/next\/dist\/bin\/next", "start"\]$/m);
+    expect(runner).not.toMatch(/^CMD .*npm/m);
+    expect(runner).toMatch(/^RUN rm -rf \/usr\/local\/lib\/node_modules\/npm /m);
+  });
+
+  // SECA-006: next 14 pins postcss 8.4.31 (file-read / path-traversal advisories, fixed in 8.5.23+).
+  it('resolves every postcss copy to a patched release', () => {
+    const lock = JSON.parse(read('package-lock.json')).packages;
+    const copies = Object.entries(lock).filter(([k]) => k.endsWith('node_modules/postcss'));
+    expect(copies.length).toBeGreaterThan(0);
+    for (const [where, { version }] of copies) {
+      const [maj, min, pat] = version.split('.').map(Number);
+      expect(maj * 1e6 + min * 1e3 + pat, `${where}@${version}`).toBeGreaterThanOrEqual(8005023);
+    }
+  });
+
+  // SECA-005: dev-only tooling (vitest, vite, eslint, svgo) carries advisories and is not needed by `next start`.
+  it('ships production dependencies only', () => {
+    const builder = docker.slice(docker.indexOf('AS builder'), docker.lastIndexOf('FROM '));
+    expect(builder.indexOf('npm prune --omit=dev')).toBeGreaterThan(builder.indexOf('npm run build'));
   });
 
   it('drops the build argument nothing reads', () => {
@@ -97,6 +149,14 @@ describe('workflows', () => {
     }
   });
 
+  // `next lint` is gone in Next 16; the ESLint CLI runs the same .eslintrc.json over the same folders.
+  it('lints with the ESLint CLI, not next lint', () => {
+    const { lint } = JSON.parse(read('package.json')).scripts;
+    expect(lint).toMatch(/^eslint /);
+    expect(lint).toContain('src e2e');
+    expect(Object.values(JSON.parse(read('package.json')).scripts).join(' ')).not.toContain('next lint');
+  });
+
   it('CI runs the accessibility check', () => {
     expect(ci).toContain('npm run test:a11y');
     expect(JSON.parse(read('package.json')).devDependencies['axe-core']).toBeTruthy();
@@ -124,6 +184,16 @@ describe('workflows', () => {
     expect(deploy).toContain('--memory');
     expect(deploy).toContain('--log-opt max-size=');
   });
+
+  // SECA-004: a moved tag would run new third-party code with the deploy secrets.
+  it('pins every third-party action to a full commit SHA', () => {
+    for (const file of ['ci.yml', 'deploy.yml', 'e2e.yml']) {
+      const uses = [...read(`.github/workflows/${file}`).matchAll(/uses:\s*(\S+)/g)].map((m) => m[1]);
+      for (const ref of uses.filter((u) => !u.startsWith('./'))) {
+        expect(ref, `${file}: ${ref}`).toMatch(/@[0-9a-f]{40}$/);
+      }
+    }
+  });
 });
 
 describe('repository hygiene', () => {
@@ -136,8 +206,21 @@ describe('repository hygiene', () => {
     }
   });
 
-  it('example env has no payment key', () => {
+  it('example env has no payment key and no auth bypass flag', () => {
     expect(read('.env.example')).not.toMatch(/RAZORPAY/i);
+    expect(read('.env.example')).not.toMatch(/BYPASS/i);
+  });
+
+  // INFRA-025 / FE-028: no hard-coded test server, stale domain or bypass switch anywhere in src.
+  it('src has no raw IP, stale domain or client-side auth bypass', () => {
+    const src = tracked.filter((f) => /^src\/.*\.(js|jsx|mjs)$/.test(f) && !/\.test\.jsx?$/.test(f) && existsSync(path.join(ROOT, f)));
+    expect(src.length).toBeGreaterThan(50);
+    const hits = src.filter((f) => {
+      const text = read(f);
+      return RAW_IP.test(text) || /talenteur\.co\.in/.test(text) || /BYPASS/i.test(text)
+        || /\b(?!127\.0\.0\.1\b)(?:\d{1,3}\.){3}\d{1,3}:\d{2,5}\b/.test(text);
+    });
+    expect(hits).toEqual([]);
   });
 
   it('has no leftover temp files on disk', () => {

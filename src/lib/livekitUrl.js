@@ -1,10 +1,5 @@
-import { PRODUCTION_HOST } from './apiConfig';
-
-/** Test server — direct WebSocket to LiveKit on :7880 */
-export const PRODUCTION_LIVEKIT_WS = `ws://${PRODUCTION_HOST}:7880`;
-
-/** Live domain — Nginx proxies /livekit/ → LiveKit server */
-export const LIVE_LIVEKIT_WSS = 'wss://talenteur.co.in/livekit/';
+/** Deployed sites: the reverse proxy serves LiveKit at /livekit/ on the page's own host (INFRA-025). */
+export const LIVEKIT_PROXY_PATH = '/livekit/';
 
 /** Default local LiveKit (must match docker/livekit.yaml + backend .env). */
 export const LOCAL_LIVEKIT_WS = 'ws://localhost:7880';
@@ -18,12 +13,6 @@ const INTERNAL_LIVEKIT_HOSTS = new Set([
 
 function isInternalLivekitHost(hostname) {
   return INTERNAL_LIVEKIT_HOSTS.has(hostname?.toLowerCase());
-}
-
-function isRewritableLivekitHost(hostname) {
-  if (!hostname) return false;
-  const h = hostname.toLowerCase();
-  return isInternalLivekitHost(h) || h === PRODUCTION_HOST;
 }
 
 function isLocalBrowserHost() {
@@ -41,24 +30,12 @@ function parseWsUrl(url) {
   }
 }
 
+/** The proxied LiveKit URL on the page's own host: wss on https pages, ws on http. */
 function getLivekitUrlForCurrentOrigin() {
   if (typeof window === 'undefined') return null;
-
-  const { hostname, protocol } = window.location;
-
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return null;
-  }
-
-  if (hostname === PRODUCTION_HOST) {
-    return PRODUCTION_LIVEKIT_WS;
-  }
-
-  if (protocol === 'https:') {
-    return `wss://${hostname}/livekit/`;
-  }
-
-  return null;
+  const { host, hostname, protocol } = window.location;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return null;
+  return `${protocol === 'https:' ? 'wss' : 'ws'}://${host}${LIVEKIT_PROXY_PATH}`;
 }
 
 /**
@@ -80,17 +57,10 @@ export function resolveLivekitBrowserUrl(urlFromApi) {
   const forOrigin = getLivekitUrlForCurrentOrigin();
   if (forOrigin) return forOrigin;
 
+  // Server-side or no window: only a URL the browser could reach is passed on.
   const parsed = parseWsUrl(urlFromApi);
-  if (!parsed || !isRewritableLivekitHost(parsed.hostname)) {
-    return urlFromApi;
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    return LIVE_LIVEKIT_WSS;
-  }
-
-  const port = parsed.port || '7880';
-  return `ws://${PRODUCTION_HOST}:${port}`;
+  if (!parsed || !isInternalLivekitHost(parsed.hostname)) return urlFromApi;
+  return LOCAL_LIVEKIT_WS;
 }
 
 /** @deprecated alias */
