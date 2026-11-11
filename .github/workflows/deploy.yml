@@ -51,6 +51,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Self-hosted runner disks fill with old images / buildx layers. Free space
+      # before build+pull so deploy does not die with "No space left on device".
+      # Images used by running containers (live xplains-frontend) are kept.
+      - name: Free runner disk
+        run: |
+          set -euo pipefail
+          echo "=== disk before cleanup ==="
+          df -h / /var/lib/docker 2>/dev/null || df -h /
+          docker system df || true
+          docker rm -f xplains-frontend-canary 2>/dev/null || true
+          docker container prune -f || true
+          docker image prune -a -f || true
+          docker builder prune -af || true
+          # Drop leftover Actions temp under this workspace only (never touch other jobs).
+          rm -rf "${{ github.workspace }}/../_temp"/* 2>/dev/null || true
+          echo "=== disk after cleanup ==="
+          df -h / /var/lib/docker 2>/dev/null || df -h /
+          docker system df || true
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
 
