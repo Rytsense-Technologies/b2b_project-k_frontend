@@ -15,7 +15,15 @@ import RefreshingVideo from '@/components/shared/RefreshingVideo';
  * way they do for a top-level navigation, so no separate auth wiring is
  * needed here.
  */
-export default function VideoPreviewModal({ open, onClose, title, src }) {
+/** The app's own watch page: the raw S3 file in a tab shows the browser's Download option. */
+export function watchHref(jobId, title) {
+  if (!jobId) return null;
+  const q = title ? `?title=${encodeURIComponent(title)}` : '';
+  return `/watch/${encodeURIComponent(jobId)}${q}`;
+}
+
+export default function VideoPreviewModal({ open, onClose, title, src, jobId }) {
+  const href = watchHref(jobId, title);
   return (
     <QuirriModal open={open} onClose={onClose} title={title || 'Video preview'} wide>
       {src ? (
@@ -25,12 +33,14 @@ export default function VideoPreviewModal({ open, onClose, title, src }) {
               Your browser does not support embedded video playback.
             </RefreshingVideo>
           </div>
-          <div className="fa-video-foot">
-            <span><Icon name="info" size={16} /> If the video does not play here, open it in a new tab.</span>
-            <a href={src} target="_blank" rel="noopener noreferrer" className="sd-btn sd-btn--ghost sd-btn--sm">
-              Open in a new tab <Icon name="arrow" size={16} />
-            </a>
-          </div>
+          {href ? (
+            <div className="fa-video-foot">
+              <span><Icon name="info" size={16} /> Want a bigger view? Open it in a new tab.</span>
+              <a href={href} target="_blank" rel="noopener noreferrer" className="sd-btn sd-btn--ghost sd-btn--sm">
+                Open in a new tab <Icon name="arrow" size={16} />
+              </a>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </QuirriModal>

@@ -30,6 +30,8 @@ describe('buildCsp', () => {
     expect(prod['connect-src']).toEqual(["'self'", 'wss://portal.example.com']);
     expect(prod['media-src']).toContain('https://projectk-media.s3.ap-south-1.amazonaws.com');
     expect(prod['img-src']).toContain('https://projectk-media.s3.ap-south-1.amazonaws.com');
+    // Production presigned video links use the global endpoint of the xplains-b2b bucket.
+    expect(prod['media-src']).toContain('https://xplains-b2b.s3.amazonaws.com');
     expect(prod['frame-ancestors']).toEqual(["'none'"]);
     expect(prod['object-src']).toEqual(["'none'"]);
   });
@@ -61,7 +63,12 @@ describe('buildCsp', () => {
     };
     const { connect, media } = configuredOrigins(env);
     expect(connect).toEqual(['wss://rtc.example.com', 'https://rtc.example.com', 'wss://lk.example.org', 'https://lk.example.org']);
-    expect(media).toEqual(['https://other-bucket.s3.ap-south-1.amazonaws.com', 'https://other-bucket.s3.amazonaws.com', 'https://cdn.example.net']);
+    expect(media).toEqual([
+      'https://other-bucket.s3.ap-south-1.amazonaws.com', 'https://other-bucket.s3.amazonaws.com',
+      'https://xplains-b2b.s3.ap-south-1.amazonaws.com', 'https://xplains-b2b.s3.amazonaws.com',
+      'https://projectk-media.s3.ap-south-1.amazonaws.com', 'https://projectk-media.s3.amazonaws.com',
+      'https://cdn.example.net',
+    ]);
     expect(originList("'self' data: *")).toEqual([]);
   });
 

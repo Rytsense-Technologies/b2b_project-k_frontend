@@ -1433,6 +1433,7 @@ function ContentStudio({ platformScope = false }) {
         onClose={() => setPreviewJob(null)}
         title={previewJob?.chapter_title || 'Video preview'}
         src={previewJob ? eduVideoApi.getDownloadUrl(previewJob.job_id) : null}
+        jobId={previewJob?.job_id}
       />
 
       <EduVideoPlanEditor

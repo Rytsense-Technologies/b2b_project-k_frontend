@@ -545,6 +545,7 @@ export default function FacultyVideosPage() {
           || asList(counts.data?.review, []).find((j) => j.job_id === previewJob?.job_id)?.chapter_title
           || 'Video preview'}
         src={previewJob ? eduVideoApi.getDownloadUrl(previewJob.job_id) : null}
+        jobId={previewJob?.job_id}
       />
       <EduVideoPlanEditor
         open={Boolean(editJob)}
