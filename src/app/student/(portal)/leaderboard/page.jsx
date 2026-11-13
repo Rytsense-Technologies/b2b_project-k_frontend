@@ -27,13 +27,18 @@ const PAGE_SIZE = 10;
 /** Podium only when it adds something: three or more ranked students. */
 const PODIUM_MIN = 3;
 
+/** Classmates arrive with user_id: null (peer names are "Asha K.", backend S6, 11 Nov 2026), so rows are keyed by rank + position. */
+function rowKey(r, i) {
+  return r.user_id || `rank-${r.rank}-${i}`;
+}
+
 function initials(name = '') {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || 'S';
 }
 
 function titleCase(name = '') {
-  return name.replace(/\b\w/g, (c) => c.toUpperCase());
+  return String(name || '').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function formatDate(iso) {
@@ -323,8 +328,8 @@ function LeaderboardInner() {
         <>
           {podium.length ? (
             <section className="slb-podium" aria-label="Top students">
-              {[podium[1], podium[0], podium[2]].filter(Boolean).map((p) => (
-                <article key={p.user_id} className={`slb-card slb-pod is-${rankTier(p.rank)}${p.is_me ? ' is-me' : ''}`}>
+              {[podium[1], podium[0], podium[2]].filter(Boolean).map((p, i) => (
+                <article key={rowKey(p, i)} className={`slb-card slb-pod is-${rankTier(p.rank)}${p.is_me ? ' is-me' : ''}`}>
                   <span className={`slb-medal is-${rankTier(p.rank)}`} aria-label={`Rank ${p.rank}`}>{p.rank}</span>
                   <span className={`slb-av${p.is_me ? ' is-me' : ''}`} aria-hidden="true">{initials(p.name)}</span>
                   <div>
@@ -349,7 +354,7 @@ function LeaderboardInner() {
             ) : (
               <>
                 <ol className="sb-rows slb-rows" aria-label="Rankings">
-                  {pageRows.map((r) => <RankRow key={r.user_id} r={r} />)}
+                  {pageRows.map((r, i) => <RankRow key={rowKey(r, i)} r={r} />)}
                   {!search && me && !meInList ? (
                     <>
                       <li className="slb-sep" aria-hidden="true">Your position</li>
